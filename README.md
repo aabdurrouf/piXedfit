@@ -6,7 +6,9 @@ handle all tasks in the analysis of spatially resolved SEDs of a galaxy, includi
 broad-band images with an IFS data cube, pixel binning, performing SED fitting, and making visualization plots for the SED fitting result. 
 **piXedfit** is a versatile tool that has been equipped with the multiprocessing module, namely message passing interface or MPI, for 
 efficient analysis of the datasets of a large number of galaxies. Detailed description on **piXedfit** and demonstration of its performance 
-is presented in **Abdurro'uf et al. (2020)**. Documentation of this Python package can be found at this [website](https://pixedfit.readthedocs.io/en/latest/index.html)
+is presented in **Abdurro'uf et al. (2020)**. Documentation of this Python package can be found at this [website](https://pixedfit.readthedocs.io/en/latest/index.html). To get sense of how **piXedfit** works, the folder `examples` contains a demonstration 
+on how to use **piXedfit** for deriving spatially resolved stellar population properties of a galaxy using 12-band imaging data from GALEX+SDSS+2MASS+WISE and 
+the IFS data from [CALIFA](https://califa.caha.es/) survey.
 
 ![image1](3Dcube_specphoto.png)
 ![image2](demo_pixedfit_ngc309_new_edit.svg)
@@ -25,7 +27,8 @@ of spaially resolved SED) without the need of using the image processing and pix
    This module is capable of doing spatial-matching (in resolution and sampling) of a multiband imaging data 
    (that have been processed by the `piXedfit_images`) with an IFS data cube (containing the same galaxy) and extract pixel-wise 
    spectrophotometric SEDs within the galaxy's region of interest. For the current version of **piXedfit**, only the IFS data from 
-   the [CALIFA](https://califa.caha.es/) and [MaNGA](https://www.sdss.org/surveys/manga/) can can be analyzed by the `piXedfit_spectrophotometric` module.   
+   the [CALIFA](https://califa.caha.es/) and [MaNGA](https://www.sdss.org/surveys/manga/) surveys can can be analyzed by 
+   the `piXedfit_spectrophotometric` module.   
 
 *  `piXedfit_bin`: **pixel binning**
    This module is capable of performing pixel binning, which is a process of combining neighboring pixels to achieve certain S/N thresholds.
