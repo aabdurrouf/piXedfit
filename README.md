@@ -6,9 +6,11 @@ handle all tasks in the analysis of spatially resolved SEDs of a galaxy, includi
 broad-band images with an IFS data cube, pixel binning, performing SED fitting, and making visualization plots for the SED fitting result. 
 **piXedfit** is a versatile tool that has been equipped with the multiprocessing module, namely message passing interface or MPI, for 
 efficient analysis of the datasets of a large number of galaxies. Detailed description on **piXedfit** and demonstration of its performance 
-is presented in **Abdurro'uf et al. (2020)**. Documentation of this Python package can be found at this [website](https://pixedfit.readthedocs.io/en/latest/index.html). To get sense of how **piXedfit** works, the folder `examples` contains a demonstration 
-on how to use **piXedfit** for deriving spatially resolved stellar population properties of a galaxy using 12-band imaging data from GALEX+SDSS+2MASS+WISE and 
-the IFS data from [CALIFA](https://califa.caha.es/) survey.
+is presented in **Abdurro'uf et al. (2020)**. 
+
+Documentation of this Python package can be found at this [website](https://pixedfit.readthedocs.io/en/latest/index.html). 
+To get sense on how **piXedfit** works, the folder `examples` contains a demonstration on how to use **piXedfit** for deriving spatially resolved 
+stellar population properties of a galaxy using 12-band imaging data from GALEX+SDSS+2MASS+WISE and the IFS data from [CALIFA](https://califa.caha.es/) survey.
 
 ![image1](3Dcube_specphoto.png)
 ![image2](demo_pixedfit_ngc309_new_edit.svg)
