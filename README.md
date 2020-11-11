@@ -22,10 +22,12 @@ doesn't need to use the other modules. For instance, it is possible to use the S
 of spaially resolved SED) without the need of using the image processing and pixel binning modules. The 6 modules and their usabilities are the following:
 
 *  `piXedfit_images`: **image processing**
+   
    This module is capable of doing spatial-matching (in resolution and spatial sampling) of multiband images ranging from the FUV to FIR 
    (from ground-based and spaced-based telescopes) and extract pixel-wise photometric SEDs within the galaxy's region of interest.
 
 *  `piXedfit_spectrophotometric`: **spatial-matching of imaging data and the IFS data**
+   
    This module is capable of doing spatial-matching (in resolution and sampling) of a multiband imaging data 
    (that have been processed by the `piXedfit_images`) with an IFS data cube (containing the same galaxy) and extract pixel-wise 
    spectrophotometric SEDs within the galaxy's region of interest. For the current version of **piXedfit**, only the IFS data from 
@@ -33,21 +35,25 @@ of spaially resolved SED) without the need of using the image processing and pix
    the `piXedfit_spectrophotometric` module.   
 
 *  `piXedfit_bin`: **pixel binning**
+   
    This module is capable of performing pixel binning, which is a process of combining neighboring pixels to achieve certain S/N thresholds.
    The pixel binning scheme takes into account the similarity of SED shape among the pixels that are going to be binned together. This way 
    important spatial information from the pixel scale can still be preserved, while increasing the S/N of the spatially resolved SEDs. 
    The S/N threshold can be set to every band, not only to a particular band.   
 
 *  `piXedfit_model`: **generating model SEDs**
+   
    This module can generate model SEDs of galaxies given some parameters. The SED modeling uses the [FSPS](https://github.com/cconroy20/fsps) SPS model 
    with the [Python-FSPS](http://dfm.io/python-fsps/current/) as the interface to the Python environment. The SED modeling incorporates the modeling 
    of light coming from stellar emission, nebular emission, dust emission, and the AGN dusty torus emission.      
 
 *  `piXedfit_fitting`: **performing SED fitting**
+   
    This module is capable of performing SED fitting for any kind of input SED, either spatially resolved SED or integrated SED. The input can be 
    in the form of photometric SED or spetrophotometric SED (i.e., combination of photometry and spectroscopy).
 
 *  `piXedfit_analysis`: **making visualization plots for the SED fiting results**
+   
    This module can make three plots for visualizing the fitting results: corner plot (i.e., plot showing 1D and joint 2D posteriors of the parameters space), 
    SED plot, and SFH plot.
    
