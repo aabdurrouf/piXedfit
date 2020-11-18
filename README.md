@@ -6,7 +6,7 @@ handle all tasks in the analysis of spatially resolved SEDs of a galaxy, includi
 broad-band images with an IFS data cube, pixel binning, performing SED fitting, and making visualization plots for the SED fitting result. 
 **piXedfit** is a versatile tool that has been equipped with the multiprocessing module, namely message passing interface or MPI, for 
 efficient analysis of the datasets of a large number of galaxies. Detailed description on **piXedfit** and demonstration of its performance 
-is presented in **Abdurro'uf et al. (2020)**. 
+is presented in **Abdurro'uf et al. (submitted)**. 
 
 Documentation of this Python package can be found at this [website](https://pixedfit.readthedocs.io/en/latest/index.html). 
 To get sense on how **piXedfit** works, the folder `examples` contains a demonstration on how to use **piXedfit** for deriving spatially resolved 
@@ -61,7 +61,7 @@ of spaially resolved SED) without the need of using the image processing and pix
 Currently, this Python package is only available within the collaboration. We will make **piXedfit** publicly available in timely manner. In the meantime, ones inerested in using **piXedfit** can contact Abdurro'uf at abdurrouf@asiaa.sinica.edu.tw.    
    
 ## Reference
-A list of some projects **piXedfit** gets benefit from:
+A list of some projects **piXedfit** is benefitted from:
 *  [FSPS](https://github.com/cconroy20/fsps) and [Python-FSPS](http://dfm.io/python-fsps/current/) stellar population synthesis model
 *  [emcee](https://emcee.readthedocs.io/en/stable/) package for the Affine Invariant Markov Chain Monte Carlo (MCMC) Ensemble sampler
 *  [Astropy](https://www.astropy.org/)
