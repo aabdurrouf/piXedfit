@@ -8,6 +8,7 @@ SED fitting, and obtaining spatially resolved maps of stellar population propert
 * NGC309_image_processing_p2.ipynb
 * NGC309_specphoto_p1.ipynb
 * NGC309_specphoto_p2.ipynb
-* NGC309_pixbin.ipynb
+* NGC309_pixbin_p1.ipynb
+* NGC309_pixbin_p2.ipynb
 * NGC309_fitting.ipynb
 * NGC309_get_maps_properties.ipynb
