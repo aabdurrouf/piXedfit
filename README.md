@@ -6,7 +6,7 @@ handle all tasks in the analysis of spatially resolved SEDs of a galaxy, includi
 broad-band images with an IFS data cube, pixel binning, performing SED fitting, and making visualization plots for the SED fitting result. 
 **piXedfit** is a versatile tool that has been equipped with the multiprocessing module, namely message passing interface or MPI, for 
 efficient analysis of the datasets of a large number of galaxies. Detailed description on **piXedfit** and demonstration of its performance 
-is presented in **Abdurro'uf et al. (submitted)**. 
+is presented in **Abdurro'uf et al. (2020, submitted)**. 
 
 Documentation of this Python package can be found at this [website](https://pixedfit.readthedocs.io/en/latest/index.html). 
 To get sense on how **piXedfit** works, the folder `examples` contains a demonstration on how to use **piXedfit** for deriving spatially resolved 
