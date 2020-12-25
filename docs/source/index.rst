@@ -5,7 +5,7 @@ imaging data or a combination of imaging data and the integral field spectroscop
 handle all tasks in the analysis of spatially resolved SEDs of a galaxy, including images processing, a spatial-matching between reduced 
 broad-band images with an IFS data cube, pixel binning, performing SED fitting, and making visualization plots for the SED fitting result. 
 **piXedfit** is a versatile tool that has been equipped with the multiprocessing module (namely message passing interface or MPI) for 
-efficient analysis of the datasets of a large number of galaxies. Detailed description on **piXedfit** and its performance is presented in **Abdurro'uf et al. (2020)**.     
+efficient analysis of the datasets of a large number of galaxies. Detailed description on **piXedfit** and its performance is presented in **Abdurro'uf et al. (2020, submitted)**.     
 
 .. image:: 3Dcube_specphoto.png
 .. image:: demo_pixedfit_ngc309_new_edit.svg
