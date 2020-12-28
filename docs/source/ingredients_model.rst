@@ -49,7 +49,7 @@ All the :math:`t` in the above equations represent the time since the start of s
 The following figure shows examples of SFHs formed with the 5 SFH choices. All the model SFHs have the same age :math:`t` of 12.5 Gyr and :math:`M_{*}=5.0\times 10^{10}M_{\odot}`. The other SFH parameters are: tau model [:math:`\tau=4.0` Gyr], delayed tau [:math:`\tau=2.5` Gyr], log-normal [:math:`\tau=1.0` Gyr, :math:`T_{0}=1.3` Gyr], Gaussian [:math:`\tau=2.5` Gyr, :math:`T_{0}=7.0` Gyr], and double power law [:math:`\tau=2.5` Gyr, :math:`\alpha=2.0` Gyr, :math:`\beta=2.0` Gyr].
 
 .. image:: paramSFH.png
-  :width: 5
+  :width: 30
 
 
 Dust emission and AGN components
