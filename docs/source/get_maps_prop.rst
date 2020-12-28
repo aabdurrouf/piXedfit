@@ -1,4 +1,4 @@
-Obtaining spatially resolved maps of properties of a galaxy
-===========================================================
+Obtaining spatially resolved maps of properties
+================================================
 
 (This page is still under constraction!)
