@@ -63,6 +63,7 @@ of spaially resolved SED) without the need of using the image processing and pix
    image_pros
    image_ifs_match
    pixel_binning
+   ingredients_model
    gen_model_SEDs
    fit_res_SEDs
    fit_ing_SEDs
