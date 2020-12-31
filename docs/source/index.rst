@@ -103,4 +103,4 @@ A list of a few projects **piXedfit** is benefited from:
 *  `Photutils <https://photutils.readthedocs.io/en/stable/>`_
 *  `Aniano et al. (2011) <https://ui.adsabs.harvard.edu/abs/2011PASP..123.1218A/abstract>`_ who provides convolution `kernels <https://www.astro.princeton.edu/~ganiano/Kernels.html>`_ for the PSF matching
 *  `SExtractor <https://www.astromatic.net/software/sextractor>`_ (`Bertin & Arnouts 1996 <https://ui.adsabs.harvard.edu/abs/1996A%26AS..117..393B/abstract>`_)
-*  `Abdurro'uf & Akiyama (2017) <https://ui.adsabs.harvard.edu/abs/2017MNRAS.469.2806A/abstract>`_ and `Abdurro'uf & Akiyama (2018) <https://ui.adsabs.harvard.edu/abs/2018MNRAS.479.5083A/abstract>`_
+*  Abdurro'uf & Akiyama (`2017 <https://ui.adsabs.harvard.edu/abs/2017MNRAS.469.2806A/abstract>`_, `2018 <https://ui.adsabs.harvard.edu/abs/2018MNRAS.479.5083A/abstract>`_)
