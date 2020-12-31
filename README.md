@@ -58,7 +58,7 @@ of spaially resolved SED) without the need of using the image processing and pix
    SED plot, and SFH plot.
    
 ## How to get the code
-Currently, this Python package is only available within the collaboration. We will make **piXedfit** publicly available in timely manner. In the meantime, ones inerested in using **piXedfit** can contact Abdurro'uf at abdurrouf@asiaa.sinica.edu.tw.    
+Currently, this Python package is only available within the collaboration. We will make **piXedfit** publicly available in timely manner. In the meantime, if you are interested in using **piXedfit**, please contact Abdurro'uf at abdurrouf@asiaa.sinica.edu.tw. We are very welcome to any new ideas of researches using **piXedfit** and we are open for collaboration.     
    
 ## Reference
 A list of some projects **piXedfit** is benefitted from:
