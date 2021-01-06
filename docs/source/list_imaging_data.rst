@@ -1,7 +1,7 @@
 List of imaging data
 =====================
 
-The list of imaging dataset that can be analyzed by the current version of **piXedfit** 
+The list of imaging dataset that can be analyzed with the current version of **piXedfit** 
 and a brief description on their specifications, unit of pixel value, and how to estimate flux uncertainty are given in the following. 
 
 *   **Galaxy Evolution Explorer (GALEX)**
