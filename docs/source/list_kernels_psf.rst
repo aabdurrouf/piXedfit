@@ -22,9 +22,9 @@ By default, when external kernels are not provided by the user, :mod:`piXedfit_i
 Figures below show a demonstration of the performance of some convolution kernels used in the :mod:`piXedfit_images` module. In the top figure, the performance of the convolution kernels used to achieve the spatial resolution of WISE/:math:`W2` is demonstrated. Different panels show different initial PSFs. In the first row from the left to right, we show the convolution results from initial PSFs of GALEX/FUV, GALEX/NUV, and SDSS/:math:`u`, respectively. The second row, from left to right, we show the result for SDSS/:math:`z`, 2MASS/:math:`J`, and 2MASS/:math:`W1`, respectively. In the bottom figure, the performance of the convolution kernels used to achieve the spatial resolution of Herschel/SPIRE350 is demonstrated. In the first row from the left to right, we show the convolution results from initial PSFs of GALEX/FUV, SDSS/:math:`u`, and 2MASS/:math:`J`, respectively. The second row, from left to right, we show the result for WISE/:math:`W1`, Spitzer/IRAC :math:`8.0\mu \text{m}`, and Spitzer/MIPS :math:`24\mu \text{m}`, respectively. The figures shows that the performance of the convolution kernels is very good, evidenced from the good matching between the shapes of the convolved PSFs and the target PSF.
 
 .. image:: perform_kernels.png
-  :width: 600
+  :width: 800
   
 .. image:: perform_kernels1.png
-  :width: 600
+  :width: 800
 
 For the characteristic PSFs of the imaging data that can be analyzed with the current version of **piXedfit** is described in another `page <https://pixedfit.readthedocs.io/en/latest/list_imaging_data.html>`_.
