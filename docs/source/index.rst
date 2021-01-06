@@ -62,6 +62,7 @@ of spaially resolved SED) without the need of using the image processing and pix
 
    install
    list_imaging_data
+   list_kernels_psf
    image_pros
    image_ifs_match
    pixel_binning
