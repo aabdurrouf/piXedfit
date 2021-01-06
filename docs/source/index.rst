@@ -1,6 +1,6 @@
 piXedfit
 ========
-`**piXedfit** <https://github.com/aabdurrouf/piXedfit>`_ is a Python package that provides a complete set of tools for analyzing spatially resolved properties of galaxies using 
+**`piXedfit <https://github.com/aabdurrouf/piXedfit>`_** is a Python package that provides a complete set of tools for analyzing spatially resolved properties of galaxies using 
 imaging data or a combination of imaging data and the integral field spectroscopy (IFS) data. **piXedfit** has six modules which can 
 handle all tasks in the analysis of spatially resolved SEDs of a galaxy, including images processing, a spatial-matching between reduced 
 broad-band images with an IFS data cube, pixel binning, performing SED fitting, and making visualization plots for the SED fitting result. 
