@@ -78,7 +78,9 @@ of spaially resolved SED) without the need of using the image processing and pix
    :maxdepth: 2
    :caption: Demonstrations and tutorials
 
-   demos 
+   demos_img_pros
+   demos_pixel_binning
+   demos_sed_fitting
    tutorials
 
 
