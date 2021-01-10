@@ -5,5 +5,5 @@ The animation below shows demonstration of how our new pixel binning scheme work
 
 In the animation below, a pixel binning process of the M51 is demonstrated. We use panchromatic imaging data in 23 bands ranging from GALEX/FUV to Herschel/SPIRE350. Before the pixel binning, the multiband images are processed (i.e., spatially-matched in resolution and sampling) using the :mod:`piXedfit_images` module. In the left panel, SDSS/:math:`r` image is shown, which is the reference band in this pixel binning process. The middle panel shows the binning map that is being constructed. The right panel shows SEDs of pixels (in colors) that are belong to a bin and the total SED of a bin (in black color).         
 
-.. image:: animation_pixbin_M51.gif
+.. figure:: animation_pixbin_M51.gif
    :width: 800
