@@ -9,4 +9,4 @@ In the animation below, a pixel binning process of the M51 is demonstrated. We u
    :width: 800
 
 
-If the animation above doesn't run, please see the animation `here <https://github.com/aabdurrouf/piXedfit/edit/main/docs/source/demos_pixel_binning.rst>`_.
+If the animation above doesn't run, please see the animation `here <https://github.com/aabdurrouf/piXedfit/blob/main/docs/source/demos_pixel_binning.rst>`_.
