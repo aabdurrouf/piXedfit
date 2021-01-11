@@ -8,7 +8,7 @@ broad-band images with an IFS data cube, pixel binning, performing SED fitting, 
 efficient analysis of the datasets of a large number of galaxies. Detailed description on **piXedfit** and demonstration of its performance 
 is presented in **Abdurro'uf et al. (2020, submitted)**. 
 
-Documentation of this Python package can be found at this [website](https://pixedfit.readthedocs.io/en/latest/index.html). 
+Documentation of **piXedfit** can be found at this [website](https://pixedfit.readthedocs.io/en/latest/index.html). 
 To get sense on how **piXedfit** works, the folder `examples` contains a demonstration on how to use **piXedfit** for deriving spatially resolved 
 stellar population properties of a galaxy using 12-band imaging data from GALEX+SDSS+2MASS+WISE and the IFS data from [CALIFA](https://califa.caha.es/) survey.
 
