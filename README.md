@@ -12,6 +12,8 @@ Documentation of this Python package can be found at this [website](https://pixe
 To get sense on how **piXedfit** works, the folder `examples` contains a demonstration on how to use **piXedfit** for deriving spatially resolved 
 stellar population properties of a galaxy using 12-band imaging data from GALEX+SDSS+2MASS+WISE and the IFS data from [CALIFA](https://califa.caha.es/) survey.
 
+Some **animations** can be seen from: [pixel binning](https://github.com/aabdurrouf/piXedfit/blob/main/docs/source/demos_pixel_binning.rst) and [SED fitting](https://github.com/aabdurrouf/piXedfit/blob/main/docs/source/demos_sed_fitting.rst).
+
 ![image1](3Dcube_specphoto.png)
 ![image2](demo_pixedfit_ngc309_new_edit.svg)
 ![image3](plot_maps_props_new.svg)
