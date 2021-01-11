@@ -3,7 +3,7 @@ Demonstration of SED fitting
 
 Animation below shows a demonstration of the MCMC process in an SED fitting using the :mod:`piXedfit_fitting` module. For this example, SED fitting is done to a mock photometric SED covering GALEX/FUV to Herschel/SPIRE250.
 
-If the animation doesn't run, please see the animation here.
+If the animation doesn't run, please see the animation `here <https://github.com/aabdurrouf/piXedfit/blob/main/docs/source/demos_sed_fitting.rst>`_.
 
 .. figure:: animation_sed_sed42.gif
    :width: 400
