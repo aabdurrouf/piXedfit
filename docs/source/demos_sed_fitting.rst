@@ -1,7 +1,10 @@
 Demonstration of SED fitting
 ============================
 
-Animation below shows a demonstration of the MCMC process in an SED fitting using the :mod:`piXedfit_fitting` module. For this example, SED fitting is done to a mock photometric SED covering GALEX/FUV to Herschel/SPIRE250.
+The MCMC process
+----------------
+
+Animation below shows a demonstration of the MCMC process in an SED fitting using the :mod:`piXedfit_fitting` module. For this example, the SED fitting is done to a mock photometric SED covering GALEX/FUV to Herschel/SPIRE250.
 
 If the animation doesn't run, please see the animation `here <https://github.com/aabdurrouf/piXedfit/blob/main/docs/source/demos_sed_fitting.rst>`_.
 
@@ -20,3 +23,15 @@ In the corner plot, the red vertical lines are the true parameters of the mock S
    
 .. figure:: corner_chains_initfit_randomgrid_sed_42.png
    :width: 800
+ 
+ 
+The effect of wavelength coverage
+---------------------------------
+
+The following animation demonstrates the effect of the wideness of the wavelength coverage and also the wavelength sampling of the photometric SED on the resulting posteriors probability distributions in the SED fitting. As we can see, the constraining power is enhancing (shown by the increasing convergence of the posteriors probability distributions) as increasing number of photometric points and expanding wavelenegth coverage.
+
+.. figure:: animation_sed_changing_filters.gif
+   :width: 600
+   
+.. figure:: animation_corner_changing_filters.gif
+   :width: 600
