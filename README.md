@@ -16,7 +16,7 @@ Some **animations** can be seen from: [pixel binning](https://github.com/aabdurr
 
 ![image1](3Dcube_specphoto.png)
 ![image2](demo_pixedfit_ngc309_new_edit.svg)
-![image3](plot_maps_props_new.svg)
+![image3](docs/source/plot_maps_props_new.svg)
 
 ## Features
 **piXedfit** has 6 modules that can work independent with each other such that a user interested of using a particular module in **piXedfit** 
