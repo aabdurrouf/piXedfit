@@ -12,7 +12,7 @@ Documentation of **piXedfit** can be found at this [website](https://pixedfit.re
 To get sense on how **piXedfit** works, the folder `examples` contains step-by-step demonstrations on how to use **piXedfit** for deriving spatially resolved 
 stellar population properties of a galaxy using a combination of 12-band imaging data from GALEX+SDSS+2MASS+WISE and the IFS data from [CALIFA](https://califa.caha.es/) survey.
 
-Some **animations** can be seen from: [image processing](https://github.com/aabdurrouf/piXedfit/blob/main/docs/source/demos_img_pros.rst), [pixel binning](https://github.com/aabdurrouf/piXedfit/blob/main/docs/source/demos_pixel_binning.rst), and [SED fitting](https://github.com/aabdurrouf/piXedfit/blob/main/docs/source/demos_sed_fitting.rst).
+Some **animations** can be seen from: [images processing](https://github.com/aabdurrouf/piXedfit/blob/main/docs/source/demos_img_pros.rst), [pixel binning](https://github.com/aabdurrouf/piXedfit/blob/main/docs/source/demos_pixel_binning.rst), and [SED fitting](https://github.com/aabdurrouf/piXedfit/blob/main/docs/source/demos_sed_fitting.rst).
 
 ![image1](3Dcube_specphoto.png)
 ![image2](demo_pixedfit_ngc309_new_edit.svg)
@@ -40,7 +40,7 @@ of spaially resolved SED, without the need of using the image processing and pix
    
    This module is capable of performing pixel binning, which is a process of combining neighboring pixels to achieve certain S/N thresholds.
    The pixel binning scheme takes into account the similarity of SED shape among the pixels that are going to be binned together. This way 
-   important spatial information from the pixel scale can be expected to be preserved. The S/N threshold can be set to each band, not limited to a particular band.   
+   important spatial information from the pixel scale can be expected to be preserved. The S/N threshold can be set to all bands, not limited to a particular band.   
 
 *  `piXedfit_model`: **generating model SEDs**
    
