@@ -4,7 +4,7 @@ piXedfit
 imaging data or a combination of imaging data and the integral field spectroscopy (IFS) data. **piXedfit** has six modules that can 
 handle all tasks in the analysis of spatially resolved SEDs of a galaxy, including images processing, a spatial-matching (in spatial resolution and sampling) between broad-band images and IFS data cube, pixel binning, performing SED fitting, and making visualization plots for the SED fitting results. 
 **piXedfit** is a versatile tool that has been equipped with the multiprocessing module (namely message passing interface or MPI) for 
-efficient analysis of the datasets of a large number of galaxies. Detailed description of **piXedfit** and its performance is presented in **Abdurro'uf et al. (2020, submitted)**.  
+efficient analysis of the datasets of a large number of galaxies. Detailed description of **piXedfit** and its performances are presented in `Abdurro'uf et al. (2021) <https://ui.adsabs.harvard.edu/abs/2021arXiv210109717A/abstract>`_.  
 
 While this website is still under construction, people interested in knowing how **piXedfit** works can see some demonstrations from a folder examples on the `GitHub page <https://github.com/aabdurrouf/piXedfit>`_. Some animations can also be seen from: `images processing <https://github.com/aabdurrouf/piXedfit/blob/main/docs/source/demos_img_pros.rst>`_, `pixel binning <https://github.com/aabdurrouf/piXedfit/blob/main/docs/source/demos_pixel_binning.rst>`_ and `SED fitting <https://github.com/aabdurrouf/piXedfit/blob/main/docs/source/demos_sed_fitting.rst>`_.   
 
