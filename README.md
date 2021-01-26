@@ -5,8 +5,8 @@ imaging data or a combination of imaging data and the integral field spectroscop
 handle all tasks in the analysis of the spatially resolved SEDs of galaxies, including images processing, a spatial-matching between reduced 
 broad-band images with an IFS data cube, pixel binning, performing SED fitting, and making visualization plots for the SED fitting results. 
 **piXedfit** is a versatile tool that has been equipped with the multiprocessing module, namely message passing interface or MPI, for 
-efficient analysis of the datasets of a large number of galaxies. Detailed description on **piXedfit** and demonstration of its performance 
-is presented in **Abdurro'uf et al. (2020, submitted)**. 
+efficient analysis of the datasets of a large number of galaxies. Detailed description on **piXedfit** and demonstration of its performances 
+are presented in [Abdurro'uf et al. (2021)](https://ui.adsabs.harvard.edu/abs/2021arXiv210109717A/abstract). 
 
 Documentation of **piXedfit** can be found at this [website](https://pixedfit.readthedocs.io/en/latest/index.html). 
 To get sense on how **piXedfit** works, the folder `examples` contains step-by-step demonstrations on how to use **piXedfit** for deriving spatially resolved 
@@ -15,7 +15,7 @@ stellar population properties of a galaxy using a combination of 12-band imaging
 Some **animations** can be seen from: [images processing](https://github.com/aabdurrouf/piXedfit/blob/main/docs/source/demos_img_pros.rst), [pixel binning](https://github.com/aabdurrouf/piXedfit/blob/main/docs/source/demos_pixel_binning.rst), and [SED fitting](https://github.com/aabdurrouf/piXedfit/blob/main/docs/source/demos_sed_fitting.rst).
 
 ![image1](3Dcube_specphoto.png)
-![image2](demo_pixedfit_ngc309_new_edit.svg)
+![image2](demo_fit_ngc309.svg)
 ![image3](docs/source/plot_maps_props_new.svg)
 
 ## Features
