@@ -14,8 +14,8 @@ stellar population properties of a galaxy using a combination of 12-band imaging
 
 Some **animations** can be seen from: [images processing](https://github.com/aabdurrouf/piXedfit/blob/main/docs/source/demos_img_pros.rst), [pixel binning](https://github.com/aabdurrouf/piXedfit/blob/main/docs/source/demos_pixel_binning.rst), and [SED fitting](https://github.com/aabdurrouf/piXedfit/blob/main/docs/source/demos_sed_fitting.rst).
 
-![image1](3Dcube_specphoto.png)
-![image2](demo_fit_ngc309.svg)
+![image1](figures/3Dcube_specphoto.png)
+![image2](figures/demo_fit_ngc309.svg)
 ![image3](docs/source/plot_maps_props_new.svg)
 
 ## Features
