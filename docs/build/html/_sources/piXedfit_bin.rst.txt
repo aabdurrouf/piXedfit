@@ -1,4 +1,5 @@
 piXedfit_bin
 ============
 
-(This page is still under constraction!)
+.. automodule:: piXedfit.piXedfit_bin
+   :members: pixel_binning_photo

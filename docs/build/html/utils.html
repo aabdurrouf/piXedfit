@@ -1,0 +1,326 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Utils &mdash; piXedfit 1.0 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+
+  
+  
+  
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/language_data.js"></script>
+        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="piXedfit_analysis" href="piXedfit_analysis.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home" alt="Documentation Home"> piXedfit
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">User guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="list_imaging_data.html">List of imaging data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="list_kernels_psf.html">Available convolution kernels and PSFs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="image_pros.html">Image processing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="image_ifs_match.html">Matching imaging data with IFS data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pixel_binning.html">Pixel binning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ingredients_model.html">Ingredients in SED modeling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="gen_model_SEDs.html">Generating model SEDs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fit_res_SEDs.html">Fitting spatially resolved SEDs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fit_ing_SEDs.html">Fitting integrated SEDs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_fitres.html">Plotting fitting results</a></li>
+<li class="toctree-l1"><a class="reference internal" href="get_maps_prop.html">Obtaining spatially resolved maps of properties</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Demonstrations and tutorials</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="demos_img_pros.html">Demonstration of image processing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demos_pixel_binning.html">Demonstration of the pixel binning process</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demos_sed_fitting.html">Demonstration of SED fitting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials.html">Tutorials</a></li>
+</ul>
+<p class="caption"><span class="caption-text">API reference</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="piXedfit_images.html">piXedfit_images</a></li>
+<li class="toctree-l1"><a class="reference internal" href="piXedfit_spectrophotometric.html">piXedfit_spectrophotometric</a></li>
+<li class="toctree-l1"><a class="reference internal" href="piXedfit_bin.html">piXedfit_bin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="piXedfit_model.html">piXedfit_model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="piXedfit_fitting.html">piXedfit_fitting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="piXedfit_analysis.html">piXedfit_analysis</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Utils</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">piXedfit</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+        
+      <li>Utils</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/utils.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-piXedfit.utils.filtering">
+<span id="utils"></span><h1>Utils<a class="headerlink" href="#module-piXedfit.utils.filtering" title="Permalink to this headline">¶</a></h1>
+<dl class="py function">
+<dt id="piXedfit.utils.filtering.add_filter">
+<code class="sig-prename descclassname">piXedfit.utils.filtering.</code><code class="sig-name descname">add_filter</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">filter_name</span></em>, <em class="sig-param"><span class="n">filter_wave</span></em>, <em class="sig-param"><span class="n">filter_transmission</span></em>, <em class="sig-param"><span class="n">filter_cwave</span></em><span class="sig-paren">)</span><a class="headerlink" href="#piXedfit.utils.filtering.add_filter" title="Permalink to this definition">¶</a></dt>
+<dd><p>A function for adding a new filter transmission function into piXedfit</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>filter_name</strong> – A given name (in string) for the filter curve</p></li>
+<li><p><strong>filter_wave</strong> – array of wavelength in the filter transmission function</p></li>
+<li><p><strong>filter_transmission</strong> – array of transmission corresponding with the filter_wave</p></li>
+<li><p><strong>filter_cwave</strong> – The central wavelength or effective wavelength of the filter</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="piXedfit.utils.filtering.cwave_filters">
+<code class="sig-prename descclassname">piXedfit.utils.filtering.</code><code class="sig-name descname">cwave_filters</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">filters</span></em><span class="sig-paren">)</span><a class="headerlink" href="#piXedfit.utils.filtering.cwave_filters" title="Permalink to this definition">¶</a></dt>
+<dd><p>A function for retrieving central wavelengths of a set of filters</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>filters</strong> – A list of filters names</p>
+</dd>
+<dt class="field-even">Returns cwaves</dt>
+<dd class="field-even"><p>A list of central wavelengths of the filters</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="piXedfit.utils.filtering.filtering">
+<code class="sig-prename descclassname">piXedfit.utils.filtering.</code><code class="sig-name descname">filtering</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">wave</span></em>, <em class="sig-param"><span class="n">spec</span></em>, <em class="sig-param"><span class="n">filters</span></em><span class="sig-paren">)</span><a class="headerlink" href="#piXedfit.utils.filtering.filtering" title="Permalink to this definition">¶</a></dt>
+<dd><p>A function for integrating a spectrum through a filter transmission function</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>wave</strong> – array of wavelength of the input spectrum</p></li>
+<li><p><strong>spec</strong> – array of fluxes of the input spectrum</p></li>
+<li><p><strong>filters</strong> – List of filters name in array of string</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns fluxes</dt>
+<dd class="field-even"><p>Array of photometric fluxes</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="piXedfit.utils.filtering.get_filter_curve">
+<code class="sig-prename descclassname">piXedfit.utils.filtering.</code><code class="sig-name descname">get_filter_curve</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">filter_name</span></em><span class="sig-paren">)</span><a class="headerlink" href="#piXedfit.utils.filtering.get_filter_curve" title="Permalink to this definition">¶</a></dt>
+<dd><p>A function to get a transmission function of a filter available in piXedfit</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>filter_name</strong> – Name of the filter</p>
+</dd>
+<dt class="field-even">Returns wave</dt>
+<dd class="field-even"><p>Array of wavelength</p>
+</dd>
+<dt class="field-odd">Returns trans</dt>
+<dd class="field-odd"><p>Array of transmission values</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="piXedfit.utils.filtering.list_filters">
+<code class="sig-prename descclassname">piXedfit.utils.filtering.</code><code class="sig-name descname">list_filters</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#piXedfit.utils.filtering.list_filters" title="Permalink to this definition">¶</a></dt>
+<dd><p>A function for listing the available filters transmission functions in piXedfit</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns filters</dt>
+<dd class="field-odd"><p>List of filters curves available</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="piXedfit.utils.filtering.remove_filter">
+<code class="sig-prename descclassname">piXedfit.utils.filtering.</code><code class="sig-name descname">remove_filter</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">filter_name</span></em><span class="sig-paren">)</span><a class="headerlink" href="#piXedfit.utils.filtering.remove_filter" title="Permalink to this definition">¶</a></dt>
+<dd><p>A function to remove a new filter transmission function from piXedfit</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>filter_name</strong> – A given name (in string) for the filter curve</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+      
+        <a href="piXedfit_analysis.html" class="btn btn-neutral float-left" title="piXedfit_analysis" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        
+        &copy; Copyright 2020, Abdurro&#39;uf
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

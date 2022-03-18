@@ -1,7 +1,7 @@
 
 
 <!DOCTYPE html>
-<html class="writer-html4" lang="en" >
+<html class="writer-html5" lang="en" >
 <head>
   <meta charset="utf-8">
   
@@ -26,10 +26,11 @@
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
-        <script type="text/javascript" src="_static/jquery.js"></script>
-        <script type="text/javascript" src="_static/underscore.js"></script>
-        <script type="text/javascript" src="_static/doctools.js"></script>
-        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/language_data.js"></script>
+        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
     
     <script type="text/javascript" src="_static/js/theme.js"></script>
 
@@ -37,7 +38,7 @@
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="piXedfit_images" href="piXedfit_images.html" />
-    <link rel="prev" title="Demonstrations" href="demos.html" /> 
+    <link rel="prev" title="Demonstration of SED fitting" href="demos_sed_fitting.html" /> 
 </head>
 
 <body class="wy-body-for-nav">
@@ -86,18 +87,22 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="list_imaging_data.html">List of imaging data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="list_kernels_psf.html">Available convolution kernels and PSFs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="image_pros.html">Image processing</a></li>
 <li class="toctree-l1"><a class="reference internal" href="image_ifs_match.html">Matching imaging data with IFS data</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pixel_binning.html">Pixel binning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ingredients_model.html">Ingredients in SED modeling</a></li>
 <li class="toctree-l1"><a class="reference internal" href="gen_model_SEDs.html">Generating model SEDs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="fit_res_SEDs.html">Fitting spatially resolved SEDs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="fit_ing_SEDs.html">Fitting integrated SEDs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="plot_fitres.html">Plotting fitting results</a></li>
-<li class="toctree-l1"><a class="reference internal" href="get_maps_prop.html">Obtaining spatially resolved maps of properties of a galaxy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="get_maps_prop.html">Obtaining spatially resolved maps of properties</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Demonstrations and tutorials</span></p>
 <ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="demos.html">Demonstrations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demos_img_pros.html">Demonstration of image processing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demos_pixel_binning.html">Demonstration of the pixel binning process</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demos_sed_fitting.html">Demonstration of SED fitting</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Tutorials</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#image-processing">Image processing</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#spatial-matching-between-imaging-data-and-ifs-data">Spatial matching between imaging data and IFS data</a></li>
@@ -115,6 +120,7 @@
 <li class="toctree-l1"><a class="reference internal" href="piXedfit_model.html">piXedfit_model</a></li>
 <li class="toctree-l1"><a class="reference internal" href="piXedfit_fitting.html">piXedfit_fitting</a></li>
 <li class="toctree-l1"><a class="reference internal" href="piXedfit_analysis.html">piXedfit_analysis</a></li>
+<li class="toctree-l1"><a class="reference internal" href="filtering.html">filtering</a></li>
 </ul>
 
             
@@ -211,7 +217,7 @@
         <a href="piXedfit_images.html" class="btn btn-neutral float-right" title="piXedfit_images" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="demos.html" class="btn btn-neutral float-left" title="Demonstrations" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="demos_sed_fitting.html" class="btn btn-neutral float-left" title="Demonstration of SED fitting" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   

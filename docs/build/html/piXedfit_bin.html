@@ -1,7 +1,7 @@
 
 
 <!DOCTYPE html>
-<html class="writer-html4" lang="en" >
+<html class="writer-html5" lang="en" >
 <head>
   <meta charset="utf-8">
   
@@ -26,10 +26,11 @@
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
-        <script type="text/javascript" src="_static/jquery.js"></script>
-        <script type="text/javascript" src="_static/underscore.js"></script>
-        <script type="text/javascript" src="_static/doctools.js"></script>
-        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/language_data.js"></script>
+        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
     
     <script type="text/javascript" src="_static/js/theme.js"></script>
 
@@ -86,18 +87,22 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="list_imaging_data.html">List of imaging data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="list_kernels_psf.html">Available convolution kernels and PSFs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="image_pros.html">Image processing</a></li>
 <li class="toctree-l1"><a class="reference internal" href="image_ifs_match.html">Matching imaging data with IFS data</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pixel_binning.html">Pixel binning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ingredients_model.html">Ingredients in SED modeling</a></li>
 <li class="toctree-l1"><a class="reference internal" href="gen_model_SEDs.html">Generating model SEDs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="fit_res_SEDs.html">Fitting spatially resolved SEDs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="fit_ing_SEDs.html">Fitting integrated SEDs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="plot_fitres.html">Plotting fitting results</a></li>
-<li class="toctree-l1"><a class="reference internal" href="get_maps_prop.html">Obtaining spatially resolved maps of properties of a galaxy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="get_maps_prop.html">Obtaining spatially resolved maps of properties</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Demonstrations and tutorials</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="demos.html">Demonstrations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demos_img_pros.html">Demonstration of image processing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demos_pixel_binning.html">Demonstration of the pixel binning process</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demos_sed_fitting.html">Demonstration of SED fitting</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tutorials.html">Tutorials</a></li>
 </ul>
 <p class="caption"><span class="caption-text">API reference</span></p>
@@ -108,6 +113,7 @@
 <li class="toctree-l1"><a class="reference internal" href="piXedfit_model.html">piXedfit_model</a></li>
 <li class="toctree-l1"><a class="reference internal" href="piXedfit_fitting.html">piXedfit_fitting</a></li>
 <li class="toctree-l1"><a class="reference internal" href="piXedfit_analysis.html">piXedfit_analysis</a></li>
+<li class="toctree-l1"><a class="reference internal" href="filtering.html">filtering</a></li>
 </ul>
 
             
@@ -173,9 +179,43 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <div class="section" id="pixedfit-bin">
-<h1>piXedfit_bin<a class="headerlink" href="#pixedfit-bin" title="Permalink to this headline">¶</a></h1>
-<p>(This page is still under constraction!)</p>
+  <div class="section" id="module-piXedfit.piXedfit_bin">
+<span id="pixedfit-bin"></span><h1>piXedfit_bin<a class="headerlink" href="#module-piXedfit.piXedfit_bin" title="Permalink to this headline">¶</a></h1>
+<dl class="py function">
+<dt id="piXedfit.piXedfit_bin.pixel_binning_photo">
+<code class="sig-prename descclassname">piXedfit.piXedfit_bin.</code><code class="sig-name descname">pixel_binning_photo</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">flux_map_fits</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">filters</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">ref_band</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">Dmin_bin</span><span class="o">=</span><span class="default_value">2.0</span></em>, <em class="sig-param"><span class="n">SNR</span><span class="o">=</span><span class="default_value">[]</span></em>, <em class="sig-param"><span class="n">redc_chi2_limit</span><span class="o">=</span><span class="default_value">4.0</span></em>, <em class="sig-param"><span class="n">sys_err_factor</span><span class="o">=</span><span class="default_value">0.0</span></em>, <em class="sig-param"><span class="n">name_out_fits</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#piXedfit.piXedfit_bin.pixel_binning_photo" title="Permalink to this definition">¶</a></dt>
+<dd><p>A function for conducting pixel binning to maximize the S/N of spatially resolved SEDs.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>flux_map_fits</strong> – An input FITS file containing the maps of multiband fluxes and fluxes uncertainties.
+This FITS file should be in the same format as that produced using the <code class="xref py py-func docutils literal notranslate"><span class="pre">flux_map()</span></code> function in the <code class="xref py py-mod docutils literal notranslate"><span class="pre">piXedfit_images</span></code> module</p></li>
+<li><p><strong>filters</strong> – (default: None)
+A list of filters (in string) that will be consider in the pixel binning process, especially in the SED shape similarity evaluation.
+If filters=None, the original filters list (stored in the flux_map_fits FITS file) is used.</p></li>
+<li><p><strong>ref_band</strong> – (default: None)
+Index of a band/filter to be used as reference in sorting pixels based on their brightness.
+If ref_band=None, the ref_band is taken to be the middle band in the list of filters considered for the pixel binning.</p></li>
+<li><p><strong>Dmin_bin</strong> – (default: 2.0 pixels)
+Minimum diameter of a bin in unit of pixel.</p></li>
+<li><p><strong>SNR</strong> – (default: [])
+An array/list containing S/N raatio thresholds of the filters. This array should has the same length as that of the
+input filters (input filters!=None) or the set of original filters (if input filters==None). S/N threshold can vary across
+the filters. If SNR is empty (for some reasons), S/N of 5 is applied to all the filters.</p></li>
+<li><p><strong>redc_chi2_limit</strong> – (default: 4.0)
+A maximum reduced chi-square in which two SED are considered to have similar SED shape.</p></li>
+<li><p><strong>sys_err_factor</strong> – (optional, default: 0.0)
+An estimate for systematic error of the input fluxes maps, in which the bulk is assumed to be a factor of the flux (in every band).</p></li>
+<li><p><strong>name_out_fits</strong> – (defult: None)
+Desired name for the output FITS file.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns name_out_fits</dt>
+<dd class="field-even"><p>Output FITS file.</p>
+</dd>
+</dl>
+</dd></dl>
+
 </div>
 
 

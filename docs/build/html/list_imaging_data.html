@@ -1,7 +1,7 @@
 
 
 <!DOCTYPE html>
-<html class="writer-html4" lang="en" >
+<html class="writer-html5" lang="en" >
 <head>
   <meta charset="utf-8">
   
@@ -26,17 +26,18 @@
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
-        <script type="text/javascript" src="_static/jquery.js"></script>
-        <script type="text/javascript" src="_static/underscore.js"></script>
-        <script type="text/javascript" src="_static/doctools.js"></script>
-        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/language_data.js"></script>
+        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
     
     <script type="text/javascript" src="_static/js/theme.js"></script>
 
     
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Image processing" href="image_pros.html" />
+    <link rel="next" title="Available convolution kernels and PSFs" href="list_kernels_psf.html" />
     <link rel="prev" title="Installation" href="install.html" /> 
 </head>
 
@@ -86,18 +87,22 @@
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">List of imaging data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="list_kernels_psf.html">Available convolution kernels and PSFs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="image_pros.html">Image processing</a></li>
 <li class="toctree-l1"><a class="reference internal" href="image_ifs_match.html">Matching imaging data with IFS data</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pixel_binning.html">Pixel binning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ingredients_model.html">Ingredients in SED modeling</a></li>
 <li class="toctree-l1"><a class="reference internal" href="gen_model_SEDs.html">Generating model SEDs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="fit_res_SEDs.html">Fitting spatially resolved SEDs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="fit_ing_SEDs.html">Fitting integrated SEDs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="plot_fitres.html">Plotting fitting results</a></li>
-<li class="toctree-l1"><a class="reference internal" href="get_maps_prop.html">Obtaining spatially resolved maps of properties of a galaxy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="get_maps_prop.html">Obtaining spatially resolved maps of properties</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Demonstrations and tutorials</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="demos.html">Demonstrations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demos_img_pros.html">Demonstration of image processing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demos_pixel_binning.html">Demonstration of the pixel binning process</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demos_sed_fitting.html">Demonstration of SED fitting</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tutorials.html">Tutorials</a></li>
 </ul>
 <p class="caption"><span class="caption-text">API reference</span></p>
@@ -108,6 +113,7 @@
 <li class="toctree-l1"><a class="reference internal" href="piXedfit_model.html">piXedfit_model</a></li>
 <li class="toctree-l1"><a class="reference internal" href="piXedfit_fitting.html">piXedfit_fitting</a></li>
 <li class="toctree-l1"><a class="reference internal" href="piXedfit_analysis.html">piXedfit_analysis</a></li>
+<li class="toctree-l1"><a class="reference internal" href="filtering.html">filtering</a></li>
 </ul>
 
             
@@ -174,15 +180,15 @@
            <div itemprop="articleBody">
             
   <div class="section" id="list-of-imaging-data">
-<h1>List of imaging data<a class="headerlink" href="#list-of-imaging-data" title="Permalink to this headline">¶</a></h1>
-<p>The list of imaging dataset that can be analyzed by the current version of <strong>piXedfit</strong>
+<span id="list-imagingdata"></span><h1>List of imaging data<a class="headerlink" href="#list-of-imaging-data" title="Permalink to this headline">¶</a></h1>
+<p>The list of imaging dataset that can be analyzed with the current version of <strong>piXedfit</strong>
 and a brief description on their specifications, unit of pixel value, and how to estimate flux uncertainty are given in the following.</p>
 <ul>
-<li><p class="first"><strong>Galaxy Evolution Explorer (GALEX)</strong></p>
+<li><p><strong>Galaxy Evolution Explorer (GALEX)</strong></p>
 <p>The input image (in FITS) is assumed to have the same format as the one obtained from the <a class="reference external" href="http://galex.stsci.edu/GR6/">MAST</a>.
 Commonly, the background subtraction has been done for the imaging data product and the background image is provided in a seperate FITS file.
-The imaging data in the two bands (FUV and NUV) have spatial resolution (i.e., FWHM of PSF) of 4.2’’ and 5.3’‘, respectively.
-The spatial sampling is 1.5’‘/pixel. The <span class="math notranslate nohighlight">\(5\sigma\)</span> limiting magnitudes in FUV (NUV) of the three surveys modes (AIS, MIS, and DIS)
+The imaging data in the two bands (FUV and NUV) have spatial resolution (i.e., FWHM of PSF) of 4.2’’ and 5.3’’, respectively.
+The spatial sampling is 1.5’’/pixel. The <span class="math notranslate nohighlight">\(5\sigma\)</span> limiting magnitudes in FUV (NUV) of the three surveys modes (AIS, MIS, and DIS)
 are 19.9 (20.8), 22.6 (22.7), 24.8 (24.4), respectively. Pixel value of the imaging data is in unit of counts (i.e., number of detected photons) per second (CPS).
 For more information, please refer to <a class="reference external" href="https://ui.adsabs.harvard.edu/abs/2007ApJS..173..682M/abstract">Morrissey et al. (2007)</a>.
 To convert the pixel value into flux and estimate flux uncertainty,
@@ -190,24 +196,24 @@ we follow the relevant information from the literature and the survey’s websit
 To convert from pixel value to flux in unit of <span class="math notranslate nohighlight">\(\text{erg }\text{s}^{-1}\text{cm}^{-2}{\text{Å}}^{-1}\)</span>, the following equation is used:</p>
 <blockquote>
 <div><ul class="simple">
-<li><strong>FUV</strong>:    <span class="math notranslate nohighlight">\(\text{flux} = 1.40 \times 10^{-15} \text{CPS}\)</span></li>
-<li><strong>NUV</strong>:    <span class="math notranslate nohighlight">\(\text{flux} = 2.06 \times 10^{-16} \text{CPS}\)</span></li>
+<li><p><strong>FUV</strong>:    <span class="math notranslate nohighlight">\(\text{flux} = 1.40 \times 10^{-15} \text{CPS}\)</span></p></li>
+<li><p><strong>NUV</strong>:    <span class="math notranslate nohighlight">\(\text{flux} = 2.06 \times 10^{-16} \text{CPS}\)</span></p></li>
 </ul>
 </div></blockquote>
 <p>To get flux uncertainty, first, uncertainty of counts is estimated using the following equation:</p>
 <blockquote>
 <div><ul class="simple">
-<li><strong>FUV</strong>:    <span class="math notranslate nohighlight">\(\text{CPS}_{\text{err}} = \frac{\sqrt{\text{CPS}\times \text{exp-time} + (0.050\times \text{CPS}\times \text{exp-time})^{2}}}{\text{exp-time}}\)</span></li>
-<li><strong>NUV</strong>:    <span class="math notranslate nohighlight">\(\text{CPS}_{\text{err}} = \frac{\sqrt{\text{CPS}\times \text{exp-time} + (0.027\times \text{CPS}\times \text{exp-time})^{2}}}{\text{exp-time}}\)</span></li>
+<li><p><strong>FUV</strong>:    <span class="math notranslate nohighlight">\(\text{CPS}_{\text{err}} = \frac{\sqrt{\text{CPS}\times \text{exp-time} + (0.050\times \text{CPS}\times \text{exp-time})^{2}}}{\text{exp-time}}\)</span></p></li>
+<li><p><strong>NUV</strong>:    <span class="math notranslate nohighlight">\(\text{CPS}_{\text{err}} = \frac{\sqrt{\text{CPS}\times \text{exp-time} + (0.027\times \text{CPS}\times \text{exp-time})^{2}}}{\text{exp-time}}\)</span></p></li>
 </ul>
 </div></blockquote>
 <p>The exp-time is exposure time which can be obained from the FITS header (keyword: EXPTIME). Then flux uncertainty can be calculated using the above equations for
 converting from counts to flux. The above information is taken from GALEX’s <a class="reference external" href="https://asd.gsfc.nasa.gov/archive/galex/FAQ/counts_background.html">website</a>.</p>
 </li>
-<li><p class="first"><strong>Sloan Digital Sky Survey (SDSS)</strong></p>
+<li><p><strong>Sloan Digital Sky Survey (SDSS)</strong></p>
 <p>The input image (in FITS) is assumed to have the same format as that of the <a class="reference external" href="https://dr16.sdss.org/datamodel/files/BOSS_PHOTOOBJ/frames/RERUN/RUN/CAMCOL/frame.html">Corrected Frame</a> product of SDSS.
 For this imaging data product, background subtraction has been done and the background image can be reconstructed from a cruder 2D grid of background image sstored in the HDU2 extension of the FITS file.
-The spatial sampling of the imaging data in the 5 bands (<span class="math notranslate nohighlight">\(u\)</span>, <span class="math notranslate nohighlight">\(g\)</span>, <span class="math notranslate nohighlight">\(r\)</span>, <span class="math notranslate nohighlight">\(i\)</span>, and <span class="math notranslate nohighlight">\(z\)</span>) is 0.396’‘/pixel.
+The spatial sampling of the imaging data in the 5 bands (<span class="math notranslate nohighlight">\(u\)</span>, <span class="math notranslate nohighlight">\(g\)</span>, <span class="math notranslate nohighlight">\(r\)</span>, <span class="math notranslate nohighlight">\(i\)</span>, and <span class="math notranslate nohighlight">\(z\)</span>) is 0.396’’/pixel.
 The median seeing of all SDSS imaging data is 1.32’’ in the <span class="math notranslate nohighlight">\(r\)</span>-band (see <a class="reference external" href="https://ui.adsabs.harvard.edu/abs/2011MNRAS.417.1350R/abstract">Ross et al. 2011</a>).
 The SDSS imaging is 95% complete to <span class="math notranslate nohighlight">\(u=22.0\)</span> mag, <span class="math notranslate nohighlight">\(g=22.2\)</span> mag, <span class="math notranslate nohighlight">\(r=22.2\)</span> mag, <span class="math notranslate nohighlight">\(i=21.3\)</span> mag, and <span class="math notranslate nohighlight">\(z=20.5\)</span> mag (<a class="reference external" href="https://ui.adsabs.harvard.edu/abs/2004AJ....128..502A/abstract">Abazajian et al. 2004</a>).
 The pixel value in the SDSS image is counts in unit of nanomaggy. To convert the pixel value into flux in unit of <span class="math notranslate nohighlight">\(\text{erg }\text{s}^{-1}\text{cm}^{-2}{\text{Å}}^{-1}\)</span>,
@@ -231,17 +237,17 @@ After getting the <span class="math notranslate nohighlight">\(\text{count}_{\te
 </div></blockquote>
 <p>The above information is obtained from this SDSS’s <a class="reference external" href="https://dr16.sdss.org/datamodel/files/BOSS_PHOTOOBJ/frames/RERUN/RUN/CAMCOL/frame.html">web page</a>.</p>
 </li>
-<li><p class="first"><strong>Hubble Space telescope (HST)</strong></p>
-<p>The HST image has a spatial sampling of 0.06’‘/pixel. The PSF FWHM varies across photometric bands. The PSF FWHM of F160W band is 0.19’‘.
+<li><p><strong>Hubble Space telescope (HST)</strong></p>
+<p>The HST image has a spatial sampling of 0.06’’/pixel. The PSF FWHM varies across photometric bands. The PSF FWHM of F160W band is 0.19’’.
 The <span class="math notranslate nohighlight">\(5\sigma\)</span> limiting magnitude of F160W is 26.4 mag. Pixel value of the HST image is counts per second. To convert the pixel value
 to flux in unit of <span class="math notranslate nohighlight">\(\text{erg }\text{s}^{-1}\text{cm}^{-2}{\text{Å}}^{-1}\)</span>, a multiplicative convertion factor can be found in the
 header of the FIST file (keyword: PHOTFLAM). Flux uncertainty of a pixel can be calculated from the weight image, which commonly provided
 by various surveys.</p>
 </li>
-<li><p class="first"><strong>Two Micron All Sky Survey (2MASS)</strong></p>
+<li><p><strong>Two Micron All Sky Survey (2MASS)</strong></p>
 <p>The input image (in FITS) is assumed to be in the same format as that provided by the NASA/IPAC Infrared Science Archive (<a class="reference external" href="https://irsa.ipac.caltech.edu/applications/2MASS/IM/">IRSA</a>).
 Commonly, the imaging data from that source is not background-subtracted.
-The imaging data product has spatial sampling of 1.0’‘/pixel. The seeing is <span class="math notranslate nohighlight">\(\sim 2.5-3.5\)</span>’’ (<a class="reference external" href="https://ui.adsabs.harvard.edu/abs/2006AJ....131.1163S/abstract">Skrutskie et al. 2006</a>).
+The imaging data product has spatial sampling of 1.0’’/pixel. The seeing is <span class="math notranslate nohighlight">\(\sim 2.5-3.5\)</span>’’ (<a class="reference external" href="https://ui.adsabs.harvard.edu/abs/2006AJ....131.1163S/abstract">Skrutskie et al. 2006</a>).
 The point-source sensitivities at signal-to-noise ratio S/N=10 are: 15.8, 15.1, and 14.3 mag for <span class="math notranslate nohighlight">\(J\)</span>, <span class="math notranslate nohighlight">\(H\)</span>, and <span class="math notranslate nohighlight">\(\text{K}_{\text{S}}\)</span>, respectively.
 Pixel value of the 2MASS image is in data-number unit (DN). To convert the pixel value to magnitude, one need a magnitude zero-point which can be obtained
 from the header of the FITS file (keyword: MAGZP). Then the flux can be calculated using a flux for zero-magnitude zero-point conversion values (<span class="math notranslate nohighlight">\(f_{\lambda,\text{zero-mag}}\)</span>).
@@ -251,11 +257,11 @@ A proper conversion factor is then applied to convert the flux in the <span clas
 The flux calibration of 2MASS is described in <a class="reference external" href="https://ui.adsabs.harvard.edu/abs/2003AJ....126.1090C/abstract">Cohen et al. (2003)</a>. The uncertainty of pixel value in a 2MASS
 image is estimated following the procedure described in the 2MASS survey’s website <a class="reference external" href="https://wise2.ipac.caltech.edu/staff/jarrett/2mass/3chan/noise/">here</a> (see the handy equations in the botttom of the web page).</p>
 </li>
-<li><p class="first"><strong>Wide-field Infrared Survey Explorer (WISE)</strong></p>
+<li><p><strong>Wide-field Infrared Survey Explorer (WISE)</strong></p>
 <p>The input image (in FITS) is assumed to be in the same format as that provided in this IRSA <a class="reference external" href="https://irsa.ipac.caltech.edu/applications/wise/">website</a>.
 Commonly, the imaging data from that source is not background-subtracted.
 The imaging data in the 4 bands <span class="math notranslate nohighlight">\(3.4\mu \text{m}\)</span> (<span class="math notranslate nohighlight">\(W1\)</span>), <span class="math notranslate nohighlight">\(4.6\mu \text{m}\)</span> (<span class="math notranslate nohighlight">\(W2\)</span>), <span class="math notranslate nohighlight">\(12\mu \text{m}\)</span> (<span class="math notranslate nohighlight">\(W3\)</span>), and <span class="math notranslate nohighlight">\(22\mu \text{m}\)</span> (<span class="math notranslate nohighlight">\(W4\)</span>) have
-spatial resolutions of 6.1’‘, 6.4’‘, 6.5’‘, and 12.0’‘, respectively. The spatial sampling of the imaging data in the 4 bands is 1.375’‘/pixel.
+spatial resolutions of 6.1’’, 6.4’’, 6.5’’, and 12.0’’, respectively. The spatial sampling of the imaging data in the 4 bands is 1.375’’/pixel.
 WISE achieved <span class="math notranslate nohighlight">\(5\sigma\)</span> point source sensitivities better than 0.08, 0.11, 1.00, and 6.00 mJy in unconfused regions on the ecliptic in the 4 bands (<a class="reference external" href="https://ui.adsabs.harvard.edu/abs/2010AJ....140.1868W/abstract">Wright et al. 2010</a>).
 The pixel value of a WISE image is DN unit. To convert the pixel value to flux in Jy, one need <em>DN_to_Jy</em> conversion factor. The <em>DN_to_Jy</em> for the
 <span class="math notranslate nohighlight">\(W1\)</span>, <span class="math notranslate nohighlight">\(W2\)</span>, <span class="math notranslate nohighlight">\(W3\)</span>, and <span class="math notranslate nohighlight">\(W4\)</span> are <span class="math notranslate nohighlight">\(1.935\times 10^{-6}\)</span>, <span class="math notranslate nohighlight">\(2.7048\times 10^{-6}\)</span>, <span class="math notranslate nohighlight">\(1.8326\times 10^{-6}\)</span>, and
@@ -263,12 +269,12 @@ The pixel value of a WISE image is DN unit. To convert the pixel value to flux i
 The WISE image atlas product commonly provides uncertainty image that gives the propagated <span class="math notranslate nohighlight">\(1\sigma\)</span> uncertainty estimate for each pixel in the
 corresponding coadded intensity image. For estimating flux uncertainty, a relevant instruction is given in a WISE survey’s website <a class="reference external" href="https://wise2.ipac.caltech.edu/docs/release/allsky/expsup/sec2_3f.html">here</a>.</p>
 </li>
-<li><p class="first"><strong>Spitzer (IRAC and MIPS)</strong></p>
+<li><p><strong>Spitzer (IRAC and MIPS)</strong></p>
 <p>The mean FWHMs of the PSFs of the 4 IRAC bands <span class="math notranslate nohighlight">\(3.6\mu \text{m}\)</span>, <span class="math notranslate nohighlight">\(4.5\mu \text{m}\)</span>, <span class="math notranslate nohighlight">\(5.8\mu \text{m}\)</span>, and <span class="math notranslate nohighlight">\(8.0\mu \text{m}\)</span> are
-1.66’‘, 1.72’‘, 1.88’‘, and 1.98’‘, respectively (<a class="reference external" href="https://ui.adsabs.harvard.edu/abs/2004ApJS..154...10F/abstract">Fazio et al. 2004</a>). The mean FWHMs of the
-PSFs of the 3 MIPS bands <span class="math notranslate nohighlight">\(24\mu \text{m}\)</span>, <span class="math notranslate nohighlight">\(70\mu \text{m}\)</span>, and <span class="math notranslate nohighlight">\(160\mu \text{m}\)</span> are 6.0’‘, 18.0’‘, and 40’‘, respectively (<a class="reference external" href="https://ui.adsabs.harvard.edu/abs/2004ApJS..154...25R/abstract">Rieke et al. 2004</a>).
-The spatial sampling of IRAC imaging data is 1.2’‘/pixel, while the spatial sammpling of MIPS imaging data varies across bands: 1.5’‘/pixel (<span class="math notranslate nohighlight">\(24\mu \text{m}\)</span>),
-4.5’‘/pixel (<span class="math notranslate nohighlight">\(70\mu \text{m}\)</span>), and 9.0’‘/pixel (<span class="math notranslate nohighlight">\(160\mu \text{m}\)</span>). The <span class="math notranslate nohighlight">\(1\sigma\)</span> point-source sensitivities (with low background and 100 second time frame) of the 4 IRAC bands are
+1.66’’, 1.72’’, 1.88’’, and 1.98’’, respectively (<a class="reference external" href="https://ui.adsabs.harvard.edu/abs/2004ApJS..154...10F/abstract">Fazio et al. 2004</a>). The mean FWHMs of the
+PSFs of the 3 MIPS bands <span class="math notranslate nohighlight">\(24\mu \text{m}\)</span>, <span class="math notranslate nohighlight">\(70\mu \text{m}\)</span>, and <span class="math notranslate nohighlight">\(160\mu \text{m}\)</span> are 6.0’’, 18.0’’, and 40’’, respectively (<a class="reference external" href="https://ui.adsabs.harvard.edu/abs/2004ApJS..154...25R/abstract">Rieke et al. 2004</a>).
+The spatial sampling of IRAC imaging data is 1.2’’/pixel, while the spatial sammpling of MIPS imaging data varies across bands: 1.5’’/pixel (<span class="math notranslate nohighlight">\(24\mu \text{m}\)</span>),
+4.5’’/pixel (<span class="math notranslate nohighlight">\(70\mu \text{m}\)</span>), and 9.0’’/pixel (<span class="math notranslate nohighlight">\(160\mu \text{m}\)</span>). The <span class="math notranslate nohighlight">\(1\sigma\)</span> point-source sensitivities (with low background and 100 second time frame) of the 4 IRAC bands are
 <span class="math notranslate nohighlight">\(0.6\mu \text{Jy}\)</span> (<span class="math notranslate nohighlight">\(3.6\mu \text{m}\)</span>), <span class="math notranslate nohighlight">\(1.2\mu \text{Jy}\)</span> (<span class="math notranslate nohighlight">\(4.5\mu \text{m}\)</span>), <span class="math notranslate nohighlight">\(8.0\mu \text{Jy}\)</span> (<span class="math notranslate nohighlight">\(5.8\mu \text{m}\)</span>), and
 <span class="math notranslate nohighlight">\(9.8\mu \text{Jy}\)</span> (<span class="math notranslate nohighlight">\(8.0\mu \text{m}\)</span>) (<a class="reference external" href="https://ui.adsabs.harvard.edu/abs/2004ApJS..154...10F/abstract">Fazio et al. 2004</a>).
 The pre-launch estimate of the <span class="math notranslate nohighlight">\(1\sigma\)</span> confusion limits of the MIPS bands are <span class="math notranslate nohighlight">\(\sim 0.5-1.3 \text{mJy}\)</span> (<span class="math notranslate nohighlight">\(70\mu \text{m}\)</span>) and
@@ -280,7 +286,7 @@ The calibration uncertainty of the 4 bands of IRAC is <span class="math notransl
 whereas that uncertainties for the 3 bands of MIPS are 4% (<span class="math notranslate nohighlight">\(24\mu \text{m}\)</span>), 5% (<span class="math notranslate nohighlight">\(70\mu \text{m}\)</span>), and 12% (<span class="math notranslate nohighlight">\(160\mu \text{m}\)</span>)
 (<a class="reference external" href="https://ui.adsabs.harvard.edu/abs/2007PASP..119..994E/abstract">Engelbracht et al. 2007</a>; <a class="reference external" href="https://ui.adsabs.harvard.edu/abs/2007PASP..119.1019G/abstract">Gordon et al. 2007</a>; <a class="reference external" href="https://ui.adsabs.harvard.edu/abs/2007PASP..119.1038S/abstract">Stansberry et al. 2007</a>).</p>
 </li>
-<li><p class="first"><strong>Herschel (PACS and SPIRE)</strong></p>
+<li><p><strong>Herschel (PACS and SPIRE)</strong></p>
 <p>The three PACS bands have measured PSF FWHMs of 5.67’’ (<span class="math notranslate nohighlight">\(70\mu \text{m}\)</span>), 7.04’’ (<span class="math notranslate nohighlight">\(100\mu \text{m}\)</span>), and 11.18’’ (<span class="math notranslate nohighlight">\(160\mu \text{m}\)</span>)
 (<a class="reference external" href="https://ui.adsabs.harvard.edu/abs/2011PASP..123.1218A/abstract">Anianp et al. 2011</a>, Geis N. and Lutz D. 2010 PACS ICC Document PICC-ME-TN-029 v2.0, Lutz D. 2010 PACS ICC Document PICC-ME-TN-033, and Müller T. 2010 PACS ICC Document PICC-ME-TN-036 v2.0).
 The three SPIRE bands have mean PSF FWHMs of 18.1’’ (<span class="math notranslate nohighlight">\(250\mu \text{m}\)</span>), 25.2’’ (<span class="math notranslate nohighlight">\(350\mu \text{m}\)</span>), and 36.6’’ (<span class="math notranslate nohighlight">\(500\mu \text{m}\)</span>).
@@ -306,7 +312,7 @@ the calibration uncertainty of the SPIRE is <span class="math notranslate nohigh
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="image_pros.html" class="btn btn-neutral float-right" title="Image processing" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="list_kernels_psf.html" class="btn btn-neutral float-right" title="Available convolution kernels and PSFs" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
         <a href="install.html" class="btn btn-neutral float-left" title="Installation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>

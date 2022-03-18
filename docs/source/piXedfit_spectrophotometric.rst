@@ -1,4 +1,5 @@
 piXedfit_spectrophotometric
 ===========================
 
-(This page is still under constraction!)
+.. automodule:: piXedfit.piXedfit_spectrophotometric	
+   :members: specphoto_califagalexsdss2masswise, specphoto_mangagalexsdss2masswise, match_specphoto

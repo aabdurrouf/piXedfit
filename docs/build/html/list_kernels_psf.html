@@ -1,0 +1,258 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Available convolution kernels and PSFs &mdash; piXedfit 1.0 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+
+  
+  
+  
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/language_data.js"></script>
+        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Image processing" href="image_pros.html" />
+    <link rel="prev" title="List of imaging data" href="list_imaging_data.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home" alt="Documentation Home"> piXedfit
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">User guide</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="list_imaging_data.html">List of imaging data</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Available convolution kernels and PSFs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="image_pros.html">Image processing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="image_ifs_match.html">Matching imaging data with IFS data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pixel_binning.html">Pixel binning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ingredients_model.html">Ingredients in SED modeling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="gen_model_SEDs.html">Generating model SEDs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fit_res_SEDs.html">Fitting spatially resolved SEDs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fit_ing_SEDs.html">Fitting integrated SEDs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_fitres.html">Plotting fitting results</a></li>
+<li class="toctree-l1"><a class="reference internal" href="get_maps_prop.html">Obtaining spatially resolved maps of properties</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Demonstrations and tutorials</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="demos_img_pros.html">Demonstration of image processing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demos_pixel_binning.html">Demonstration of the pixel binning process</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demos_sed_fitting.html">Demonstration of SED fitting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials.html">Tutorials</a></li>
+</ul>
+<p class="caption"><span class="caption-text">API reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="piXedfit_images.html">piXedfit_images</a></li>
+<li class="toctree-l1"><a class="reference internal" href="piXedfit_spectrophotometric.html">piXedfit_spectrophotometric</a></li>
+<li class="toctree-l1"><a class="reference internal" href="piXedfit_bin.html">piXedfit_bin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="piXedfit_model.html">piXedfit_model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="piXedfit_fitting.html">piXedfit_fitting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="piXedfit_analysis.html">piXedfit_analysis</a></li>
+<li class="toctree-l1"><a class="reference internal" href="filtering.html">filtering</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">piXedfit</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+        
+      <li>Available convolution kernels and PSFs</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/list_kernels_psf.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="available-convolution-kernels-and-psfs">
+<h1>Available convolution kernels and PSFs<a class="headerlink" href="#available-convolution-kernels-and-psfs" title="Permalink to this headline">¶</a></h1>
+<p>The point spread function (PSF) describes the two-dimensional distribution of light in the telescope focal plane for the astronomical point sources.
+To get reliable multiwavelength photometric SED from a set of multiband images, especially in the analysis of spatially resolved SEDs of galaxies,
+it is important to homogenize the spatial resolution (i.e., PSF size) of those images before extracting SEDs from them. This process of homogenizing
+the PSF size of multiband images is called PSF matching. The final/target spatial resolution to be achieved is the one that is the lowest (i.e., worst) among the multiband images being analyzed. Commonly, PSF matching process of multiband images is done by convolving the images that have higher spatil resolution
+(i.e., smaller PSF size than the target PSF) with a set of pre-calculated convolution kerenels. The convolution kernel for matching a pair of two PSFs
+is derived from the ratio of Fourier transforms (e.g., <a class="reference external" href="https://ui.adsabs.harvard.edu/abs/2008ApJ...682..336G/abstract">Gordon et al. 2008</a>;
+<a class="reference external" href="https://ui.adsabs.harvard.edu/abs/2011PASP..123.1218A/abstract">Aniano et al. 2011</a>).</p>
+<p>For PSF matching process, <code class="xref py py-mod docutils literal notranslate"><span class="pre">piXedfit_images</span></code> module uses convolution kernels from <a class="reference external" href="https://ui.adsabs.harvard.edu/abs/2011PASP..123.1218A/abstract">Aniano et al. 2011</a> that are publicly available at this <a class="reference external" href="https://www.astro.princeton.edu/~ganiano/Kernels.html">website</a>. The available kernels cover various ground-based and spaced-based telescopes, including <a class="reference external" href="http://www.galex.caltech.edu/">GALEX</a>, <a class="reference external" href="http://www.spitzer.caltech.edu/">Spitzer</a>, <a class="reference external" href="https://wise2.ipac.caltech.edu/docs/release/allsky/">WISE</a>,
+and <a class="reference external" href="https://sci.esa.int/web/herschel">Herschel</a>. Besides that, <a class="reference external" href="https://ui.adsabs.harvard.edu/abs/2011PASP..123.1218A/abstract">Aniano et al. 2011</a>
+also provide convolution kernels for some analytical PSFs that includes Gaussian, sum of Gaussians, and Moffat. Those analytical PSFs are expected to be representative of the net (i.e., effective) PSFs of ground-based telescopes.</p>
+<p>To associate the PSFs of SDSS and 2MASS (which are not explicitely covered in <a class="reference external" href="https://ui.adsabs.harvard.edu/abs/2011PASP..123.1218A/abstract">Aniano et al. 2011</a>) with the analytical PSFs of <a class="reference external" href="https://ui.adsabs.harvard.edu/abs/2011PASP..123.1218A/abstract">Aniano et al. 2011</a>, we have constructed empirical PSFs of the 5 SDSS bands and 3 2MASS bands and compare the constructed empirical PSFs with the analytical PSFs from <a class="reference external" href="https://ui.adsabs.harvard.edu/abs/2011PASP..123.1218A/abstract">Aniano et al. 2011</a>. We find that the empirical PSFs of SDSS <span class="math notranslate nohighlight">\(u\)</span>, <span class="math notranslate nohighlight">\(g\)</span>, and <span class="math notranslate nohighlight">\(r\)</span> bands are best represented by double Gaussian with FWHM of 1.5’’, while the other bands (<span class="math notranslate nohighlight">\(i\)</span> and <span class="math notranslate nohighlight">\(z\)</span>) are best represented by double Gaussian with FWHM of 1.0’’. For 2MASS, all the 3 bands (<span class="math notranslate nohighlight">\(J\)</span>, <span class="math notranslate nohighlight">\(H\)</span>, and <span class="math notranslate nohighlight">\(\text{K}_{\text{S}}\)</span>) are best represented by Gaussian with FWHM of 3.5’’. Construction of these empirical PSFs is presented in Appendix A of <strong>Abdurro’uf et al. (2020, submitted)</strong>. The empirical PSFs are available at this <a class="reference external" href="https://github.com/aabdurrouf/empPSFs_GALEXSDSS2MASS">Github page</a>. For consistency, the <code class="xref py py-mod docutils literal notranslate"><span class="pre">piXedfit_images</span></code> use those analytical PSFs to represent the PSFs of SDSS and 2MASS and use the convolution kernels associated with them whenever needed.</p>
+<p>By default, when external kernels are not provided by the user, <code class="xref py py-mod docutils literal notranslate"><span class="pre">piXedfit_images</span></code> module will use the kernels from <a class="reference external" href="https://ui.adsabs.harvard.edu/abs/2011PASP..123.1218A/abstract">Aniano et al. 2011</a>. For flexibility, the users can also input their own kernels to <code class="xref py py-mod docutils literal notranslate"><span class="pre">piXedfit_images</span></code>.</p>
+<p>Figures below show a demonstration of the performance of some convolution kernels used in the <code class="xref py py-mod docutils literal notranslate"><span class="pre">piXedfit_images</span></code> module. In the top figure, the performance of the convolution kernels used to achieve the spatial resolution of WISE/<span class="math notranslate nohighlight">\(W2\)</span> is demonstrated. Different panels show different initial PSFs. In the first row from the left to right, we show the convolution results from initial PSFs of GALEX/FUV, GALEX/NUV, and SDSS/<span class="math notranslate nohighlight">\(u\)</span>, respectively. The second row, from left to right, we show the result for SDSS/<span class="math notranslate nohighlight">\(z\)</span>, 2MASS/<span class="math notranslate nohighlight">\(J\)</span>, and 2MASS/<span class="math notranslate nohighlight">\(W1\)</span>, respectively. In the bottom figure, the performance of the convolution kernels used to achieve the spatial resolution of Herschel/SPIRE350 is demonstrated. In the first row from the left to right, we show the convolution results from initial PSFs of GALEX/FUV, SDSS/<span class="math notranslate nohighlight">\(u\)</span>, and 2MASS/<span class="math notranslate nohighlight">\(J\)</span>, respectively. The second row, from left to right, we show the result for WISE/<span class="math notranslate nohighlight">\(W1\)</span>, Spitzer/IRAC <span class="math notranslate nohighlight">\(8.0\mu \text{m}\)</span>, and Spitzer/MIPS <span class="math notranslate nohighlight">\(24\mu \text{m}\)</span>, respectively. The figures shows that the performance of the convolution kernels is very good, evidenced from the good matching between the shapes of the convolved PSFs and the target PSF.</p>
+<a class="reference internal image-reference" href="_images/perform_kernels.png"><img alt="_images/perform_kernels.png" src="_images/perform_kernels.png" style="width: 900px;" /></a>
+<a class="reference internal image-reference" href="_images/perform_kernels1.png"><img alt="_images/perform_kernels1.png" src="_images/perform_kernels1.png" style="width: 900px;" /></a>
+<p>For the characteristic PSFs of the imaging data that can be analyzed with the current version of <strong>piXedfit</strong>, please see the description in this <a class="reference external" href="https://pixedfit.readthedocs.io/en/latest/list_imaging_data.html">page</a>.</p>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="image_pros.html" class="btn btn-neutral float-right" title="Image processing" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="list_imaging_data.html" class="btn btn-neutral float-left" title="List of imaging data" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        
+        &copy; Copyright 2020, Abdurro&#39;uf
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

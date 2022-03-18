@@ -1,3 +1,5 @@
+.. _list-imagingdata:
+
 List of imaging data
 =====================
 

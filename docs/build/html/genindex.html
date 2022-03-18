@@ -1,8 +1,7 @@
 
 
-
 <!DOCTYPE html>
-<html class="writer-html4" lang="en" >
+<html class="writer-html5" lang="en" >
 <head>
   <meta charset="utf-8">
   
@@ -27,10 +26,11 @@
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
-        <script type="text/javascript" src="_static/jquery.js"></script>
-        <script type="text/javascript" src="_static/underscore.js"></script>
-        <script type="text/javascript" src="_static/doctools.js"></script>
-        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/language_data.js"></script>
+        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
     
     <script type="text/javascript" src="_static/js/theme.js"></script>
 
@@ -85,18 +85,22 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="list_imaging_data.html">List of imaging data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="list_kernels_psf.html">Available convolution kernels and PSFs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="image_pros.html">Image processing</a></li>
 <li class="toctree-l1"><a class="reference internal" href="image_ifs_match.html">Matching imaging data with IFS data</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pixel_binning.html">Pixel binning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ingredients_model.html">Ingredients in SED modeling</a></li>
 <li class="toctree-l1"><a class="reference internal" href="gen_model_SEDs.html">Generating model SEDs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="fit_res_SEDs.html">Fitting spatially resolved SEDs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="fit_ing_SEDs.html">Fitting integrated SEDs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="plot_fitres.html">Plotting fitting results</a></li>
-<li class="toctree-l1"><a class="reference internal" href="get_maps_prop.html">Obtaining spatially resolved maps of properties of a galaxy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="get_maps_prop.html">Obtaining spatially resolved maps of properties</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Demonstrations and tutorials</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="demos.html">Demonstrations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demos_img_pros.html">Demonstration of image processing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demos_pixel_binning.html">Demonstration of the pixel binning process</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demos_sed_fitting.html">Demonstration of SED fitting</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tutorials.html">Tutorials</a></li>
 </ul>
 <p class="caption"><span class="caption-text">API reference</span></p>
@@ -107,6 +111,7 @@
 <li class="toctree-l1"><a class="reference internal" href="piXedfit_model.html">piXedfit_model</a></li>
 <li class="toctree-l1"><a class="reference internal" href="piXedfit_fitting.html">piXedfit_fitting</a></li>
 <li class="toctree-l1"><a class="reference internal" href="piXedfit_analysis.html">piXedfit_analysis</a></li>
+<li class="toctree-l1"><a class="reference internal" href="utils.html">Utils</a></li>
 </ul>
 
             
@@ -174,8 +179,284 @@
 <h1 id="index">Index</h1>
 
 <div class="genindex-jumpbox">
+ <a href="#A"><strong>A</strong></a>
+ | <a href="#C"><strong>C</strong></a>
+ | <a href="#D"><strong>D</strong></a>
+ | <a href="#E"><strong>E</strong></a>
+ | <a href="#F"><strong>F</strong></a>
+ | <a href="#G"><strong>G</strong></a>
+ | <a href="#I"><strong>I</strong></a>
+ | <a href="#K"><strong>K</strong></a>
+ | <a href="#L"><strong>L</strong></a>
+ | <a href="#M"><strong>M</strong></a>
+ | <a href="#P"><strong>P</strong></a>
+ | <a href="#R"><strong>R</strong></a>
+ | <a href="#S"><strong>S</strong></a>
+ | <a href="#V"><strong>V</strong></a>
  
 </div>
+<h2 id="A">A</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="piXedfit_model.html#piXedfit.piXedfit_model.add_fagn_bol_samplers">add_fagn_bol_samplers() (in module piXedfit.piXedfit_model)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="utils.html#piXedfit.utils.filtering.add_filter">add_filter() (in module piXedfit.utils.filtering)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="C">C</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="piXedfit_images.html#piXedfit.piXedfit_images.crop_ellipse_galregion">crop_ellipse_galregion() (in module piXedfit.piXedfit_images)</a>
+</li>
+      <li><a href="piXedfit_images.html#piXedfit.piXedfit_images.crop_ellipse_galregion_fits">crop_ellipse_galregion_fits() (in module piXedfit.piXedfit_images)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="piXedfit_images.html#piXedfit.piXedfit_images.crop_stars_galregion_fits">crop_stars_galregion_fits() (in module piXedfit.piXedfit_images)</a>
+</li>
+      <li><a href="utils.html#piXedfit.utils.filtering.cwave_filters">cwave_filters() (in module piXedfit.utils.filtering)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="D">D</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="piXedfit_images.html#piXedfit.piXedfit_images.draw_ellipse">draw_ellipse() (in module piXedfit.piXedfit_images)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="E">E</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="piXedfit_images.html#piXedfit.piXedfit_images.ellipse_fit">ellipse_fit() (in module piXedfit.piXedfit_images)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="F">F</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="utils.html#piXedfit.utils.filtering.filtering">filtering() (in module piXedfit.utils.filtering)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="piXedfit_images.html#piXedfit.piXedfit_images.images_processing.flux_map">flux_map() (piXedfit.piXedfit_images.images_processing method)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="G">G</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="piXedfit_images.html#piXedfit.piXedfit_images.images_processing.galaxy_region">galaxy_region() (piXedfit.piXedfit_images.images_processing method)</a>
+</li>
+      <li><a href="piXedfit_model.html#piXedfit.piXedfit_model.generate_mockSED">generate_mockSED() (in module piXedfit.piXedfit_model)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="piXedfit_model.html#piXedfit.piXedfit_model.generate_modelSED_photo">generate_modelSED_photo() (in module piXedfit.piXedfit_model)</a>
+</li>
+      <li><a href="piXedfit_model.html#piXedfit.piXedfit_model.generate_modelSED_spec">generate_modelSED_spec() (in module piXedfit.piXedfit_model)</a>
+</li>
+      <li><a href="utils.html#piXedfit.utils.filtering.get_filter_curve">get_filter_curve() (in module piXedfit.utils.filtering)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="I">I</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="piXedfit_images.html#piXedfit.piXedfit_images.images_processing">images_processing (class in piXedfit.piXedfit_images)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="piXedfit_fitting.html#piXedfit.piXedfit_fitting.inferred_params_mcmc_list">inferred_params_mcmc_list() (in module piXedfit.piXedfit_fitting)</a>
+</li>
+      <li><a href="piXedfit_fitting.html#piXedfit.piXedfit_fitting.inferred_params_rdsps_list">inferred_params_rdsps_list() (in module piXedfit.piXedfit_fitting)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="K">K</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="piXedfit_images.html#piXedfit.piXedfit_images.kpc_per_pixel">kpc_per_pixel() (in module piXedfit.piXedfit_images)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="L">L</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="utils.html#piXedfit.utils.filtering.list_filters">list_filters() (in module piXedfit.utils.filtering)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="M">M</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="piXedfit_fitting.html#piXedfit.piXedfit_fitting.map_params_mcmc">map_params_mcmc() (in module piXedfit.piXedfit_fitting)</a>
+</li>
+      <li><a href="piXedfit_fitting.html#piXedfit.piXedfit_fitting.map_params_rdsps">map_params_rdsps() (in module piXedfit.piXedfit_fitting)</a>
+</li>
+      <li><a href="piXedfit_spectrophotometric.html#piXedfit.piXedfit_spectrophotometric.match_specphoto">match_specphoto() (in module piXedfit.piXedfit_spectrophotometric)</a>
+</li>
+      <li>
+    module
+
+      <ul>
+        <li><a href="piXedfit_analysis.html#module-piXedfit.piXedfit_analysis">piXedfit.piXedfit_analysis</a>
+</li>
+        <li><a href="piXedfit_bin.html#module-piXedfit.piXedfit_bin">piXedfit.piXedfit_bin</a>
+</li>
+        <li><a href="piXedfit_fitting.html#module-piXedfit.piXedfit_fitting">piXedfit.piXedfit_fitting</a>
+</li>
+        <li><a href="piXedfit_images.html#module-piXedfit.piXedfit_images">piXedfit.piXedfit_images</a>
+</li>
+        <li><a href="piXedfit_model.html#module-piXedfit.piXedfit_model">piXedfit.piXedfit_model</a>
+</li>
+        <li><a href="piXedfit_spectrophotometric.html#module-piXedfit.piXedfit_spectrophotometric">piXedfit.piXedfit_spectrophotometric</a>
+</li>
+        <li><a href="utils.html#module-piXedfit.utils.filtering">piXedfit.utils.filtering</a>
+</li>
+      </ul></li>
+  </ul></td>
+</tr></table>
+
+<h2 id="P">P</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li>
+    piXedfit.piXedfit_analysis
+
+      <ul>
+        <li><a href="piXedfit_analysis.html#module-piXedfit.piXedfit_analysis">module</a>
+</li>
+      </ul></li>
+      <li>
+    piXedfit.piXedfit_bin
+
+      <ul>
+        <li><a href="piXedfit_bin.html#module-piXedfit.piXedfit_bin">module</a>
+</li>
+      </ul></li>
+      <li>
+    piXedfit.piXedfit_fitting
+
+      <ul>
+        <li><a href="piXedfit_fitting.html#module-piXedfit.piXedfit_fitting">module</a>
+</li>
+      </ul></li>
+      <li>
+    piXedfit.piXedfit_images
+
+      <ul>
+        <li><a href="piXedfit_images.html#module-piXedfit.piXedfit_images">module</a>
+</li>
+      </ul></li>
+      <li>
+    piXedfit.piXedfit_model
+
+      <ul>
+        <li><a href="piXedfit_model.html#module-piXedfit.piXedfit_model">module</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li>
+    piXedfit.piXedfit_spectrophotometric
+
+      <ul>
+        <li><a href="piXedfit_spectrophotometric.html#module-piXedfit.piXedfit_spectrophotometric">module</a>
+</li>
+      </ul></li>
+      <li>
+    piXedfit.utils.filtering
+
+      <ul>
+        <li><a href="utils.html#module-piXedfit.utils.filtering">module</a>
+</li>
+      </ul></li>
+      <li><a href="piXedfit_bin.html#piXedfit.piXedfit_bin.pixel_binning_photo">pixel_binning_photo() (in module piXedfit.piXedfit_bin)</a>
+</li>
+      <li><a href="piXedfit_analysis.html#piXedfit.piXedfit_analysis.plot_corner">plot_corner() (in module piXedfit.piXedfit_analysis)</a>
+</li>
+      <li><a href="piXedfit_analysis.html#piXedfit.piXedfit_analysis.plot_SED_mcmc">plot_SED_mcmc() (in module piXedfit.piXedfit_analysis)</a>
+</li>
+      <li><a href="piXedfit_analysis.html#piXedfit.piXedfit_analysis.plot_SED_mcmc_with_residual">plot_SED_mcmc_with_residual() (in module piXedfit.piXedfit_analysis)</a>
+</li>
+      <li><a href="piXedfit_analysis.html#piXedfit.piXedfit_analysis.plot_SED_rdsps">plot_SED_rdsps() (in module piXedfit.piXedfit_analysis)</a>
+</li>
+      <li><a href="piXedfit_analysis.html#piXedfit.piXedfit_analysis.plot_SED_rdsps_with_residual">plot_SED_rdsps_with_residual() (in module piXedfit.piXedfit_analysis)</a>
+</li>
+      <li><a href="piXedfit_analysis.html#piXedfit.piXedfit_analysis.plot_sfh_mcmc">plot_sfh_mcmc() (in module piXedfit.piXedfit_analysis)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="R">R</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="piXedfit_images.html#piXedfit.piXedfit_images.images_processing.reduced_stamps">reduced_stamps() (piXedfit.piXedfit_images.images_processing method)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="utils.html#piXedfit.utils.filtering.remove_filter">remove_filter() (in module piXedfit.utils.filtering)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="S">S</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="piXedfit_model.html#piXedfit.piXedfit_model.save_models">save_models() (in module piXedfit.piXedfit_model)</a>
+</li>
+      <li><a href="piXedfit_fitting.html#piXedfit.piXedfit_fitting.SEDfit_from_binmap">SEDfit_from_binmap() (in module piXedfit.piXedfit_fitting)</a>
+</li>
+      <li><a href="piXedfit_images.html#piXedfit.piXedfit_images.images_processing.segmentation_sextractor">segmentation_sextractor() (piXedfit.piXedfit_images.images_processing method)</a>
+</li>
+      <li><a href="piXedfit_fitting.html#piXedfit.piXedfit_fitting.singleSEDfit">singleSEDfit() (in module piXedfit.piXedfit_fitting)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="piXedfit_images.html#piXedfit.piXedfit_images.skybg_sdss">skybg_sdss() (in module piXedfit.piXedfit_images)</a>
+</li>
+      <li><a href="piXedfit_spectrophotometric.html#piXedfit.piXedfit_spectrophotometric.specphoto_califagalexsdss2masswise">specphoto_califagalexsdss2masswise() (in module piXedfit.piXedfit_spectrophotometric)</a>
+</li>
+      <li><a href="piXedfit_spectrophotometric.html#piXedfit.piXedfit_spectrophotometric.specphoto_mangagalexsdss2masswise">specphoto_mangagalexsdss2masswise() (in module piXedfit.piXedfit_spectrophotometric)</a>
+</li>
+      <li><a href="piXedfit_images.html#piXedfit.piXedfit_images.subtract_background">subtract_background() (in module piXedfit.piXedfit_images)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="V">V</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="piXedfit_images.html#piXedfit.piXedfit_images.var_img_2MASS">var_img_2MASS() (in module piXedfit.piXedfit_images)</a>
+</li>
+      <li><a href="piXedfit_images.html#piXedfit.piXedfit_images.var_img_from_unc_img">var_img_from_unc_img() (in module piXedfit.piXedfit_images)</a>
+</li>
+      <li><a href="piXedfit_images.html#piXedfit.piXedfit_images.var_img_from_weight_img">var_img_from_weight_img() (in module piXedfit.piXedfit_images)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="piXedfit_images.html#piXedfit.piXedfit_images.var_img_GALEX">var_img_GALEX() (in module piXedfit.piXedfit_images)</a>
+</li>
+      <li><a href="piXedfit_images.html#piXedfit.piXedfit_images.var_img_sdss">var_img_sdss() (in module piXedfit.piXedfit_images)</a>
+</li>
+      <li><a href="piXedfit_images.html#piXedfit.piXedfit_images.var_img_WISE">var_img_WISE() (in module piXedfit.piXedfit_images)</a>
+</li>
+  </ul></td>
+</tr></table>
+
 
 
            </div>
