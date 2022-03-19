@@ -8,8 +8,9 @@ from scipy.interpolate import interp1d
 
 from ..utils.posteriors import calc_mode
 
-global PIXEDFIT_HOME
-PIXEDFIT_HOME = os.environ['PIXEDFIT_HOME']
+#global PIXEDFIT_HOME
+#PIXEDFIT_HOME = os.environ['PIXEDFIT_HOME']
+PIXEDFIT_HOME=""
 
 os.environ["OMP_NUM_THREADS"] = "1"
 
