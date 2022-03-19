@@ -26,7 +26,7 @@ of spaially resolved SED, without the need of using the image processing and pix
 *  `piXedfit_images`: **image processing**
    
    This module is capable of doing spatial-matching (in spatial resolution and spatial sampling) of multiband imaging data ranging from FUV to FIR 
-   (from ground-based and spaced-based telescopes) and extract pixel-wise photometric SEDs within the galaxy's region of interest.
+   (from ground-based and spaced-based telescopes) and extract pixel-wise photometric SEDs within the galaxy's region of interest. 
 
 *  `piXedfit_spectrophotometric`: **spatial-matching of imaging data and the IFS data**
    
@@ -59,7 +59,10 @@ of spaially resolved SED, without the need of using the image processing and pix
    SED plot (i.e., a plot showing recovery of the input SED by the best-fit model SED), and SFH plot (i.e., a plot showing inferred SFH from the fitting).
    
 ## How to get the code
-Currently, we are working on documentation of **piXedfit** and we plan to publicly release the codes in next few month (before summer 2022). In the meantime, if you are interested in using **piXedfit**, please contact Abdurro'uf (abdurrouf@asiaa.sinica.edu.tw). We are very welcome to any ideas of new researches using **piXedfit**.     
+Currently, we are working on documentation of **piXedfit** and we plan to publicly release the codes in next few month (before summer 2022). In the meantime, if you are interested in using **piXedfit**, please contact Abdurro'uf (abdurrouf@asiaa.sinica.edu.tw). We are very welcome to any ideas of new researches using **piXedfit**.   
+
+## Kernels
+Please download kernel files from [here](https://drive.google.com/drive/folders/1pTRASNKLuckkY8_sl8WYeZ62COvcBtGn?usp=sharing).
    
 ## Reference
 A list of some projects **piXedfit** is benefitted from:
