@@ -19,7 +19,7 @@ __all__ = ["singleSEDfit", "SEDfit_from_binmap", "inferred_params_mcmc_list", "i
 
 
 def nproc_reduced(nproc,nwalkers,nsteps,nsteps_cut):
-	ngrids2 = (nwalkers*nsteps) - (nwalkers*nsteps_cut)        ### please update this!!
+	ngrids2 = (nwalkers*nsteps) - (nwalkers*nsteps_cut)        
 	for ii in range(0,nproc):
 		if ngrids2%nproc == 0:
 			nproc_new = nproc
@@ -149,6 +149,7 @@ def singleSEDfit(obs_flux=[],obs_flux_err=[],filters=[],gal_z=-99.0,imf_type=1,s
 
 	CODE_dir = PIXEDFIT_HOME+'/piXedfit/piXedfit_fitting/'
 	temp_dir = PIXEDFIT_HOME+'/data/temp/'
+
 
 	# get number of filters:
 	nbands = len(filters)

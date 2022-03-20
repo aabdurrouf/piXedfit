@@ -10,17 +10,17 @@ PIXEDFIT_HOME = os.environ['PIXEDFIT_HOME']
 sys.path.insert(0, PIXEDFIT_HOME)
 
 
-from ..utils.posteriors import model_leastnorm
-from ..piXedfit_model.gen_models import generate_modelSED_spec
-from .specphoto_utils import spec_smoothing, match_spectra_poly_legendre
+from piXedfit.utils.posteriors import model_leastnorm
+from piXedfit.piXedfit_model import generate_modelSED_spec, get_no_nebem_wave_fit
+from piXedfit.piXedfit_spectrophotometric import spec_smoothing, match_spectra_poly_legendre_fit
 
 
 """
 USAGE: mpirun -np [nproc] python ./match_specphoto.py (1)specphoto_file (2)name_saved_randmod (3)spec_sigma (4)name_out_fits
 """
 
-if len(sys.argv)!=5:
-	print ("USAGE: mpirun -np [nproc] python ./match_specphoto.py (1)specphoto_file (2)name_saved_randmod (3)spec_sigma (4)name_out_fits")
+if len(sys.argv)!=6:
+	print ("USAGE: mpirun -np [nproc] python ./match_specphoto.py (1)specphoto_file (2)name_saved_randmod (3)spec_sigma (4)name_out_fits (5)del_wave_nebem")
 	sys.exit()
 
 
@@ -141,14 +141,21 @@ spec_SED = generate_modelSED_spec(sp=sp, imf_type=imf, duste_switch=duste_switch
 								params_val=def_params_val)
 # cut model spectrum to match range given by the IFS spectra
 idx_mod_wave = np.where((spec_SED['wave']>min_spec_wave-50) & (spec_SED['wave']<max_spec_wave+50))
-map_bfit_mod_spec_wave = spec_SED['wave'][idx_mod_wave[0]]
-# allocate memory for output best-fit model spectra
-nwaves_bfit_spec = len(map_bfit_mod_spec_wave)
-map_bfit_mod_spec_flux = np.zeros((dim_y,dim_x,nwaves_bfit_spec))
 #========================================#
 
+# get wavelength free of emission lines:
+del_wave_nebem = float(sys.argv[5])
+spec_wave_clean,wave_mask = get_no_nebem_wave_fit(sp,gal_z,spec_wave,del_wave_nebem)
 
-for pp in range(0,npixs):
+# allocate memory for output best-fit model spectra
+#map_bfit_mod_spec_wave = spec_SED['wave'][idx_mod_wave[0]]
+#nwaves_bfit_spec = len(map_bfit_mod_spec_wave)
+map_bfit_mod_spec_wave = spec_wave_clean
+map_bfit_mod_spec_flux = np.zeros((dim_y,dim_x,len(spec_wave_clean)))
+
+
+#for pp in range(0,npixs):
+for pp in range(0,10):
 	# obs SED
 	obs_flux = photo_flux_trans[rows[pp]][cols[pp]]
 	obs_flux_err = photo_flux_err_trans[rows[pp]][cols[pp]]
@@ -187,6 +194,12 @@ for pp in range(0,npixs):
 
 		count = count + 1
 
+		sys.stdout.write('\r')
+		sys.stdout.write('rank: %d  Calculation process: %d from %d  --->  %d%%' % (rank,count,len(recvbuf_idx),
+																					count*100/len(recvbuf_idx)))
+		sys.stdout.flush()
+	sys.stdout.write('\n')
+
 	mod_chi2 = np.zeros(numDataPerRank*size)
 	mod_id = np.zeros(numDataPerRank*size)
 	mod_log_mass = np.zeros(numDataPerRank*size)
@@ -204,7 +217,7 @@ for pp in range(0,npixs):
 		# parameters of the best-fit model
 		params_val = def_params_val
 		for jj in range(0,nparams):
-			params_val[params[jj]] = data_randmod[params[jj]][mod_id[idx0]]
+			params_val[params[jj]] = data_randmod[params[jj]][int(mod_id[idx0])]
 		params_val['log_mass'] = mod_log_mass[idx0]
 		params_val['z'] = gal_z
 
@@ -226,41 +239,42 @@ for pp in range(0,npixs):
 
 		# match scaling/normalization of IFS spectra to the best-fit model spectrum
 		in_spec_flux = spec_flux_trans[rows[pp]][cols[pp]]
-		final_wave,final_flux,factor = match_spectra_poly_legendre_fit(sp=sp,in_spec_wave=spec_wave,in_spec_flux=in_spec_flux,
+		final_wave,final_flux,factor,ref_spec_flux_clean = match_spectra_poly_legendre_fit(sp=sp,in_spec_wave=spec_wave,in_spec_flux=in_spec_flux,
 																		ref_spec_wave=conv_bfit_spec_wave,ref_spec_flux=conv_bfit_spec_flux,
-																		final_wave=spec_wave,z=gal_z,del_wave_nebem=15.0,order=3)
+																		wave_clean=spec_wave_clean,z=gal_z,del_wave_nebem=del_wave_nebem,order=3)
 
 		# get output re-scaled spectrum
 		rescaled_spec_flux[rows[pp]][cols[pp]] = final_flux
 		rescaled_spec_flux_err[rows[pp]][cols[pp]] = spec_flux_err_trans[rows[pp]][cols[pp]]*factor
 
 		# get output best-fit model
-		map_bfit_mod_spec_flux[rows[pp]][cols[pp]] = bfit_spec_flux
+		#map_bfit_mod_spec_flux[rows[pp]][cols[pp]] = bfit_spec_flux
+		map_bfit_mod_spec_flux[rows[pp]][cols[pp]] = ref_spec_flux_clean
 
 
+if rank == 0:
+	# transpose (y,x,wave) => (wave,y,x) and re-normalize 
+	map_rescaled_spec_flux = np.transpose(rescaled_spec_flux, axes=(2,0,1))/unit
+	map_rescaled_spec_flux_err = np.transpose(rescaled_spec_flux_err, axes=(2,0,1))/unit
+	map_bfit_mod_spec_flux_trans = np.transpose(map_bfit_mod_spec_flux, axes=(2,0,1))/unit
 
-# transpose (y,x,wave) => (wave,y,x) and re-normalize 
-map_rescaled_spec_flux = np.transpose(rescaled_spec_flux, axes=(2,0,1))/unit
-map_rescaled_spec_flux_err = np.transpose(rescaled_spec_flux_err, axes=(2,0,1))/unit
-map_bfit_mod_spec_flux_trans = np.transpose(map_bfit_mod_spec_flux, axes=(2,0,1))/unit
 
+	# Store into FITS file 
+	hdul = fits.HDUList()
+	primary_hdu = fits.PrimaryHDU(header=header)
+	hdul.append(primary_hdu)
+	hdul.append(fits.ImageHDU(photo_gal_region, name='photo_region'))
+	hdul.append(fits.ImageHDU(spec_gal_region, name='spec_region'))
+	hdul.append(fits.ImageHDU(photo_flux, name='photo_flux'))
+	hdul.append(fits.ImageHDU(photo_flux_err, name='photo_fluxerr'))
+	hdul.append(fits.ImageHDU(spec_wave, name='wave'))
+	hdul.append(fits.ImageHDU(map_rescaled_spec_flux, name='spec_flux'))
+	hdul.append(fits.ImageHDU(map_rescaled_spec_flux_err , name='spec_fluxerr'))
+	hdul.append(fits.ImageHDU(map_bfit_mod_spec_wave, name='mod_wave'))
+	hdul.append(fits.ImageHDU(map_bfit_mod_spec_flux_trans, name='mod_flux'))
 
-# Store into FITS file 
-hdul = fits.HDUList()
-primary_hdu = fits.PrimaryHDU(header=header)
-hdul.append(primary_hdu)
-hdul.append(fits.ImageHDU(photo_gal_region, name='photo_region'))
-hdul.append(fits.ImageHDU(spec_gal_region, name='spec_region'))
-hdul.append(fits.ImageHDU(photo_flux, name='photo_flux'))
-hdul.append(fits.ImageHDU(photo_flux_err, name='photo_fluxerr'))
-hdul.append(fits.ImageHDU(spec_wave, name='wave'))
-hdul.append(fits.ImageHDU(map_rescaled_spec_flux, name='spec_flux'))
-hdul.append(fits.ImageHDU(map_rescaled_spec_flux_err , name='spec_fluxerr'))
-hdul.append(fits.ImageHDU(map_bfit_mod_spec_wave, name='mod_wave'))
-hdul.append(fits.ImageHDU(map_bfit_mod_spec_flux_trans, name='mod_flux'))
-
-# write to fits file
-hdul.writeto(name_out_fits, overwrite=True)
+	# write to fits file
+	hdul.writeto(name_out_fits, overwrite=True)
 
 
 

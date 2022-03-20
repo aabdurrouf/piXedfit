@@ -544,15 +544,16 @@ def specphoto_mangagalexsdss2masswise(photo_fluxmap=None, manga_file=None, pixsi
 
 
 
-def match_specphoto(specphoto_file=None,spec_sigma=3.5,name_saved_randmod=None,nproc=10,name_out_fits=None):
+def match_specphoto(specphoto_file=None,spec_sigma=3.5,name_saved_randmod=None,nproc=10,
+					del_wave_nebem=10.0,name_out_fits=None):
 
 	"""Function for correcting wavelength-dependent mismatch between IFS data and the multiwavelength photometric data. 
 	
 	:param specphoto_file:
 		Input spec+photo FITS file, which is an output from previous step: specphoto_califagalexsdss2masswise or specphoto_mangagalexsdss2masswise.
 
-	:param spec_sigma: (default: 3.5)
-		Spectral resolution in Angstrom.
+	:param spec_sigma: (default: 3.5).
+		Spectral resolution of the IFS data in Angstrom.
 
 	:param name_saved_randmod:
 		FITS file that contains random model SED templates to be used for fitting photometric SED. 
@@ -563,17 +564,21 @@ def match_specphoto(specphoto_file=None,spec_sigma=3.5,name_saved_randmod=None,n
 	:param nproc:
 		Number of cores for calculation.
 
-	:param name_out_fits:
-		Name of output FITS file.
+	:param del_wave_nebem: (default: 15.0 Angstrom).
+		The range (+/-) around emission lines in the model spectra that will be removed in producing continuum-only spectrum. 
+		This will be used as reference in correcting the wavelength-dependent mismatch between the IFS spectra and photometric SEDs.    
+
+	:param name_out_fits: (optional).
+		Desired name for the output FITS file.
 
 	"""
 
 	CODE_dir = PIXEDFIT_HOME+'/piXedfit/piXedfit_spectrophotometric/'
 
 	if name_out_fits==None:
-		name_out_fits= "match_%s" % specphoto_file
-	os.system("mpirun -n %d python %s./match_specphoto.py %s %s %lf %s" % (nproc,CODE_dir,specphoto_file,name_saved_randmod,
-																			spec_sigma,name_out_fits))
+		name_out_fits= "corr_%s" % specphoto_file
+	os.system("mpirun -n %d python %s./match_specphoto.py %s %s %lf %s %lf" % (nproc,CODE_dir,specphoto_file,name_saved_randmod,
+																			spec_sigma,name_out_fits,del_wave_nebem))
 
 	return name_out_fits
 

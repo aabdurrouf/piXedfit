@@ -98,6 +98,46 @@ def match_spectra_poly_legendre(in_spec_wave=[],in_spec_flux=[],ref_spec_wave=[]
 
 
 def match_spectra_poly_legendre_fit(sp=None,in_spec_wave=[],in_spec_flux=[],ref_spec_wave=[],ref_spec_flux=[],
+	wave_clean=[],z=0.001,del_wave_nebem=10.0,order=3):
+	""" Function for matching normalization og two spectra by multiplying one spectra with a smooth factor, 
+	which is derived from polynomial interpolation to the continuum flux ratio as a function of wavelength
+	"""
+
+	if len(wave_clean)==0:
+		# get wavelength grids (in the final wave sampling) that are free from emission lines:
+		wave_clean,wave_mask = get_no_nebem_wave_fit(sp,z,final_wave,del_wave_nebem)
+
+	# get flux ratio of continuum between the two spectra in the final wave sampling:
+	f = interp1d(in_spec_wave,in_spec_flux)
+	in_spec_flux_clean = f(wave_clean)
+	f = interp1d(ref_spec_wave,ref_spec_flux)
+	ref_spec_flux_clean = f(wave_clean)
+
+	flux_ratio = ref_spec_flux_clean/in_spec_flux_clean
+
+	# remove bad fluxes
+	idx = np.where((np.isnan(flux_ratio)==False) & (np.isinf(flux_ratio)==False))
+	if len(idx[0])>0:
+		flux_ratio = flux_ratio[idx[0]]
+		wave_clean = wave_clean[idx[0]]
+
+	# fit polynomial function
+	final_wave = in_spec_wave
+	poly_legendre = np.polynomial.legendre.Legendre.fit(wave_clean, flux_ratio, order)
+	factor = poly_legendre(final_wave)
+
+	# get final re-scaled spectrum
+	final_flux = in_spec_flux*factor
+
+	# get model/reference spectrum
+
+
+	return final_wave, final_flux, factor, ref_spec_flux_clean
+
+
+
+
+def old_match_spectra_poly_legendre_fit(sp=None,in_spec_wave=[],in_spec_flux=[],ref_spec_wave=[],ref_spec_flux=[],
 	final_wave=[],wave_clean=[],z=0.001,del_wave_nebem=10.0,order=3):
 	""" Function for matching normalization og two spectra by multiplying one spectra with a smooth factor, 
 	which is derived from polynomial interpolation to the continuum flux ratio as a function of wavelength

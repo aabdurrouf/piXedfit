@@ -183,20 +183,24 @@
 <span id="pixedfit-spectrophotometric"></span><h1>piXedfit_spectrophotometric<a class="headerlink" href="#module-piXedfit.piXedfit_spectrophotometric" title="Permalink to this headline">¶</a></h1>
 <dl class="py function">
 <dt id="piXedfit.piXedfit_spectrophotometric.match_specphoto">
-<code class="sig-prename descclassname">piXedfit.piXedfit_spectrophotometric.</code><code class="sig-name descname">match_specphoto</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">specphoto_file</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">spec_sigma</span><span class="o">=</span><span class="default_value">3.5</span></em>, <em class="sig-param"><span class="n">name_saved_randmod</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">nproc</span><span class="o">=</span><span class="default_value">10</span></em>, <em class="sig-param"><span class="n">name_out_fits</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#piXedfit.piXedfit_spectrophotometric.match_specphoto" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">piXedfit.piXedfit_spectrophotometric.</code><code class="sig-name descname">match_specphoto</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">specphoto_file</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">spec_sigma</span><span class="o">=</span><span class="default_value">3.5</span></em>, <em class="sig-param"><span class="n">name_saved_randmod</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">nproc</span><span class="o">=</span><span class="default_value">10</span></em>, <em class="sig-param"><span class="n">del_wave_nebem</span><span class="o">=</span><span class="default_value">10.0</span></em>, <em class="sig-param"><span class="n">name_out_fits</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#piXedfit.piXedfit_spectrophotometric.match_specphoto" title="Permalink to this definition">¶</a></dt>
 <dd><p>Function for correcting wavelength-dependent mismatch between IFS data and the multiwavelength photometric data.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>specphoto_file</strong> – Input spec+photo FITS file, which is an output from previous step: specphoto_califagalexsdss2masswise or specphoto_mangagalexsdss2masswise.</p></li>
 <li><p><strong>spec_sigma</strong> – (default: 3.5)
-Spectral resolution in Angstrom.</p></li>
+Spectral resolution of the IFS data in Angstrom.</p></li>
 <li><p><strong>name_saved_randmod</strong> – FITS file that contains random model SED templates to be used for fitting photometric SED.
 The best-fit model spectra will then be used as references for correcting wavelength-dependent mismatch
 between the IFS spectra and the photometric SEDs.This FITS file should have the same format as
 the output of the <a class="reference internal" href="piXedfit_model.html#piXedfit.piXedfit_model.save_models" title="piXedfit.piXedfit_model.save_models"><code class="xref py py-func docutils literal notranslate"><span class="pre">piXedfit.piXedfit_model.save_models()</span></code></a> function.</p></li>
 <li><p><strong>nproc</strong> – Number of cores for calculation.</p></li>
-<li><p><strong>name_out_fits</strong> – Name of output FITS file.</p></li>
+<li><p><strong>del_wave_nebem</strong> – (default: 15.0 Angstrom)
+The range (+/-) around emission lines in the model spectra that will be removed in producing continuum-only spectrum.
+This will be used as reference in correcting the wavelength-dependent mismatch between the IFS spectra and photometric SEDs.</p></li>
+<li><p><strong>name_out_fits</strong> – (optional)
+Desired name for the output FITS file.</p></li>
 </ul>
 </dd>
 </dl>
