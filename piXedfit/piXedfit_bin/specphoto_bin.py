@@ -1,10 +1,32 @@
+import numpy as np 
+import math
+import sys, os
+import operator
+from astropy.io import fits
+
+__all__ = ["pixel_binning_specphoto"]
 
 
+## Still under active development!
 
+def pixel_binning_specphoto(specphoto_map_fits=None, fits_binmap=None, SNR=None, name_out_fits=None):
+	"""Function for performing pixel binning on spectrophotometric data cube. 
 
+	:param specphoto_map_fits:
+		Input spectrophotometric data cube.
 
-### define function for pixel binning:
-def pixel_binning_specphoto(specphoto_map_fits=None, fits_binmap=None, SNR=None, out_fits_name=None):
+	:param fits_binmap:
+		Input FITS file photometric data cube that has been performed with pixel binning. 
+		This will be used for reference in pixel binning of the spectrophotometric data cube.
+
+	:param SNR: 
+		S/N thresholds in multiple bands, the same as that in :func:`piXedfit.piXedfit_bin.pixel_binning_photo`.
+
+	:param name_out_fits: (defult: None)
+		Desired name for the output FITS file.
+
+	"""
+
 	###================================###
 	#### get the specphoto_map:
 	cube = fits.open(specphoto_map_fits)
@@ -187,7 +209,7 @@ def pixel_binning_specphoto(specphoto_map_fits=None, fits_binmap=None, SNR=None,
 	primary_hdu = fits.PrimaryHDU(header=hdr)
 	hdul.append(primary_hdu)
 	## add pixel bin flag:
-	hdul.append(fits.ImageHDU(map_bin_flag_crop, name='bin_flag'))
+	hdul.append(fits.ImageHDU(map_bin_flag_crop, name='bin_map'))
 	## add map of bin flux:
 	hdul.append(fits.ImageHDU(map_bin_photo_fluxes, name='bin_photo_flux'))
 	## add map if bin flux error:
@@ -201,15 +223,8 @@ def pixel_binning_specphoto(specphoto_map_fits=None, fits_binmap=None, SNR=None,
 	## add spectroscopic masking maps to the HDU list:
 
 	## write to fits file:
-	if out_fits_name == None:
-		out_fits_name = "pixbin_%s" % specphoto_map_fits
-	hdul.writeto(out_fits_name, overwrite=True)
+	if name_out_fits == None:
+		name_out_fits = "pixbin_%s" % specphoto_map_fits
+	hdul.writeto(name_out_fits, overwrite=True)
 
-	pixbin = {}
-	pixbin["bin_flag"] = map_bin_flag_crop
-	pixbin["bin_flux"] = map_bin_photo_fluxes
-	pixbin["bin_fluxerr"] = map_bin_photo_flux_err
-	pixbin["spec_wave"] = wave
-	pixbin["bin_spec_flux"] = map_bin_spec_fluxes
-	pixbin["bin_spec_fluxerr"] = map_bin_spec_flux_err
-	return pixbin
+	return name_out_fits

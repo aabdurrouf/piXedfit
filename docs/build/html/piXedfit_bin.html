@@ -113,7 +113,7 @@
 <li class="toctree-l1"><a class="reference internal" href="piXedfit_model.html">piXedfit_model</a></li>
 <li class="toctree-l1"><a class="reference internal" href="piXedfit_fitting.html">piXedfit_fitting</a></li>
 <li class="toctree-l1"><a class="reference internal" href="piXedfit_analysis.html">piXedfit_analysis</a></li>
-<li class="toctree-l1"><a class="reference internal" href="filtering.html">filtering</a></li>
+<li class="toctree-l1"><a class="reference internal" href="utils.html">Utils</a></li>
 </ul>
 
             
@@ -211,7 +211,26 @@ Desired name for the output FITS file.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns name_out_fits</dt>
-<dd class="field-even"><p>Output FITS file.</p>
+<dd class="field-even"><p>(optional)
+Desired name of output FITS file.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="piXedfit.piXedfit_bin.pixel_binning_specphoto">
+<code class="sig-prename descclassname">piXedfit.piXedfit_bin.</code><code class="sig-name descname">pixel_binning_specphoto</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">specphoto_map_fits</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">fits_binmap</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">SNR</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">name_out_fits</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#piXedfit.piXedfit_bin.pixel_binning_specphoto" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function for performing pixel binning on spectrophotometric data cube.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>specphoto_map_fits</strong> – Input spectrophotometric data cube.</p></li>
+<li><p><strong>fits_binmap</strong> – Input FITS file photometric data cube that has been performed with pixel binning.
+This will be used for reference in pixel binning of the spectrophotometric data cube.</p></li>
+<li><p><strong>SNR</strong> – S/N thresholds in multiple bands, the same as that in <a class="reference internal" href="#piXedfit.piXedfit_bin.pixel_binning_photo" title="piXedfit.piXedfit_bin.pixel_binning_photo"><code class="xref py py-func docutils literal notranslate"><span class="pre">piXedfit.piXedfit_bin.pixel_binning_photo()</span></code></a>.</p></li>
+<li><p><strong>name_out_fits</strong> – (defult: None)
+Desired name for the output FITS file.</p></li>
+</ul>
 </dd>
 </dl>
 </dd></dl>

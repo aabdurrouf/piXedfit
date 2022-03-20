@@ -41,8 +41,8 @@ def pixel_binning_photo(flux_map_fits=None, filters=None, ref_band=None, Dmin_bi
 		Desired name for the output FITS file.
 
 	
-	:returns name_out_fits:
-		Output FITS file.
+	:returns name_out_fits: (optional)
+		Desired name of output FITS file.
 	"""
 
 	# input FITS file:

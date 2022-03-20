@@ -154,8 +154,7 @@ map_bfit_mod_spec_wave = spec_wave_clean
 map_bfit_mod_spec_flux = np.zeros((dim_y,dim_x,len(spec_wave_clean)))
 
 
-#for pp in range(0,npixs):
-for pp in range(0,10):
+for pp in range(0,npixs):
 	# obs SED
 	obs_flux = photo_flux_trans[rows[pp]][cols[pp]]
 	obs_flux_err = photo_flux_err_trans[rows[pp]][cols[pp]]
@@ -194,11 +193,11 @@ for pp in range(0,10):
 
 		count = count + 1
 
-		sys.stdout.write('\r')
-		sys.stdout.write('rank: %d  Calculation process: %d from %d  --->  %d%%' % (rank,count,len(recvbuf_idx),
-																					count*100/len(recvbuf_idx)))
-		sys.stdout.flush()
-	sys.stdout.write('\n')
+		#sys.stdout.write('\r')
+		#sys.stdout.write('rank: %d  Calculation process: %d from %d  --->  %d%%' % (rank,count,len(recvbuf_idx),
+		#																			count*100/len(recvbuf_idx)))
+		#sys.stdout.flush()
+	#sys.stdout.write('\n')
 
 	mod_chi2 = np.zeros(numDataPerRank*size)
 	mod_id = np.zeros(numDataPerRank*size)
