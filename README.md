@@ -8,9 +8,8 @@ broad-band images with an IFS data cube, pixel binning, performing SED fitting, 
 efficient analysis of the datasets of a large number of galaxies. Detailed description on **piXedfit** and demonstration of its performances 
 are presented in [Abdurro'uf et al. (2021)](https://ui.adsabs.harvard.edu/abs/2021ApJS..254...15A/abstract). 
 
-Documentation of **piXedfit** can be found at this [website](https://pixedfit.readthedocs.io/en/latest/index.html). 
-To get sense on how **piXedfit** works, the folder `examples` contains step-by-step demonstrations on how to use **piXedfit** for deriving spatially resolved 
-stellar population properties of a galaxy using a combination of 12-band imaging data from GALEX+SDSS+2MASS+WISE and the IFS data from [CALIFA](https://califa.caha.es/) survey.
+Detailed documentation of **piXedfit** is given at this [website](https://pixedfit.readthedocs.io/en/latest/index.html). 
+To get the first glance of how **piXedfit** works, the folder `examples` contains demonstrations on how to use this tool for measuring spatially resolved stellar population properties of a galaxy using a combination of 12-band imaging data (from GALEX, SDSS, 2MASS, and WISE) and IFS data from CALIFA.
 
 Some **animations** can be seen from: [images processing](https://github.com/aabdurrouf/piXedfit/blob/main/docs/source/demos_img_pros.rst), [pixel binning](https://github.com/aabdurrouf/piXedfit/blob/main/docs/source/demos_pixel_binning.rst), and [SED fitting](https://github.com/aabdurrouf/piXedfit/blob/main/docs/source/demos_sed_fitting.rst).
 
