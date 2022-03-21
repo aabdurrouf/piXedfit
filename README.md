@@ -59,7 +59,7 @@ of spaially resolved SED, without the need of using the image processing and pix
    SED plot (i.e., a plot showing recovery of the input SED by the best-fit model SED), and SFH plot (i.e., a plot showing inferred SFH from the fitting).
    
 ## Kernels
-Because of the large sizes of the kernel files, we do not upload them to this GitHub repository. We put the kernel files on this [link](https://drive.google.com/drive/folders/1pTRASNKLuckkY8_sl8WYeZ62COvcBtGn?usp=sharing). To be able to use image processing feature (`piXedfit_images`), you need to download the necessary kernel files. List of the kernel files needed for image processing would depend on the imaging data that will be analyzed.  
+Because of the large sizes of the kernel files, we do not upload them to this GitHub repository. We put the kernel files on this [link](https://drive.google.com/drive/folders/1pTRASNKLuckkY8_sl8WYeZ62COvcBtGn?usp=sharing). To be able to use image processing feature (`piXedfit_images`), you need to download the necessary kernel files and copy them to `/data/kernels`. List of the kernel files needed for image processing would depend on the imaging data that will be analyzed.  
    
 ## How to get the code
 Currently, we are working on documentation of **piXedfit** and we plan to publicly release the codes in next few month (before summer 2022). In the meantime, if you are interested in using **piXedfit**, please contact Abdurro'uf (abdurrouf@asiaa.sinica.edu.tw). We are very welcome to any ideas of researches employing **piXedfit**.  
