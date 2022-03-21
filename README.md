@@ -6,7 +6,7 @@ handle all tasks in the analysis of the spatially resolved SEDs of galaxies, inc
 broad-band images with an IFS data cube, pixel binning, performing SED fitting, and making visualization plots for the SED fitting results. 
 **piXedfit** is a versatile tool that has been equipped with the multiprocessing module, namely message passing interface or MPI, for 
 efficient analysis of the datasets of a large number of galaxies. Detailed description on **piXedfit** and demonstration of its performances 
-are presented in [Abdurro'uf et al. (2021)](https://ui.adsabs.harvard.edu/abs/2021arXiv210109717A/abstract). 
+are presented in [Abdurro'uf et al. (2021)](https://ui.adsabs.harvard.edu/abs/2021ApJS..254...15A/abstract). 
 
 Documentation of **piXedfit** can be found at this [website](https://pixedfit.readthedocs.io/en/latest/index.html). 
 To get sense on how **piXedfit** works, the folder `examples` contains step-by-step demonstrations on how to use **piXedfit** for deriving spatially resolved 
@@ -58,21 +58,45 @@ of spaially resolved SED, without the need of using the image processing and pix
    This module can make three plots for visualizing the fitting results: corner plot (i.e., a plot showing 1D and joint 2D posteriors of the parameters), 
    SED plot (i.e., a plot showing recovery of the input SED by the best-fit model SED), and SFH plot (i.e., a plot showing inferred SFH from the fitting).
    
-## How to get the code
-Currently, we are working on documentation of **piXedfit** and we plan to publicly release the codes in next few month (before summer 2022). In the meantime, if you are interested in using **piXedfit**, please contact Abdurro'uf (abdurrouf@asiaa.sinica.edu.tw). We are very welcome to any ideas of new researches using **piXedfit**.   
-
 ## Kernels
-Please download kernel files from [here](https://drive.google.com/drive/folders/1pTRASNKLuckkY8_sl8WYeZ62COvcBtGn?usp=sharing).
+Because of the large sizes of the kernel files, we do not upload them to this GitHub repository. We put the kernel files on this [link](https://drive.google.com/drive/folders/1pTRASNKLuckkY8_sl8WYeZ62COvcBtGn?usp=sharing). To be able to use image processing feature (`piXedfit_images`), you need to download the necessary kernel files. List of the kernel files needed for image processing would depend on the imaging data that will be analyzed.  
+   
+## How to get the code
+Currently, we are working on documentation of **piXedfit** and we plan to publicly release the codes in next few month (before summer 2022). In the meantime, if you are interested in using **piXedfit**, please contact Abdurro'uf (abdurrouf@asiaa.sinica.edu.tw). We are very welcome to any ideas of researches employing **piXedfit**.  
+
+## Citation
+If you use this code for your research, please reference [Abdurro'uf et al. (2021)](https://ui.adsabs.harvard.edu/abs/2021ApJS..254...15A/abstract):
+
+```
+@ARTICLE{2021ApJS..254...15A,
+       author = {{Abdurro'uf} and {Lin}, Yen-Ting and {Wu}, Po-Feng and {Akiyama}, Masayuki},
+        title = "{Introducing piXedfit: A Spectral Energy Distribution Fitting Code Designed for Resolved Sources}",
+      journal = {\apjs},
+     keywords = {Astronomical methods, Bayesian statistics, Galaxy evolution, Posterior distribution, 1043, 1900, 594, 1926, Astrophysics - Astrophysics of Galaxies},
+         year = 2021,
+        month = may,
+       volume = {254},
+       number = {1},
+          eid = {15},
+        pages = {15},
+          doi = {10.3847/1538-4365/abebe2},
+archivePrefix = {arXiv},
+       eprint = {2101.09717},
+ primaryClass = {astro-ph.GA},
+       adsurl = {https://ui.adsabs.harvard.edu/abs/2021ApJS..254...15A},
+      adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+}
+```
+
    
 ## Reference
 A list of some projects **piXedfit** is benefitted from:
-*  [FSPS](https://github.com/cconroy20/fsps) and [Python-FSPS](http://dfm.io/python-fsps/current/) stellar population synthesis model
-*  [emcee](https://emcee.readthedocs.io/en/stable/) package for the Affine Invariant Markov Chain Monte Carlo (MCMC) Ensemble sampler
 *  [Astropy](https://www.astropy.org/)
 *  [Photutils](https://photutils.readthedocs.io/en/stable/)
-*  [Aniano et al. (2011)](https://ui.adsabs.harvard.edu/abs/2011PASP..123.1218A/abstract) who provides convolution [kernels](https://www.astro.princeton.edu/~ganiano/Kernels.html) for the PSF matching
+*  [Aniano et al. (2011)](https://ui.adsabs.harvard.edu/abs/2011PASP..123.1218A/abstract) who provides convolution [kernels](https://www.astro.princeton.edu/~ganiano/Kernels.html)
+*  [FSPS](https://github.com/cconroy20/fsps) and [Python-FSPS](http://dfm.io/python-fsps/current/) stellar population synthesis model
+*  [emcee](https://emcee.readthedocs.io/en/stable/) package for the Affine Invariant Markov Chain Monte Carlo (MCMC) Ensemble sampler
 *  [SExtractor](https://www.astromatic.net/software/sextractor) ([Bertin & Arnouts 1996](https://ui.adsabs.harvard.edu/abs/1996A%26AS..117..393B/abstract))
-*  Abdurro'uf & Akiyama ([2017](https://ui.adsabs.harvard.edu/abs/2017MNRAS.469.2806A/abstract), [2018](https://ui.adsabs.harvard.edu/abs/2018MNRAS.479.5083A/abstract))
 
 
 
