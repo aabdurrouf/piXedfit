@@ -61,7 +61,7 @@ of spaially resolved SED, without the need of using the image processing and pix
 Because of the large sizes of the kernel files, we do not upload them to this GitHub repository. We put the kernel files on this [link](https://drive.google.com/drive/folders/1pTRASNKLuckkY8_sl8WYeZ62COvcBtGn?usp=sharing). To be able to use image processing feature (`piXedfit_images`), you need to download the necessary kernel files and copy them to `/data/kernels`. List of the kernel files needed for image processing would depend on the imaging data that will be analyzed.  
    
 ## How to get the code
-Currently, we are working on documentation of **piXedfit** and we plan to publicly release the codes in next few month (before summer 2022). In the meantime, if you are interested in using **piXedfit**, please contact Abdurro'uf (abdurrouf@asiaa.sinica.edu.tw). We are very welcome to any ideas of researches employing **piXedfit**.  
+Currently, we are working on documentation of **piXedfit** and we plan to publicly release the codes in the next few months (before summer 2022). In the meantime, if you are interested in using **piXedfit**, please contact Abdurro'uf (abdurrouf@asiaa.sinica.edu.tw).  
 
 ## Citation
 If you use this code for your research, please reference [Abdurro'uf et al. (2021)](https://ui.adsabs.harvard.edu/abs/2021ApJS..254...15A/abstract):
