@@ -208,6 +208,20 @@ def get_margin(sampler):
 def get_1D_PDF_posterior(sampler,min_sampler,max_sampler,nbins):
 	"""A function to derive a 1D PDF of posterior probability distribution.
 	"""
+	grid_sampler = np.linspace(min_sampler,max_sampler,nbins+1)
+	grid_prob = np.zeros(nbins)
+	for ii in range(0,nbins):
+		idx0 = np.where((sampler>=grid_sampler[ii]) & (sampler<grid_sampler[ii+1]))
+		grid_prob[ii] = len(idx0[0])
+
+	grid_prob = grid_prob/len(sampler)
+
+	return grid_sampler,grid_prob
+
+
+def get_1D_PDF_posterior_old(sampler,min_sampler,max_sampler,nbins):
+	"""A function to derive a 1D PDF of posterior probability distribution.
+	"""
 	nsamplers = len(sampler)
 	del_val = (max_sampler-min_sampler)/nbins
 	grid_min = np.zeros(nbins)
@@ -225,7 +239,25 @@ def get_1D_PDF_posterior(sampler,min_sampler,max_sampler,nbins):
 		grid_prob[int(ii)] = float(tot_prob/nsamplers)
 	return grid_min,grid_max,grid_prob
 
-def construct_1D_histogram(grid_min,grid_max,grid_prob):
+
+def construct_1D_histogram(grid_sampler,grid_prob):
+	"""A function to construct step histogram from an 1D PDF
+	"""
+	nbins = len(grid_sampler)-1
+	hist_val = []
+	hist_prob = []
+	hist_val.append(grid_sampler[0])
+	hist_prob.append(0)
+	for ii in range(0,int(nbins)):
+		hist_val.append(grid_sampler[ii])
+		hist_prob.append(grid_prob[ii])
+		hist_val.append(grid_sampler[ii+1])
+		hist_prob.append(grid_prob[ii])
+	hist_val.append(grid_sampler[int(nbins)])
+	hist_prob.append(0)
+	return hist_val,hist_prob 
+
+def construct_1D_histogram_old(grid_min,grid_max,grid_prob):
 	"""A function to construct step histogram from an 1D PDF
 	"""
 	nbins = len(grid_min)
@@ -240,9 +272,26 @@ def construct_1D_histogram(grid_min,grid_max,grid_prob):
 		hist_prob.append(grid_prob[int(ii)])
 	hist_val.append(grid_max[int(ii)-1])
 	hist_prob.append(0)
-	return hist_val,hist_prob   
+	return hist_val,hist_prob
+
 
 def get_2D_PDF_posterior(sampler1,min_sampler1,max_sampler1,nbins1,sampler2,min_sampler2,max_sampler2,nbins2):
+	"""A function to derive 2D posterior probability distribution
+	"""
+	grid_sampler1 = np.linspace(min_sampler1,max_sampler1,nbins1+1)
+	grid_sampler2 = np.linspace(min_sampler2,max_sampler2,nbins2+1)
+
+	prob_2D = np.zeros((nbins1,nbins2))
+	for yy in range(0,nbins1):
+		for xx in range(0,nbins2):
+			idx0 = np.where((sampler1>=grid_sampler1[yy]) & (sampler1<grid_sampler1[yy+1]) & (sampler2>=grid_sampler2[xx]) & (sampler2<grid_sampler2[xx+1]))
+			prob_2D[yy][xx] = len(idx0[0])
+
+	prob_2D = prob_2D/len(sampler1)
+	return prob_2D
+
+
+def get_2D_PDF_posterior_old(sampler1,min_sampler1,max_sampler1,nbins1,sampler2,min_sampler2,max_sampler2,nbins2):
 	"""A function to derive 2D posterior probability distribution
 	"""
 	nsamplers = len(sampler1)
@@ -250,34 +299,35 @@ def get_2D_PDF_posterior(sampler1,min_sampler1,max_sampler1,nbins1,sampler2,min_
 	min_grid_sampler1 = np.zeros(nbins1)
 	max_grid_sampler1 = np.zeros(nbins1)
 	for ii in range(0,nbins1):
-		min_grid_sampler1[int(ii)] = min_sampler1 + int(ii)*del_val1
-		max_grid_sampler1[int(ii)] = min_sampler1 + (int(ii)+1.0)*del_val1
+		min_grid_sampler1[ii] = min_sampler1 + (ii*del_val1)
+		max_grid_sampler1[ii] = min_sampler1 + ((ii+1.0)*del_val1)
 
 	del_val2 = (max_sampler2-min_sampler2)/nbins2
 	min_grid_sampler2 = np.zeros(nbins2)
 	max_grid_sampler2 = np.zeros(nbins2)
 	for ii in range(0,nbins2):
-		min_grid_sampler2[int(ii)] = min_sampler2 + int(ii)*del_val2
-		max_grid_sampler2[int(ii)] = min_sampler2 + (int(ii)+1.0)*del_val2
+		min_grid_sampler2[ii] = min_sampler2 + (ii*del_val2)
+		max_grid_sampler2[ii] = min_sampler2 + ((ii+1.0)*del_val2)
 
 	prob_2D = np.zeros((nbins1,nbins2))
 	for ii in range(0,nsamplers):
 		status1 = 0
 		status2 = 0
 		for yy in range(0,nbins1):
-			if min_grid_sampler1[int(yy)]<=sampler1[int(ii)]<max_grid_sampler1[int(yy)]:
-				idx_y = int(yy)
+			if min_grid_sampler1[yy]<=sampler1[ii]<max_grid_sampler1[yy]:
+				idx_y = yy
 				status1 = 1
 				break
 		for xx in range(0,nbins2):
-			if min_grid_sampler2[int(xx)]<=sampler2[int(ii)]<max_grid_sampler2[int(xx)]:
-				idx_x = int(xx)
+			if min_grid_sampler2[xx]<=sampler2[ii]<max_grid_sampler2[xx]:
+				idx_x = xx
 				status2 = 1
 				break
 		if status1==1 and status2==1:
 			temp = prob_2D[int(idx_y)][int(idx_x)]
 			prob_2D[int(idx_y)][int(idx_x)] = temp + float(1.0/nsamplers)
 	return prob_2D
+
 
 def calc_mode(sampler_chains0):
 	"""A function for calculating mode from a sampler chains
@@ -528,8 +578,10 @@ def plot_triangle_posteriors(param_samplers=[],label_params=[],true_params=[],po
 					elif post_mode_flag[p1]==1:
 						mode = calc_mode(param_samplers[p1])
 
-					grid_min,grid_max,grid_prob = get_1D_PDF_posterior(param_samplers[p1],x_min,x_max,nbins)
-					hist_val,hist_prob = construct_1D_histogram(grid_min,grid_max,grid_prob)
+					#grid_min,grid_max,grid_prob = get_1D_PDF_posterior(param_samplers[p1],x_min,x_max,nbins)
+					grid_sampler,grid_prob = get_1D_PDF_posterior(param_samplers[p1],x_min,x_max,nbins)
+					#hist_val,hist_prob = construct_1D_histogram(grid_min,grid_max,grid_prob)
+					hist_val,hist_prob = construct_1D_histogram(grid_sampler,grid_prob)
 					plot_line_histogram(f1,nbins,hist_prob,x_min,x_max,perc_16,perc_50,perc_84,mode,mean,true_params[p1])
 
 					if int(p1) == nparams-1:

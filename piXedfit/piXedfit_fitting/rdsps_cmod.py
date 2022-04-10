@@ -1,8 +1,8 @@
 import numpy as np
-import math
+from math import log10, pow
 import sys, os
 import fsps
-import operator
+from operator import itemgetter
 from mpi4py import MPI
 from astropy.io import fits
 from astropy.cosmology import *
@@ -56,22 +56,22 @@ def bayesian_sedfit_gauss():
 		norm0 = model_leastnorm(obs_fluxes,obs_flux_err,fluxes)
 		mod_fluxes0 = norm0*fluxes
 
-		sampler_log_mass_temp[int(count)] = math.log10(norm0)
-		sampler_log_sfr_temp[int(count)] = math.log10(SED_prop['SFR']*norm0)
+		sampler_log_mass_temp[int(count)] = log10(norm0)
+		sampler_log_sfr_temp[int(count)] = log10(SED_prop['SFR']*norm0)
 		if duste_switch == 'duste':
-			sampler_logdustmass_temp[int(count)] = math.log10(SED_prop['dust_mass']*norm0)
+			sampler_logdustmass_temp[int(count)] = log10(SED_prop['dust_mass']*norm0)
 		if add_agn == 1:
 			sampler_log_fagn_bol_temp[int(count)] = SED_prop['log_fagn_bol']
 
 		# calculate mass-weighted age
-		age = math.pow(10.0,params_val['log_age'])
-		tau = math.pow(10.0,params_val['log_tau'])
-		t0 = math.pow(10.0,params_val['log_t0'])
-		alpha = math.pow(10.0,params_val['log_alpha'])
-		beta = math.pow(10.0,params_val['log_beta'])
+		age = pow(10.0,params_val['log_age'])
+		tau = pow(10.0,params_val['log_tau'])
+		t0 = pow(10.0,params_val['log_t0'])
+		alpha = pow(10.0,params_val['log_alpha'])
+		beta = pow(10.0,params_val['log_beta'])
 		mw_age = calc_mw_age(sfh_form=sfh_form,tau=tau,t0=t0,alpha=alpha,beta=beta,
 											age=age,formed_mass=SED_prop['SM']*norm0)
-		sampler_log_mw_age_temp[int(count)] = math.log10(mw_age)
+		sampler_log_mw_age_temp[int(count)] = log10(mw_age)
 
 		# calculate chi-square and prob
 		chi2 = calc_chi2(obs_fluxes,obs_flux_err,mod_fluxes0)
@@ -126,7 +126,7 @@ def bayesian_sedfit_gauss():
 	modif_obs_flux_err = np.zeros(nbands)
 
 	if rank == 0:
-		idx0, min_val = min(enumerate(mod_chi2), key=operator.itemgetter(1))
+		idx0, min_val = min(enumerate(mod_chi2), key=itemgetter(1))
 
 		fluxes = np.zeros(nbands)
 		for bb in range(0,nbands):
@@ -265,22 +265,22 @@ def bayesian_sedfit_student_t():
 		norm0 = model_leastnorm(obs_fluxes,obs_flux_err,fluxes)
 		mod_fluxes0 = norm0*fluxes
 
-		sampler_log_mass_temp[int(count)] = math.log10(norm0)
-		sampler_log_sfr_temp[int(count)] = math.log10(SED_prop['SFR']*norm0)
+		sampler_log_mass_temp[int(count)] = log10(norm0)
+		sampler_log_sfr_temp[int(count)] = log10(SED_prop['SFR']*norm0)
 		if duste_switch == 'duste':
-			sampler_logdustmass_temp[int(count)] = math.log10(SED_prop['dust_mass']*norm0)
+			sampler_logdustmass_temp[int(count)] = log10(SED_prop['dust_mass']*norm0)
 		if add_agn == 1:
 			sampler_log_fagn_bol_temp[int(count)] = SED_prop['log_fagn_bol']
 
 		# calculate mass-weighted age:
-		age = math.pow(10.0,params_val['log_age'])
-		tau = math.pow(10.0,params_val['log_tau'])
-		t0 = math.pow(10.0,params_val['log_t0'])
-		alpha = math.pow(10.0,params_val['log_alpha'])
-		beta = math.pow(10.0,params_val['log_beta'])
+		age = pow(10.0,params_val['log_age'])
+		tau = pow(10.0,params_val['log_tau'])
+		t0 = pow(10.0,params_val['log_t0'])
+		alpha = pow(10.0,params_val['log_alpha'])
+		beta = pow(10.0,params_val['log_beta'])
 		mw_age = calc_mw_age(sfh_form=sfh_form,tau=tau,t0=t0,alpha=alpha,beta=beta,
 											age=age,formed_mass=SED_prop['SM']*norm0)
-		sampler_log_mw_age_temp[int(count)] = math.log10(mw_age)
+		sampler_log_mw_age_temp[int(count)] = log10(mw_age)
 
 		# calculate chi-square and prob.
 		chi2 = calc_chi2(obs_fluxes,obs_flux_err,mod_fluxes0)
@@ -332,7 +332,7 @@ def bayesian_sedfit_student_t():
 	modif_obs_flux_err = np.zeros(nbands)
 
 	if rank == 0:
-		idx0, min_val = min(enumerate(mod_chi2), key=operator.itemgetter(1))
+		idx0, min_val = min(enumerate(mod_chi2), key=itemgetter(1))
 
 		fluxes = np.zeros(nbands)
 		for bb in range(0,nbands):

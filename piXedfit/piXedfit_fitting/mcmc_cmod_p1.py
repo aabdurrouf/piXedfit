@@ -1,9 +1,8 @@
 import numpy as np
-import math
 import sys, os
 import fsps
 import emcee
-import operator
+from operator import itemgetter
 from mpi4py import MPI
 from astropy.io import fits
 from schwimmbad import MPIPool
@@ -81,7 +80,7 @@ def initfit_new():
 		lowest_chi2 = np.zeros(1)
 
 		# get model with lowest chi-square: adjusting flux uncertainties, accounting for systematic error 
-		idx0, min_val = min(enumerate(mod_chi2), key=operator.itemgetter(1))
+		idx0, min_val = min(enumerate(mod_chi2), key=itemgetter(1))
 
 		# best-fit model SED
 		fluxes = np.zeros(nbands)
@@ -188,7 +187,7 @@ def initfit(increase_ferr,mod_params0,mod_fluxes0):
 			modif_obs_flux_err = np.zeros(nbands)   		# default: 0
 			params_chi2min_initfit = np.zeros(nparams)  	# include norm
 			# get model with lowest chi-square: adjusting flux uncertainties, accounting for systematic error 
-			idx0, min_val = min(enumerate(mod_chi2), key=operator.itemgetter(1))
+			idx0, min_val = min(enumerate(mod_chi2), key=itemgetter(1))
 			# best-fit model SED
 			fluxes = np.zeros(nbands)
 			for bb in range(0,nbands):
@@ -250,7 +249,7 @@ def initfit(increase_ferr,mod_params0,mod_fluxes0):
 		comm.Gather(mod_chi2_temp, mod_chi2, root=0)
 
 		if rank == 0:
-			idx0, min_val = min(enumerate(mod_chi2), key=operator.itemgetter(1))
+			idx0, min_val = min(enumerate(mod_chi2), key=itemgetter(1))
 
 			params_chi2min_initfit = np.zeros(nparams)  	# include log_norm
 			for pp in range(0,nparams-1):

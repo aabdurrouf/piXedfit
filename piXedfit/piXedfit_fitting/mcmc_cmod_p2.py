@@ -1,9 +1,8 @@
 import numpy as np
-import math
+from math import log10, pow
 import sys, os
 import fsps
 import emcee
-import operator
 from mpi4py import MPI
 from astropy.io import fits
 
@@ -177,8 +176,8 @@ def calc_sampler_dustmass_fagnbol_mainSFH(nsamples=0,sampler_params=None):
 			params_val[params[pp]] = sampler_params[params[pp]][int(ii)] 
 		dust_mass, fagn_bol = get_dust_mass_fagnbol_mainSFH_fit(sp=sp,imf_type=imf,sfh_form=sfh_form,params_fsps=params_fsps, params_val=params_val)
 
-		sampler_logdustmass0[int(count)] = math.log10(dust_mass)
-		sampler_log_fagn_bol0[int(count)] = math.log10(fagn_bol) 
+		sampler_logdustmass0[int(count)] = log10(dust_mass)
+		sampler_log_fagn_bol0[int(count)] = log10(fagn_bol) 
 
 		count = count + 1
 		#sys.stdout.write('\r')
@@ -212,7 +211,7 @@ def calc_sampler_dustmass_mainSFH(nsamples=0,sampler_params=None):
 		for pp in range(0,nparams):
 			params_val[params[pp]] = sampler_params[params[pp]][int(ii)] 
 		dust_mass = get_dust_mass_mainSFH_fit(sp=sp,imf_type=imf,sfh_form=sfh_form,params_fsps=params_fsps, params_val=params_val)
-		sampler_logdustmass0[int(count)] = math.log10(dust_mass)
+		sampler_logdustmass0[int(count)] = log10(dust_mass)
 
 		count = count + 1
 		#sys.stdout.write('\r')
@@ -241,7 +240,7 @@ def calc_sampler_dustmass_othSFH(nsamples=0,sampler_params=None):
 		for pp in range(0,nparams):
 			params_val[params[pp]] = sampler_params[params[pp]][int(ii)] 
 		dust_mass = get_dust_mass_othSFH_fit(sp=sp,imf_type=imf,sfh_form=sfh_form,params_fsps=params_fsps, params_val=params_val)
-		sampler_logdustmass0[int(count)] = math.log10(dust_mass)
+		sampler_logdustmass0[int(count)] = log10(dust_mass)
 
 		count = count + 1
 
@@ -274,11 +273,11 @@ def calc_sampler_SFR_dustmass_fagnbol_othSFH(nsamples=0,sampler_params=None):
 
 		SFR, dust_mass, log_fagn_bol = get_sfr_dust_mass_fagnbol_othSFH_fit(sp=sp,imf_type=imf,sfh_form=sfh_form,params_fsps=params_fsps, params_val=params_val)
 
-		sampler_log_sfr0[int(count)] = math.log10(SFR)
+		sampler_log_sfr0[int(count)] = log10(SFR)
 		if dust_mass <= 0:
 			sampler_logdustmass0[int(count)] = -99.0
 		elif dust_mass > 0:
-			sampler_logdustmass0[int(count)] = math.log10(dust_mass)
+			sampler_logdustmass0[int(count)] = log10(dust_mass)
 
 		sampler_log_fagn_bol0[int(count)] = log_fagn_bol
 
@@ -318,11 +317,11 @@ def calc_sampler_SFR_dustmass_othSFH(nsamples=0,sampler_params=None):
 		for pp in range(0,nparams):
 			params_val[params[pp]] = sampler_params[params[pp]][int(ii)] 
 		SFR,dust_mass = get_sfr_dust_mass_othSFH_fit(sp=sp,imf_type=imf,sfh_form=sfh_form,params_fsps=params_fsps, params_val=params_val)
-		sampler_log_sfr0[int(count)] = math.log10(SFR)
+		sampler_log_sfr0[int(count)] = log10(SFR)
 		if dust_mass <= 0:
 			sampler_logdustmass0[int(count)] = -99.0
 		elif dust_mass > 0:
-			sampler_logdustmass0[int(count)] = math.log10(dust_mass)
+			sampler_logdustmass0[int(count)] = log10(dust_mass)
 
 		count = count + 1
 		
@@ -350,22 +349,22 @@ def calc_sampler_SFR_othSFH(nsamples=0,sampler_params=None):
 
 	count = 0
 	for ii in recvbuf_idx:
-		tau = math.pow(10.0,sampler_params['log_tau'][int(ii)])
-		age = math.pow(10.0,sampler_params['log_age'][int(ii)])
-		formed_mass = math.pow(10.0,sampler_params['log_mass'][int(ii)])
+		tau = pow(10.0,sampler_params['log_tau'][int(ii)])
+		age = pow(10.0,sampler_params['log_age'][int(ii)])
+		formed_mass = pow(10.0,sampler_params['log_mass'][int(ii)])
 		t0 = 0.0
 		alpha = 0.0
 		beta = 0.0
 
 		if sfh_form == 'log_normal_sfh' or sfh_form == 'gaussian_sfh':
-			t0 = math.pow(10.0,sampler_params['log_t0'][int(ii)])
+			t0 = pow(10.0,sampler_params['log_t0'][int(ii)])
 		if sfh_form == 'double_power_sfh':
-			alpha = math.pow(10.0,sampler_params['log_alpha'][int(ii)])
-			beta = math.pow(10.0,sampler_params['log_beta'][int(ii)])
+			alpha = pow(10.0,sampler_params['log_alpha'][int(ii)])
+			beta = pow(10.0,sampler_params['log_beta'][int(ii)])
 		
 		t, SFR_t = construct_SFH(sfh_form=sfh_form,t0=t0,tau=tau,alpha=alpha,beta=beta,age=age,formed_mass=formed_mass)
 
-		sampler_log_sfr0[int(count)] = math.log10(SFR_t[len(t)-1])
+		sampler_log_sfr0[int(count)] = log10(SFR_t[len(t)-1])
 
 		count = count + 1
 		#sys.stdout.write('\r')
