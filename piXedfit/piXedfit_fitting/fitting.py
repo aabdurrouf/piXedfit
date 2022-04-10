@@ -94,8 +94,8 @@ def singleSEDfit(obs_flux=[],obs_flux_err=[],filters=[],gal_z=-99.0,imf_type=1,s
 		Only relevant for 2 cases: (1) fit_method='rdsps' and likelihood='gauss', and (2) fit_method='mcmc'.
 		gauss_likelihood_form=0 means the Gaussian likelihood function uses the original/full Gaussian function form, whereas gauss_likelihood_form=1 means the likelihood function uses simplified form: P=exp(-0.5*chi^2).
 
-	:param name_saved_randmod: (**Mandatory in the current version**)
-		Name of the FITS file that contains pre-calculated model SEDs. As for the current version of **piXedfit**, this parameter is mandatory, meaning that a set of model SEDs (stored in FITS file) should be 
+	:param name_saved_randmod: (Mandatory)
+		Name of the FITS file that contains pre-calculated model SEDs. This is mandatory, meaning that a set of model SEDs (stored in FITS file) should be 
 		generated before performing SED fitting. The task of generatig set of random model SEDs can be done using :func:`save_models` function in :mod:`piXedfit_model` module.
 
 	:param nrandmod: (default: 0)
@@ -279,8 +279,12 @@ def singleSEDfit(obs_flux=[],obs_flux_err=[],filters=[],gal_z=-99.0,imf_type=1,s
 	if fit_method=='rdsps' or fit_method=='RDSPS':
 		file_out.write("likelihood %s\n" % likelihood)
 		file_out.write("dof %lf\n" % dof)
-	if name_saved_randmod != None:
-		file_out.write("name_saved_randmod %s\n" % name_saved_randmod)
+
+	if name_saved_randmod == None:
+		print ("name_saved_randmod is mandatory input!")
+		sys.exit()
+	file_out.write("name_saved_randmod %s\n" % name_saved_randmod)
+
 	file_out.write("gauss_likelihood_form %d\n" % gauss_likelihood_form)
 	# redshift
 	file_out.write("gal_z %lf\n" % gal_z)
@@ -312,35 +316,42 @@ def singleSEDfit(obs_flux=[],obs_flux_err=[],filters=[],gal_z=-99.0,imf_type=1,s
 			name_out_fits = "rdsps_fit%d.fits" % random_int
 
 	if fit_method=='mcmc' or fit_method=='MCMC':
-		if name_saved_randmod == None:
-			os.system("mpirun -n %d python %s./mcmc_cmod_p1.py %s %s %s %s %s %s" % (nproc,CODE_dir,name_filters_list,name_config,
-																						name_SED_txt,name_params_list,name_sampler_list,
-																						name_modif_obs_photo_SED))
-			os.system('mv %s %s' % (name_params_list,temp_dir))
-			os.system('mv %s %s' % (name_sampler_list,temp_dir))
-			os.system('mv %s %s' % (name_modif_obs_photo_SED,temp_dir))
-			os.system("mpirun -n %d python %s./mcmc_cmod_p2.py %s %s %s %s %s %s" % (nproc_new,CODE_dir,name_filters_list,name_config,
-																					name_params_list,name_sampler_list,
-																					name_modif_obs_photo_SED,name_out_fits))
-
-		elif name_saved_randmod !=None:
+		if store_full_samplers==1 or store_full_samplers==True:
 			os.system("mpirun -n %d python %s./mcmc_pcmod_p1.py %s %s %s %s %s %s" % (nproc,CODE_dir,name_filters_list,name_config,
-																						name_SED_txt,name_params_list,name_sampler_list,
-																						name_modif_obs_photo_SED))
+																							name_SED_txt,name_params_list,name_sampler_list,
+																							name_modif_obs_photo_SED))
 			os.system('mv %s %s' % (name_params_list,temp_dir))
 			os.system('mv %s %s' % (name_sampler_list,temp_dir))
 			os.system('mv %s %s' % (name_modif_obs_photo_SED,temp_dir))
 			os.system("mpirun -n %d python %s./mcmc_pcmod_p2.py %s %s %s %s %s %s" % (nproc_new,CODE_dir,name_filters_list,name_config,
-																					name_params_list,name_sampler_list,
-																					name_modif_obs_photo_SED,name_out_fits))
+																						name_params_list,name_sampler_list,
+																						name_modif_obs_photo_SED,name_out_fits))
+		elif store_full_samplers==0 or store_full_samplers==False:
+			os.system("mpirun -n %d python %s./mcmc_pcmod_nsamp_p1.py %s %s %s %s %s %s" % (nproc,CODE_dir,name_filters_list,name_config,
+																							name_SED_txt,name_params_list,name_sampler_list,
+																							name_modif_obs_photo_SED))
+			os.system('mv %s %s' % (name_params_list,temp_dir))
+			os.system('mv %s %s' % (name_sampler_list,temp_dir))
+			os.system('mv %s %s' % (name_modif_obs_photo_SED,temp_dir))
+			os.system("mpirun -n %d python %s./mcmc_pcmod_nsamp_p2.py %s %s %s %s %s %s" % (nproc_new,CODE_dir,name_filters_list,name_config,
+																						name_params_list,name_sampler_list,
+																						name_modif_obs_photo_SED,name_out_fits))
+		else:
+			print ("Input store_full_samplers not recognized!")
+			sys.exit()
+
 
 	elif fit_method=='rdsps' or fit_method=='RDSPS':
-		if name_saved_randmod == None:
-			os.system("mpirun -n %d python %s./rdsps_cmod.py %s %s %s %s" % (nproc_new,CODE_dir,name_filters_list,name_config,name_SED_txt,
-																			name_out_fits))
-		elif name_saved_randmod != None:
+		if store_full_samplers==1 or store_full_samplers==True:
 			os.system("mpirun -n %d python %s./rdsps_pcmod.py %s %s %s %s" % (nproc_new,CODE_dir,name_filters_list,name_config,name_SED_txt,
 																			name_out_fits))
+		elif store_full_samplers==0 or store_full_samplers==False:
+			os.system("mpirun -n %d python %s./rdsps_pcmod_nsamp.py %s %s %s %s" % (nproc_new,CODE_dir,name_filters_list,name_config,name_SED_txt,
+																			name_out_fits))
+		else:
+			print ("Input store_full_samplers not recognized!")
+			sys.exit()
+
 	else:
 		print ("The input fit_method is not recognized!")
 		sys.exit()
