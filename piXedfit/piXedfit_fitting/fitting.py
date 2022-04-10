@@ -430,7 +430,7 @@ def SEDfit_from_binmap(fits_binmap=None,binid_range=[],bin_ids=[],filters=None,g
 		gauss_likelihood_form=0 means the Gaussian likelihood function uses the original/full Gaussian function form, whereas gauss_likelihood_form=1 means the likelihood function uses simplified form: P=exp(-0.5*chi^2).
 
 	:param name_saved_randmod: (**Mandatory in the current version**)
-		Name of the FITS file that contains pre-calculated model SEDs. Ass for the current version of **piXedfit**, this parameter is mandatory, meaning that a set of model SEDs (stored in FITS file) should be 
+		Name of the FITS file that contains pre-calculated model SEDs. As for the current version of **piXedfit**, this parameter is mandatory, meaning that a set of model SEDs (stored in FITS file) should be 
 		generated before performing SED fitting. The task of generatig set of random model SEDs can be done using :func:`save_models` function in :mod:`piXedfit_model` module.
 
 	:param nrandmod: (default: 0)

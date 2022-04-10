@@ -232,7 +232,7 @@ Choice for the Gaussian likelihood function. Options are: (1)0 for full/original
 Only relevant for 2 cases: (1) fit_method=’rdsps’ and likelihood=’gauss’, and (2) fit_method=’mcmc’.
 gauss_likelihood_form=0 means the Gaussian likelihood function uses the original/full Gaussian function form, whereas gauss_likelihood_form=1 means the likelihood function uses simplified form: P=exp(-0.5*chi^2).</p></li>
 <li><p><strong>name_saved_randmod</strong> – (<strong>Mandatory in the current version</strong>)
-Name of the FITS file that contains pre-calculated model SEDs. Ass for the current version of <strong>piXedfit</strong>, this parameter is mandatory, meaning that a set of model SEDs (stored in FITS file) should be
+Name of the FITS file that contains pre-calculated model SEDs. As for the current version of <strong>piXedfit</strong>, this parameter is mandatory, meaning that a set of model SEDs (stored in FITS file) should be
 generated before performing SED fitting. The task of generatig set of random model SEDs can be done using <code class="xref py py-func docutils literal notranslate"><span class="pre">save_models()</span></code> function in <code class="xref py py-mod docutils literal notranslate"><span class="pre">piXedfit_model</span></code> module.</p></li>
 <li><p><strong>nrandmod</strong> – (default: 0)
 Number of random model SEDs to be generated for the initial fitting. This paremeter is only relevant if name_saved_randmod=None.
