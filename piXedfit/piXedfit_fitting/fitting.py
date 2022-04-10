@@ -33,7 +33,7 @@ def singleSEDfit(obs_flux=[],obs_flux_err=[],filters=[],gal_z=-99.0,imf_type=1,s
 	log_alpha_range=[-2.0,2.0],log_beta_range=[-2.0,2.0],log_t0_range=[-1.0,1.14],dust_index_range=[-0.7,-0.7],dust1_range=[0.0,3.0],dust2_range=[0.0,3.0],
 	log_gamma_range=[-3.0,-0.824],log_umin_range=[-1.0,1.176],log_qpah_range=[-1.0,0.845], z_range=[-99.0,-99.0],log_fagn_range=[-5.0,0.48],
 	log_tauagn_range=[0.70,2.18],del_lognorm=[-2.0,2.0],fit_method='mcmc',likelihood='gauss', dof=2.0, gauss_likelihood_form=0, name_saved_randmod=None, 
-	gridding_z=0, nrandmod=0, nrand_z=10, redc_chi2_initfit=2.0, nwalkers=100, nsteps=600, nsteps_cut=50, width_initpos=0.08, nproc=10, 
+	nrandmod=0, nrand_z=10, redc_chi2_initfit=2.0, nwalkers=100, nsteps=600, nsteps_cut=50, width_initpos=0.08, nproc=10, 
 	cosmo=0,H0=70.0,Om0=0.3,name_out_fits=None):
 	"""Function for performing SED fitting to a single photometric SED.
 
@@ -98,9 +98,6 @@ def singleSEDfit(obs_flux=[],obs_flux_err=[],filters=[],gal_z=-99.0,imf_type=1,s
 	:param name_saved_randmod: (**Mandatory in the current version**)
 		Name of the FITS file that contains pre-calculated model SEDs. Ass for the current version of **piXedfit**, this parameter is mandatory, meaning that a set of model SEDs (stored in FITS file) should be 
 		generated before performing SED fitting. The task of generatig set of random model SEDs can be done using :func:`save_models` function in :mod:`piXedfit_model` module.
-
-	:param gridding_z: (**Not available in the current version**, default: 0)
-		A status of whether the pre-calculated model SED is in grids of redshifts (value: 1 or True) or at a single value of redshift (value: 0 or False).
 
 	:param nrandmod: (default: 0)
 		Number of random model SEDs to be generated for the initial fitting. This paremeter is only relevant if name_saved_randmod=None.
@@ -342,25 +339,8 @@ def singleSEDfit(obs_flux=[],obs_flux_err=[],filters=[],gal_z=-99.0,imf_type=1,s
 			os.system("mpirun -n %d python %s./rdsps_cmod.py %s %s %s %s" % (nproc_new,CODE_dir,name_filters_list,name_config,name_SED_txt,
 																			name_out_fits))
 		elif name_saved_randmod != None:
-			if gridding_z==False or gridding_z==0:
-				os.system("mpirun -n %d python %s./rdsps_pcmod.py %s %s %s %s" % (nproc_new,CODE_dir,name_filters_list,name_config,name_SED_txt,
+			os.system("mpirun -n %d python %s./rdsps_pcmod.py %s %s %s %s" % (nproc_new,CODE_dir,name_filters_list,name_config,name_SED_txt,
 																			name_out_fits))
-
-			elif gridding_z==True or gridding_z==1:
-				if gal_z > 0.0:
-					os.system("mpirun -n %d python %s./rdsps_pcmod_gz_fz.py %s %s %s %s" % (nproc_new,CODE_dir,name_filters_list,
-																							name_config,name_SED_txt,name_out_fits))
-				else:
-					if z_range[0] == z_range[1]:
-						print ("z_range[0] and z_range[1] should be different!")
-						sys.exit()
-					elif z_range[0]<0 or z_range[1]<0:
-						print ("z_range[0] and z_range[1] should be positive values!")
-						sys.exit()
-					else:
-						os.system("mpirun -n %d python %s./rdsps_pcmod_gz_vz.py %s %s %s %s" % (nproc_new,CODE_dir,name_filters_list,name_config,
-																								name_SED_txt,name_out_fits))
-
 	else:
 		print ("The input fit_method is not recognized!")
 		sys.exit()
@@ -381,7 +361,7 @@ def SEDfit_from_binmap(fits_binmap=None,binid_range=[],bin_ids=[],filters=None,g
 	log_alpha_range=[-2.0,2.0],log_beta_range=[-2.0,2.0],log_t0_range=[-1.0,1.14],dust_index_range=[-0.7,-0.7],dust1_range=[0.0,3.0],
 	dust2_range=[0.0,3.0],log_gamma_range=[-3.0,-0.824],log_umin_range=[-1.0,1.176],log_qpah_range=[-1.0,0.845], z_range=[-99.0,-99.0],
 	log_fagn_range=[-5.0,0.48],log_tauagn_range=[0.70,2.18],del_lognorm=[-2.0,2.0],fit_method='mcmc',likelihood='gauss', dof=3.0, 
-	gauss_likelihood_form=0, name_saved_randmod=None, gridding_z=False, nrandmod=0, nrand_z=10, redc_chi2_initfit=2.0, nwalkers=100, 
+	gauss_likelihood_form=0, name_saved_randmod=None, nrandmod=0, nrand_z=10, redc_chi2_initfit=2.0, nwalkers=100, 
 	nsteps=600, nsteps_cut=50, width_initpos=0.08, nproc=10, cosmo=0,H0=70.0,Om0=0.3,name_out_fits=[]):
 
 	"""A function for performing SED fitting to set of spatially resolved SEDs from the reduced data cube that is produced after the pixel binning. 
@@ -452,9 +432,6 @@ def SEDfit_from_binmap(fits_binmap=None,binid_range=[],bin_ids=[],filters=None,g
 	:param name_saved_randmod: (**Mandatory in the current version**)
 		Name of the FITS file that contains pre-calculated model SEDs. Ass for the current version of **piXedfit**, this parameter is mandatory, meaning that a set of model SEDs (stored in FITS file) should be 
 		generated before performing SED fitting. The task of generatig set of random model SEDs can be done using :func:`save_models` function in :mod:`piXedfit_model` module.
-
-	:param gridding_z: (**Not available in the current version**, default: 0)
-		A status of whether the pre-calculated model SED is in grids of redshifts (value: 1 or True) or at a single value of redshift (value: 0 or False).
 
 	:param nrandmod: (default: 0)
 		Number of random model SEDs to be generated for the initial fitting. This paremeter is only relevant if name_saved_randmod=None.
@@ -535,19 +512,33 @@ def SEDfit_from_binmap(fits_binmap=None,binid_range=[],bin_ids=[],filters=None,g
 				idx_fil[ii] = jj
 
 	# observed SEDs of all bins
-	dim_y = pix_bin_flag.shape[0]
-	dim_x = pix_bin_flag.shape[1]
+	#dim_y = pix_bin_flag.shape[0]
+	#dim_x = pix_bin_flag.shape[1]
+	#nbins = int(np.max(pix_bin_flag))
+	#unit = float(header['unit'])
+	#obs_flux_all = np.zeros((nbins,nbands))
+	#obs_flux_err_all = np.zeros((nbins,nbands))
+	#for yy in range(0,dim_y):
+	#	for xx in range(0,dim_x):
+	#		idx_bin = pix_bin_flag[yy][xx]-1
+	#		if idx_bin>=0:
+	#			for bb in range(0,nbands):
+	#				obs_flux_all[int(idx_bin)][bb] = bin_flux[int(idx_fil[bb])][yy][xx]*unit
+	#				obs_flux_err_all[int(idx_bin)][bb] = bin_flux_err[int(idx_fil[bb])][yy][xx]*unit
+
+	# transpose from (wave,y,x) => (y,x,wave)
+	bin_flux_trans = np.transpose(bin_flux, axes=(1,2,0))
+	bin_flux_err_trans = np.transpose(bin_flux_err, axes=(1,2,0))
+
+	# get observed SEDs of all bins
 	nbins = int(np.max(pix_bin_flag))
 	unit = float(header['unit'])
 	obs_flux_all = np.zeros((nbins,nbands))
 	obs_flux_err_all = np.zeros((nbins,nbands))
-	for yy in range(0,dim_y):
-		for xx in range(0,dim_x):
-			idx_bin = pix_bin_flag[yy][xx]-1
-			if idx_bin>=0:
-				for bb in range(0,nbands):
-					obs_flux_all[int(idx_bin)][bb] = bin_flux[int(idx_fil[bb])][yy][xx]*unit
-					obs_flux_err_all[int(idx_bin)][bb] = bin_flux_err[int(idx_fil[bb])][yy][xx]*unit
+	for bb in range(0,nbins):
+		rows, cols = np.where(pix_bin_flag==bb+1)
+		obs_flux_all[bb] = bin_flux_trans[rows[0]][cols[0]]*unit
+		obs_flux_err_all[bb] = bin_flux_err_trans[rows[0]][cols[0]]*unit
 
 	# make text file containing list of filters:
 	name_filters_list = "filters_list%d.dat" % (random.randint(0,10000))
@@ -712,7 +703,6 @@ def SEDfit_from_binmap(fits_binmap=None,binid_range=[],bin_ids=[],filters=None,g
 			for ii in range(binid_min,binid_max):
 				bin_ids[int(count_id)] = ii
 				count_id = count_id + 1
-
 
 	if 0<len(name_out_fits)<nbins_calc:
 		print ("The number of elements in name_out_fits should be the same as the number of bins to be calculated!")
@@ -1275,12 +1265,13 @@ def map_params_mcmc(fits_binmap=None, name_chains_fits=[], fits_fluxmap=None, re
 	nindexes = len(indexes)
 
 	# get galaxy_region map
-	galaxy_region = np.zeros((dim_y,dim_x))
-	for yy in range(0,dim_y):
-		for xx in range(0,dim_x):
-			if pix_bin_flag[yy][xx]>=1:
-				galaxy_region[yy][xx] = 1
-
+	#galaxy_region = np.zeros((dim_y,dim_x))
+	#for yy in range(0,dim_y):
+	#	for xx in range(0,dim_x):
+	#		if pix_bin_flag[yy][xx]>=1:
+	#			galaxy_region[yy][xx] = 1
+	rows, cols = np.where(pix_bin_flag>=1)
+	galaxy_region[rows,cols] = 1
 
 	# Make FITS file
 	hdul = fits.HDUList()
@@ -1581,10 +1572,12 @@ def map_params_rdsps(fits_binmap=None, name_chains_fits=[], fits_fluxmap=None, r
 	nindexes = len(indexes)
 
 	galaxy_region = np.zeros((dim_y,dim_x))
-	for yy in range(0,dim_y):
-		for xx in range(0,dim_x):
-			if pix_bin_flag[yy][xx]>=1:
-				galaxy_region[yy][xx] = 1
+	#for yy in range(0,dim_y):
+	#	for xx in range(0,dim_x):
+	#		if pix_bin_flag[yy][xx]>=1:
+	#			galaxy_region[yy][xx] = 1
+	rows, cols = np.where(pix_bin_flag>=1)
+	galaxy_region[rows,cols] = 1
 
 	hdul = fits.HDUList()
 	hdr = fits.Header()
