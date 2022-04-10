@@ -32,7 +32,8 @@ def singleSEDfit(obs_flux=[],obs_flux_err=[],filters=[],gal_z=-99.0,imf_type=1,s
 	log_alpha_range=[-2.0,2.0],log_beta_range=[-2.0,2.0],log_t0_range=[-1.0,1.14],dust_index_range=[-0.7,-0.7],dust1_range=[0.0,3.0],dust2_range=[0.0,3.0],
 	log_gamma_range=[-3.0,-0.824],log_umin_range=[-1.0,1.176],log_qpah_range=[-1.0,0.845], z_range=[-99.0,-99.0],log_fagn_range=[-5.0,0.48],
 	log_tauagn_range=[0.70,2.18],del_lognorm=[-2.0,2.0],fit_method='mcmc',likelihood='gauss', dof=2.0, gauss_likelihood_form=0, name_saved_randmod=None, 
-	nrandmod=0, redc_chi2_initfit=2.0, nwalkers=100, nsteps=600, nsteps_cut=50, width_initpos=0.08, nproc=10, cosmo=0,H0=70.0,Om0=0.3,name_out_fits=None):
+	nrandmod=0, redc_chi2_initfit=2.0, nwalkers=100, nsteps=600, nsteps_cut=50, width_initpos=0.08, nproc=10, cosmo=0,H0=70.0,Om0=0.3,
+	store_full_samplers=1, name_out_fits=None):
 	"""Function for performing SED fitting to a single photometric SED.
 
 	:param obs_flux:
@@ -94,7 +95,7 @@ def singleSEDfit(obs_flux=[],obs_flux_err=[],filters=[],gal_z=-99.0,imf_type=1,s
 		gauss_likelihood_form=0 means the Gaussian likelihood function uses the original/full Gaussian function form, whereas gauss_likelihood_form=1 means the likelihood function uses simplified form: P=exp(-0.5*chi^2).
 
 	:param name_saved_randmod: (**Mandatory in the current version**)
-		Name of the FITS file that contains pre-calculated model SEDs. Ass for the current version of **piXedfit**, this parameter is mandatory, meaning that a set of model SEDs (stored in FITS file) should be 
+		Name of the FITS file that contains pre-calculated model SEDs. As for the current version of **piXedfit**, this parameter is mandatory, meaning that a set of model SEDs (stored in FITS file) should be 
 		generated before performing SED fitting. The task of generatig set of random model SEDs can be done using :func:`save_models` function in :mod:`piXedfit_model` module.
 
 	:param nrandmod: (default: 0)
@@ -132,6 +133,10 @@ def singleSEDfit(obs_flux=[],obs_flux_err=[],filters=[],gal_z=-99.0,imf_type=1,s
 
 	:param Om0: (default: 0.3)
 		The Omega matter at z=0.0. Only relevant when cosmo='flat_LCDM' is chosen.
+
+	:param store_full_samplers: (default: 1 or True)
+		Flag indicating whether full sampler models will be stored into the output FITS file or not. 
+		Options are: (a) 1 or True and (b) 0 or False.
 
 	:param name_out_fits: (optional, default: None)
 		Name of output FITS file. This parameter is optional. 
