@@ -1,8 +1,7 @@
 import numpy as np
-import math
+from math import pi, pow, sqrt, cos, sin
 import sys, os
-import random
-import operator
+from random import randint
 from astropy.io import fits
 from scipy.interpolate import interp1d
 
@@ -33,7 +32,7 @@ def singleSEDfit(obs_flux=[],obs_flux_err=[],filters=[],gal_z=-99.0,imf_type=1,s
 	log_alpha_range=[-2.0,2.0],log_beta_range=[-2.0,2.0],log_t0_range=[-1.0,1.14],dust_index_range=[-0.7,-0.7],dust1_range=[0.0,3.0],dust2_range=[0.0,3.0],
 	log_gamma_range=[-3.0,-0.824],log_umin_range=[-1.0,1.176],log_qpah_range=[-1.0,0.845], z_range=[-99.0,-99.0],log_fagn_range=[-5.0,0.48],
 	log_tauagn_range=[0.70,2.18],del_lognorm=[-2.0,2.0],fit_method='mcmc',likelihood='gauss', dof=2.0, gauss_likelihood_form=0, name_saved_randmod=None, 
-	nrandmod=0, nrand_z=10, redc_chi2_initfit=2.0, nwalkers=100, nsteps=600, nsteps_cut=50, width_initpos=0.08, nproc=10, 
+	nrandmod=0, redc_chi2_initfit=2.0, nwalkers=100, nsteps=600, nsteps_cut=50, width_initpos=0.08, nproc=10, 
 	cosmo=0,H0=70.0,Om0=0.3,name_out_fits=None):
 	"""Function for performing SED fitting to a single photometric SED.
 
@@ -103,8 +102,6 @@ def singleSEDfit(obs_flux=[],obs_flux_err=[],filters=[],gal_z=-99.0,imf_type=1,s
 		Number of random model SEDs to be generated for the initial fitting. This paremeter is only relevant if name_saved_randmod=None.
 		If name_saved_randmod=None, model SEDs will be generated for conducting initial fitting. If equal to nrandmod=0, then it is set to nparams*10000
 
-	:param nrand_z: (**Not available in the current version**, default: 10).
-
 	:param redc_chi2_initfit: (default: 2.0)
 		Desired reduced chi-square of the best-fit model SED in the initial fitting. This is set to estimate bulk systemtic error associated with 
 		the input SED and models. It is quite possible that flux uncertainties of observed SEDs are underestimated because of underestimating or not accounting for the systematic errors. 
@@ -155,7 +152,7 @@ def singleSEDfit(obs_flux=[],obs_flux_err=[],filters=[],gal_z=-99.0,imf_type=1,s
 	obs_flux_err = np.asarray(obs_flux_err)
 
 	# make text file containing list of filters:
-	name_filters_list = "filters_list%d.dat" % (random.randint(0,10000))
+	name_filters_list = "filters_list%d.dat" % (randint(0,10000))
 	file_out = open(name_filters_list,"w")
 	for ii in range(0,nbands):
 		file_out.write("%s\n" % filters[ii]) 
@@ -168,7 +165,7 @@ def singleSEDfit(obs_flux=[],obs_flux_err=[],filters=[],gal_z=-99.0,imf_type=1,s
 		nproc_new = nproc
 
 	# make configuration file:
-	name_config = "config_file%d.dat" % (random.randint(0,10000))
+	name_config = "config_file%d.dat" % (randint(0,10000))
 	file_out = open(name_config,"w")
 	file_out.write("imf_type %d\n" % imf_type)
 	file_out.write("add_neb_emission %d\n" % add_neb_emission)
@@ -251,7 +248,6 @@ def singleSEDfit(obs_flux=[],obs_flux_err=[],filters=[],gal_z=-99.0,imf_type=1,s
 	file_out.write("width_initpos %lf\n" % width_initpos)
 	file_out.write("ori_nproc %d\n" % nproc)
 	file_out.write("nrandmod %d\n" % nrandmod)
-	file_out.write("nrand_z %d\n" % nrand_z)
 	file_out.write("redc_chi2_initfit %lf\n" % redc_chi2_initfit)
 
 	# cosmology
@@ -290,7 +286,7 @@ def singleSEDfit(obs_flux=[],obs_flux_err=[],filters=[],gal_z=-99.0,imf_type=1,s
 	os.system('mv %s %s' % (name_config,temp_dir))
 
 	# input SED text file
-	name_SED_txt = "inputSED_file%d.dat" % (random.randint(0,20000))
+	name_SED_txt = "inputSED_file%d.dat" % (randint(0,20000))
 	file_out = open(name_SED_txt,"w")
 	for ii in range(0,nbands):
 		file_out.write("%e  %e\n" % (obs_flux[ii],obs_flux_err[ii]))
@@ -298,14 +294,14 @@ def singleSEDfit(obs_flux=[],obs_flux_err=[],filters=[],gal_z=-99.0,imf_type=1,s
 	os.system('mv %s %s' % (name_SED_txt,temp_dir))
 
 	# more..
-	random_int = (random.randint(0,10000))
+	random_int = (randint(0,10000))
 	name_params_list = "params_list_%d.dat" % random_int
 	name_sampler_list = "sampler_%d.dat" % random_int
 	name_modif_obs_photo_SED = "modif_obs_photo_SED_%d.dat" % random_int
 
 	# output files name:
 	if name_out_fits == None:
-		random_int = (random.randint(0,10000))
+		random_int = (randint(0,10000))
 		if fit_method=='mcmc' or fit_method=='MCMC':
 			name_out_fits = "mcmc_fit%d.fits" % random_int
 		elif fit_method=='rdsps' or fit_method=='RDSPS':
@@ -361,7 +357,7 @@ def SEDfit_from_binmap(fits_binmap=None,binid_range=[],bin_ids=[],filters=None,g
 	log_alpha_range=[-2.0,2.0],log_beta_range=[-2.0,2.0],log_t0_range=[-1.0,1.14],dust_index_range=[-0.7,-0.7],dust1_range=[0.0,3.0],
 	dust2_range=[0.0,3.0],log_gamma_range=[-3.0,-0.824],log_umin_range=[-1.0,1.176],log_qpah_range=[-1.0,0.845], z_range=[-99.0,-99.0],
 	log_fagn_range=[-5.0,0.48],log_tauagn_range=[0.70,2.18],del_lognorm=[-2.0,2.0],fit_method='mcmc',likelihood='gauss', dof=3.0, 
-	gauss_likelihood_form=0, name_saved_randmod=None, nrandmod=0, nrand_z=10, redc_chi2_initfit=2.0, nwalkers=100, 
+	gauss_likelihood_form=0, name_saved_randmod=None, nrandmod=0, redc_chi2_initfit=2.0, nwalkers=100, 
 	nsteps=600, nsteps_cut=50, width_initpos=0.08, nproc=10, cosmo=0,H0=70.0,Om0=0.3,name_out_fits=[]):
 
 	"""A function for performing SED fitting to set of spatially resolved SEDs from the reduced data cube that is produced after the pixel binning. 
@@ -436,8 +432,6 @@ def SEDfit_from_binmap(fits_binmap=None,binid_range=[],bin_ids=[],filters=None,g
 	:param nrandmod: (default: 0)
 		Number of random model SEDs to be generated for the initial fitting. This paremeter is only relevant if name_saved_randmod=None.
 		If name_saved_randmod=None, model SEDs will be generated for conducting initial fitting. If equal to nrandmod=0, then it is set to nparams*10000
-
-	:param nrand_z: (**Not available in the current version**, default: 10).
 
 	:param redc_chi2_initfit: (default: 2.0)
 		Desired reduced chi-square of the best-fit model SED in the initial fitting. This is set to estimate bulk systemtic error associated with 
@@ -541,7 +535,7 @@ def SEDfit_from_binmap(fits_binmap=None,binid_range=[],bin_ids=[],filters=None,g
 		obs_flux_err_all[bb] = bin_flux_err_trans[rows[0]][cols[0]]*unit
 
 	# make text file containing list of filters:
-	name_filters_list = "filters_list%d.dat" % (random.randint(0,10000))
+	name_filters_list = "filters_list%d.dat" % (randint(0,10000))
 	file_out = open(name_filters_list,"w")
 	for ii in range(0,nbands):
 		file_out.write("%s\n" % filters[ii]) 
@@ -549,7 +543,7 @@ def SEDfit_from_binmap(fits_binmap=None,binid_range=[],bin_ids=[],filters=None,g
 	os.system('mv %s %s' % (name_filters_list,temp_dir))
 
 	# make configuration file:
-	name_config = "config_file%d.dat" % (random.randint(0,10000))
+	name_config = "config_file%d.dat" % (randint(0,10000))
 	file_out = open(name_config,"w")
 	file_out.write("imf_type %d\n" % imf_type)
 
@@ -632,7 +626,6 @@ def SEDfit_from_binmap(fits_binmap=None,binid_range=[],bin_ids=[],filters=None,g
 	file_out.write("width_initpos %lf\n" % width_initpos)
 	file_out.write("ori_nproc %d\n" % nproc)
 	file_out.write("nrandmod %d\n" % nrandmod)
-	file_out.write("nrand_z %d\n" % nrand_z)
 	file_out.write("redc_chi2_initfit %lf\n" % redc_chi2_initfit)
 
 	# cosmology
@@ -716,7 +709,7 @@ def SEDfit_from_binmap(fits_binmap=None,binid_range=[],bin_ids=[],filters=None,g
 			obs_flux_err = obs_flux_err_all[int(idx_bin)]
 
 			# input SED text file
-			name_SED_txt = "inputSED_file%d.dat" % (random.randint(0,20000))
+			name_SED_txt = "inputSED_file%d.dat" % (randint(0,20000))
 			file_out = open(name_SED_txt,"w")
 			for ii in range(0,nbands):
 				file_out.write("%e  %e\n" % (obs_flux[ii],obs_flux_err[ii]))
@@ -730,7 +723,7 @@ def SEDfit_from_binmap(fits_binmap=None,binid_range=[],bin_ids=[],filters=None,g
 				name_out_fits1 = name_out_fits[int(count_id)]
 
 			# more..
-			random_int = (random.randint(0,10000))
+			random_int = (randint(0,10000))
 			name_params_list = "params_list_%d.dat" % random_int
 			name_sampler_list = "sampler_%d.dat" % random_int
 			name_modif_obs_photo_SED = "modif_obs_photo_SED_%d.dat" % random_int
@@ -744,7 +737,6 @@ def SEDfit_from_binmap(fits_binmap=None,binid_range=[],bin_ids=[],filters=None,g
 			os.system("mpirun -n %d python %s./mcmc_pcmod_p2.py %s %s %s %s %s %s" % (nproc_new,CODE_dir,name_filters_list,name_config,
 																					name_params_list,name_sampler_list,
 																					name_modif_obs_photo_SED,name_out_fits1))
-
 			os.system("rm %s%s" % (temp_dir,name_SED_txt))
 			os.system("rm %s%s" % (temp_dir,name_params_list))
 			os.system("rm %s%s" % (temp_dir,name_sampler_list))
@@ -754,7 +746,7 @@ def SEDfit_from_binmap(fits_binmap=None,binid_range=[],bin_ids=[],filters=None,g
 
 	elif fit_method=='rdsps' or fit_method=='RDSPS':
 		# input SEDs
-		name_inputSEDs = "input_SEDs_%d.dat" % (random.randint(0,10000))
+		name_inputSEDs = "input_SEDs_%d.dat" % (randint(0,10000))
 		file_out = open(name_inputSEDs,"w")
 		for idx_bin in bin_ids:
 			for bb in range(0,nbands):
@@ -767,14 +759,14 @@ def SEDfit_from_binmap(fits_binmap=None,binid_range=[],bin_ids=[],filters=None,g
 
 		# name outputs:
 		if len(name_out_fits) == 0:
-			name_outs = "name_outs_%d.dat" % (random.randint(0,10000))
+			name_outs = "name_outs_%d.dat" % (randint(0,10000))
 			file_out = open(name_outs,"w")
 			for idx_bin in bin_ids:
 				name0 = "rdsps_bin%d.fits" % (idx_bin+1)
 				file_out.write("%s\n" % name0)
 			file_out.close()
 		else:
-			name_outs = "name_outs_%d.dat" % (random.randint(0,10000))
+			name_outs = "name_outs_%d.dat" % (randint(0,10000))
 			file_out = open(name_outs,"w")
 			for zz in range(0,len(name_out_fits)):
 				file_out.write("%s\n" % name_out_fits[zz])
@@ -791,7 +783,6 @@ def SEDfit_from_binmap(fits_binmap=None,binid_range=[],bin_ids=[],filters=None,g
 	else:
 		print ("Input fit_method is not recognized!")
 		sys.exit()
-
 
 	# free disk space:
 	os.system("rm %s%s" % (temp_dir,name_filters_list))
@@ -1017,7 +1008,7 @@ def inferred_params_rdsps_list(list_name_fits=[], idx_exclude=[], perc_chi2=5.0,
 			array_val2 = np.square(array_val1)
 			mean_val = np.sum(array_val1*mod_prob1)/np.sum(mod_prob1)
 			mean_val2 = np.sum(array_val2*mod_prob1)/np.sum(mod_prob1)
-			std_val = math.sqrt(abs(mean_val2 - (mean_val*mean_val)))
+			std_val = sqrt(abs(mean_val2 - (mean_val*mean_val)))
 
 			bfit_params[params[pp]][ii] = mean_val
 			bfit_params_err[params[pp]][ii] = std_val
@@ -1342,7 +1333,7 @@ def map_params_mcmc(fits_binmap=None, name_chains_fits=[], fits_fluxmap=None, re
 					for xx in range(0,dim_x):
 						if pix_bin_flag[yy][xx]>=1:
 							bin_idx = pix_bin_flag[yy][xx] - 1
-							bin_val = math.pow(10.0,bfit_param_bin[int(bin_idx)])
+							bin_val = pow(10.0,bfit_param_bin[int(bin_idx)])
 							pix_val = bin_val*pix_flux[int(refband_SFR)][yy][xx]/bin_flux[int(refband_SFR)][yy][xx]
 							map_prop[yy][xx] = np.log10(pix_val)
 				hdul.append(fits.ImageHDU(map_prop, name=idx_str))
@@ -1351,13 +1342,13 @@ def map_params_mcmc(fits_binmap=None, name_chains_fits=[], fits_fluxmap=None, re
 					for xx in range(0,dim_x):
 						if pix_bin_flag[yy][xx]>=1:
 							bin_idx = pix_bin_flag[yy][xx] - 1
-							bin_val = math.pow(10.0,bfit_param["log_sfr"]["mean"][int(bin_idx)])
-							bin_valerr = math.pow(10.0,bfit_param_bin[int(bin_idx)])
+							bin_val = pow(10.0,bfit_param["log_sfr"]["mean"][int(bin_idx)])
+							bin_valerr = pow(10.0,bfit_param_bin[int(bin_idx)])
 							bin_f = bin_flux[int(refband_SFR)][yy][xx]
 							bin_ferr =  bin_flux_err[int(refband_SFR)][yy][xx]
 							pix_f = pix_flux[int(refband_SFR)][yy][xx]
 							pix_ferr = pix_flux_err[int(refband_SFR)][yy][xx]
-							pix_val = bin_val*math.sqrt((bin_val*bin_val/bin_valerr/bin_valerr) + (bin_f*bin_f/bin_ferr/bin_ferr) + (pix_f*pix_f/pix_ferr/pix_ferr))
+							pix_val = bin_val*sqrt((bin_val*bin_val/bin_valerr/bin_valerr) + (bin_f*bin_f/bin_ferr/bin_ferr) + (pix_f*pix_f/pix_ferr/pix_ferr))
 							map_prop[int(yy)][int(xx)] = np.log10(pix_val)
 				hdul.append(fits.ImageHDU(map_prop, name=idx_str))
 			elif params[pp]=='log_mass' and indexes[ii]!='mean_err':
@@ -1365,7 +1356,7 @@ def map_params_mcmc(fits_binmap=None, name_chains_fits=[], fits_fluxmap=None, re
 					for xx in range(0,dim_x):
 						if pix_bin_flag[yy][xx]>=1:
 							bin_idx = pix_bin_flag[yy][xx] - 1
-							bin_val = math.pow(10.0,bfit_param_bin[int(bin_idx)])
+							bin_val = pow(10.0,bfit_param_bin[int(bin_idx)])
 							pix_val = bin_val*pix_flux[int(refband_SM)][yy][xx]/bin_flux[int(refband_SM)][yy][xx]
 							map_prop[yy][xx] = np.log10(pix_val)
 				hdul.append(fits.ImageHDU(map_prop, name=idx_str))
@@ -1374,13 +1365,13 @@ def map_params_mcmc(fits_binmap=None, name_chains_fits=[], fits_fluxmap=None, re
 					for xx in range(0,dim_x):
 						if pix_bin_flag[yy][xx]>=1:
 							bin_idx = pix_bin_flag[yy][xx] - 1
-							bin_val = math.pow(10.0,bfit_param["log_mass"]["mean"][int(bin_idx)])
-							bin_valerr = math.pow(10.0,bfit_param_bin[int(bin_idx)])
+							bin_val = pow(10.0,bfit_param["log_mass"]["mean"][int(bin_idx)])
+							bin_valerr = pow(10.0,bfit_param_bin[int(bin_idx)])
 							bin_f = bin_flux[int(refband_SM)][yy][xx]
 							bin_ferr =  bin_flux_err[int(refband_SM)][yy][xx]
 							pix_f = pix_flux[int(refband_SM)][yy][xx]
 							pix_ferr = pix_flux_err[int(refband_SM)][yy][xx]
-							pix_val = bin_val*math.sqrt((bin_val*bin_val/bin_valerr/bin_valerr) + (bin_f*bin_f/bin_ferr/bin_ferr) + (pix_f*pix_f/pix_ferr/pix_ferr))
+							pix_val = bin_val*sqrt((bin_val*bin_val/bin_valerr/bin_valerr) + (bin_f*bin_f/bin_ferr/bin_ferr) + (pix_f*pix_f/pix_ferr/pix_ferr))
 							map_prop[yy][xx] = np.log10(pix_val)
 				hdul.append(fits.ImageHDU(map_prop, name=idx_str))
 			elif params[pp]=='log_dustmass' and indexes[ii]!='mean_err':
@@ -1388,7 +1379,7 @@ def map_params_mcmc(fits_binmap=None, name_chains_fits=[], fits_fluxmap=None, re
 					for xx in range(0,dim_x):
 						if pix_bin_flag[yy][xx]>=1:
 							bin_idx = pix_bin_flag[yy][xx] - 1
-							bin_val = math.pow(10.0,bfit_param_bin[int(bin_idx)])
+							bin_val = pow(10.0,bfit_param_bin[int(bin_idx)])
 							pix_val = bin_val*pix_flux[int(refband_Mdust)][yy][xx]/bin_flux[int(refband_Mdust)][yy][xx]
 							map_prop[yy][xx] = np.log10(pix_val)
 				hdul.append(fits.ImageHDU(map_prop, name=idx_str))
@@ -1397,13 +1388,13 @@ def map_params_mcmc(fits_binmap=None, name_chains_fits=[], fits_fluxmap=None, re
 					for xx in range(0,dim_x):
 						if pix_bin_flag[yy][xx]>=1:
 							bin_idx = pix_bin_flag[yy][xx] - 1
-							bin_val = math.pow(10.0,bfit_param["log_dustmass"]["mean"][int(bin_idx)])
-							bin_valerr = math.pow(10.0,bfit_param_bin[int(bin_idx)])
+							bin_val = pow(10.0,bfit_param["log_dustmass"]["mean"][int(bin_idx)])
+							bin_valerr = pow(10.0,bfit_param_bin[int(bin_idx)])
 							bin_f = bin_flux[int(refband_Mdust)][yy][xx]
 							bin_ferr =  bin_flux_err[int(refband_Mdust)][yy][xx]
 							pix_f = pix_flux[int(refband_Mdust)][yy][xx]
 							pix_ferr = pix_flux_err[int(refband_Mdust)][yy][xx]
-							pix_val = bin_val*math.sqrt((bin_val*bin_val/bin_valerr/bin_valerr) + (bin_f*bin_f/bin_ferr/bin_ferr) + (pix_f*pix_f/pix_ferr/pix_ferr))
+							pix_val = bin_val*sqrt((bin_val*bin_val/bin_valerr/bin_valerr) + (bin_f*bin_f/bin_ferr/bin_ferr) + (pix_f*pix_f/pix_ferr/pix_ferr))
 							map_prop[yy][xx] = np.log10(pix_val)
 				hdul.append(fits.ImageHDU(map_prop, name=idx_str))
 
@@ -1477,7 +1468,7 @@ def get_inferred_params_rdsps(list_name_sampler_fits=[], bin_excld_flag=[], idx_
 				array_val2 = np.square(array_val1)
 				mean_val = np.sum(array_val1*mod_prob1)/np.sum(mod_prob1)
 				mean_val2 = np.sum(array_val2*mod_prob1)/np.sum(mod_prob1)
-				std_val = math.sqrt(abs(mean_val2 - (mean_val*mean_val)))
+				std_val = sqrt(abs(mean_val2 - (mean_val*mean_val)))
 
 				bfit_param[params[int(pp)]]["mean"].append(mean_val)
 				bfit_param[params[int(pp)]]["mean_err"].append(std_val)
@@ -1645,7 +1636,7 @@ def map_params_rdsps(fits_binmap=None, name_chains_fits=[], fits_fluxmap=None, r
 					for xx in range(0,dim_x):
 						if pix_bin_flag[yy][xx]>=1:
 							bin_idx = pix_bin_flag[yy][xx] - 1
-							bin_val = math.pow(10.0,bfit_param_bin[int(bin_idx)])
+							bin_val = pow(10.0,bfit_param_bin[int(bin_idx)])
 							pix_val = bin_val*pix_flux[int(refband_SFR)][yy][xx]/bin_flux[int(refband_SFR)][yy][xx]
 							map_prop[yy][xx] = np.log10(pix_val)
 				hdul.append(fits.ImageHDU(map_prop, name=idx_str))
@@ -1654,13 +1645,13 @@ def map_params_rdsps(fits_binmap=None, name_chains_fits=[], fits_fluxmap=None, r
 					for xx in range(0,dim_x):
 						if pix_bin_flag[yy][xx]>=1:
 							bin_idx = pix_bin_flag[yy][xx] - 1
-							bin_val = math.pow(10.0,bfit_param["log_sfr"]["mean"][int(bin_idx)])
-							bin_valerr = math.pow(10.0,bfit_param_bin[int(bin_idx)])
+							bin_val = pow(10.0,bfit_param["log_sfr"]["mean"][int(bin_idx)])
+							bin_valerr = pow(10.0,bfit_param_bin[int(bin_idx)])
 							bin_f = bin_flux[int(refband_SFR)][yy][xx]
 							bin_ferr =  bin_flux_err[int(refband_SFR)][yy][xx]
 							pix_f = pix_flux[int(refband_SFR)][yy][xx]
 							pix_ferr = pix_flux_err[int(refband_SFR)][yy][xx]
-							pix_val = bin_val*math.sqrt((bin_val*bin_val/bin_valerr/bin_valerr) + (bin_f*bin_f/bin_ferr/bin_ferr) + (pix_f*pix_f/pix_ferr/pix_ferr))
+							pix_val = bin_val*sqrt((bin_val*bin_val/bin_valerr/bin_valerr) + (bin_f*bin_f/bin_ferr/bin_ferr) + (pix_f*pix_f/pix_ferr/pix_ferr))
 							map_prop[yy][xx] = np.log10(pix_val)
 				hdul.append(fits.ImageHDU(map_prop, name=idx_str))
 			elif params[pp] == 'log_mass' and indexes[ii] != 'mean_err':
@@ -1668,7 +1659,7 @@ def map_params_rdsps(fits_binmap=None, name_chains_fits=[], fits_fluxmap=None, r
 					for xx in range(0,dim_x):
 						if pix_bin_flag[yy][xx]>=1:
 							bin_idx = pix_bin_flag[yy][xx] - 1
-							bin_val = math.pow(10.0,bfit_param_bin[int(bin_idx)])
+							bin_val = pow(10.0,bfit_param_bin[int(bin_idx)])
 							pix_val = bin_val*pix_flux[int(refband_SM)][yy][xx]/bin_flux[int(refband_SM)][yy][xx]
 							map_prop[yy][xx] = np.log10(pix_val)
 				hdul.append(fits.ImageHDU(map_prop, name=idx_str))
@@ -1677,13 +1668,13 @@ def map_params_rdsps(fits_binmap=None, name_chains_fits=[], fits_fluxmap=None, r
 					for xx in range(0,dim_x):
 						if pix_bin_flag[yy][xx]>=1:
 							bin_idx = pix_bin_flag[yy][xx] - 1
-							bin_val = math.pow(10.0,bfit_param["log_mass"]["mean"][int(bin_idx)])
-							bin_valerr = math.pow(10.0,bfit_param_bin[int(bin_idx)])
+							bin_val = pow(10.0,bfit_param["log_mass"]["mean"][int(bin_idx)])
+							bin_valerr = pow(10.0,bfit_param_bin[int(bin_idx)])
 							bin_f = bin_flux[int(refband_SM)][yy][xx]
 							bin_ferr =  bin_flux_err[int(refband_SM)][yy][xx]
 							pix_f = pix_flux[int(refband_SM)][yy][xx]
 							pix_ferr = pix_flux_err[int(refband_SM)][yy][xx]
-							pix_val = bin_val*math.sqrt((bin_val*bin_val/bin_valerr/bin_valerr) + (bin_f*bin_f/bin_ferr/bin_ferr) + (pix_f*pix_f/pix_ferr/pix_ferr))
+							pix_val = bin_val*sqrt((bin_val*bin_val/bin_valerr/bin_valerr) + (bin_f*bin_f/bin_ferr/bin_ferr) + (pix_f*pix_f/pix_ferr/pix_ferr))
 							map_prop[yy][xx] = np.log10(pix_val)
 				hdul.append(fits.ImageHDU(map_prop, name=idx_str))
 			elif params[pp]=='log_dustmass' and indexes[ii]!='mean_err':
@@ -1691,7 +1682,7 @@ def map_params_rdsps(fits_binmap=None, name_chains_fits=[], fits_fluxmap=None, r
 					for xx in range(0,dim_x):
 						if pix_bin_flag[yy][xx]>=1:
 							bin_idx = pix_bin_flag[yy][xx] - 1
-							bin_val = math.pow(10.0,bfit_param_bin[int(bin_idx)])
+							bin_val = pow(10.0,bfit_param_bin[int(bin_idx)])
 							pix_val = bin_val*pix_flux[int(refband_Mdust)][yy][xx]/bin_flux[int(refband_Mdust)][yy][xx]
 							map_prop[yy][xx] = np.log10(pix_val)
 				hdul.append(fits.ImageHDU(map_prop, name=idx_str))
@@ -1700,13 +1691,13 @@ def map_params_rdsps(fits_binmap=None, name_chains_fits=[], fits_fluxmap=None, r
 					for xx in range(0,dim_x):
 						if pix_bin_flag[yy][xx]>=1:
 							bin_idx = pix_bin_flag[yy][xx] - 1
-							bin_val = math.pow(10.0,bfit_param["log_dustmass"]["mean"][int(bin_idx)])
-							bin_valerr = math.pow(10.0,bfit_param_bin[int(bin_idx)])
+							bin_val = pow(10.0,bfit_param["log_dustmass"]["mean"][int(bin_idx)])
+							bin_valerr = pow(10.0,bfit_param_bin[int(bin_idx)])
 							bin_f = bin_flux[int(refband_Mdust)][yy][xx]
 							bin_ferr =  bin_flux_err[int(refband_Mdust)][yy][xx]
 							pix_f = pix_flux[int(refband_Mdust)][yy][xx]
 							pix_ferr = pix_flux_err[int(refband_Mdust)][yy][xx]
-							pix_val = bin_val*math.sqrt((bin_val*bin_val/bin_valerr/bin_valerr) + (bin_f*bin_f/bin_ferr/bin_ferr) + (pix_f*pix_f/pix_ferr/pix_ferr))
+							pix_val = bin_val*sqrt((bin_val*bin_val/bin_valerr/bin_valerr) + (bin_f*bin_f/bin_ferr/bin_ferr) + (pix_f*pix_f/pix_ferr/pix_ferr))
 							map_prop[yy][xx] = np.log10(pix_val)
 				hdul.append(fits.ImageHDU(map_prop, name=idx_str))
 				

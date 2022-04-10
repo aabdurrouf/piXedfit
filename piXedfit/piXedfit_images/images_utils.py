@@ -1,5 +1,5 @@
 import numpy as np 
-import math
+from math import pi, pow, sqrt, cos, sin 
 import sys, os
 import operator
 #import photutils
@@ -129,7 +129,7 @@ def k_lmbd_Fitz1986_LMC(wavelength_Ang):
 			bx = 1.41338*yy + 2.28305*yy*yy + 1.07233*yy*yy*yy - 5.38434*yy*yy*yy*yy - 0.62251*yy*yy*yy*yy*yy + 5.30260*yy*yy*yy*yy*yy*yy - 2.09002*yy*yy*yy*yy*yy*yy*yy
 			k = 3.1*ax + bx
 		elif inv_lmbd_micron<1.1:
-			ax = 0.574*math.pow(inv_lmbd_micron,1.61)
+			ax = 0.574*pow(inv_lmbd_micron,1.61)
 			bx = -0.527*pow(inv_lmbd_micron,1.61)
 			k = 3.1*ax + bx
 
@@ -141,18 +141,11 @@ def EBV_foreground_dust(Alambda_SDSS):
 	given A_lambda in 5 SDSS bands. Assuming Fitzpatrick et al. 1986
 	"""
 
-	## central wavelengths of the SDSS 5 bands: 
+	# central wavelengths of the SDSS 5 bands: 
 	filters = ['sdss_u', 'sdss_g', 'sdss_r', 'sdss_i', 'sdss_z']
-	#wave_SDSS =filtering.cwave_filters(filters)
 	wave_SDSS = cwave_filters(filters)
 
-	## calculate average E(B-V):
-	#ebv_SDSS = np.zeros(5)
-	#ebv_SDSS[0] = Alambda_SDSS[0]/k_lmbd_Fitz1986_LMC(wave_SDSS[0])
-	#ebv_SDSS[1] = Alambda_SDSS[1]/k_lmbd_Fitz1986_LMC(wave_SDSS[1])
-	#ebv_SDSS[2] = Alambda_SDSS[2]/k_lmbd_Fitz1986_LMC(wave_SDSS[2])
-	#ebv_SDSS[3] = Alambda_SDSS[3]/k_lmbd_Fitz1986_LMC(wave_SDSS[3])
-	#ebv_SDSS[4] = Alambda_SDSS[4]/k_lmbd_Fitz1986_LMC(wave_SDSS[4])
+	# calculate average E(B-V):
 	ebv_SDSS = Alambda_SDSS/k_lmbd_Fitz1986_LMC(wave_SDSS)
 
 	ave_ebv = np.mean(ebv_SDSS)
@@ -418,10 +411,6 @@ def var_img_sdss(fits_image=None,filter_name=None,name_out_fits=None):
 		name_out_fits = 'var_%s' % fits_image
 	fits.writeto(name_out_fits,sigma_sq_full,header,overwrite=True)
 
-	#output = {}
-	#output['sigmasq'] = sigma_sq_full
-	#output['sigmasq_name'] = sigma_sq_name
-	#return output
 	return name_out_fits
 
 
@@ -528,7 +517,6 @@ def var_img_2MASS(sci_img=None,skyrms_img=None,skyrms_img_data=[],skyrms_value=N
 		name_out_fits = 'var_%s' % sci_img
 	fits.writeto(name_out_fits, sigma_sq_img_data, sci_img_header, overwrite=True)
 
-	#return sigma_sq_img_data
 	return name_out_fits
 
 
@@ -593,14 +581,13 @@ def var_img_WISE(filter_name='wise_w1',sci_img=None,unc_img=None,skyrms_img=None
 	sigma_i = unc_img_data
 	sigma_B = skyrms_img_data
 	#sigma_conf = 0.0
-	sigma_src = np.sqrt(Fcorr*(np.square(sigma_i) + (0.5*math.pi*sigma_B*sigma_B)))
+	sigma_src = np.sqrt(Fcorr*(np.square(sigma_i) + (0.5*pi*sigma_B*sigma_B)))
 	sigma_sq_img_data = np.square(sci_img_data)*((sigma_0*sigma_0/f_0/f_0) + (0.8483*sigma_magzp*sigma_magzp) + np.square(sigma_src)) ## in unit of DN
 
 	if name_out_fits == None:
 		name_out_fits = 'var_%s' % unc_img
 	fits.writeto(name_out_fits, sigma_sq_img_data, sci_img_header, overwrite=True)
 
-	#return sigma_sq_img_data
 	return name_out_fits
 
 
@@ -727,7 +714,6 @@ def sci_var_img_miniJPAS(filters=[],img=[],zp=[],zp_err=[]):
 
 		# image unit: 0 means flux, 1 means surface brightness
 		img_unit[filters[bb]] = 0
-
 
 	return sci_img, var_img, img_unit
 
@@ -967,15 +953,6 @@ def subtract_background(fits_image=None, hdu_idx=0, sigma=3.0, box_size=None, ma
 	fits.writeto(name_out_skybgsub, skybgsub_image, header, overwrite=True)
 	print ("produce %s" % name_out_skybgsub)
 
-	#output = {}
-	#output['skybg'] = skybg_image
-	#output['skybg_name'] = name_out_skybg
-	#output['skybgrms'] = skybgrms_image
-	#output['skybgrms_name'] = name_out_skybgrms
-	#output['skybgsub'] = skybgsub_image
-	#output['skybgsub_name'] = name_out_skybgsub
-	#return output
-
 
 def check_avail_kernel(filter_init=None, filter_final=None):
 	filters_def = ['galex_fuv', 'galex_nuv', 'sdss_u', 'sdss_g', 'sdss_r', 'sdss_i', 'sdss_z', '2mass_j', '2mass_h', '2mass_k', 
@@ -1170,7 +1147,7 @@ def ellipse_fit(data=None, init_x0=None, init_y0=None, init_sma=10.0,
 		init_y0 = (data.shape[0]-1)/2
 
 	geometry = EllipseGeometry(x0=init_x0, y0=init_y0, sma=init_sma, eps=init_ell,
-								pa=init_pa*np.pi/180.0)
+								pa=init_pa*pi/180.0)
 	ellipse = Ellipse(data, geometry)
 	isolist = ellipse.fit_image()
 
@@ -1186,7 +1163,7 @@ def ellipse_fit(data=None, init_x0=None, init_y0=None, init_sma=10.0,
 	x0 = isolist.x0[idx_sma]
 	y0 = isolist.y0[idx_sma]
 
-	pa = (pa*180.0/math.pi) - 90.0
+	pa = (pa*180.0/pi) - 90.0
 
 	return x0, y0, ell, pa
 
@@ -1216,14 +1193,14 @@ def draw_ellipse(x_cent,y_cent,a,e,pa):
 	"""
 
 	# convert from degree to radian:
-	pa = pa*math.pi/180.0
+	pa = pa*pi/180.0
 	x_temp = []
 	y_temp = []
 	count = 0
 	# the positive x side:
 	y0 = -1.0*a
 	while y0<=a:
-		x0 = (1.0-e)*math.sqrt((a*a) - (y0*y0))
+		x0 = (1.0-e)*sqrt((a*a) - (y0*y0))
 		count = count + 1
 		x_temp.append(x0)
 		y_temp.append(y0)
@@ -1241,10 +1218,10 @@ def draw_ellipse(x_cent,y_cent,a,e,pa):
 		for ii in range(0,2*num_points):
 			if int(xx)==0:
 				# transform to x-y plane:
-				x0 = x_temp[int(ii)]*math.cos(pa) - y_temp[int(ii)]*math.sin(pa)
+				x0 = x_temp[int(ii)]*cos(pa) - y_temp[int(ii)]*sin(pa)
 				ellipse_xy[int(xx)].append(x0+x_cent)
 			elif int(xx)==1:
-				y0 = x_temp[int(ii)]*math.sin(pa) + y_temp[int(ii)]*math.cos(pa)
+				y0 = x_temp[int(ii)]*sin(pa) + y_temp[int(ii)]*cos(pa)
 				ellipse_xy[int(xx)].append(y0+y_cent)
 
 	return ellipse_xy
@@ -1269,8 +1246,8 @@ def ellipse_sma(ell,pa,x_norm,y_norm):
 	"""
 
 	# convert to the x'-y' plane:
-	x_norm_rot = np.asarray(x_norm)*math.cos(pa*math.pi/180.0) + np.asarray(y_norm)*math.sin(pa*math.pi/180.0)
-	y_norm_rot = -1.0*np.asarray(x_norm)*math.sin(pa*math.pi/180.0) + np.asarray(y_norm)*math.cos(pa*math.pi/180.0)
+	x_norm_rot = np.asarray(x_norm)*cos(pa*pi/180.0) + np.asarray(y_norm)*sin(pa*pi/180.0)
+	y_norm_rot = -1.0*np.asarray(x_norm)*sin(pa*pi/180.0) + np.asarray(y_norm)*cos(pa*pi/180.0)
 	# get the semi-major axis of the pixel at x'-y' plane:
 	sma = np.sqrt((y_norm_rot*y_norm_rot) + (x_norm_rot*x_norm_rot/(1.0-ell)/(1.0-ell)))
 	return sma
@@ -1482,7 +1459,7 @@ def crop_stars(gal_region0=[],x_cent=[],y_cent=[],radius=[]):
 			if gal_region[yy][xx] == 1:
 				status_in = 0
 				for ii in range(0,nstars):
-					rad = math.sqrt((yy-y_cent[ii])**2.0 + (xx-x_cent[ii])**2.0)
+					rad = sqrt((yy-y_cent[ii])**2.0 + (xx-x_cent[ii])**2.0)
 					if rad<=radius[ii]:
 						status_in = status_in + 1
 

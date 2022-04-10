@@ -1057,24 +1057,13 @@ class images_processing:
 			hdr[str_temp] = filters[int(bb)]
 		primary_hdu = fits.PrimaryHDU(header=hdr)
 		hdul.append(primary_hdu)
-		# add galaxy_region into the HDU list:
 		hdul.append(fits.ImageHDU(gal_region, name='galaxy_region'))
-		# add fluxes maps to the HDU list:
 		hdul.append(fits.ImageHDU(map_flux, name='flux'))
-		# add flux errors maps to the HDU list:
 		hdul.append(fits.ImageHDU(map_flux_err, name='flux_err'))
-		# add one of the stamp image (the first band):
 		hdul.append(fits.ImageHDU(data=stamp_img, header=stamp_hdr, name='stamp_image'))
-		# write to fits file:
 		if name_out_fits == None:
 			name_out_fits = 'fluxmap.fits'
 		hdul.writeto(name_out_fits, overwrite=True)
-
-		#flux_map = {}
-		#flux_map["galaxy_region"] = gal_region
-		#flux_map["flux"] = map_flux
-		#flux_map["flux_err"] = map_flux_err
-		###================ (3) Store into fits file ===============####
 
 		return name_out_fits
 
