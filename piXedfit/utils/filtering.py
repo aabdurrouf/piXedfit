@@ -7,7 +7,7 @@ from astropy.io import fits
 global PIXEDFIT_HOME
 PIXEDFIT_HOME = os.environ['PIXEDFIT_HOME']
 
-__all__ = ["list_filters", "add_filter", "remove_filter", "get_filter_curve", "cwave_filters", "filtering", 
+__all__ = ["list_filters", "add_filter", "remove_filter", "change_filter_name", "get_filter_curve", "cwave_filters", "filtering", 
 			"match_filters_array", "filtering_match_filters_array"]
 
 def list_filters():
@@ -95,7 +95,7 @@ def add_filter(filter_name,filter_wave,filter_transmission,filter_cwave):
 		col2_array = np.array(old_fil_trans[int(bb)])     
 		col2 = fits.Column(name='trans', format='D', array=col2_array) 
 		cols = fits.ColDefs([col1, col2])
-		hdu = fits.BinTableHDU.from_columns(cols, name=old_fil_name[int(bb)])
+		hdu = fits.BinTableHDU.from_columns(cols, name=old_fil_name[bb])
 		hdul.append(hdu)
 	# add the new filter:
 	col1_array = np.array(filter_wave)    
@@ -113,10 +113,10 @@ def add_filter(filter_name,filter_wave,filter_transmission,filter_cwave):
 
 
 def remove_filter(filter_name):
-	"""A function to remove a new filter transmission function from piXedfit
+	"""A function for removing a filter transmission function from piXedfit
 
 	:param filter_name:
-		A given name (in string) for the filter curve
+		The filter name.
 	"""
 
 	# get the old filters.fits
@@ -167,6 +167,87 @@ def remove_filter(filter_name):
 	# make one HDU for one filter:
 	for bb in range(0,old_nfilters):
 		if old_fil_name[bb] != filter_name:
+			col1_array = np.array(old_fil_wave[bb])    
+			col1 = fits.Column(name='wave', format='D', array=col1_array) 
+			col2_array = np.array(old_fil_trans[bb])     
+			col2 = fits.Column(name='trans', format='D', array=col2_array) 
+			cols = fits.ColDefs([col1, col2])
+			hdu = fits.BinTableHDU.from_columns(cols, name=old_fil_name[bb])
+			hdul.append(hdu)
+
+	# write to fits file:
+	hdul.writeto('filters.fits', overwrite=True)
+	# move it to the original directory:
+	os.system('mv filters.fits %s' % dir_file)
+
+
+def change_filter_name(old_filter_name, new_filter_name):
+	"""A function for changing a filter name
+
+	:param old_filter_name:
+		Old filter name.
+
+	:param new_filter_name:
+		New filter name.
+	"""
+
+	# get the old filters.fits
+	dir_file = PIXEDFIT_HOME+'/data/filters/'
+	old_filters = fits.open(dir_file+'filters.fits')
+	old_header = old_filters[0].header
+	# number of filters curves:
+	old_nfilters = int(old_header['nfilters'])
+	# get the filters:
+	old_fil_wave = []
+	old_fil_trans = []
+	old_fil_name = []
+	old_fil_cwave = np.zeros(old_nfilters)
+	for bb in range(0,old_nfilters):
+		old_fil_wave.append([])
+		old_fil_trans.append([])
+		# get name of the filter:
+		str_temp = 'fil%d' % (bb+1)
+		fil_name = old_header[str_temp]
+		old_fil_name.append(fil_name)
+		# get central wave of the filter:
+		str_temp = 'cw_%s' % fil_name
+		old_fil_cwave[bb] = float(old_header[str_temp])
+		# get the transmission curve:
+		data = old_filters[fil_name].data
+		old_fil_wave[bb] = data['wave']
+		old_fil_trans[bb] = data['trans']
+	old_filters.close()
+
+	# make new FITS file
+	hdr = fits.Header()
+	# make header
+	hdr['nfilters'] = old_nfilters
+	for bb in range(0,old_nfilters):
+		if old_fil_name[bb] == old_filter_name:
+			temp_str = 'fil%d' % (bb+1)
+			hdr[temp_str] = new_filter_name
+			temp_str = 'cw_%s' % new_filter_name
+			hdr[temp_str] = old_fil_cwave[bb]
+		else:
+			temp_str = 'fil%d' % (bb+1)
+			hdr[temp_str] = old_fil_name[bb]
+			temp_str = 'cw_%s' % old_fil_name[bb]
+			hdr[temp_str] = old_fil_cwave[bb]
+	# add to the first HDU:
+	primary_hdu = fits.PrimaryHDU(header=hdr)
+	hdul = fits.HDUList([primary_hdu])
+
+	# make one HDU for one filter:
+	for bb in range(0,old_nfilters):
+		if old_fil_name[bb] == old_filter_name:
+			col1_array = np.array(old_fil_wave[bb])    
+			col1 = fits.Column(name='wave', format='D', array=col1_array) 
+			col2_array = np.array(old_fil_trans[bb])     
+			col2 = fits.Column(name='trans', format='D', array=col2_array) 
+			cols = fits.ColDefs([col1, col2])
+			hdu = fits.BinTableHDU.from_columns(cols, name=new_filter_name)
+			hdul.append(hdu)
+		else:
 			col1_array = np.array(old_fil_wave[bb])    
 			col1 = fits.Column(name='wave', format='D', array=col1_array) 
 			col2_array = np.array(old_fil_trans[bb])     

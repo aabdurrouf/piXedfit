@@ -73,10 +73,15 @@ class images_processing:
 
 	:param stamp_size: (default: [101,101])
 		Desired size for the reduced maps of multiband fluxes. This is a list data type with 2 elements. Accepted struture is: [dim_y,dim_x]. Only relevant if flag_crop=0. 
+	
+	:param remove_files: (default: True)
+		If True, the unnecessary image files produced during the image processing will be removed. This can save disk space. 
+		If False, those files will not be removed.   
 	"""
 
 	def __init__(self, filters=[],sci_img={},var_img={},img_unit={},flag_psfmatch=0, flag_reproject=0, flag_crop=0, 
-		img_pixsizes={},kernels=None,psf_fwhm=None,gal_ra=None,gal_dec=None,gal_z=None,stamp_size=[101,101]):
+		img_pixsizes={},kernels=None,psf_fwhm=None,gal_ra=None,gal_dec=None,gal_z=None,stamp_size=[101,101],
+		remove_files=True):
 
 		# sorting filters:
 		sorted_filters = sort_filters(filters)
@@ -94,6 +99,7 @@ class images_processing:
 		self.gal_dec = gal_dec
 		self.gal_z = gal_z
 		self.stamp_size = stamp_size
+		self.remove_files = remove_files
 		#self.nbands = len(filters)
 
 		# kernels:
@@ -110,6 +116,8 @@ class images_processing:
 		:returns output_stamps:
 			Dictionary containing name of postage stamps of reduced multiband images. 
 		"""
+
+		temp_file_names = []
 
 		####============== (1) GET BASIC INPUT ============#####
 		# get the list of filters:
@@ -310,6 +318,7 @@ class images_processing:
 					name_out = "crop_%s" % sci_img_name[filters[bb]]
 					hdu.writeto(name_out, overwrite=True)
 					print ("[produce %s]" % name_out)
+					temp_file_names.append(name_out)
 
 					#++> for variance image:
 					hdu = fits.open(var_img_name[filters[bb]])[0]
@@ -323,6 +332,7 @@ class images_processing:
 					name_out = "crop_%s" % var_img_name[filters[bb]]
 					hdu.writeto(name_out, overwrite=True)
 					print ("[produce %s]" % name_out)
+					temp_file_names.append(name_out)
 
 					# resize/resampling kernel image to match the sampling of the image:
 					kernel_resize0 = resize_psf(kernel_data[filters[bb]], 0.250, img_pixsizes[filters[bb]], order=3)
@@ -387,6 +397,7 @@ class images_processing:
 					fits.writeto(name_out,psfmatch_sci_img_data[filters[bb]],hdu[0].header, overwrite=True)
 					hdu.close()
 					print ("[produce %s]" % name_out)
+					temp_file_names.append(name_out)
 
 					#++> for variance image:
 					name_fits = "crop_%s" % var_img_name[filters[int(bb)]]
@@ -397,6 +408,7 @@ class images_processing:
 					fits.writeto(name_out,psfmatch_var_img_data[filters[bb]],hdu[0].header, overwrite=True)
 					hdu.close()
 					print ("[produce %s]" % name_out)
+					temp_file_names.append(name_out)
 
 			####============== End of (c) PSF matching ============#####
 
@@ -450,6 +462,7 @@ class images_processing:
 				align_psfmatch_sci_img_data[filters[bb]] = hdu[0].data
 				print ("[produce %s]" % name_out)
 				hdu.close()
+				#temp_file_names.append(name_out)
 
 				#++> for variance image:
 				hdu = fits.open(psfmatch_var_img_name[filters[bb]])
@@ -459,6 +472,7 @@ class images_processing:
 				align_psfmatch_var_img_data[filters[bb]] = hdu[0].data
 				print ("[produce %s]" % name_out)
 				hdu.close()
+				#temp_file_names.append(name_out)
 
 
 		if flag_reproject==0:
@@ -528,6 +542,7 @@ class images_processing:
 					align_psfmatch_sci_img_name[filters[bb]] = name_out
 					align_psfmatch_sci_img_data[filters[bb]] = align_data_image
 					print ("[produce %s]" % name_out)
+					#temp_file_names.append(name_out)
 
 					#++> for variance image:
 					hdu = fits.open(psfmatch_var_img_name[filters[bb]])
@@ -545,6 +560,7 @@ class images_processing:
 					align_psfmatch_var_img_name[filters[bb]] = name_out
 					align_psfmatch_var_img_data[filters[bb]] = align_data_image
 					print ("[produce %s]" % name_out)
+					#temp_file_names.append(name_out)
 
 			####============== (End of 3) Reprojection and resampling ============#####
 
@@ -563,6 +579,10 @@ class images_processing:
 			output_stamps['idfil_align'] = idfil_align
 			output_stamps['idfil_psfmatch'] = idfil_psfmatch
 
+		## remove files:
+		if self.remove_files==True:
+			for zz in range(0,len(temp_file_names)):
+				os.system("rm %s" % temp_file_names[zz])
 
 		return output_stamps
 
