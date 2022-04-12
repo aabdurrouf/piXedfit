@@ -15,10 +15,8 @@ from piXedfit.piXedfit_model import calc_mw_age, get_dust_mass_mainSFH_fit, get_
 
 
 # Function to store the sampler chains into output fits file:
-def store_to_fits(nsamples=None,sampler_params=None,sampler_log_sfr=None,sampler_log_mw_age=None,
+def store_to_fits(sampler_params=None,sampler_log_sfr=None,sampler_log_mw_age=None,
 	sampler_logdustmass=None,sampler_log_fagn_bol=None,fits_name_out=None): 
-	# sampler_id:
-	sampler_id = np.linspace(1, nsamples, nsamples)
 
 	hdr = fits.Header()
 	hdr['imf'] = imf
@@ -38,7 +36,6 @@ def store_to_fits(nsamples=None,sampler_params=None,sampler_log_sfr=None,sampler
 	if duste_switch == 'duste':
 		if fix_dust_index == 1:
 			hdr['dust_index'] = fix_dust_index_val
-
 	if add_igm_absorption == 1:
 		hdr['igm_type'] = igm_type
 	for bb in range(0,nbands):
@@ -62,67 +59,81 @@ def store_to_fits(nsamples=None,sampler_params=None,sampler_log_sfr=None,sampler
 		hdr['free_z'] = 0
 	elif free_z == 1:
 		hdr['free_z'] = 1
-	hdr['nrows'] = nsamples
 	# add parameters
 	for pp in range(0,nparams):
 		str_temp = 'param%d' % pp
 		hdr[str_temp] = params[pp]
 
+	# add columns
+	cols0 = []
 	col_count = 1
 	str_temp = 'col%d' % col_count
-	hdr[str_temp] = 'id'
+	hdr[str_temp] = 'rows'
+	col = fits.Column(name='rows', format='3A', array=['p16','p50','p84'])
+	cols0.append(col)
+
+	#=> basic params
 	for pp in range(0,nparams):
 		col_count = col_count + 1
 		str_temp = 'col%d' % col_count
 		hdr[str_temp] = params[pp]
-	col_count = col_count + 1
-	str_temp = 'col%d' % (col_count)
-	hdr[str_temp] = 'log_sfr'
-	col_count = col_count + 1
-	str_temp = 'col%d' % (col_count)
-	hdr[str_temp] = 'log_mw_age'
+		p16 = np.percentile(sampler_params[params[pp]],16)
+		p50 = np.percentile(sampler_params[params[pp]],50)
+		p84 = np.percentile(sampler_params[params[pp]],84)
+		col = fits.Column(name=params[pp], format='D', array=np.array([p16,p50,p84]))
+		cols0.append(col)
 
+	#=> SFR
+	col_count = col_count + 1
+	str_temp = 'col%d' % col_count
+	hdr[str_temp] = 'log_sfr'
+	p16 = np.percentile(sampler_log_sfr,16)
+	p50 = np.percentile(sampler_log_sfr,50)
+	p84 = np.percentile(sampler_log_sfr,84)
+	col = fits.Column(name='log_sfr', format='D', array=np.array([p16,p50,p84]))
+	cols0.append(col)
+
+	#=> mass-weighted age
+	col_count = col_count + 1
+	str_temp = 'col%d' % col_count
+	hdr[str_temp] = 'log_mw_age'
+	p16 = np.percentile(sampler_log_mw_age,16)
+	p50 = np.percentile(sampler_log_mw_age,50)
+	p84 = np.percentile(sampler_log_mw_age,84)
+	col = fits.Column(name='log_mw_age', format='D', array=np.array([p16,p50,p84]))
+	cols0.append(col)
+
+	#=> dust mass
 	if duste_switch == 'duste':
 		col_count = col_count + 1
-		str_temp = 'col%d' % (col_count)
+		str_temp = 'col%d' % col_count
 		hdr[str_temp] = 'log_dustmass'
+		p16 = np.percentile(sampler_logdustmass,16)
+		p50 = np.percentile(sampler_logdustmass,50)
+		p84 = np.percentile(sampler_logdustmass,84)
+		col = fits.Column(name='log_dustmass', format='D', array=np.array([p16,p50,p84]))
+		cols0.append(col)
 
+	#=> AGN
 	if add_agn == 1:
 		col_count = col_count + 1
 		str_temp = 'col%d' % col_count
 		hdr[str_temp] = 'log_fagn_bol'
+		p16 = np.percentile(sampler_log_fagn_bol,16)
+		p50 = np.percentile(sampler_log_fagn_bol,50)
+		p84 = np.percentile(sampler_log_fagn_bol,84)
+		col = fits.Column(name='log_fagn_bol', format='D', array=np.array([p16,p50,p84]))
+		cols0.append(col)
 
 	hdr['ncols'] = col_count
 
-	cols0 = []
-	col = fits.Column(name='id', format='K', array=np.array(sampler_id))
-	cols0.append(col)
-
-	for pp in range(0,nparams):
-		col = fits.Column(name=params[pp], format='D', array=np.array(sampler_params[params[pp]]))
-		cols0.append(col)
-
-	col = fits.Column(name='log_sfr', format='D', array=np.array(sampler_log_sfr))
-	cols0.append(col)
-
-	col = fits.Column(name='log_mw_age', format='D', array=np.array(sampler_log_mw_age))
-	cols0.append(col)
-
-	if duste_switch == 'duste':
-		col = fits.Column(name='log_dustmass', format='D', array=np.array(sampler_logdustmass))
-		cols0.append(col)
-
-	if add_agn == 1:
-		col = fits.Column(name='log_fagn_bol', format='D', array=np.array(sampler_log_fagn_bol))
-		cols0.append(col)
-
+	# combine all
+	primary_hdu = fits.PrimaryHDU(header=hdr)
 	cols = fits.ColDefs(cols0)
 	hdu = fits.BinTableHDU.from_columns(cols)
-	primary_hdu = fits.PrimaryHDU(header=hdr)
 
 	hdul = fits.HDUList([primary_hdu, hdu])
-	#fits_name_out = config_data['name_out_finalfit']
-	hdul.writeto(fits_name_out, overwrite=True)	
+	hdul.writeto(fits_name_out, overwrite=True)
 
 
 def calc_sampler_mwage(nsamples=0,sampler_pop_mass=[],sampler_tau=[],sampler_t0=[],
@@ -713,7 +724,7 @@ elif sfh_form == 'double_power_sfh':
 		sampler_log_sfr = calc_sampler_SFR_othSFH(nsamples=nsamples,sampler_params=sampler_params)
 
 fits_name_out = str(sys.argv[6])
-store_to_fits(nsamples=nsamples,sampler_params=sampler_params,sampler_log_sfr=sampler_log_sfr,
+store_to_fits(sampler_params=sampler_params,sampler_log_sfr=sampler_log_sfr,
 					sampler_log_mw_age=sampler_log_mw_age,sampler_logdustmass=sampler_logdustmass,
 					sampler_log_fagn_bol=sampler_log_fagn_bol,fits_name_out=fits_name_out)
 

@@ -1,5 +1,5 @@
 import numpy as np
-from math import log10, pow 
+from math import log10, pow, sqrt 
 import sys, os
 import fsps
 from operator import itemgetter
@@ -12,7 +12,8 @@ PIXEDFIT_HOME = os.environ['PIXEDFIT_HOME']
 sys.path.insert(0, PIXEDFIT_HOME)
 
 from piXedfit.utils.posteriors import model_leastnorm, calc_chi2, gauss_prob, gauss_prob_reduced, student_t_prob
-from piXedfit.piXedfit_model import calc_mw_age
+from piXedfit.piXedfit_model import calc_mw_age, generate_modelSED_spec_decompose
+from piXedfit.utils.filtering import cwave_filters
 
 
 def bayesian_sedfit_gauss():
@@ -21,7 +22,7 @@ def bayesian_sedfit_gauss():
 	data_randmod = hdu[1].data
 	hdu.close()
 
-	redcd_chi2 = float(config_data['redc_chi2_initfit'])
+	#redcd_chi2 = float(config_data['redc_chi2_initfit'])
 
 	numDataPerRank = int(npmod_seds/size)
 	idx_mpi = np.linspace(0,npmod_seds-1,npmod_seds)
@@ -235,7 +236,7 @@ def bayesian_sedfit_student_t():
 	data_randmod = hdu[1].data
 	hdu.close()
 
-	redcd_chi2 = float(config_data['redc_chi2_initfit'])
+	#redcd_chi2 = float(config_data['redc_chi2_initfit'])
 
 	numDataPerRank = int(npmod_seds/size)
 	idx_mpi = np.linspace(0,npmod_seds-1,npmod_seds)
@@ -438,11 +439,97 @@ def bayesian_sedfit_student_t():
 	return mod_params, mod_fluxes, mod_chi2, mod_prob, modif_obs_flux_err, sampler_log_mass, sampler_log_sfr, sampler_log_mw_age, sampler_logdustmass, sampler_log_fagn_bol
 
 
-def store_to_fits(nsamples=None,sampler_params=None,sampler_log_mass=None,sampler_log_sfr=None,sampler_log_mw_age=None,
-	sampler_logdustmass=None,sampler_log_fagn_bol=None,mod_chi2=None,mod_prob=None,cosmo_str='flat_LCDM', H0=70.0, Om0=0.3,fits_name_out=None):
+def store_to_fits(sampler_params=None,sampler_log_mass=None,sampler_log_sfr=None,sampler_log_mw_age=None,
+	sampler_logdustmass=None,sampler_log_fagn_bol=None,mod_chi2=None,mod_prob=None,fits_name_out=None):
 
-	sampler_id = np.linspace(1, nsamples, nsamples)
+	#==> Get best-fit parameters
+	crit_chi2 = np.percentile(mod_chi2, perc_chi2)
+	idx_sel = np.where((mod_chi2<=crit_chi2) & (sampler_log_sfr>-29.0) & (np.isnan(mod_prob)==False) & (np.isinf(mod_prob)==False))
 
+	array_prob = mod_prob[idx_sel[0]]
+	tot_prob = np.sum(array_prob)
+
+	params_bfits = np.zeros((nparams,2))
+	for pp in range(0,nparams):
+		array_val = sampler_params[params[pp]][idx_sel[0]]
+
+		mean_val = np.sum(array_val*array_prob)/tot_prob
+		mean_val2 = np.sum(np.square(array_val)*array_prob)/tot_prob
+		std_val = sqrt(abs(mean_val2 - (mean_val**2)))
+
+		params_bfits[pp][0] = mean_val
+		params_bfits[pp][1] = std_val
+
+	#log_mass
+	array_val = sampler_log_mass[idx_sel[0]]
+	mean_val = np.sum(array_val*array_prob)/tot_prob
+	mean_val2 = np.sum(np.square(array_val)*array_prob)/tot_prob
+	std_val = sqrt(abs(mean_val2 - (mean_val**2)))
+	log_mass_mean = mean_val
+	log_mass_std = std_val
+
+	#log_sfr
+	array_val = sampler_log_sfr[idx_sel[0]]
+	mean_val = np.sum(array_val*array_prob)/tot_prob
+	mean_val2 = np.sum(np.square(array_val)*array_prob)/tot_prob
+	std_val = sqrt(abs(mean_val2 - (mean_val**2)))
+	log_sfr_mean = mean_val
+	log_sfr_std = std_val
+
+	#log_mw_age
+	array_val = sampler_log_mw_age[idx_sel[0]]
+	mean_val = np.sum(array_val*array_prob)/tot_prob
+	mean_val2 = np.sum(np.square(array_val)*array_prob)/tot_prob
+	std_val = sqrt(abs(mean_val2 - (mean_val**2)))
+	log_mw_age_mean = mean_val
+	log_mw_age_std = std_val
+
+	#dust
+	if duste_switch == 'duste':
+		array_val = sampler_logdustmass[idx_sel[0]]
+		mean_val = np.sum(array_val*array_prob)/tot_prob
+		mean_val2 = np.sum(np.square(array_val)*array_prob)/tot_prob
+		std_val = sqrt(abs(mean_val2 - (mean_val**2)))
+		logdustmass_mean = mean_val
+		logdustmass_std = std_val
+
+	#agn
+	if add_agn == 1: 
+		array_val = sampler_log_fagn_bol[idx_sel[0]]
+		mean_val = np.sum(array_val*array_prob)/tot_prob
+		mean_val2 = np.sum(np.square(array_val)*array_prob)/tot_prob
+		std_val = sqrt(abs(mean_val2 - (mean_val**2)))
+		log_fagn_bol_mean = mean_val
+		log_fagn_bol_std = std_val
+
+
+	#==> Get best-fit model spectrum
+	def_params_val={'log_mass':0.0,'z':0.001,'log_fagn':-3.0,'log_tauagn':1.0,'log_qpah':0.54,'log_umin':0.0,'log_gamma':-2.0,
+				'dust1':0.5,'dust2':0.5,'dust_index':-0.7,'log_age':1.0,'log_alpha':0.1,'log_beta':0.1,'log_t0':0.4,
+				'log_tau':0.4,'logzsol':0.0}
+
+	idx, min_val = min(enumerate(mod_chi2), key=operator.itemgetter(1))
+	# best-fit chi-square
+	bfit_chi2 = mod_chi2[idx]
+
+	# call fsps
+	sp = fsps.StellarPopulation(zcontinuous=1, imf_type=imf)
+
+	# generate the spectrum
+	params_val = def_params_val
+	for pp in range(0,nparams):
+		params_val[params[pp]] = sampler_params[params[pp]][idx]
+	params_val['log_mass'] = sampler_log_mass[idx]
+
+	spec_SED = generate_modelSED_spec_decompose(sp=sp,params_val=params_val, imf=imf, duste_switch=duste_switch,
+							add_neb_emission=add_neb_emission,dust_ext_law=dust_ext_law,add_agn=add_agn,add_igm_absorption=add_igm_absorption,
+							igm_type=igm_type,cosmo=cosmo_str,H0=H0,Om0=Om0,sfh_form=sfh_form,funit=='erg/s/cm2/A')
+
+	# get the photometric SED:
+	bfit_photo_SED = filtering(spec_SED['wave'],spec_SED['flux_total'],filters)
+
+
+	# store to FITS file
 	hdr = fits.Header()
 	hdr['imf'] = imf
 	hdr['nparams'] = nparams
@@ -478,79 +565,113 @@ def store_to_fits(nsamples=None,sampler_params=None,sampler_log_mass=None,sample
 	hdr['cosmo'] = cosmo_str
 	hdr['H0'] = H0
 	hdr['Om0'] = Om0
-	hdr['nrows'] = nsamples
 
 	# parameters
 	for pp in range(0,nparams):
 		str_temp = 'param%d' % pp
 		hdr[str_temp] = params[pp]
 
+	# chi-square
+	hdr['redcd_chi2'] = bfit_chi2/nbands
+	hdr['perc_chi2'] = perc_chi2
+
+	# add columns
+	cols0 = []
 	col_count = 1
 	str_temp = 'col%d' % col_count
-	hdr[str_temp] = 'id'
+	hdr[str_temp] = 'rows'
+	col = fits.Column(name='rows', format='4A', array=['mean','std'])
+	cols0.append(col)
+
+	#=> basic params
 	for pp in range(0,nparams):
 		col_count = col_count + 1
 		str_temp = 'col%d' % col_count
 		hdr[str_temp] = params[pp]
+		col = fits.Column(name=params[pp], format='D', array=np.array([params_bfits[pp][0],params_bfits[pp][1]]))
+		cols0.append(col)
 
+	#=> log_mass
 	col_count = col_count + 1
 	str_temp = 'col%d' % col_count
 	hdr[str_temp] = 'log_mass'
+	col = fits.Column(name='log_mass', format='D', array=np.array([log_mass_mean,log_mass_std]))
+	cols0.append(col)
+
+	#=> log_sfr
 	col_count = col_count + 1
 	str_temp = 'col%d' % col_count
 	hdr[str_temp] = 'log_sfr'
+	col = fits.Column(name='log_sfr', format='D', array=np.array([log_sfr_mean,log_sfr_std]))
+	cols0.append(col)
+
+	#=> log_mw_age
 	col_count = col_count + 1
 	str_temp = 'col%d' % col_count
 	hdr[str_temp] = 'log_mw_age'
+	col = fits.Column(name='log_mw_age', format='D', array=np.array([log_mw_age_mean,log_mw_age_std]))
+	cols0.append(col)
 
+	#=> dust
 	if duste_switch == 'duste':
 		col_count = col_count + 1
 		str_temp = 'col%d' % col_count
 		hdr[str_temp] = 'log_dustmass'
-	if add_agn == 1:
+		col = fits.Column(name='log_dustmass', format='D', array=np.array([logdustmass_mean,logdustmass_std]))
+		cols0.append(col)
+
+	#agn
+	if add_agn == 1: 
 		col_count = col_count + 1
 		str_temp = 'col%d' % col_count
 		hdr[str_temp] = 'log_fagn_bol'
+		col = fits.Column(name='log_fagn_bol', format='D', array=np.array([log_fagn_bol_mean,log_fagn_bol_std]))
+		cols0.append(col)
 
-	col_count = col_count + 1
-	str_temp = 'col%d' % col_count
-	hdr[str_temp] = 'chi2'
-	col_count = col_count + 1
-	str_temp = 'col%d' % col_count
-	hdr[str_temp] = 'prob'
 	hdr['ncols'] = col_count
 
-	cols0 = []
-	col = fits.Column(name='id', format='K', array=np.array(sampler_id))
-	cols0.append(col)
-	for pp in range(0,nparams):
-		col = fits.Column(name=params[pp], format='D', array=np.array(sampler_params[params[pp]]))
-		cols0.append(col)
-	col = fits.Column(name='log_mass', format='D', array=np.array(sampler_log_mass))
-	cols0.append(col)
-	col = fits.Column(name='log_sfr', format='D', array=np.array(sampler_log_sfr))
-	cols0.append(col)
-	col = fits.Column(name='log_mw_age', format='D', array=np.array(sampler_log_mw_age))
-	cols0.append(col)
-	if duste_switch == 'duste':
-		col = fits.Column(name='log_dustmass', format='D', array=np.array(sampler_logdustmass))
-		cols0.append(col)
-
-	if add_agn == 1:
-		col = fits.Column(name='log_fagn_bol', format='D', array=np.array(sampler_log_fagn_bol))
-		cols0.append(col)
-
-	col = fits.Column(name='chi2', format='D', array=np.array(mod_chi2))
-	cols0.append(col)
-	col = fits.Column(name='prob', format='D', array=np.array(mod_prob))
-	cols0.append(col)
-
-	cols = fits.ColDefs(cols0)
-	hdu = fits.BinTableHDU.from_columns(cols)
+	# combine header
 	primary_hdu = fits.PrimaryHDU(header=hdr)
 
-	hdul = fits.HDUList([primary_hdu, hdu])
-	hdul.writeto(fits_name_out, overwrite=True)	
+	# combine binary table HDU1
+	cols = fits.ColDefs(cols0)
+	hdu = fits.BinTableHDU.from_columns(cols)
+
+	#==> make new table for best-fit spectra
+	cols0 = []
+	col = fits.Column(name='wave', format='D', array=np.array(spec_SED['wave']))
+	cols0.append(col)
+	col = fits.Column(name='flux_total', format='D', array=np.array(spec_SED['flux_total']))
+	cols0.append(col)
+	col = fits.Column(name='flux_stellar', format='D', array=np.array(spec_SED['flux_stellar']))
+	cols0.append(col)
+	if add_neb_emission == 1:
+		col = fits.Column(name='flux_nebe', format='D', array=np.array(spec_SED['flux_nebe']))
+		cols0.append(col)
+	if duste_switch == 'duste':
+		col = fits.Column(name='flux_duste', format='D', array=np.array(spec_SED['flux_duste']))
+		cols0.append(col)
+	if add_agn == 1:
+		col = fits.Column(name='flux_agn', format='D', array=np.array(spec_SED['flux_agn']))
+		cols0.append(col)
+	cols = fits.ColDefs(cols0)
+	hdu1 = fits.BinTableHDU.from_columns(cols)
+
+	#==> make new table for best-fit photometry
+	photo_cwave = cwave_filters(filters)
+
+	cols0 = []
+	col = fits.Column(name='wave', format='D', array=np.array(photo_cwave))
+	cols0.append(col)
+	col = fits.Column(name='flux', format='D', array=np.array(bfit_photo_SED))
+	cols0.append(col)
+	cols = fits.ColDefs(cols0)
+	hdu2 = fits.BinTableHDU.from_columns(cols)
+
+	# combine all
+	hdul = fits.HDUList([primary_hdu, hdu, hdu1, hdu2])
+	hdul.writeto(fits_name_out, overwrite=True)
+
 
 """
 USAGE: mpirun -np [npros] python ./rdsps_pcmod.py (1)name_filters_list (2)name_config (3)name_SED_txt (4)name_out_fits
@@ -564,7 +685,7 @@ size = comm.Get_size()
 rank = comm.Get_rank() 
 
 # configuration file
-global config_data
+#global config_data
 config_file = str(sys.argv[2])
 data = np.genfromtxt(temp_dir+config_file, dtype=str)
 config_data = {}
@@ -590,8 +711,8 @@ hdu.close()
 
 # number of model SEDs:
 global npmod_seds
-npmod_seds0 = int(header_randmod['nrows'])
-npmod_seds = int(npmod_seds0/size)*size
+npmod_seds = int(header_randmod['nrows'])
+npmod_seds = int(npmod_seds/size)*size
 
 global add_neb_emission
 add_neb_emission = int(header_randmod['add_neb_emission'])
@@ -629,15 +750,6 @@ add_igm_absorption = int(header_randmod['add_igm_absorption'])
 #igm_type = int(header_randmod['igm_type'])
 if add_igm_absorption == 1:
 	igm_type = int(header_randmod['igm_type'])
-
-# whether dust_index is fixed or not
-#global fix_dust_index, fix_dust_index_val
-#if float(config_data['pr_dust_index_min']) == float(config_data['pr_dust_index_max']):     # dust_index is fixed
-#	fix_dust_index = 1
-#	fix_dust_index_val = float(config_data['pr_dust_index_min'])
-#elif float(config_data['pr_dust_index_min']) != float(config_data['pr_dust_index_max']):   # dust_index varies
-#	fix_dust_index = 0
-#	fix_dust_index_val = 0
 
 global add_agn 
 add_agn = int(header_randmod['add_agn'])
@@ -679,6 +791,14 @@ for ii in range(0,nparams):
 	str_temp = 'param%d' % ii
 	params.append(header_randmod[str_temp])
 
+
+global redcd_chi2
+redcd_chi2 = float(config_data['redc_chi2_initfit'])
+
+global perc_chi2
+perc_chi2 = float(config_data['perc_chi2'])
+
+
 # running the calculation
 if likelihood_form == 'gauss':
 	mod_params, mod_fluxes, mod_chi2, mod_prob, modif_obs_flux_err, sampler_log_mass, sampler_log_sfr, sampler_log_mw_age, sampler_logdustmass, sampler_log_fagn_bol = bayesian_sedfit_gauss()
@@ -701,8 +821,8 @@ for pp in range(0,nparams):
 # store to fits file
 if rank == 0:
 	fits_name_out = str(sys.argv[4])
-	store_to_fits(nsamples=nsamples,sampler_params=sampler_params,sampler_log_mass=sampler_log_mass,sampler_log_sfr=sampler_log_sfr,
+	store_to_fits(sampler_params=sampler_params,sampler_log_mass=sampler_log_mass,sampler_log_sfr=sampler_log_sfr,
 				sampler_log_mw_age=sampler_log_mw_age,sampler_logdustmass=sampler_logdustmass, sampler_log_fagn_bol=sampler_log_fagn_bol,
-				mod_chi2=mod_chi2,mod_prob=mod_prob,cosmo_str=cosmo_str,H0=H0,Om0=Om0,fits_name_out=fits_name_out)
+				mod_chi2=mod_chi2,mod_prob=mod_prob,fits_name_out=fits_name_out)
 
 

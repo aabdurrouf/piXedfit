@@ -18,8 +18,8 @@ from piXedfit.piXedfit_model import generate_modelSED_photo_fit, generate_modelS
 
 
 # function for initial fitting:
-# mod_fluxes0 = [idx-band][idx-model]  --> this input will only be used if increase_ferr==0
-# mod_params1 = [idx-param][idx-model]  --> this input will only be used if increase_ferr==0
+# mod_fluxes0 = [idx-band][idx-model]  --> this input will be used if increase_ferr==0
+# mod_params1 = [idx-param][idx-model]  --> this input will be used if increase_ferr==0
 def initfit(increase_ferr,name_saved_randmod):
 	# Fits file containing pre-calculated model SEDs:
 	hdu = fits.open(name_saved_randmod)
