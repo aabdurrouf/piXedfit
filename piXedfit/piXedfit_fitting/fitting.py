@@ -12,7 +12,7 @@ os.environ["OMP_NUM_THREADS"] = "1"
 
 __all__ = ["singleSEDfit", "SEDfit_from_binmap", "SEDfit_pixels_from_fluxmap", "inferred_params_mcmc_list", "inferred_params_rdsps_list",
 			"get_inferred_params_mcmc", "map_params_mcmc", "get_inferred_params_rdsps", "map_params_rdsps", 
-			"map_params_rdsps_from_list"]
+			"map_params_rdsps_from_list", "map_params_fit_pixels_mcmc"]
 
 
 def nproc_reduced(nproc,nwalkers,nsteps,nsteps_cut):
@@ -1304,9 +1304,6 @@ def inferred_params_mcmc_list(list_name_fits=[],name_out_fits=None):
 
 	:param name_out_fits: (optional, default: None)
 		Desired name for the output FITS file.
-
-	:returns name_out_fits:
-		Output FITS file.
 	"""
 
 	nfiles = len(list_name_fits)
@@ -1373,7 +1370,6 @@ def inferred_params_mcmc_list(list_name_fits=[],name_out_fits=None):
 				elif indexes[ii] == 'p84':
 					arrays_fitres[str_temp][jj] = np.percentile(data_samp, 84)
 
-
 	# make output FITS file to store the results
 	hdr = fits.Header()
 	hdr['nfiles'] = nfiles
@@ -1409,7 +1405,6 @@ def inferred_params_mcmc_list(list_name_fits=[],name_out_fits=None):
 	return name_out_fits
 
 
-
 def inferred_params_rdsps_list(list_name_fits=[], perc_chi2=10.0, name_out_fits=None):
 	"""Function for calculating inferred parameters (i.e., median posteriors) of fitting results obtained with RDSPS method.
 	The expected input is a list of FITS files contining the model properties which are output of :func:`singleSEDfit` or :func:`SEDfit_from_binmap` functions. 
@@ -1424,9 +1419,6 @@ def inferred_params_rdsps_list(list_name_fits=[], perc_chi2=10.0, name_out_fits=
 
 	:param name_out_fits: (default: None)
 		Desired name for the output FITS file.
-
-	:returns name_out_fits:
-		Output FITS file.
 	"""
 	
 	nseds = len(list_name_fits)
@@ -1527,49 +1519,25 @@ def get_inferred_params_mcmc(list_name_sampler_fits=[], bin_excld_flag=[]):
 	"""
 	nfiles = len(list_name_sampler_fits)
 
-	# get the parameters in one file
-	hdu = fits.open(list_name_sampler_fits[0])
-	# get parameters
+	# get list of parameters
+	hdu = fits.open(list_name_sampler_fits[nfiles-1])
 	tfields = int(hdu[1].header['TFIELDS'])
-	params1 = []
+	params = []
 	for ii in range(1,tfields):
 		str_temp = 'TTYPE%d' % (ii+1)
-		params1.append(hdu[1].header[str_temp])
-	nparams1 = len(params1)
+		params.append(hdu[1].header[str_temp])
+	nparams = len(params)
 	hdu.close()
 
-	# get the parameters in other file
-	for bb in range(int(nfiles), 0, -1):
-		if bin_excld_flag[bb-1] != 1:
-			hdu = fits.open(list_name_sampler_fits[bb-1])
-			tfields = int(hdu[1].header['TFIELDS'])
-			params2 = []
-			for ii in range(1,tfields):
-				str_temp = 'TTYPE%d' % (ii+1)
-				params2.append(hdu[1].header[str_temp])
-			nparams2 = len(params2)
-			hdu.close()
-			break
-
-	indexes = statistics ["p16","p50","p84"]
+	indexes = ["p16","p50","p84"]
 	nindexes = len(indexes)
-
-	if nparams1 < nparams2:
-		nparams3 = nparams2
-		params3 = params2
-
-		nparams2 = nparams1
-		params2 = params1
-
-		nparams1 = nparams3
-		params1 = params3
 
 	# allocate memory
 	bfit_param = {}
-	for pp in range(0,nparams1):
-		bfit_param[params1[pp]] = {}
+	for pp in range(0,nparams):
+		bfit_param[params[pp]] = {}
 		for ii in range(0,nindexes):
-			bfit_param[params1[pp]][indexes[ii]] = np.zeros(nfiles) - 99.0
+			bfit_param[params[pp]][indexes[ii]] = np.zeros(nfiles) - 99.0
 
 	# calculation
 	for ii in range(0,nfiles):
@@ -1597,21 +1565,24 @@ def get_inferred_params_mcmc(list_name_sampler_fits=[], bin_excld_flag=[]):
 						bfit_param[params0[pp]][indexes[kk]][ii] = np.percentile(data_samp, 84)
 			hdu.close()
 
-	return bfit_param,params1
+	return bfit_param,params
 
 
-
-def map_params_mcmc(fits_binmap=None, name_chains_fits=[], fits_fluxmap=None, refband_SFR=None, refband_SM=None, refband_Mdust=None,
-	bin_id_exclude=[], name_out_fits=None):
+def map_params_mcmc(fits_binmap=None, bin_ids=[], name_sampler_fits=[], fits_fluxmap=None, refband_SFR=None, 
+	refband_SM=None, refband_Mdust=None, name_out_fits=None):
 	"""Function for calculating maps of properties from the fitting results obtained with the MCMC method.
 
-	:param fits_binmap: (Mandatory, default=None)
+	:param fits_binmap:
 		FITS file containing the reduced data after the pixel binning process, which is output of the :func:`pixel_binning_photo` function in the :mod:`piXedfit_bin` module.
 
-	:param name_chains_fits: (Mandatory, default: [])
-		List of names of the FITS files containing the fitting results.
+	:param bin_ids:
+		Bin indices of the FITS files listed in name_sampler_fits input. Allowed format is a 1D array. The id starts from 0. 
 
-	:param fits_fluxmap: (Mandatory, default: None)
+	:param name_sampler_fits:
+		List of the names of the FITS files containing the fitting results of spatial bins. This should have the same number of element as that of bin_ids. 
+		The number of element doesn't necessarily the same as the number of bins. A missing bin will be ignored in the creation of the maps of properties.
+
+	:param fits_fluxmap:
 		FITS file containing reduced maps of multiband fluxes, which is output of the :func:`flux_map` in the :class:`images_processing` class in the :mod:`piXedfit_images` module.
 
 	:param refband_SFR: (default: None)
@@ -1631,10 +1602,11 @@ def map_params_mcmc(fits_binmap=None, name_chains_fits=[], fits_fluxmap=None, re
 
 	:param name_out_fits: (optional, default: None)
 		Desired name for the output FITS file.   
-
-	:returns name_out_fits:
-		Output FITS file.
 	"""
+
+	if len(bin_ids) != len(name_sampler_fits):
+		print ("Both bin_ids and name_sampler_fits are required and they should have the same number of elements!")
+		sys.exit()
 
 	# open the FITS file containing the pixel binning map
 	hdu = fits.open(fits_binmap)
@@ -1651,17 +1623,13 @@ def map_params_mcmc(fits_binmap=None, name_chains_fits=[], fits_fluxmap=None, re
 	dim_x = pix_bin_flag.shape[1]
 
 	# flag for excluded bins
-	bin_excld_flag = np.zeros(nbins)
-	for bb in range(0,len(bin_id_exclude)):
-		idx0 = bin_id_exclude[bb] - 1
-		bin_excld_flag[int(idx0)] = 1
-
-	# list of FITS files names
-	if len(name_chains_fits) == 0:
-		name_chains_fits = []
-		for bb in range(0,nbins):
-			name_chains_fits0 = "mcmc_bin%d.fits" % (bb+1)
-			name_chains_fits.append(name_chains_fits0)
+	name_sampler_fits1 = []
+	for bb in range(0,nbins):
+		name_sampler_fits1.append("temp")
+	bin_excld_flag = np.zeros(nbins) + 1
+	for bb in range(0,len(bin_ids)):
+		bin_excld_flag[int(bin_ids[bb])] = 0
+		name_sampler_fits1[int(bin_ids[bb])] = name_sampler_fits[bb]
 
 	# open FITS file containing multiband fluxes maps
 	hdu = fits.open(fits_fluxmap)
@@ -1671,14 +1639,52 @@ def map_params_mcmc(fits_binmap=None, name_chains_fits=[], fits_fluxmap=None, re
 	pix_flux_err = hdu['flux_err'].data*unit_pix
 	hdu.close()
 
-	# get the fitting results
-	bfit_param,params = get_inferred_params_mcmc(list_name_sampler_fits=name_chains_fits,bin_excld_flag=bin_excld_flag)
-
-	nparams = len(params)
+	# inspect whether the FITS fitting results contains sampler chains or only the inferred parameters
+	hdu = fits.open(name_sampler_fits[0])
+	header_samplers = hdu[0].header
+	if header_samplers['col1'] == 'rows':
+		store_full_samplers = 0
+	elif header_samplers['col1'] == 'id':
+		store_full_samplers = 1
+	hdu.close()
 
 	indexes = ["p16","p50","p84"]
 	nindexes = len(indexes)
 
+	#=> get the fitting results
+	if store_full_samplers == 1:
+		bfit_param,params = get_inferred_params_mcmc(list_name_sampler_fits=name_sampler_fits1,bin_excld_flag=bin_excld_flag)
+
+	elif store_full_samplers == 0:
+		nfiles = len(name_sampler_fits)
+
+		# get params
+		hdu = fits.open(name_sampler_fits[nfiles-1])
+		params = []
+		for ii in range(2,int(hdu[0].header['ncols']+1)):
+			str_temp = 'col%d' % ii
+			params.append(hdu[0].header[str_temp])
+		hdu.close()
+		nparams = len(params)
+
+		# allocate memory
+		bfit_param = {}
+		for pp in range(0,nparams):
+			bfit_param[params[pp]] = {}
+			for ii in range(0,nindexes):
+				bfit_param[params[pp]][indexes[ii]] = np.zeros(nbins) - 99.0
+
+		# get bfit_param
+		for ii in range(0,nbins):
+			if bin_excld_flag[ii] != 1:
+				hdu = fits.open(name_sampler_fits[ii])
+				for pp in range(0,nparams):
+					bfit_param[params[pp]]["p16"][ii] = hdu[1].data[params[pp]][0]
+					bfit_param[params[pp]]["p50"][ii] = hdu[1].data[params[pp]][1]
+					bfit_param[params[pp]]["p84"][ii] = hdu[1].data[params[pp]][2]
+				hdu.close()
+
+	nparams = len(params)
 	# Make FITS file:
 	hdul = fits.HDUList()
 	hdr = fits.Header()
@@ -1808,15 +1814,19 @@ def get_inferred_params_rdsps(list_name_sampler_fits=[], bin_excld_flag=[], perc
 
 
 
-def map_params_rdsps(fits_binmap=None, name_chains_fits=[], fits_fluxmap=None, refband_SFR=None, refband_SM=None, 
+def map_params_rdsps(fits_binmap=None, bin_ids=[], name_sampler_fits=[], fits_fluxmap=None, refband_SFR=None, refband_SM=None, 
 	refband_Mdust=None, bin_id_exclude=[], perc_chi2=10.0, name_out_fits=None):
 	"""Function for calculating maps of properties from the fitting results obtained with the RDSPS method.
 
 	:param fits_binmap: (Mandatory, default=None)
 		FITS file containing the reduced data after the pixel binning process, which is output of the :func:`pixel_binning_photo` function in the :mod:`piXedfit_bin` module.
 
-	:param name_chains_fits: (Mandatory, default: [])
-		List of names of the FITS files containing the fitting results.
+	:param bin_ids:
+		Bin indices of the FITS files listed in name_sampler_fits input. Allowed format is a 1D array. The id starts from 0. 
+
+	:param name_sampler_fits:
+		List of the names of the FITS files containing the fitting results of spatial bins. This should have the same number of element as that of bin_ids. 
+		The number of element doesn't necessarily the same as the number of bins. A missing bin will be ignored in the creation of the maps of properties.
 
 	:param fits_fluxmap: (Mandatory, default: None)
 		FITS file containing reduced maps of multiband fluxes, which is output of the :func:`flux_map` in the :class:`images_processing` class in the :mod:`piXedfit_images` module.
@@ -1842,9 +1852,6 @@ def map_params_rdsps(fits_binmap=None, name_chains_fits=[], fits_fluxmap=None, r
 
 	:param name_out_fits: (optional, default: None)
 		Desired name for the output FITS file.   
-
-	:returns name_out_fits:
-		Output FITS file.
 	"""
 
 	# open the FITS file containing the pixel binning map
@@ -1861,16 +1868,14 @@ def map_params_rdsps(fits_binmap=None, name_chains_fits=[], fits_fluxmap=None, r
 	dim_y = pix_bin_flag.shape[0]
 	dim_x = pix_bin_flag.shape[1]
 
-	bin_excld_flag = np.zeros(nbins)
-	for bb in range(0,len(bin_id_exclude)):
-		idx0 = bin_id_exclude[bb] - 1
-		bin_excld_flag[int(idx0)] = 1 
-
-	if len(name_chains_fits) == 0:
-		name_chains_fits = []
-		for bb in range(0,nbins):
-			name_chains_fits0 = "rdsps_bin%d.fits" % (bb+1)
-			name_chains_fits.append(name_chains_fits0)
+	# flag for excluded bins
+	name_sampler_fits1 = []
+	for bb in range(0,nbins):
+		name_sampler_fits1.append("temp")
+	bin_excld_flag = np.zeros(nbins) + 1
+	for bb in range(0,len(bin_ids)):
+		bin_excld_flag[int(bin_ids[bb])] = 0
+		name_sampler_fits1[int(bin_ids[bb])] = name_sampler_fits[bb]
 
 	# open FITS file containing multiband fluxes maps
 	hdu = fits.open(fits_fluxmap)
@@ -1880,12 +1885,52 @@ def map_params_rdsps(fits_binmap=None, name_chains_fits=[], fits_fluxmap=None, r
 	pix_flux_err = hdu['flux_err'].data*unit_pix
 	hdu.close()
 
-	# get the fitting results
-	bfit_param,params,indexes = get_inferred_params_rdsps(list_name_sampler_fits=name_chains_fits, bin_excld_flag=bin_excld_flag, perc_chi2=perc_chi2)
+	# inspect whether the FITS fitting results contains sampler chains or only the inferred parameters
+	hdu = fits.open(name_sampler_fits[0])
+	header_samplers = hdu[0].header
+	if header_samplers['col1'] == 'rows':
+		store_full_samplers = 0
+	elif header_samplers['col1'] == 'id':
+		store_full_samplers = 1
+	hdu.close()
 
-	nparams = len(params)
+	indexes = ["mean", "mean_err"]
 	nindexes = len(indexes)
 
+	#=> get the fitting results
+	if store_full_samplers == 1:
+		bfit_param,params,indexes = get_inferred_params_rdsps(list_name_sampler_fits=name_sampler_fits1, bin_excld_flag=bin_excld_flag, perc_chi2=perc_chi2)
+
+	elif store_full_samplers == 0:
+		nfiles = len(name_sampler_fits)
+
+		# get params
+		hdu = fits.open(name_sampler_fits[nfiles-1])
+		params = []
+		for ii in range(2,int(hdu[0].header['ncols']+1)):
+			str_temp = 'col%d' % ii
+			params.append(hdu[0].header[str_temp])
+		hdu.close()
+		nparams = len(params)
+
+		# allocate memory
+		bfit_param = {}
+		for pp in range(0,nparams):
+			bfit_param[params[pp]] = {}
+			for ii in range(0,nindexes):
+				bfit_param[params[pp]][indexes[ii]] = np.zeros(nbins) - 99.0
+
+		# get bfit_param
+		for ii in range(0,nbins):
+			if bin_excld_flag[ii] != 1:
+				hdu = fits.open(name_sampler_fits[ii])
+				for pp in range(0,nparams):
+					bfit_param[params[pp]]["mean"][ii] = hdu[1].data[params[pp]][0]
+					bfit_param[params[pp]]["mean_err"][ii] = hdu[1].data[params[pp]][1]
+				hdu.close()
+
+
+	nparams = len(params)
 	#=> Store to FITS file
 	hdul = fits.HDUList()
 	hdr = fits.Header()
@@ -2019,9 +2064,6 @@ def map_params_rdsps_from_list(fits_binmap=None, fits_fluxmap=None, fit_results=
 
 	:param name_out_fits: (optional, default: None)
 		Desired name for the output FITS file.   
-
-	:returns name_out_fits:
-		Output FITS file.
 	"""
 
 	# open the FITS file containing pixel binning map
@@ -2078,7 +2120,6 @@ def map_params_rdsps_from_list(fits_binmap=None, fits_fluxmap=None, fit_results=
 
 	indexes = ["mean", "mean_err"]
 	nindexes = len(indexes)
-
 
 	bfit_param = {}
 	for pp in range(0,nparams):
@@ -2184,9 +2225,125 @@ def map_params_rdsps_from_list(fits_binmap=None, fits_fluxmap=None, fit_results=
 		name_out_fits = "fitres_%s" % fits_binmap
 	hdul.writeto(name_out_fits, overwrite=True)
 
-
 	return name_out_fits
 
+
+
+def map_params_fit_pixels_mcmc(fits_fluxmap=None, pix_x=[], pix_y=[], name_sampler_fits=[], name_out_fits=None):
+	"""Function for calculating maps of properties from the fitting results obtained with the MCMC method.
+
+	:param fits_fluxmap: 
+		FITS file containing reduced maps of multiband fluxes, which is output of the :func:`flux_map` in the :class:`images_processing` class in the :mod:`piXedfit_images` module.
+
+	:param pix_x:
+		x coordinates of pixels associated with the FITS files (fitting results) in name_sampler_fits input.
+
+	:param pix_y:
+		y coordinates of pixels associated with the FITS files (fitting results) in name_sampler_fits input.
+
+	:param name_sampler_fits: 
+		List of names of the FITS files containing the fitting results. 
+		The three inputs of pix_x, pix_y, and name_sampler_fits should have the same number of elements.
+
+	:param name_out_fits: (optional, default: None)
+		Desired name for the output FITS file.   
+	"""
+	npixs = len(name_sampler_fits)
+
+	if len(pix_x)!=npixs or len(pix_y)!=npixs:
+		print ("pix_x and pix_y should have the same number of elements as that of name_sampler_fits!")
+		sys.exit()
+
+	# open FITS file containing multiband fluxes maps
+	hdu = fits.open(fits_fluxmap)
+	galaxy_region = hdu['galaxy_region'].data
+	gal_z = float(hdu[0].header['z'])
+	hdu.close()
+
+	dim_y = galaxy_region.shape[0]
+	dim_x = galaxy_region.shape[1]
+
+	# inspect whether the FITS fitting results contains sampler chains or only the inferred parameters
+	hdu = fits.open(name_sampler_fits[0])
+	header_samplers = hdu[0].header
+	if header_samplers['col1'] == 'rows':
+		store_full_samplers = 0
+	elif header_samplers['col1'] == 'id':
+		store_full_samplers = 1
+	hdu.close()
+
+	indexes = ["p16","p50","p84"]
+	nindexes = len(indexes)
+
+	#=> get the fitting results
+	if store_full_samplers == 1:
+		bin_excld_flag = np.zeros(npixs)
+		bfit_param,params = get_inferred_params_mcmc(list_name_sampler_fits=name_sampler_fits,bin_excld_flag=bin_excld_flag)
+
+	elif store_full_samplers == 0:
+		# get params
+		hdu = fits.open(name_sampler_fits[npixs-1])
+		params = []
+		for ii in range(2,int(hdu[0].header['ncols']+1)):
+			str_temp = 'col%d' % ii
+			params.append(hdu[0].header[str_temp])
+		hdu.close()
+		nparams = len(params)
+
+		# allocate memory
+		bfit_param = {}
+		for pp in range(0,nparams):
+			bfit_param[params[pp]] = {}
+			for ii in range(0,nindexes):
+				bfit_param[params[pp]][indexes[ii]] = np.zeros(npixs) - 99.0
+
+		# get bfit_param
+		for ii in range(0,npixs):
+			hdu = fits.open(name_sampler_fits[ii])
+			for pp in range(0,nparams):
+				bfit_param[params[pp]]["p16"][ii] = hdu[1].data[params[pp]][0]
+				bfit_param[params[pp]]["p50"][ii] = hdu[1].data[params[pp]][1]
+				bfit_param[params[pp]]["p84"][ii] = hdu[1].data[params[pp]][2]
+			hdu.close()
+
+	nparams = len(params)
+	# Make FITS file:
+	hdul = fits.HDUList()
+	hdr = fits.Header()
+	hdr['gal_z'] = gal_z
+	count_HDU = 2
+	# pixel space
+	for pp in range(0,nparams):
+		for ii in range(0,nindexes):
+			idx_str = "pix-%s-%s" % (params[pp],indexes[ii])
+			str_temp = 'HDU%d' % int(count_HDU)
+			hdr[str_temp] = idx_str
+			count_HDU = count_HDU + 1
+	hdr['nHDU'] = count_HDU
+	primary_hdu = fits.PrimaryHDU(header=hdr)
+	hdul.append(primary_hdu)
+
+	# get number of parameters to be distributed to pixel space
+	nparams_pix = len(params_pix)
+
+	hdul.append(fits.ImageHDU(galaxy_region, name='galaxy_region'))
+
+	# maps of properties
+	for pp in range(0,nparams):
+		for ii in range(0,nindexes):
+			idx_str = "bin-%s-%s" % (params[pp],indexes[ii])
+			map_prop = np.zeros((dim_y,dim_x)) - 99.0
+			for jj in range(0,npixs):
+				yy = int(pix_y[jj])
+				xx = int(pix_x[jj])
+				map_prop[yy][xx] = bfit_param[params[pp]][indexes[ii]][jj]
+			hdul.append(fits.ImageHDU(map_prop, name=idx_str))
+				
+	if name_out_fits == None:
+		name_out_fits = "fitres_%s" % fits_binmap
+	hdul.writeto(name_out_fits, overwrite=True)
+
+	return name_out_fits
 
 
 
