@@ -7,6 +7,8 @@ from astropy.io import fits
 __all__ = ["pixel_binning_photo"]
 
 
+#### This code is under active development!
+
 def pixel_binning_photo(flux_map_fits=None, filters=None, ref_band=None, Dmin_bin=2.0, SNR=[], 
 	redc_chi2_limit=4.0, sys_err_factor=0.0, name_out_fits=None):
 	"""A function for conducting pixel binning to maximize the S/N of spatially resolved SEDs.
