@@ -1,9 +1,7 @@
 import numpy as np 
 from math import pi, pow, sqrt, cos, sin 
 import sys, os
-import operator
-#import photutils
-#import astropy
+from operator import itemgetter
 from numpy import unravel_index
 from astropy.io import fits
 from astropy.wcs import WCS 
@@ -12,7 +10,6 @@ from astropy.convolution import convolve_fft
 from astropy.stats import SigmaClip
 from astropy.modeling.models import Gaussian2D
 from scipy import interpolate
-from reproject import reproject_exact
 from photutils import Background2D, MedianBackground
 from photutils import CosineBellWindow, HanningWindow, create_matching_kernel
 from astropy.cosmology import *
@@ -748,7 +745,7 @@ def create_kernels_miniJPAS(filters=[], psf_img=[], pix_scale=0.2267, alpha_cosb
 		hdu.close()
 
 	# get the largest PSF size:
-	idx_max, max_val = max(enumerate(fwhm), key=operator.itemgetter(1))
+	idx_max, max_val = max(enumerate(fwhm), key=itemgetter(1))
 
 	# get reference PSF:
 	hdu = fits.open(psf_img[idx_max])
@@ -892,7 +889,6 @@ def subtract_background(fits_image=None, hdu_idx=0, sigma=3.0, box_size=None, ma
 				rows, cols = np.where((mask_region0==1) or (mask_region==1))
 				mask_region1[rows,cols] = 1
 
-		#print ("[Estimating skybackground of %s]" % fits_image)
 		sigma_clip = SigmaClip(sigma=sigma)
 		bkg_estimator = MedianBackground()
 		bkg = Background2D(data_image, (box_size[0], box_size[1]), filter_size=(3, 3), mask=mask_region1,
@@ -952,6 +948,21 @@ def subtract_background(fits_image=None, hdu_idx=0, sigma=3.0, box_size=None, ma
 	name_out_skybgsub = "skybgsub_%s" % fits_image
 	fits.writeto(name_out_skybgsub, skybgsub_image, header, overwrite=True)
 	print ("produce %s" % name_out_skybgsub)
+
+
+def unknown_images(filters):
+	list_filters = ['galex_fuv', 'galex_nuv', 'sdss_u', 'sdss_g', 'sdss_r', 'sdss_i',
+					'sdss_z', '2mass_j', '2mass_h', '2mass_k', 'spitzer_irac_36', 'spitzer_irac_45',
+					'spitzer_irac_58', 'spitzer_irac_80', 'spitzer_mips_24', 'spitzer_mips_70',
+					'spitzer_mips_160', 'herschel_pacs_70', 'herschel_pacs_100', 'herschel_pacs_160',
+					'herschel_spire_250', 'herschel_spire_350', 'herschel_spire_500', 'wise_w1', 'wise_w2',
+					'wise_w3', 'wise_w4']
+	unknown = []
+	for fil in filters:
+		if (fil in list_filters) == False:
+			unknown.append(fil)
+
+	return unknown 
 
 
 def check_avail_kernel(filter_init=None, filter_final=None):
@@ -1014,8 +1025,49 @@ def get_psf_fwhm(filters=[]):
 	return psf_fwhm
 
 
+def get_largest_FWHM_PSF(filters=None):
+	"""A function to find a band that has largest PSF size
+	"""
+	col_fwhm_psf = {}
+	col_fwhm_psf['galex_fuv'] = 4.48
+	col_fwhm_psf['galex_nuv'] = 5.05
+	col_fwhm_psf['sdss_u'] = 1.4
+	col_fwhm_psf['sdss_g'] = 1.4
+	col_fwhm_psf['sdss_r'] = 1.2
+	col_fwhm_psf['sdss_i'] = 1.2
+	col_fwhm_psf['sdss_z'] = 1.2
+	col_fwhm_psf['2mass_j'] = 3.4
+	col_fwhm_psf['2mass_h'] = 3.4
+	col_fwhm_psf['2mass_k'] = 3.5
+	col_fwhm_psf['spitzer_irac_36'] = 1.9
+	col_fwhm_psf['spitzer_irac_45'] = 1.81
+	col_fwhm_psf['spitzer_irac_58'] = 2.11
+	col_fwhm_psf['spitzer_irac_80'] = 2.82
+	col_fwhm_psf['spitzer_mips_24'] = 6.43
+	col_fwhm_psf['spitzer_mips_70'] = 18.74
+	col_fwhm_psf['spitzer_mips_160'] = 38.78
+	col_fwhm_psf['herschel_pacs_70'] = 5.67
+	col_fwhm_psf['herschel_pacs_100'] = 7.04
+	col_fwhm_psf['herschel_pacs_160'] = 11.18
+	col_fwhm_psf['herschel_spire_250'] = 18.15
+	col_fwhm_psf['herschel_spire_350'] = 24.88
+	col_fwhm_psf['herschel_spire_500'] = 36.09
+	col_fwhm_psf['wise_w1'] = 5.79
+	col_fwhm_psf['wise_w2'] = 6.37
+	col_fwhm_psf['wise_w3'] = 6.60
+	col_fwhm_psf['wise_w4'] = 11.89
 
-def get_largest_FWHM_PSF(filters=None, col_fwhm_psf=None, seeing_wfcam_y=None, seeing_wfcam_j=None, seeing_wfcam_h=None, seeing_wfcam_k=None,
+	nbands = len(filters)
+	fil_fwhm = np.zeros(nbands)
+	for bb in range(0,nbands):
+		fil_fwhm[bb] = col_fwhm_psf[filters[bb]]
+
+	idx_fil_max, max_val = max(enumerate(fil_fwhm), key=itemgetter(1))
+
+	return idx_fil_max
+
+
+def old_get_largest_FWHM_PSF(filters=None, col_fwhm_psf=None, seeing_wfcam_y=None, seeing_wfcam_j=None, seeing_wfcam_h=None, seeing_wfcam_k=None,
 	seeing_vircam_z=None, seeing_vircam_y=None, seeing_vircam_j=None, seeing_vircam_h=None, seeing_vircam_ks=None):
 	"""A function to find a band that has largest PSF size
 	"""
@@ -1156,7 +1208,7 @@ def ellipse_fit(data=None, init_x0=None, init_y0=None, init_sma=10.0,
 		idx_sma = nell - 1
 	else:
 		abs_dist = np.absolute(isolist.sma - rmax)
-		idx_sma, min_val = min(enumerate(abs_dist), key=operator.itemgetter(1))
+		idx_sma, min_val = min(enumerate(abs_dist), key=itemgetter(1))
 
 	ell = isolist.eps[idx_sma]
 	pa = isolist.pa[idx_sma]
@@ -1208,21 +1260,21 @@ def draw_ellipse(x_cent,y_cent,a,e,pa):
 	num_points = count
 	# the negative x side:
 	for ii in range(num_points,0,-1):
-		x_temp.append(-1.0*x_temp[int(ii)-1])
-		y_temp.append(y_temp[int(ii)-1])
+		x_temp.append(-1.0*x_temp[ii-1])
+		y_temp.append(y_temp[ii-1])
         
 	# store the ellipse's coordinates:
 	ellipse_xy = []
 	for xx in range(0,2):
 		ellipse_xy.append([])
 		for ii in range(0,2*num_points):
-			if int(xx)==0:
+			if xx==0:
 				# transform to x-y plane:
-				x0 = x_temp[int(ii)]*cos(pa) - y_temp[int(ii)]*sin(pa)
-				ellipse_xy[int(xx)].append(x0+x_cent)
+				x0 = x_temp[ii]*cos(pa) - y_temp[ii]*sin(pa)
+				ellipse_xy[xx].append(x0+x_cent)
 			elif int(xx)==1:
-				y0 = x_temp[int(ii)]*sin(pa) + y_temp[int(ii)]*cos(pa)
-				ellipse_xy[int(xx)].append(y0+y_cent)
+				y0 = x_temp[ii]*sin(pa) + y_temp[ii]*cos(pa)
+				ellipse_xy[xx].append(y0+y_cent)
 
 	return ellipse_xy
 
@@ -1245,61 +1297,11 @@ def ellipse_sma(ell,pa,x_norm,y_norm):
 		Radii of the pixels (along the semi-major axis).  
 	"""
 
-	# convert to the x'-y' plane:
 	x_norm_rot = np.asarray(x_norm)*cos(pa*pi/180.0) + np.asarray(y_norm)*sin(pa*pi/180.0)
 	y_norm_rot = -1.0*np.asarray(x_norm)*sin(pa*pi/180.0) + np.asarray(y_norm)*cos(pa*pi/180.0)
-	# get the semi-major axis of the pixel at x'-y' plane:
 	sma = np.sqrt((y_norm_rot*y_norm_rot) + (x_norm_rot*x_norm_rot/(1.0-ell)/(1.0-ell)))
+
 	return sma
-
-
-def old_crop_ellipse_galregion(gal_region0,x_cent,y_cent,ell,pa,rmax):
-	"""A function for cropping a galaxy's region within an ellipse aperture.
-	The input should be in 2D array with values of either 1 (meaning 
-	that the pixel is belong to the galaxy's region) or 0 (meaning 
-	that the pixel is not belong to the galaxy's region)
-
-	:param gal_region0:
-		Original galaxy's region. Should be in 2D array as explained above
-
-	:param x_cent and y_cent:
-		The central coordinate of the galaxy
-
-	:param ell:
-		The ellipticity of the ellipse aperture used as reference in cropping
-
-	:param pa:
-		The position angle of the ellipse aperture used as reference in cropping
-
-	:param rmax:
-		The radius (along the semi-major axis) of tne ellipse aperture
-
-	:returns gal_region:
-		The cropped galaxy's region
-	"""
-
-	dim_y = gal_region0.shape[0]
-	dim_x = gal_region0.shape[1]
-
-	npixs = dim_y*dim_x
-	pix_x_norm = np.zeros(npixs)
-	pix_y_norm = np.zeros(npixs)
-	idx = 0
-	for yy in range(0,dim_y):
-		for xx in range(0,dim_x):
-			pix_x_norm[int(idx)] = xx - x_cent
-			pix_y_norm[int(idx)] = yy - y_cent
-			idx = idx + 1
-
-	sma = ellipse_sma(ell,pa,pix_x_norm,pix_y_norm)
-	gal_region = np.zeros((dim_y,dim_x))
-	for ii in range(0,npixs):
-		xx = pix_x_norm[int(ii)] + x_cent
-		yy = pix_y_norm[int(ii)] + y_cent
-		if gal_region0[int(yy)][int(xx)] == 1 and sma[ii]<=rmax:
-			gal_region[int(yy)][int(xx)] = 1
-
-	return gal_region
 
 
 def crop_ellipse_galregion(gal_region0,x_cent,y_cent,ell,pa,rmax):
@@ -1346,6 +1348,7 @@ def crop_ellipse_galregion(gal_region0,x_cent,y_cent,ell,pa,rmax):
 	gal_region[rows,cols] = 1
 
 	return gal_region 
+
 
 
 def crop_ellipse_galregion_fits(input_fits=None,x_cent=None,y_cent=None,
@@ -1396,30 +1399,37 @@ def crop_ellipse_galregion_fits(input_fits=None,x_cent=None,y_cent=None,
 		y_cent = (dim_y-1)/2
 
 	# get modified galaxy's region
-	gal_region = crop_ellipse_galregion(gal_region0,x_cent,y_cent,ell,pa,rmax) 
+	gal_region = crop_ellipse_galregion(gal_region0,x_cent,y_cent,ell,pa,rmax)
 
-	# crop the flux maps following the modified gal_region
+	# number of filters
 	nbands = int(header['nfilters'])
+
+	rows, cols = np.where(gal_region==1)
+
 	map_flux = np.zeros((nbands,dim_y,dim_x))
 	map_flux_err = np.zeros((nbands,dim_y,dim_x))
 	for bb in range(0,nbands):
-		for yy in range(0,dim_y):
-			for xx in range(0,dim_x):
-				if gal_region[int(yy)][int(xx)] == 1:
-					map_flux[bb][int(yy)][int(xx)] = map_flux0[bb][int(yy)][int(xx)]
-					map_flux_err[bb][int(yy)][int(xx)] = map_flux_err0[bb][int(yy)][int(xx)]
+		map_flux[bb][rows,cols] = map_flux0[bb][rows,cols]
+		map_flux_err[bb][rows,cols] = map_flux_err0[bb][rows,cols]
+
+	# crop the flux maps following the modified gal_region
+	#nbands = int(header['nfilters'])
+	#map_flux = np.zeros((nbands,dim_y,dim_x))
+	#map_flux_err = np.zeros((nbands,dim_y,dim_x))
+	#for bb in range(0,nbands):
+	#	for yy in range(0,dim_y):
+	#		for xx in range(0,dim_x):
+	#			if gal_region[int(yy)][int(xx)] == 1:
+	#				map_flux[bb][int(yy)][int(xx)] = map_flux0[bb][int(yy)][int(xx)]
+	#				map_flux_err[bb][int(yy)][int(xx)] = map_flux_err0[bb][int(yy)][int(xx)]
 
 	# store to FITS file
 	hdul = fits.HDUList()
 	primary_hdu = fits.PrimaryHDU(header=header)
 	hdul.append(primary_hdu)
-	# add mask map to the HDU list
 	hdul.append(fits.ImageHDU(gal_region, name='galaxy_region'))
-	# add fluxes maps to the HDU list
 	hdul.append(fits.ImageHDU(map_flux, name='flux'))
-	# add flux errors maps to the HDU list
 	hdul.append(fits.ImageHDU(map_flux_err, name='flux_err'))
-	# add one of the stamp image (the first band):
 	hdul.append(fits.ImageHDU(data=stamp_img, header=stamp_hdr, name='stamp_image'))
 	# write to fits file
 	if name_out_fits == None:
@@ -1429,7 +1439,45 @@ def crop_ellipse_galregion_fits(input_fits=None,x_cent=None,y_cent=None,
 	return name_out_fits
 
 
-def crop_stars(gal_region0=[],x_cent=[],y_cent=[],radius=[]):
+
+def crop_stars(gal_region=[],x_cent=[],y_cent=[],radius=[]):
+	"""A function for cropping foreground stars within a galaxy's region of interst.
+	The input is aa galaxy region in 2D array with values of either 1 (meaning 
+	that the pixel is belong to the galaxy's region) or 0 (meaning 
+	that the pixel is not belong to the galaxy's region)   
+
+	:param gal_region0:
+		The 2D array of input galaxy's region.
+
+	:param x_cent and y_cent:
+		Arrays containing central coordinates of the stars.
+
+	:param radius:
+		Arrays containing the estimated radii of the stars.
+
+	:returns gal_region:
+		2D array containing output galaxy's region after stars subtraction. 
+	"""
+	nstars = len(x_cent)
+
+	dim_y = gal_region.shape[0]
+	dim_x = gal_region.shape[1]
+
+	x = np.linspace(0,dim_x-1,dim_x)
+	y = np.linspace(0,dim_y-1,dim_y)
+	xx, yy = np.meshgrid(x,y)
+
+	for ii in range(0,nstars):
+		xx_norm, yy_norm = xx-x_cent[ii], yy-y_cent[ii]
+		data2D_rad = np.sqrt(np.square(xx_norm) + np.square(yy_norm))
+
+		rows, cols = np.where(data2D_rad<=radius[ii])
+		gal_region[rows,cols] = 0
+
+	return gal_region
+
+
+def old_crop_stars(gal_region0=[],x_cent=[],y_cent=[],radius=[]):
 	"""A function for cropping foreground stars within a galaxy's region of interst.
 	The input is aa galaxy region in 2D array with values of either 1 (meaning 
 	that the pixel is belong to the galaxy's region) or 0 (meaning 
@@ -1471,16 +1519,16 @@ def crop_stars(gal_region0=[],x_cent=[],y_cent=[],radius=[]):
 
 def crop_stars_galregion_fits(input_fits=None,output_fits=None,x_cent=[],y_cent=[],radius=[]):
 	"""A function for cropping foreground stars within a galaxy's region of interst.
-	The input is a FITS file containing reduced multiband fluxes maps output of flux_map() function
+	The input is a FITS file of reduced multiband fluxes maps output of flux_map() function
 
 	:param input_fits:
-		The input FITS file
+		The input FITS file.
 
 	:param output_fits:
-		Desired name for the output FITS file
+		Desired name for the output FITS file.
 
 	:param x_cent and y_cent:
-		Arrays containing cenral coordinates of the stars
+		Arrays containing cenral coordinates of the stars.
 
 	:param radius:
 		Arrays containing the estimated radii of the stars.   
@@ -1496,33 +1544,44 @@ def crop_stars_galregion_fits(input_fits=None,output_fits=None,x_cent=[],y_cent=
 	stamp_hdr = hdu['stamp_image'].header
 	hdu.close()
 
-	# get modified galaxy's region:
-	gal_region = crop_stars(gal_region0=gal_region0,x_cent=x_cent,y_cent=y_cent,radius=radius)
-
-	# crop the flux maps following the modified gal_region:
+	# number of filters
 	nbands = int(header['nfilters'])
+
+	# dimension
 	dim_y = gal_region0.shape[0]
 	dim_x = gal_region0.shape[1]
+
+	# get modified galaxy's region:
+	gal_region = crop_stars(gal_region=gal_region0,x_cent=x_cent,y_cent=y_cent,radius=radius)
+
+	rows, cols = np.where(gal_region==1)
+
 	map_flux = np.zeros((nbands,dim_y,dim_x))
 	map_flux_err = np.zeros((nbands,dim_y,dim_x))
 	for bb in range(0,nbands):
-		for yy in range(0,dim_y):
-			for xx in range(0,dim_x):
-				if gal_region[int(yy)][int(xx)] == 1:
-					map_flux[bb][int(yy)][int(xx)] = map_flux0[bb][int(yy)][int(xx)]
-					map_flux_err[bb][int(yy)][int(xx)] = map_flux_err0[bb][int(yy)][int(xx)]
+		map_flux[bb][rows,cols] = map_flux0[bb][rows,cols]
+		map_flux_err[bb][rows,cols] = map_flux_err0[bb][rows,cols]
+
+	# crop the flux maps following the modified gal_region:
+	#nbands = int(header['nfilters'])
+	#dim_y = gal_region0.shape[0]
+	#dim_x = gal_region0.shape[1]
+	#map_flux = np.zeros((nbands,dim_y,dim_x))
+	#map_flux_err = np.zeros((nbands,dim_y,dim_x))
+	#for bb in range(0,nbands):
+	#	for yy in range(0,dim_y):
+	#		for xx in range(0,dim_x):
+	#			if gal_region[int(yy)][int(xx)] == 1:
+	#				map_flux[bb][int(yy)][int(xx)] = map_flux0[bb][int(yy)][int(xx)]
+	#				map_flux_err[bb][int(yy)][int(xx)] = map_flux_err0[bb][int(yy)][int(xx)]
 
 	# store to fits file:
 	hdul = fits.HDUList()
 	primary_hdu = fits.PrimaryHDU(header=header)
 	hdul.append(primary_hdu)
-	# add mask map to the HDU list:
 	hdul.append(fits.ImageHDU(gal_region, name='galaxy_region'))
-	# add fluxes maps to the HDU list:
 	hdul.append(fits.ImageHDU(map_flux, name='flux'))
-	# add flux errors maps to the HDU list:
 	hdul.append(fits.ImageHDU(map_flux_err, name='flux_err'))
-	# add one of the stamp image (the first band):
 	hdul.append(fits.ImageHDU(data=stamp_img, header=stamp_hdr, name='stamp_image'))
 	# write to fits file:
 	if output_fits == None:
@@ -1530,6 +1589,8 @@ def crop_stars_galregion_fits(input_fits=None,output_fits=None,x_cent=[],y_cent=
 	hdul.writeto(output_fits, overwrite=True)
 
 	return output_fits
+
+
 
 def crop_square_region_fluxmap(input_fits=None,xrange=[],yrange=[],name_out_fits=None):
 
@@ -1615,6 +1676,21 @@ def crop_image_given_xy(img_name=None, x=None, y=None, stamp_size=[], name_out_f
 	hdu.writeto(name_out_fits, overwrite=True)
 	print ("[produce %s]" % name_out_fits)
 
+
+
+
+def crop_2D_data(in_data=None, data_x_cent=None, data_y_cent=None, new_size_x=None, new_size_y=None):
+	del_y = int((new_size_y-1)/2)
+	row_start = data_y_cent - del_y
+	row_end = data_y_cent + del_y + 1
+
+	del_x = int((new_size_x-1)/2)
+	col_start = data_x_cent - del_x
+	col_end = data_x_cent + del_x + 1
+
+	new_data = in_data[row_start:row_end, col_start:col_end]
+
+	return new_data
 
 
 

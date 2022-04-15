@@ -412,3 +412,10 @@ def pixel_binning_photo(flux_map_fits=None, filters=None, ref_band=None, Dmin_bi
 
 
 
+
+def pixbin( ):
+
+	
+
+
+

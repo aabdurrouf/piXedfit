@@ -215,11 +215,6 @@ def pixel_binning_specphoto(specphoto_map_fits=None, fits_binmap=None, name_out_
 
 
 
-
-
-
-
-
 def old_pixel_binning_specphoto(specphoto_map_fits=None, fits_binmap=None, SNR=None, name_out_fits=None):
 	"""Function for performing pixel binning on spectrophotometric data cube. 
 

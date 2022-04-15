@@ -490,7 +490,7 @@ def store_to_fits(sampler_params=None,sampler_log_mass=None,sampler_log_sfr=None
 				'dust1':0.5,'dust2':0.5,'dust_index':-0.7,'log_age':1.0,'log_alpha':0.1,'log_beta':0.1,'log_t0':0.4,
 				'log_tau':0.4,'logzsol':0.0}
 
-	idx, min_val = min(enumerate(mod_chi2), key=operator.itemgetter(1))
+	idx, min_val = min(enumerate(mod_chi2), key=itemgetter(1))
 	# best-fit chi-square
 	bfit_chi2 = mod_chi2[idx]
 
