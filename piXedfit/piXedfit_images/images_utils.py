@@ -1,17 +1,7 @@
 import numpy as np 
 from math import pi, pow, sqrt, cos, sin 
 import sys, os
-from operator import itemgetter
-from numpy import unravel_index
-from astropy.io import fits
-from astropy.wcs import WCS 
-from astropy.nddata import Cutout2D
-from astropy.convolution import convolve_fft
-from astropy.stats import SigmaClip
-from astropy.modeling.models import Gaussian2D
-from scipy import interpolate
-from photutils import Background2D, MedianBackground
-from photutils import CosineBellWindow, HanningWindow, create_matching_kernel
+from astropy.io import fits 
 from astropy.cosmology import *
 
 from ..utils.filtering import cwave_filters
@@ -162,6 +152,9 @@ def skybg_sdss(fits_image):
 		A dictionary format that contains background image and the name 
 	"""
 	#print ("[Construct sky-background of an SDSS image: %s]" % fits_image)
+
+	from scipy import interpolate
+
 	hdu = fits.open(fits_image)
 	hdu2_data = hdu[2].data
 	ALLSKY = hdu2_data[0][0]
@@ -737,6 +730,8 @@ def create_kernels_miniJPAS(filters=[], psf_img=[], pix_scale=0.2267, alpha_cosb
 	:returns psf_fwhm:
 		Dictionary containing PSF FWHMs of the PFS images. This information is taken from the header of those FITS files. 
 	"""
+	
+	from photutils import CosineBellWindow, create_matching_kernel	
 
 	fwhm = np.zeros(len(filters))
 	for bb in range(0,len(filters)):
@@ -860,6 +855,9 @@ def subtract_background(fits_image=None, hdu_idx=0, sigma=3.0, box_size=None, ma
 		Minimum number of pixels above threshold triggering detection. This is the same as DETECT_MINAREA parameter in SExtractor.
 
 	"""
+
+	from astropy.stats import SigmaClip
+	from photutils import Background2D, MedianBackground
 
 	# open the input image:
 	hdu = fits.open(fits_image)
@@ -1124,6 +1122,10 @@ def old_get_largest_FWHM_PSF(filters=None, col_fwhm_psf=None, seeing_wfcam_y=Non
 
 
 def create_kernel_gaussian(psf_fwhm_init=None, psf_fwhm_final=None, alpha_cosbell=1.5, pixsize_PSF_target=0.25, size=[101,101]):
+
+	from astropy.modeling.models import Gaussian2D
+	from photutils import CosineBellWindow, create_matching_kernel
+
 	y_cent = (size[0]-1)/2
 	x_cent = (size[1]-1)/2 
 
@@ -1644,6 +1646,9 @@ def crop_image_given_radec(img_name=None, ra=None, dec=None, stamp_size=[], name
 	"""Function for cropping an image around a given position (RA, DEC)
 	"""
 
+	from astropy.wcs import WCS
+	from astropy.nddata import Cutout2D
+
 	hdu = fits.open(img_name)[0]
 	wcs = WCS(hdu.header)
 	gal_x, gal_y = wcs.wcs_world2pix(ra, dec, 1)
@@ -1662,6 +1667,9 @@ def crop_image_given_radec(img_name=None, ra=None, dec=None, stamp_size=[], name
 def crop_image_given_xy(img_name=None, x=None, y=None, stamp_size=[], name_out_fits=None):
 	"""Function for cropping an image around a given position (x, y)
 	"""
+
+	from astropy.wcs import WCS
+	from astropy.nddata import Cutout2D
 
 	hdu = fits.open(img_name)[0]
 	wcs = WCS(hdu.header)

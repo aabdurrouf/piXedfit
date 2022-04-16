@@ -1,7 +1,6 @@
 import numpy as np 
 from math import sqrt, pow
 import sys, os
-from numpy import unravel_index
 from astropy.io import fits
 from astropy.wcs import WCS 
 from astropy.nddata import Cutout2D
@@ -256,7 +255,7 @@ class images_processing:
 
 					if kernel_resize0.shape[0] > dim_temp + 5:
 						# get coordinate of brightest pixel
-						bright_y,bright_x = unravel_index(kernel_resize0.argmax(), kernel_resize0.shape)
+						bright_y,bright_x = np.unravel_index(kernel_resize0.argmax(), kernel_resize0.shape)
 
 						# new dimension:
 						if (dim_temp + 5)%2 == 0:

@@ -3,7 +3,6 @@ from math import pi, pow, sqrt, cos, sin
 import sys, os
 from random import randint
 from astropy.io import fits
-from scipy.interpolate import interp1d
 
 global PIXEDFIT_HOME
 PIXEDFIT_HOME = os.environ['PIXEDFIT_HOME']

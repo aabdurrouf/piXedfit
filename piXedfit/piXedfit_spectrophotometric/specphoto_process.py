@@ -2,20 +2,10 @@ import numpy as np
 import sys, os
 from astropy.io import fits
 from astropy.wcs import WCS 
-#from astropy.nddata import Cutout2D
-from astropy.convolution import convolve, convolve_fft, Gaussian1DKernel
+from astropy.convolution import convolve_fft, Gaussian1DKernel
 from reproject import reproject_exact
 from photutils.psf.matching import resize_psf
-#import photutils
-from photutils import detect_threshold
-from photutils import detect_sources
-from photutils import deblend_sources
-from photutils import Background2D, MedianBackground
-from photutils import create_matching_kernel
-from photutils import CosineBellWindow
-from astropy import units as u
 from ..piXedfit_images.images_utils import get_largest_FWHM_PSF, k_lmbd_Fitz1986_LMC
-#from .specphoto_utils import correct_Galacticdust
 
 
 global PIXEDFIT_HOME

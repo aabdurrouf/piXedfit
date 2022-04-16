@@ -1,7 +1,6 @@
 import numpy as np 
 import sys, os
 from math import sqrt, pi, gamma, exp
-from operator import mul
 from astropy.io import fits
 import matplotlib
 matplotlib.use('agg')
@@ -9,17 +8,16 @@ import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 import matplotlib.patches as patches
 import matplotlib.transforms as transforms
-from scipy.interpolate import interp1d
-from decimal import *
-from decimal import Decimal, Context
-from functools import reduce
 
 __all__ = ["gauss_prob", "gauss_ln_prob", "student_t_prob", "model_leastnorm",  "calc_chi2", "calc_modprob_leastnorm_gauss_reduced", 
 			"calc_modprob_leastnorm_gauss", "plot_triangle_posteriors"]
 
 
 def prod(iterable):
-    return reduce(mul, iterable, 1)
+	from operator import mul
+	from functools import reduce
+
+	return reduce(mul, iterable, 1)
 
 def gauss_prob(obs_fluxes,obs_flux_err,mod_fluxes):
 	d = np.asarray(obs_fluxes)
@@ -331,6 +329,8 @@ def get_2D_PDF_posterior_old(sampler1,min_sampler1,max_sampler1,nbins1,sampler2,
 
 # function to make float be with 2 decimal points:
 def change_2decimal(x):
+	from decimal import Decimal
+
 	TWOPLACES = Decimal(10)**-2
 	ndata = len(x)
 	x_new = np.zeros(ndata)
