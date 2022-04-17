@@ -818,10 +818,10 @@ class images_processing:
 		hdr['bunit'] = 'erg/s/cm^2/A'
 		hdr['GalEBV'] = Gal_EBV
 		hdr['struct'] = '(band,y,x)'
-		hdr['fil_sampling'] = fil_align
-		hdr['pix_size'] = final_pix_size
-		hdr['fil_psfmatch'] = fil_psfmatch
-		hdr['psf_fwhm'] = final_psf_fwhm
+		hdr['fsamp'] = fil_align
+		hdr['pixsize'] = final_pix_size
+		hdr['fpsfmtch'] = fil_psfmatch
+		hdr['psffwhm'] = final_psf_fwhm
 		for bb in range(0,nbands):
 			str_temp = 'fil%d' % int(bb)
 			hdr[str_temp] = filters[int(bb)]

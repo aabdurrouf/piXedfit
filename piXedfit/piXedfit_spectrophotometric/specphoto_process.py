@@ -263,9 +263,18 @@ def specphoto_califagalexsdss2masswise(photo_fluxmap=None, califa_file=None, pix
 	hdr = fits.Header()
 	hdr['nfilters'] = nbands
 	hdr['z'] = header_photo_fluxmap['z']
+	hdr['RA'] = header_photo_fluxmap['RA']
+	hdr['DEC'] = header_photo_fluxmap['DEC']
+	hdr['GalEBV'] = header_photo_fluxmap['GalEBV']
 	hdr['unit'] = unit_ifu_new
-	hdr['struct_photo'] = '(band,y,x)'
-	hdr['struct_spec'] = '(wavelength,y,x)'
+	hdr['bunit'] = 'erg/s/cm^2/A'
+	hdr['structph'] = '(band,y,x)'
+	hdr['structsp'] = '(wavelength,y,x)'
+	hdr['fsamp'] = header_photo_fluxmap['fsamp']
+	hdr['pixsize'] = header_photo_fluxmap['pixsize']
+	hdr['fpsfmtch'] = header_photo_fluxmap['fpsfmtch']
+	hdr['psffwhm'] = header_photo_fluxmap['psffwhm']
+
 	for bb in range(0,nbands):
 		str_temp = 'fil%d' % int(bb)
 		hdr[str_temp] = header_photo_fluxmap[str_temp]
@@ -308,15 +317,6 @@ def specphoto_mangagalexsdss2masswise(photo_fluxmap=None, manga_file=None, pixsi
 	:param name_out_fits:
 		Name of output FITS file.
 	"""
-
-
-	# get stamp image and its header
-	#hdu = fits.open(stamp_image)
-	#header_stamp_image = hdu[0].header
-	#data_stamp_image = hdu[0].data
-	#dimy_stamp_image = data_stamp_image.shape[0]
-	#dimx_stamp_image = data_stamp_image.shape[1]
-	#hdu.close()
 
 	# get maps of photometric fluxes
 	hdu = fits.open(photo_fluxmap)
@@ -508,9 +508,18 @@ def specphoto_mangagalexsdss2masswise(photo_fluxmap=None, manga_file=None, pixsi
 	hdr = fits.Header()
 	hdr['nfilters'] = nbands
 	hdr['z'] = header_photo_fluxmap['z']
+	hdr['RA'] = header_photo_fluxmap['RA']
+	hdr['DEC'] = header_photo_fluxmap['DEC']
+	hdr['GalEBV'] = header_photo_fluxmap['GalEBV']
 	hdr['unit'] = unit_ifu
-	hdr['struct_photo'] = '(band,y,x)'
-	hdr['struct_spec'] = '(wavelength,y,x)'
+	hdr['bunit'] = 'erg/s/cm^2/A'
+	hdr['structph'] = '(band,y,x)'
+	hdr['structsp'] = '(wavelength,y,x)'
+	hdr['fsamp'] = header_photo_fluxmap['fsamp']
+	hdr['pixsize'] = header_photo_fluxmap['pixsize']
+	hdr['fpsfmtch'] = header_photo_fluxmap['fpsfmtch']
+	hdr['psffwhm'] = header_photo_fluxmap['psffwhm']
+
 	for bb in range(0,nbands):
 		str_temp = 'fil%d' % int(bb)
 		hdr[str_temp] = header_photo_fluxmap[str_temp]

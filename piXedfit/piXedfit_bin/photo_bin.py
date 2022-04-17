@@ -284,15 +284,18 @@ def pixel_binning(fits_fluxmap=None, ref_band=None, Dmin_bin=2.0, SNR=[], redc_c
 		hdr = fits.Header()
 		hdr['nfilters'] = nbands
 		hdr['refband'] = ref_band
+		hdr['RA'] = header['RA']
+		hdr['DEC'] = header['DEC']
 		hdr['z'] = header['z']
+		hdr['GalEBV'] = header['GalEBV']
 		hdr['nbins'] = count_bin
 		hdr['unit'] = header['unit']
 		hdr['bunit'] = 'erg/s/cm^2/A'
 		hdr['struct'] = '(band,y,x)'
-		hdr['fil_sampling'] = header['fil_sampling']
-		hdr['pix_size'] = header['pix_size']
-		hdr['fil_psfmatch'] = header['fil_psfmatch']
-		hdr['psf_fwhm'] = header['psf_fwhm']
+		hdr['fsamp'] = header['fsamp']
+		hdr['pixsize'] = header['pixsize']
+		hdr['fpsfmtch'] = header['fpsfmtch']
+		hdr['psffwhm'] = header['psffwhm']
 
 		for bb in range(0,nbands):
 			str_temp = 'fil%d' % bb
@@ -309,12 +312,20 @@ def pixel_binning(fits_fluxmap=None, ref_band=None, Dmin_bin=2.0, SNR=[], redc_c
 		hdr = fits.Header()
 		hdr['nfilters'] = nbands
 		hdr['refband'] = ref_band
+		hdr['RA'] = header['RA']
+		hdr['DEC'] = header['DEC']
 		hdr['z'] = header['z']
-		hdr['nbins_photo'] = count_bin
-		hdr['nbins_spec'] = count_bin_specphoto
+		hdr['GalEBV'] = header['GalEBV']
+		hdr['nbinsph'] = count_bin
+		hdr['nbinssp'] = count_bin_specphoto
 		hdr['unit'] = header['unit']
-		hdr['struct_photo'] = '(band,y,x)'
-		hdr['struct_spec'] = '(wavelength,y,x)'
+		hdr['bunit'] = 'erg/s/cm^2/A'
+		hdr['structph'] = '(band,y,x)'
+		hdr['structsp'] = '(wavelength,y,x)'
+		hdr['fsamp'] = header['fsamp']    
+		hdr['pixsize'] = header['pixsize']       
+		hdr['fpsfmtch'] = header['fpsfmtch']   
+		hdr['psffwhm'] = header['psffwhm']
 
 		for bb in range(0,nbands):
 			str_temp = 'fil%d' % bb

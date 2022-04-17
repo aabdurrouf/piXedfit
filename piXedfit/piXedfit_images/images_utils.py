@@ -12,8 +12,7 @@ __all__ = ["sort_filters", "kpc_per_pixel", "k_lmbd_Fitz1986_LMC", "EBV_foregrou
 			"var_img_from_weight_img", "segm_sextractor", "mask_region_bgmodel", "subtract_background", "get_psf_fwhm",
 			"get_largest_FWHM_PSF", "ellipse_fit", "draw_ellipse", "ellipse_sma", "crop_ellipse_galregion",
 			"crop_ellipse_galregion_fits", "crop_stars", "crop_stars_galregion_fits", "crop_square_region_fluxmap", 
-			"crop_image_given_radec", "crop_image_given_xy", "sci_var_img_miniJPAS", "create_kernels_miniJPAS", 
-			"check_avail_kernel", "create_kernel_gaussian"]
+			"crop_image_given_radec", "crop_image_given_xy", "check_avail_kernel", "create_kernel_gaussian"]
 
 
 def sort_filters(filters):
