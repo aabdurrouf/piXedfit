@@ -156,6 +156,7 @@ class images_processing:
 			for bb in range(0,nbands):
 				psfmatch_sci_img_name[filters[bb]] = sci_img_name[filters[bb]]
 				psfmatch_var_img_name[filters[bb]] = var_img_name[filters[bb]]
+			idfil_psfmatch = 0
 
 		elif flag_psfmatch == 0:
 			####============== (2) PSF matching ============#####
@@ -728,7 +729,7 @@ class images_processing:
 				map_flux[bb][rows1,cols1] = FLUXZP_2mass*pow(10.0,0.4*((2.5*np.log10(sci_img_data[rows1,cols1]))-MAGZP_2mass))*1.0e+3*Gal_dust_corr_factor  # in erg/s/cm^2/Ang. 
 
 				rows2, cols2 = np.where((gal_region==1) & (sci_img_data<=0))
-				map_flux[bb][rows2,cols2] = FLUXZP_2mass*pow(10.0,0.4*((2.5*np.log10(-1.0*sci_img_data[rows2,cols2]))-MAGZP_2mass))*1.0e+3*Gal_dust_corr_factor  # in erg/s/cm^2/Ang. 
+				map_flux[bb][rows2,cols2] = -1.0*FLUXZP_2mass*pow(10.0,0.4*((2.5*np.log10(-1.0*sci_img_data[rows2,cols2]))-MAGZP_2mass))*1.0e+3*Gal_dust_corr_factor  # in erg/s/cm^2/Ang. 
 
 				#=> flux error
 				map_flux_err[bb][rows,cols] = FLUXZP_2mass*pow(10.0,0.4*((2.5*np.log10(np.sqrt(np.absolute(var_img_data[rows,cols]))))-MAGZP_2mass))*1.0e+3*Gal_dust_corr_factor  # in erg/s/cm^2/Ang. 
@@ -791,7 +792,7 @@ class images_processing:
 
 
 		# scaling the flux maps:
-		print ("[scaling the flux map to a unit of %e erg/s/cm^2/Ang.]" % scale_unit)
+		#print ("[scaling the flux map to a unit of %e erg/s/cm^2/Ang.]" % scale_unit)
 		map_flux = map_flux/scale_unit
 		map_flux_err = map_flux_err/scale_unit
 
