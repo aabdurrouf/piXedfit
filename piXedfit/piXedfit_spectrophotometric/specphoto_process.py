@@ -230,17 +230,6 @@ def specphoto_califagalexsdss2masswise(photo_fluxmap=None, califa_file=None, pix
 	map_specphoto_spec_flux_err0[rows,cols] = corr_spec_err
 	map_specphoto_spec_mask0[rows,cols] = map_ifu_mask_temp_trans[rows,cols]
 
-	#elif adopt_photo_region == True:
-	#	rows, cols = np.where(photo_gal_region==1)
-	#	spec_gal_region[rows,cols] = 1
-	#	# Flux in CALIFA has been corrected for the foreground dust extinction
-	#	corr_spec = map_ifu_flux_temp_trans[rows,cols]
-	#	corr_spec_err = map_ifu_flux_err_temp_trans[rows,cols]
-	#	# store in temporary arrays:
-	#	map_specphoto_spec_flux0[rows,cols] = corr_spec
-	#	map_specphoto_spec_flux_err0[rows,cols] = corr_spec_err
-	#	map_specphoto_spec_mask0[rows,cols] = map_ifu_mask_temp_trans[rows,cols]
-
 	# transpose from (y,x,wave) => (wave,y,x):
 	# and convert into a new flux unit which is the same as flux unit for spec+photo with MaNGA:
 	unit_ifu_new = 1.0e-17          #### in erg/s/cm^2/Ang.
@@ -278,17 +267,29 @@ def specphoto_califagalexsdss2masswise(photo_fluxmap=None, califa_file=None, pix
 	for bb in range(0,nbands):
 		str_temp = 'fil%d' % int(bb)
 		hdr[str_temp] = header_photo_fluxmap[str_temp]
-	primary_hdu = fits.PrimaryHDU(header=hdr)
-	hdul.append(primary_hdu)
-	hdul.append(fits.ImageHDU(spec_gal_region, name='spec_region'))
-	hdul.append(fits.ImageHDU(photo_gal_region, name='photo_region'))
-	hdul.append(fits.ImageHDU(map_specphoto_phot_flux, name='photo_flux'))
+
+	hdul.append(fits.PrimaryHDU(data=map_specphoto_phot_flux, header=hdr, name='photo_flux'))
 	hdul.append(fits.ImageHDU(map_specphoto_phot_flux_err, name='photo_fluxerr'))
-	hdul.append(fits.ImageHDU(wave, name='wave'))
 	hdul.append(fits.ImageHDU(map_specphoto_spec_flux, name='spec_flux'))
 	hdul.append(fits.ImageHDU(map_specphoto_spec_flux_err, name='spec_fluxerr'))
+	hdul.append(fits.ImageHDU(spec_gal_region, name='spec_region'))
+	hdul.append(fits.ImageHDU(photo_gal_region, name='photo_region'))
+	hdul.append(fits.ImageHDU(wave, name='wave'))
 	hdul.append(fits.ImageHDU(map_specphoto_spec_mask, name='spec_good_pix'))
 	hdul.append(fits.ImageHDU(data=data_stamp_image, header=header_stamp_image, name='stamp_image'))
+
+	#primary_hdu = fits.PrimaryHDU(header=hdr)
+	#hdul.append(primary_hdu)
+	#hdul.append(fits.ImageHDU(spec_gal_region, name='spec_region'))
+	#hdul.append(fits.ImageHDU(photo_gal_region, name='photo_region'))
+	#hdul.append(fits.ImageHDU(map_specphoto_phot_flux, name='photo_flux'))
+	#hdul.append(fits.ImageHDU(map_specphoto_phot_flux_err, name='photo_fluxerr'))
+	#hdul.append(fits.ImageHDU(wave, name='wave'))
+	#hdul.append(fits.ImageHDU(map_specphoto_spec_flux, name='spec_flux'))
+	#hdul.append(fits.ImageHDU(map_specphoto_spec_flux_err, name='spec_fluxerr'))
+	#hdul.append(fits.ImageHDU(map_specphoto_spec_mask, name='spec_good_pix'))
+	#hdul.append(fits.ImageHDU(data=data_stamp_image, header=header_stamp_image, name='stamp_image'))
+
 	if name_out_fits==None:
 		name_out_fits = "specphoto_%s.fits" % califa_file
 	hdul.writeto(name_out_fits, overwrite=True)

@@ -11,8 +11,8 @@ __all__ = ["sort_filters", "kpc_per_pixel", "k_lmbd_Fitz1986_LMC", "EBV_foregrou
 			"var_img_sdss", "var_img_GALEX", "var_img_2MASS", "var_img_WISE", "var_img_from_unc_img",
 			"var_img_from_weight_img", "segm_sextractor", "mask_region_bgmodel", "subtract_background", "get_psf_fwhm",
 			"get_largest_FWHM_PSF", "ellipse_fit", "draw_ellipse", "ellipse_sma", "crop_ellipse_galregion",
-			"crop_ellipse_galregion_fits", "crop_stars", "crop_stars_galregion_fits", "crop_square_region_fluxmap", 
-			"crop_image_given_radec", "crop_image_given_xy", "check_avail_kernel", "create_kernel_gaussian"]
+			"crop_ellipse_galregion_fits", "crop_stars", "crop_stars_galregion_fits",  "crop_image_given_radec", 
+			"crop_image_given_xy", "check_avail_kernel", "create_kernel_gaussian"]
 
 
 def sort_filters(filters):
@@ -633,143 +633,6 @@ def var_img_from_weight_img(wht_image=None, header=None, name_out_fits=None):
 
 	return name_out_fits
 
-
-def sci_var_img_miniJPAS(filters=[],img=[],zp=[],zp_err=[]):
-	"""Function for creating science images and variance images from miniJPAS data. The produced images are in flux density unit erg/s/cm^-2/Ang.
-
-	:param filters:
-		List of photometric filters names in string format. The accepted naming for the filters can be seen using :func:`list_filters` function in the :mod:`utils.filtering` module. 
-		It is not mandatory to give the filters names in the wavelength order (from shortest to longest).
-
-	:param img:
-		List of the names of the input images.
-
-	:param zp:
-		List of zero-points.  
-
-	:param zp_err:
-		List of zero-point uncertainties.
-
-	:returns sci_img:
-		Dictionary containing names of produced science images. The format is sci_img['filter_name']='sci_img_name'.
-
-	:returns var_img:
-		Dictionary containing names of produced variance images. The format is var_img['filter_name']='var_img_name'.
-	"""
-
-	c = 2.998e+18        ## in A/s
-
-	# get central wavelength of the filters:
-	photo_wave = cwave_filters(filters)
-
-	sci_img = {}
-	var_img = {}
-	img_unit = {}
-	for bb in range(0,len(filters)):
-		hdu = fits.open(img[bb])
-		data_image = hdu[0].data
-		header = hdu[0].header
-		hdu.close()
-
-		data_image_positive = np.sqrt(np.square(data_image))
-
-		#=> science image
-		mAB = -2.5*np.log10(data_image_positive) + zp[bb]
-		f_nu = np.power(10.0,-4.0*(mAB+48.6)/10.0)
-		f_lmd = c*f_nu/photo_wave[bb]/photo_wave[bb]
-		# give negative sign fro previously negative values
-		f_lmd_new = f_lmd*data_image/np.absolute(data_image)		# in erg/s/cm^2/Ang.
-		# store into fits file:
-		name_out = "sci_%s" % img[bb]
-		fits.writeto(name_out, f_lmd_new, header=header, overwrite=True)
-		sci_img[filters[bb]] = name_out
-
-		# variance image
-		mAB = -2.5*np.log10(data_image_positive) + zp[bb] + zp_err[bb]
-		f_nu = np.power(10.0,-4.0*(mAB+48.6)/10.0)
-		f_lmd1 = c*f_nu/photo_wave[bb]/photo_wave[bb]				# in erg/s/cm^2/Ang.
-
-		mAB = -2.5*np.log10(data_image_positive) + zp[bb] - zp_err[bb]
-		f_nu = np.power(10.0,-4.0*(mAB+48.6)/10.0)
-		f_lmd2 = c*f_nu/photo_wave[bb]/photo_wave[bb]				# in erg/s/cm^2/Ang.
-
-		del_f_lmd = 0.5*np.absolute(f_lmd2-f_lmd1)
-		f_lmd_sq = del_f_lmd*del_f_lmd
-
-		# store into fits file:
-		name_out = "var_%s" % img[bb]
-		fits.writeto(name_out, f_lmd_sq, header=header, overwrite=True)
-		var_img[filters[bb]] = name_out
-
-		# image unit: 0 means flux, 1 means surface brightness
-		img_unit[filters[bb]] = 0
-
-	return sci_img, var_img, img_unit
-
-
-def create_kernels_miniJPAS(filters=[], psf_img=[], pix_scale=0.2267, alpha_cosbell=0.6):
-	"""Function for creating kernels for PSF matching among miniJPAS data. This function uses some functions in Photutils package. 
-
-	:param filters:
-		List of photometric filters names in string format. The accepted naming for the filters can be seen using :func:`list_filters` function in the :mod:`utils.filtering` module. 
-		It is not mandatory to give the filters names in the wavelength order (from shortest to longest).
-
-	:param psf_img:
-		Names of PSF images.
-
-	:param pix_scale:
-		Pixel size in arcsecond.
-
-	:param alpha_cosbell:
-		The alpha parameter (the percentage of array that are tapered) in the Cosine Bell window function (see `CosineBellWindow <https://photutils.readthedocs.io/en/stable/api/photutils.psf.matching.CosineBellWindow.html#photutils.psf.matching.CosineBellWindow>`_).
-
-	:returns kernels:
-		Dictionary containing names of produced kernels.
-
-	:returns psf_fwhm:
-		Dictionary containing PSF FWHMs of the PFS images. This information is taken from the header of those FITS files. 
-	"""
-	
-	from photutils import CosineBellWindow, create_matching_kernel	
-
-	fwhm = np.zeros(len(filters))
-	for bb in range(0,len(filters)):
-		hdu = fits.open(psf_img[bb])
-		fwhm[bb] = float(hdu[1].header['PSF_FWHM'])*pix_scale		# in arcsec
-		hdu.close()
-
-	# get the largest PSF size:
-	idx_max, max_val = max(enumerate(fwhm), key=itemgetter(1))
-
-	# get reference PSF:
-	hdu = fits.open(psf_img[idx_max])
-	psf_final = hdu[1].data
-	hdu.close()
-
-	# create kernels:
-	kernels = {}
-	psf_fwhm = {}
-	for bb in range(0,len(filters)):
-		psf_fwhm[filters[bb]] = fwhm[bb]
-		if bb == idx_max:
-			kernels[filters[bb]] = None
-		else:
-			hdu = fits.open(psf_img[bb])
-			psf_init = hdu[1].data
-			header = hdu[1].data
-			hdu.close()
-
-			window = CosineBellWindow(alpha=alpha_cosbell)
-			kernel_data = create_matching_kernel(psf_init, psf_final, window=window)
-
-			# store into fits file:
-			name_out = "kernel_%s_to_%s.fits" % (filters[bb],filters[idx_max])
-			fits.writeto(name_out, kernel_data, overwrite=True)
-			kernels[filters[bb]] = name_out
-
-	return kernels, psf_fwhm
-
-
   
 def segm_sextractor(fits_image=None,detect_thresh=1.5,detect_minarea=20,
 	deblend_nthresh=32.0,deblend_mincont=0.005):
@@ -800,31 +663,57 @@ def segm_sextractor(fits_image=None,detect_thresh=1.5,detect_minarea=20,
 	return segm_map
 
 
-def mask_region_bgmodel(fits_image=None,detect_thresh=1.5,detect_minarea=20):
-	"""A function to get segmentation map containing regions associated with 
-	sources within an image. This segmentation map is then used as reference
-	for regions masking in the backround subtraction process
 
-	"""
+def segm_sep(fits_image=None, thresh=1.5, var=None, minarea=5, deblend_nthresh=32, deblend_cont=0.005):
+	import sep 
 
-	# get segmentation map of the field:
-	segm_map = segm_sextractor(fits_image,detect_thresh,detect_minarea)
+	hdu = fits.open(fits_image)
+	data_img = hdu[0].data 
+	hdu.close()
+
+	data_img = data_img.byteswap(inplace=True).newbyteorder()
+
+	if var==None:
+		rows,cols = np.where((np.isnan(data_img)==False) & (np.isinf(data_img)==False))
+		err = np.percentile(data_img[rows,cols], 2.5)
+	else:
+		hdu = fits.open(var)
+		data_var = hdu[0].data 
+		hdu.close()
+
+		data_var = data_var.byteswap(inplace=True).newbyteorder()
+		err = np.sqrt(data_var)
+
+
+	objects, segm_map = sep.extract(data=data_img, thresh=thresh, err=err, minarea=minarea, 
+									deblend_nthresh=deblend_nthresh, deblend_cont=deblend_cont, 
+									segmentation_map=True)
+
+	return segm_map
+
+
+def mask_region_bgmodel(fits_image=None, thresh=1.5, var=None, minarea=5, deblend_nthresh=32, deblend_cont=0.005):
+
+	segm_map = segm_sep(fits_image=fits_image, thresh=thresh, var=var, minarea=minarea, 
+						deblend_nthresh=deblend_nthresh, deblend_cont=deblend_cont)
 
 	dim_y = segm_map.shape[0]
 	dim_x = segm_map.shape[1]
 	mask_region = np.zeros((dim_y,dim_x))
-	for yy in range(0,dim_y):
-		for xx in range(0,dim_x):
-			if segm_map[int(yy)][int(xx)]>0:
-				mask_region[int(yy)][int(xx)] = 1
+
+	rows, cols = np.where(segm_map>0)
+	mask_region[rows,cols] = 1
 
 	return mask_region
 
 
-def subtract_background(fits_image=None, hdu_idx=0, sigma=3.0, box_size=None, mask_region=[], 
-						mask_sextractor_sources=True, detect_thresh=3.0, detect_minarea=50):
-	"""Function for estimating 2D background and subtracting it from an image. This function also produce RMS image.
-	Basically, the input image is gridded and the sigma clipping is done to each bin/grid.
+
+def subtract_background(fits_image=None, hdu_idx=0, sigma=3.0, box_size=None, mask_region=[], mask_sources=True, 
+	var=None, thresh=1.5, minarea=5, deblend_nthresh=32, deblend_cont=0.005):
+	"""Function for estimating 2D background and subtracting it from the input image. This function also produce RMS image. 
+	This function adopts the Background2D function from the photutils package. To estimate 2D background, 
+	the input image is gridded and sigma clipping is done to each bin/grid. Then 2D interpolation is performed to
+	construct 2D background image. This task is done  
 
 	:param fits_image:
 		Input image.
@@ -842,16 +731,26 @@ def subtract_background(fits_image=None, hdu_idx=0, sigma=3.0, box_size=None, ma
 		Region within the image that are going to be excluded. 
 		mask_region should be 2D array with the same size as the input image.
 
-	:param mask_sextractor_sources: (default: True)
-		If True, source detection and segmentation will be performed with SExtractor 
-		and the regions associated with the detected sources will be excluded. 
-		This can reduce the contamination by astronomical sources.
+	:param mask_sources: (default: True)
+		If True, source detection and segmentation will be performed with SEP (Pyhton version of SExtractor) 
+		and the regions associated with the detected sources will be excluded. This help reducing contamination by astronomical sources.
 
-	:param detect_thresh: (default: 3.0)
-		Detection threshold. This is the same as DETECT_THRESH parameter in SExtractor.
+	:param var: (optional, default: None)
+		Variance image to be used in the sources detection process. This input argument is only relevant if mask_sources=True.
 
-	:param detect_minarea: (default: 50)
-		Minimum number of pixels above threshold triggering detection. This is the same as DETECT_MINAREA parameter in SExtractor.
+	:param thresh: (default: 1.5)
+		Detection threshold for the sources detection. If variance image is supplied, the threshold value for a given pixel is 
+		interpreted as a multiplicative factor of the uncertainty (i.e. square root of the variance) on that pixel. 
+		If var=None, the threshold is taken to be 2.5 percentile of the pixel values in the image. 
+
+	:param minarea: (default: 5)
+		Minimum number of pixels above threshold triggering detection. 
+
+	:param deblend_nthresh: (default: 32)
+		The same as deblend_nthresh parameter in the SEP.
+
+	:param deblend_cont: (default: 0.005)
+		The same as deblend_cont parameter in the SEP.
 
 	"""
 
@@ -872,8 +771,14 @@ def subtract_background(fits_image=None, hdu_idx=0, sigma=3.0, box_size=None, ma
 	elif box_size != None:
 		box_size = box_size
 
-	if mask_sextractor_sources==True or mask_sextractor_sources==1: 
-		mask_region0 = mask_region_bgmodel(fits_image=fits_image,detect_thresh=detect_thresh,detect_minarea=detect_minarea)
+	if mask_sources==True or mask_sources==1: 
+		if var==None:
+			err = None 
+		else:
+			err = np.sqrt(var)
+		mask_region0 = mask_region_bgmodel(fits_image=fits_image, thresh=thresh, var=var, 
+											minarea=minarea, deblend_nthresh=deblend_nthresh, 
+											deblend_cont=deblend_cont)
 
 		if len(mask_region) == 0:
 			mask_region1 = mask_region0
@@ -891,7 +796,7 @@ def subtract_background(fits_image=None, hdu_idx=0, sigma=3.0, box_size=None, ma
 		bkg = Background2D(data_image, (box_size[0], box_size[1]), filter_size=(3, 3), mask=mask_region1,
 							sigma_clip=sigma_clip, bkg_estimator=bkg_estimator)
 
-	elif mask_sextractor_sources==False or mask_sextractor_sources==0:
+	elif mask_sources==False or mask_sources==0:
 		if len(mask_region)==0:
 			sigma_clip = SigmaClip(sigma=sigma)
 			bkg_estimator = MedianBackground()
@@ -901,31 +806,6 @@ def subtract_background(fits_image=None, hdu_idx=0, sigma=3.0, box_size=None, ma
 			sigma_clip = SigmaClip(sigma=sigma)
 			bkg_estimator = MedianBackground()
 			bkg = Background2D(data_image, (box_size[0], box_size[1]), filter_size=(3, 3), mask=mask_region, sigma_clip=sigma_clip, bkg_estimator=bkg_estimator)
-
-	# define mask_region: including source extraction using sextractor
-	#if mask_sextractor_sources==True or mask_sextractor_sources==1: 
-	#	mask_region0 = mask_region_bgmodel(fits_image=fits_image,detect_thresh=detect_thresh,detect_minarea=detect_minarea)
-	#elif mask_sextractor_sources==False or mask_sextractor_sources==0:
-	#	mask_region0 = np.zeros((dim_y,dim_x))
-
-	#if len(mask_region) == 0:
-	#	mask_region1 = mask_region0
-	#else:
-	#	if mask_region.shape[0]!=dim_y or mask_region.shape[1]!=dim_x:
-	#		print ("dimension of mask_region should be the same with the dimension of fits_image!")
-	#		sys.exit()
-	#	else:
-	#		mask_region1 = np.zeros((dim_y,dim_x))
-	#		for yy in range(0,dim_y):
-	#			for xx in range(0,dim_x):
-	#				if mask_region0[yy][xx]==1 or mask_region[yy][xx]==1:
-	#					mask_region1[yy][xx] = 1
-
-	#print ("[Estimating skybackground of %s]" % fits_image)
-	#sigma_clip = SigmaClip(sigma=sigma)
-	#bkg_estimator = MedianBackground()
-	#bkg = Background2D(data_image, (box_size[0], box_size[1]), filter_size=(3, 3), mask=mask_region1,
-	#					sigma_clip=sigma_clip, bkg_estimator=bkg_estimator)
 
 
 	skybg_image = bkg.background
@@ -1025,6 +905,8 @@ def get_psf_fwhm(filters=[]):
 def get_largest_FWHM_PSF(filters=None):
 	"""A function to find a band that has largest PSF size
 	"""
+	from operator import itemgetter
+
 	col_fwhm_psf = {}
 	col_fwhm_psf['galex_fuv'] = 4.48
 	col_fwhm_psf['galex_nuv'] = 5.05
@@ -1192,6 +1074,7 @@ def ellipse_fit(data=None, init_x0=None, init_y0=None, init_sma=10.0,
 	from photutils import EllipticalAperture
 	from photutils.isophote import EllipseGeometry
 	from photutils.isophote import Ellipse
+	from operator import itemgetter
 
 	## estimate central pixel:
 	if init_x0 == None:
@@ -1426,12 +1309,11 @@ def crop_ellipse_galregion_fits(input_fits=None,x_cent=None,y_cent=None,
 
 	# store to FITS file
 	hdul = fits.HDUList()
-	primary_hdu = fits.PrimaryHDU(header=header)
-	hdul.append(primary_hdu)
-	hdul.append(fits.ImageHDU(gal_region, name='galaxy_region'))
-	hdul.append(fits.ImageHDU(map_flux, name='flux'))
+	hdul.append(fits.ImageHDU(data=map_flux, header=header, name='flux'))
 	hdul.append(fits.ImageHDU(map_flux_err, name='flux_err'))
+	hdul.append(fits.ImageHDU(gal_region, name='galaxy_region'))
 	hdul.append(fits.ImageHDU(data=stamp_img, header=stamp_hdr, name='stamp_image'))
+	
 	# write to fits file
 	if name_out_fits == None:
 		name_out_fits = 'crop_%s' % input_fits
@@ -1578,67 +1460,17 @@ def crop_stars_galregion_fits(input_fits=None,output_fits=None,x_cent=[],y_cent=
 
 	# store to fits file:
 	hdul = fits.HDUList()
-	primary_hdu = fits.PrimaryHDU(header=header)
-	hdul.append(primary_hdu)
-	hdul.append(fits.ImageHDU(gal_region, name='galaxy_region'))
-	hdul.append(fits.ImageHDU(map_flux, name='flux'))
+	hdul.append(fits.ImageHDU(data=map_flux, header=header, name='flux'))
 	hdul.append(fits.ImageHDU(map_flux_err, name='flux_err'))
+	hdul.append(fits.ImageHDU(gal_region, name='galaxy_region'))
 	hdul.append(fits.ImageHDU(data=stamp_img, header=stamp_hdr, name='stamp_image'))
+	
 	# write to fits file:
 	if output_fits == None:
 		output_fits = 'crop_%s' % input_fits
 	hdul.writeto(output_fits, overwrite=True)
 
 	return output_fits
-
-
-
-def crop_square_region_fluxmap(input_fits=None,xrange=[],yrange=[],name_out_fits=None):
-
-	# get the initial galaxy's region:
-	hdu = fits.open(input_fits)
-	header = hdu[0].header
-	gal_region0 = hdu['galaxy_region'].data
-	map_flux0 = hdu['flux'].data
-	map_flux_err0 = hdu['flux_err'].data
-	stamp_img = hdu['stamp_image'].data 
-	stamp_hdr = hdu['stamp_image'].header
-	hdu.close()
-
-	# crop the maps:
-	nbands = int(header['nfilters'])
-	#dim_y = gal_region0.shape[0]
-	#dim_x = gal_region0.shape[1]
-	dim_y = int(yrange[1]) - int(yrange[0])
-	dim_x = int(xrange[1]) - int(xrange[0])
-	gal_region = np.zeros((dim_y,dim_x))
-	map_flux = np.zeros((nbands,dim_y,dim_x))
-	map_flux_err = np.zeros((nbands,dim_y,dim_x))
-	for bb in range(0,nbands):
-		idx_y = 0
-		for yy in range(int(yrange[0]),int(yrange[1])):
-			idx_x = 0
-			for xx in range(int(xrange[0]),int(xrange[1])):
-				gal_region[int(idx_y)][int(idx_x)] = gal_region0[yy][xx]
-				map_flux[bb][int(idx_y)][int(idx_x)] = map_flux0[bb][yy][xx]
-				map_flux_err[bb][int(idx_y)][int(idx_x)] = map_flux_err0[bb][yy][xx]
-				idx_x = idx_x + 1
-			idx_y = idx_y + 1
-
-	# store to fits file:
-	hdul = fits.HDUList()
-	primary_hdu = fits.PrimaryHDU(header=header)
-	hdul.append(primary_hdu)
-	hdul.append(fits.ImageHDU(gal_region, name='galaxy_region'))
-	hdul.append(fits.ImageHDU(map_flux, name='flux'))
-	hdul.append(fits.ImageHDU(map_flux_err, name='flux_err'))
-	hdul.append(fits.ImageHDU(data=stamp_img, header=stamp_hdr, name='stamp_image'))
-
-	if name_out_fits == None:
-		name_out_fits = 'crop_%s' % input_fits
-	hdul.writeto(name_out_fits, overwrite=True)
-
-	return name_out_fits
 
 
 def crop_image_given_radec(img_name=None, ra=None, dec=None, stamp_size=[], name_out_fits=None):

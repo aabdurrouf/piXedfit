@@ -9,7 +9,7 @@ from reproject import reproject_exact
 from photutils.psf.matching import resize_psf
 
 from ..utils.filtering import cwave_filters
-from .images_utils import sort_filters, k_lmbd_Fitz1986_LMC, unknown_images, check_avail_kernel, get_psf_fwhm, get_largest_FWHM_PSF, crop_2D_data  
+from .images_utils import sort_filters, k_lmbd_Fitz1986_LMC, unknown_images, check_avail_kernel, get_psf_fwhm, get_largest_FWHM_PSF, crop_2D_data, ellipse_sma  
 
 global PIXEDFIT_HOME
 PIXEDFIT_HOME = os.environ['PIXEDFIT_HOME']
@@ -113,6 +113,8 @@ class images_processing:
 		:returns output_stamps:
 			Dictionary containing name of postage stamps of reduced multiband images. 
 		"""
+
+		from operator import itemgetter
 
 		temp_file_names = []
 
@@ -451,100 +453,158 @@ class images_processing:
 		return output_stamps
 
 
-	def segmentation_sextractor(self,output_stamps=None,detect_thresh=1.5,detect_minarea=10,deblend_nthresh=32,
-								deblend_mincont=0.005):
-
-		"""A function for deriving segmentation maps of a galaxy in multiple bands using the SExtractor through `sewpy <https://sewpy.readthedocs.io/en/latest/>`_ Python wrapper.
-		To use this function, sewpy package should be installed. 
+	def segmentation_sep(self, output_stamps=None, thresh=1.5, minarea=30, deblend_nthresh=32, deblend_cont=0.005):
+		"""Get segmentation maps of a galaxy in multiple bands using the SEP (a Python version of the SExtractor). 
 
 		:param output_stamps:
 			output_stamps output from the :func:`reduced_stamps`.
 
-		:param detect_thresh: (default: 1.5)
-			Detection threshold. This is the same as DETECT_THRESH parameter in SExtractor.
+		:param thresh: (default: 1.5)
+			Detection threshold for the sources detection. If variance image is supplied, the threshold value for a given pixel is 
+			interpreted as a multiplicative factor of the uncertainty (i.e. square root of the variance) on that pixel. 
+			If var=None, the threshold is taken to be 2.5 percentile of the pixel values in the image.
 
-		:param detect_minarea: (default: 10)
-			Minimum number of pixels above threshold triggering detection. This is the same as DETECT_MINAREA parameter in SExtractor.
+		:param minarea: (default: 5)
+			Minimum number of pixels (above threshold) required for a detected object. 
 
 		:param deblend_nthresh: (default: 32)
-			Number of deblending sub-thresholds. This is the same as DEBLEND_NTHRESH parameter in SExtractor.
+			The same as deblend_nthresh parameter in the SEP.
 
-		:param deblend_mincont: (default: 0.005)
-			Minimum contrast parameter for deblending. This is the same as DEBLEND_MINCONT parameter in SExtractor.
+		:param deblend_cont: (default: 0.005)
+			The same as deblend_cont parameter in the SEP.
 
-		:returns segm_map:
+		:returns segm_maps:
 			Output segmentation maps.
-
-		:returns segm_map_name:
-			Names of output FITS files containing the segmentation maps.
 		"""
 
-		import logging
-		logging.basicConfig(format='%(levelname)s: %(name)s(%(funcName)s): %(message)s', level=logging.DEBUG)
-
-		import sewpy
-		sexpath='sex'
+		import sep 
 
 		filters = self.filters
 		nbands = len(filters)
-		# get set of images that will be used for this analysis
+
+		# get input science images
 		name_img = []
 		for bb in range(0,nbands):
 			str_temp = "name_img_%s" % filters[bb]
 			name_img.append(output_stamps[str_temp])
 
-		# get image dimension
-		hdu = fits.open(name_img[0])
-		image_data = hdu[0].data
-		dim_y = image_data.shape[0]
-		dim_x = image_data.shape[1]
-		hdu.close()
-
-		segm_map_name = []
-		segm_map = np.zeros((nbands,dim_y,dim_x))
+		# get input variance images
+		name_var = []
 		for bb in range(0,nbands):
-			name_segm = "segm_sext_%s" % name_img[bb]
-			segm_map_name.append(name_segm)
-			sew = sewpy.SEW(params=["X_IMAGE", "Y_IMAGE", "FLUX_APER(3)", "FLAGS"],
-				config={"DETECT_THRESH":detect_thresh, "DETECT_MINAREA":detect_minarea, "DEBLEND_NTHRESH":deblend_nthresh,
-				"DEBLEND_MINCONT":deblend_mincont, "CHECKIMAGE_TYPE":"SEGMENTATION", 
-				"CHECKIMAGE_NAME":name_segm},sexpath=sexpath)
-			out = sew(name_img[int(bb)])
-			print ("SExtractor detection and segemnetation for %s" % name_img[bb])
-			print (out["table"])
-			# get the segmentation map in form of 2D array:
-			hdu = fits.open(name_segm)
-			segm_map[bb] = hdu[0].data
+			str_temp = "name_var_%s" % filters[bb]
+			name_var.append(output_stamps[str_temp])
+
+		segm_maps = []
+		for bb in range(0,nbands):
+			# data of science image
+			hdu = fits.open(name_img[bb])
+			data_img = hdu[0].data 
 			hdu.close()
 
-		return segm_map, segm_map_name
+			# date of variance image
+			hdu = fits.open(name_var[bb])
+			data_var = hdu[0].data 
+			hdu.close()
+
+			data_img = data_img.byteswap(inplace=True).newbyteorder()
+			data_var = data_var.byteswap(inplace=True).newbyteorder()
+
+			rows,cols = np.where((np.isnan(data_var)==False) & (np.isinf(data_var)==False))
+			med_var = np.median(data_var[rows,cols])
+			med_err = np.sqrt(med_var)
+
+			objects, segm_map0 = sep.extract(data=data_img, thresh=thresh, err=med_err, minarea=minarea, 
+											deblend_nthresh=deblend_nthresh, deblend_cont=deblend_cont, 
+											segmentation_map=True)
+
+			if np.max(segm_map0)>1:
+				dim_y, dim_x = data_img.shape[0], data_img.shape[1]
+				y_cent = (dim_y-1)/2
+				x_cent = (dim_x-1)/2
+
+				segm_map1 = np.zeros((dim_y,dim_x))
+				rows, cols = np.where(segm_map0==segm_map0[int(y_cent)][int(x_cent)])
+				segm_map1[rows,cols] = 1
+			else:
+				segm_map1 = segm_map0
+
+			segm_maps.append(segm_map1)
 
 
-	def galaxy_region(self, name_segmentation_maps):
-		"""A function to get initial definition of the galaxy's region of interest by merging together the segmentation maps.
+		return segm_maps
 
-		:param name_segmentation_maps:
-			List of the segmentation maps.
+
+	def galaxy_region(self, segm_maps=[], use_ellipse=False, x_cent=None,
+	 					y_cent=None, ell=0, pa=45, radius_sma=30.0):
+		"""Define galaxy's region of interest for further analysis.
+
+		:param segm_maps: 
+			Input segmentation maps in a list format. If the galaxy's region is to be defined based 
+			on segmentation maps obtained with SEP, this input argument is required.
+
+		:param use_ellipse: (optional, default: False)
+			Alternative of defining galaxy's region using elliptical aperture centered at the target galaxy.
+			Set use_ellipse=True if you want to use this option.
+
+		:param x_cent: (optional, default: None)
+			x coordinate of the ellipse center. If x_cent=None, the ellipse center is assumed 
+			to be the same as the image center. 
+
+		:param y_cent: (optional, default: None)
+			y coordinate of the ellipse center. If y_cent=None, the ellipse center is assumed 
+			to be the same as the image center.
+
+		:param ell:
+			Ellipticity of the elliptical aperture.
+
+		:param pa:
+			Position angle of the elliptical aperture.
+
+		:param radius_sma:
+			Radal distance along the semi-major axis of the elliptical aperture. 
 
 		:returns gal_region:
-			Final merged-segmentation map.
+			Output galaxy's region of interest.
 		"""
+		stamp_size = self.stamp_size
 
-		nmaps = len(name_segmentation_maps)
-
-		# image size
-		hdu = fits.open(name_segmentation_maps[0])
-		dim_y = hdu[0].data.shape[0]
-		dim_x = hdu[0].data.shape[1]
-		hdu.close()
+		dim_y = int(stamp_size[0])
+		dim_x = int(stamp_size[1])
 
 		gal_region = np.zeros((dim_y,dim_x))
 
-		for bb in range(0,nmaps):
-			hdu = fits.open(name_segmentation_maps[bb])
-			rows, cols = np.where(hdu[0].data == 1)
+
+		if use_ellipse==False or use_ellipse==0:
+			if len(segm_maps)>0:
+				# use the segmentation maps: merge them
+				for bb in range(0,len(segm_maps)):
+					rows, cols = np.where(segm_maps[bb] == 1)
+					gal_region[rows,cols] = 1
+			else:
+				print ("In case of not using elliptical aperture, segm_maps input is required!")
+				sys.exit()
+
+		elif use_ellipse==True or use_ellipse==1:
+			# use elliptical aperture
+			if y_cent == None:
+				y_cent = (dim_y-1)/2
+			if x_cent == None:
+				x_cent = (dim_x-1)/2
+
+			x = np.linspace(0,dim_x-1,dim_x)
+			y = np.linspace(0,dim_y-1,dim_y)
+			xx, yy = np.meshgrid(x,y)
+			xx_norm, yy_norm = xx-x_cent, yy-y_cent
+
+			data2D_sma = ellipse_sma(ell,pa,xx_norm,yy_norm)
+
+			rows,cols = np.where(data2D_sma<=radius_sma)
+
 			gal_region[rows,cols] = 1
-			hdu.close()
+
+		else:
+			print ("The inputted use_ellipse is not recognized!")
+			sys.exit()
 
 		return gal_region
 
@@ -576,6 +636,8 @@ class images_processing:
 		:param name_out_fits:
 			Desired name for the output FITS file.
 		"""
+
+		from operator import itemgetter
 
 		###================ (1) get basic information ===============####
 		filters = self.filters
@@ -726,13 +788,13 @@ class images_processing:
 			elif filters[bb]=='2mass_j' or filters[bb]=='2mass_h' or filters[bb]=='2mass_k':
 				#=> flux
 				rows1, cols1 = np.where((gal_region==1) & (sci_img_data>0))
-				map_flux[bb][rows1,cols1] = FLUXZP_2mass*pow(10.0,0.4*((2.5*np.log10(sci_img_data[rows1,cols1]))-MAGZP_2mass))*1.0e+3*Gal_dust_corr_factor  # in erg/s/cm^2/Ang. 
+				map_flux[bb][rows1,cols1] = FLUXZP_2mass*np.power(10.0,0.4*((2.5*np.log10(sci_img_data[rows1,cols1]))-MAGZP_2mass))*1.0e+3*Gal_dust_corr_factor  # in erg/s/cm^2/Ang. 
 
 				rows2, cols2 = np.where((gal_region==1) & (sci_img_data<=0))
-				map_flux[bb][rows2,cols2] = -1.0*FLUXZP_2mass*pow(10.0,0.4*((2.5*np.log10(-1.0*sci_img_data[rows2,cols2]))-MAGZP_2mass))*1.0e+3*Gal_dust_corr_factor  # in erg/s/cm^2/Ang. 
+				map_flux[bb][rows2,cols2] = -1.0*FLUXZP_2mass*np.power(10.0,0.4*((2.5*np.log10(-1.0*sci_img_data[rows2,cols2]))-MAGZP_2mass))*1.0e+3*Gal_dust_corr_factor  # in erg/s/cm^2/Ang. 
 
 				#=> flux error
-				map_flux_err[bb][rows,cols] = FLUXZP_2mass*pow(10.0,0.4*((2.5*np.log10(np.sqrt(np.absolute(var_img_data[rows,cols]))))-MAGZP_2mass))*1.0e+3*Gal_dust_corr_factor  # in erg/s/cm^2/Ang. 
+				map_flux_err[bb][rows,cols] = FLUXZP_2mass*np.power(10.0,0.4*((2.5*np.log10(np.sqrt(np.absolute(var_img_data[rows,cols]))))-MAGZP_2mass))*1.0e+3*Gal_dust_corr_factor  # in erg/s/cm^2/Ang. 
 
 			#--> Spitzer: IRAC and MIPS
 			# Spitzer image is in Mjy/sr
@@ -823,14 +885,14 @@ class images_processing:
 		hdr['fpsfmtch'] = fil_psfmatch
 		hdr['psffwhm'] = final_psf_fwhm
 		for bb in range(0,nbands):
-			str_temp = 'fil%d' % int(bb)
-			hdr[str_temp] = filters[int(bb)]
-		primary_hdu = fits.PrimaryHDU(header=hdr)
-		hdul.append(primary_hdu)
-		hdul.append(fits.ImageHDU(gal_region, name='galaxy_region'))
-		hdul.append(fits.ImageHDU(map_flux, name='flux'))
+			str_temp = 'fil%d' % bb
+			hdr[str_temp] = filters[bb]
+
+		hdul.append(fits.ImageHDU(data=map_flux, header=hdr, name='flux'))
 		hdul.append(fits.ImageHDU(map_flux_err, name='flux_err'))
+		hdul.append(fits.ImageHDU(gal_region, name='galaxy_region'))
 		hdul.append(fits.ImageHDU(data=stamp_img, header=stamp_hdr, name='stamp_image'))
+		
 		if name_out_fits == None:
 			name_out_fits = 'fluxmap.fits'
 		hdul.writeto(name_out_fits, overwrite=True)
