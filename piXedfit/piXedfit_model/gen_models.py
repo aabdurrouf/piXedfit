@@ -21,8 +21,7 @@ PIXEDFIT_HOME = os.environ['PIXEDFIT_HOME']
 
 
 __all__ = ["generate_modelSED_propspecphoto", "generate_modelSED_spec", "generate_modelSED_photo", "generate_modelSED_specphoto", 
-			"generate_modelSED_spec_decompose", "generate_modelSED_specphoto_decompose","save_models", "save_models_gridz_params", 
-			"save_models_gridz_sed", "save_models_gridz_merge", "generate_mockSED", "add_fagn_bol_samplers"]
+			"generate_modelSED_spec_decompose", "generate_modelSED_specphoto_decompose","save_models", "generate_mockSED", "add_fagn_bol_samplers"]
 
 def generate_modelSED_propspecphoto(sp=None,imf_type=1,duste_switch=1,add_neb_emission=1,dust_ext_law='Cal2000',
 	sfh_form='delayed_tau_sfh',add_agn=0,filters=['galex_fuv','galex_nuv','sdss_u','sdss_g','sdss_r','sdss_i','sdss_z'],
