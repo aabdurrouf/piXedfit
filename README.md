@@ -11,7 +11,7 @@ are presented in [Abdurro'uf et al. (2021)](https://ui.adsabs.harvard.edu/abs/20
 Detailed documentation of **piXedfit** is given at this [website](https://pixedfit.readthedocs.io/en/latest/index.html). 
 To get the first glance of how **piXedfit** works, the folder `examples` contains demonstrations on how to use this tool for measuring spatially resolved stellar population properties of a galaxy using a combination of 12-band imaging data (from GALEX, SDSS, 2MASS, and WISE) and IFS data from CALIFA.
 
-Some **animations** can be seen from: [images processing](https://github.com/aabdurrouf/piXedfit/blob/main/docs/source/demos_img_pros.rst), [pixel binning](https://github.com/aabdurrouf/piXedfit/blob/main/docs/source/demos_pixel_binning.rst), and [SED fitting](https://github.com/aabdurrouf/piXedfit/blob/main/docs/source/demos_sed_fitting.rst).
+Some **demo** can be seen from: [pixel binning](https://github.com/aabdurrouf/piXedfit/blob/main/docs/source/demos_pixel_binning.rst) and [SED fitting](https://github.com/aabdurrouf/piXedfit/blob/main/docs/source/demos_sed_fitting.rst).
 
 ![image1](figures/3Dcube_specphoto.png)
 ![image2](figures/demo_fit_ngc309.svg)
