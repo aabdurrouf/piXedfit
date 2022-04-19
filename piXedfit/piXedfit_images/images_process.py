@@ -884,6 +884,7 @@ class images_processing:
 		hdr['pixsize'] = final_pix_size
 		hdr['fpsfmtch'] = fil_psfmatch
 		hdr['psffwhm'] = final_psf_fwhm
+		hdr['specphot'] = 0
 		for bb in range(0,nbands):
 			str_temp = 'fil%d' % bb
 			hdr[str_temp] = filters[bb]

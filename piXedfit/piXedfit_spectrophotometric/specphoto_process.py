@@ -35,13 +35,7 @@ def specphoto_califagalexsdss2masswise(photo_fluxmap=None, califa_file=None, pix
 		Name of output FITS file.
 	"""
 
-	# get stamp image and its header
-	#hdu = fits.open(stamp_image)
-	#header_stamp_image = hdu[0].header
-	#data_stamp_image = hdu[0].data
-	#dimy_stamp_image = data_stamp_image.shape[0]
-	#dimx_stamp_image = data_stamp_image.shape[1]
-	#hdu.close()
+	## Next update: remove arguments pixsize_califa and spec_sigma, no smoothing with spec_sigma, and remove extension spec_good_pix
 
 	# get maps of photometric fluxes 
 	hdu = fits.open(photo_fluxmap)
@@ -53,7 +47,7 @@ def specphoto_califagalexsdss2masswise(photo_fluxmap=None, califa_file=None, pix
 	# header and data of stamp image
 	data_stamp_image = hdu['stamp_image'].data 
 	header_stamp_image = hdu['stamp_image'].header
-	# dimension
+	# image size
 	dimy_stamp_image = data_stamp_image.shape[0]
 	dimx_stamp_image = data_stamp_image.shape[1]
 	hdu.close()
@@ -68,12 +62,8 @@ def specphoto_califagalexsdss2masswise(photo_fluxmap=None, califa_file=None, pix
 		filters.append(header_photo_fluxmap[str_temp])
 
 	# pixel size in photometric data
-	pixsize_image = float(header_photo_fluxmap['pix_size'])
-	filter_ref_psfmatch = header_photo_fluxmap['fil_psfmatch']
-
-	# find filter reference in PSF matching
-	#idfil_psfmatch = get_largest_FWHM_PSF(filters=filters)
-	#filter_ref_psfmatch = filters[idfil_psfmatch]
+	pixsize_image = float(header_photo_fluxmap['pixsize'])
+	filter_ref_psfmatch = header_photo_fluxmap['fpsfmtch']
 	
 	# open CALIFA IFS data
 	cube = fits.open(califa_file)
@@ -263,32 +253,21 @@ def specphoto_califagalexsdss2masswise(photo_fluxmap=None, califa_file=None, pix
 	hdr['pixsize'] = header_photo_fluxmap['pixsize']
 	hdr['fpsfmtch'] = header_photo_fluxmap['fpsfmtch']
 	hdr['psffwhm'] = header_photo_fluxmap['psffwhm']
+	hdr['specphot'] = 1
 
 	for bb in range(0,nbands):
 		str_temp = 'fil%d' % int(bb)
 		hdr[str_temp] = header_photo_fluxmap[str_temp]
 
-	hdul.append(fits.PrimaryHDU(data=map_specphoto_phot_flux, header=hdr, name='photo_flux'))
+	hdul.append(fits.ImageHDU(data=map_specphoto_phot_flux, header=hdr, name='photo_flux'))
 	hdul.append(fits.ImageHDU(map_specphoto_phot_flux_err, name='photo_fluxerr'))
+	hdul.append(fits.ImageHDU(wave, name='wave'))
 	hdul.append(fits.ImageHDU(map_specphoto_spec_flux, name='spec_flux'))
 	hdul.append(fits.ImageHDU(map_specphoto_spec_flux_err, name='spec_fluxerr'))
 	hdul.append(fits.ImageHDU(spec_gal_region, name='spec_region'))
 	hdul.append(fits.ImageHDU(photo_gal_region, name='photo_region'))
-	hdul.append(fits.ImageHDU(wave, name='wave'))
 	hdul.append(fits.ImageHDU(map_specphoto_spec_mask, name='spec_good_pix'))
 	hdul.append(fits.ImageHDU(data=data_stamp_image, header=header_stamp_image, name='stamp_image'))
-
-	#primary_hdu = fits.PrimaryHDU(header=hdr)
-	#hdul.append(primary_hdu)
-	#hdul.append(fits.ImageHDU(spec_gal_region, name='spec_region'))
-	#hdul.append(fits.ImageHDU(photo_gal_region, name='photo_region'))
-	#hdul.append(fits.ImageHDU(map_specphoto_phot_flux, name='photo_flux'))
-	#hdul.append(fits.ImageHDU(map_specphoto_phot_flux_err, name='photo_fluxerr'))
-	#hdul.append(fits.ImageHDU(wave, name='wave'))
-	#hdul.append(fits.ImageHDU(map_specphoto_spec_flux, name='spec_flux'))
-	#hdul.append(fits.ImageHDU(map_specphoto_spec_flux_err, name='spec_fluxerr'))
-	#hdul.append(fits.ImageHDU(map_specphoto_spec_mask, name='spec_good_pix'))
-	#hdul.append(fits.ImageHDU(data=data_stamp_image, header=header_stamp_image, name='stamp_image'))
 
 	if name_out_fits==None:
 		name_out_fits = "specphoto_%s.fits" % califa_file
@@ -344,12 +323,8 @@ def specphoto_mangagalexsdss2masswise(photo_fluxmap=None, manga_file=None, pixsi
 		filters.append(header_photo_fluxmap[str_temp])
 
 	# pixel size in photometric data
-	pixsize_image = float(header_photo_fluxmap['pix_size'])
-	filter_ref_psfmatch = header_photo_fluxmap['fil_psfmatch']
-
-	# find filter reference in PSF matching
-	#idfil_psfmatch = get_largest_FWHM_PSF(filters=filters)
-	#filter_ref_psfmatch = filters[idfil_psfmatch]
+	pixsize_image = float(header_photo_fluxmap['pixsize'])
+	filter_ref_psfmatch = header_photo_fluxmap['fpsfmtch']
 
 	## open MaNGA IFS data
 	cube = fits.open(manga_file)
@@ -520,21 +495,21 @@ def specphoto_mangagalexsdss2masswise(photo_fluxmap=None, manga_file=None, pixsi
 	hdr['pixsize'] = header_photo_fluxmap['pixsize']
 	hdr['fpsfmtch'] = header_photo_fluxmap['fpsfmtch']
 	hdr['psffwhm'] = header_photo_fluxmap['psffwhm']
-
+	hdr['specphot'] = 1
+	
 	for bb in range(0,nbands):
 		str_temp = 'fil%d' % int(bb)
 		hdr[str_temp] = header_photo_fluxmap[str_temp]
-	primary_hdu = fits.PrimaryHDU(header=hdr)
-	hdul.append(primary_hdu)
-	hdul.append(fits.ImageHDU(spec_gal_region, name='spec_region'))
-	hdul.append(fits.ImageHDU(photo_gal_region, name='photo_region'))
-	hdul.append(fits.ImageHDU(map_specphoto_phot_flux, name='photo_flux'))
+	hdul.append(fits.ImageHDU(data=map_specphoto_phot_flux, header=hdr, name='photo_flux'))
 	hdul.append(fits.ImageHDU(map_specphoto_phot_flux_err, name='photo_fluxerr'))
 	hdul.append(fits.ImageHDU(wave, name='wave'))
 	hdul.append(fits.ImageHDU(map_specphoto_spec_flux, name='spec_flux'))
 	hdul.append(fits.ImageHDU(map_specphoto_spec_flux_err, name='spec_fluxerr'))
+	hdul.append(fits.ImageHDU(spec_gal_region, name='spec_region'))
+	hdul.append(fits.ImageHDU(photo_gal_region, name='photo_region'))
 	hdul.append(fits.ImageHDU(map_specphoto_spec_mask, name='spec_good_pix'))
 	hdul.append(fits.ImageHDU(data=data_stamp_image, header=header_stamp_image, name='stamp_image'))
+
 	## write to fits file:
 	if name_out_fits==None:
 		name_out_fits = "specphoto_%s.fits" % manga_file

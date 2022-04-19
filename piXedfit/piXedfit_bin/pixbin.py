@@ -8,7 +8,7 @@ __all__ = ["pixel_binning", "pixel_binning_images"]
 
 
 
-def pixel_binning(fits_fluxmap=None, ref_band=None, Dmin_bin=2.0, SNR=[], redc_chi2_limit=4.0, name_out_fits=None):
+def pixel_binning(fits_fluxmap=None, ref_band=None, Dmin_bin=2.0, SNR=[], redc_chi2_limit=4.0, del_r=2.0, name_out_fits=None):
 	"""Function for performing pixel binning, a proses of combining neighboring pixels to increase signal-to-noise ratios of the 
 	spatially resolved SEDs.  
 
@@ -31,19 +31,20 @@ def pixel_binning(fits_fluxmap=None, ref_band=None, Dmin_bin=2.0, SNR=[], redc_c
 	:param redc_chi2_limit: (default: 4.0)
 		A maximum of reduced chi-square for two SEDs are considered to have a similar shape. 
 
+	:param del_r: (optional, default: 2 pixel)
+		Increment of circular radius in the binning process.
+
 	:param name_out_fits: (defult: None)
 		Desired name for the output FITS file.
 	"""
 
 	hdu = fits.open(fits_fluxmap)
 	header = hdu[0].header
-	if hdu[1].name == 'GALAXY_REGION':
-		flag_specphoto = 0
+	if header['specphot'] == 0:
 		gal_region = hdu['GALAXY_REGION'].data
 		map_flux = hdu['FLUX'].data
 		map_flux_err = hdu['FLUX_ERR'].data 
-	elif hdu[1].name == 'PHOTO_REGION':
-		flag_specphoto = 1
+	elif header['specphot'] == 1:
 		gal_region = hdu['PHOTO_REGION'].data
 		spec_gal_region = hdu['SPEC_REGION'].data 
 		map_flux = hdu['PHOTO_FLUX'].data 
@@ -86,7 +87,6 @@ def pixel_binning(fits_fluxmap=None, ref_band=None, Dmin_bin=2.0, SNR=[], redc_c
 	tot_npixs = len(rows)
 
 	count_bin = 0
-	del_r = 2
 	cumul_npixs_in_bin = 0
 	while len(rows)>0:
 		# center pixel of a bin
@@ -218,7 +218,25 @@ def pixel_binning(fits_fluxmap=None, ref_band=None, Dmin_bin=2.0, SNR=[], redc_c
 					stat_increase = 0
 				
 				else:
-					if (len(cumul_rows)+cumul_npixs_in_bin) == tot_npixs:
+					# check remaining pixels
+					rows_rest, cols_rest = np.where((gal_region==1) & (pixbin_map==0))
+					tflux = np.sum(map_flux_trans[rows_rest,cols_rest], axis=0)
+					tflux_err2 = np.sum(np.square(map_flux_err_trans[rows_rest,cols_rest]), axis=0)
+					tSNR = tflux/np.sqrt(tflux_err2)
+					tidx = np.where(tSNR-SN_threshold>=0)
+
+					if len(tidx[0]) < nbands:
+						# bin all remaining pixels:
+						count_bin = count_bin + 1
+						pixbin_map[rows_rest,cols_rest] = count_bin
+						map_bin_flux[rows_rest,cols_rest] = tflux
+						map_bin_flux_err[rows_rest,cols_rest] = np.sqrt(tflux_err2)
+						cumul_npixs_in_bin = cumul_npixs_in_bin + len(rows_rest)
+
+						stat_increase = 0
+						break
+
+					elif (len(cumul_rows)+cumul_npixs_in_bin) == tot_npixs:
 						# get bin
 						count_bin = count_bin + 1
 						pixbin_map[cumul_rows,cumul_cols] = count_bin
@@ -228,6 +246,7 @@ def pixel_binning(fits_fluxmap=None, ref_band=None, Dmin_bin=2.0, SNR=[], redc_c
 
 						stat_increase = 0
 						break
+
 					else:
 						stat_increase = 1
 
@@ -238,15 +257,21 @@ def pixel_binning(fits_fluxmap=None, ref_band=None, Dmin_bin=2.0, SNR=[], redc_c
 		rows, cols = np.where((gal_region==1) & (pixbin_map==0))
 		# end of while..
 
+		sys.stdout.write('\r')
+		sys.stdout.write('Bins: %d ==> accumulated pixels: %d/%d' % (count_bin,cumul_npixs_in_bin,tot_npixs))
+		sys.stdout.flush()
+	sys.stdout.write('\n')
+
+
 	# transpose from (y,x,wave) => (wave,y,x)
 	map_bin_flux_trans = np.transpose(map_bin_flux, axes=(2,0,1))
 	map_bin_flux_err_trans = np.transpose(map_bin_flux_err, axes=(2,0,1))
 
-	if flag_specphoto == 0:
+	if header['specphot'] == 0:
 		print ("Number of bins: %d" % count_bin)
 
 	# In case of specphoto input file: bin the IFS spectra
-	elif flag_specphoto == 1:
+	elif header['specphot'] == 1:
 		pixbin_map_specphoto = np.zeros((dim_y,dim_x))
 		map_bin_spec_flux = np.zeros((dim_y,dim_x,nwaves))
 		map_bin_spec_flux_err = np.zeros((dim_y,dim_x,nwaves))
@@ -270,7 +295,7 @@ def pixel_binning(fits_fluxmap=None, ref_band=None, Dmin_bin=2.0, SNR=[], redc_c
 
 
 	## store into FITS file
-	if flag_specphoto == 0:
+	if header['specphot'] == 0:
 		hdul = fits.HDUList()
 		hdr = fits.Header()
 		hdr['nfilters'] = nbands
@@ -287,18 +312,17 @@ def pixel_binning(fits_fluxmap=None, ref_band=None, Dmin_bin=2.0, SNR=[], redc_c
 		hdr['pixsize'] = header['pixsize']
 		hdr['fpsfmtch'] = header['fpsfmtch']
 		hdr['psffwhm'] = header['psffwhm']
+		hdr['specphot'] = header['specphot']
 
 		for bb in range(0,nbands):
 			str_temp = 'fil%d' % bb
 			hdr[str_temp] = header[str_temp]
 
-		primary_hdu = fits.PrimaryHDU(header=hdr)
-		hdul.append(primary_hdu)
-		hdul.append(fits.ImageHDU(pixbin_map, name='bin_map'))
+		hdul.append(fits.ImageHDU(data=pixbin_map, header=hdr, name='bin_map'))
 		hdul.append(fits.ImageHDU(map_bin_flux_trans, name='bin_flux'))
 		hdul.append(fits.ImageHDU(map_bin_flux_err_trans, name='bin_fluxerr'))
 
-	elif flag_specphoto == 1:
+	elif header['specphot'] == 1:
 		hdul = fits.HDUList()
 		hdr = fits.Header()
 		hdr['nfilters'] = nbands
@@ -317,14 +341,13 @@ def pixel_binning(fits_fluxmap=None, ref_band=None, Dmin_bin=2.0, SNR=[], redc_c
 		hdr['pixsize'] = header['pixsize']       
 		hdr['fpsfmtch'] = header['fpsfmtch']   
 		hdr['psffwhm'] = header['psffwhm']
+		hdr['specphot'] = header['specphot']
 
 		for bb in range(0,nbands):
 			str_temp = 'fil%d' % bb
 			hdr[str_temp] = header[str_temp]
 
-		primary_hdu = fits.PrimaryHDU(header=hdr)
-		hdul.append(primary_hdu)
-		hdul.append(fits.ImageHDU(pixbin_map, name='photo_bin_map'))
+		hdul.append(fits.ImageHDU(data=pixbin_map, header=hdr, name='photo_bin_map'))
 		hdul.append(fits.ImageHDU(pixbin_map_specphoto, name='spec_bin_map'))
 		hdul.append(fits.ImageHDU(map_bin_flux_trans, name='bin_photo_flux'))
 		hdul.append(fits.ImageHDU(map_bin_flux_err_trans, name='bin_photo_fluxerr'))
@@ -342,7 +365,7 @@ def pixel_binning(fits_fluxmap=None, ref_band=None, Dmin_bin=2.0, SNR=[], redc_c
 
 
 
-def pixel_binning_images(images=[], var_images=[], ref_band=None, Dmin_bin=2.0, SNR=[], redc_chi2_limit=4.0, name_out_fits=None):
+def pixel_binning_images(images=[], var_images=[], ref_band=None, Dmin_bin=2.0, SNR=[], redc_chi2_limit=4.0, del_r=2.0, name_out_fits=None):
 	"""Function for performing pixel binning to multiband images.  
 
 	:param images:
@@ -365,6 +388,9 @@ def pixel_binning_images(images=[], var_images=[], ref_band=None, Dmin_bin=2.0, 
 
 	:param redc_chi2_limit: (default: 4.0)
 		A maximum of reduced chi-square for two SEDs are considered to have a similar shape. 
+
+	:param del_r: (optional, default: 2 pixel)
+		Increment of circular radius in the binning process.
 
 	:param name_out_fits: (defult: None)
 		Desired name for the output FITS file.
@@ -418,7 +444,6 @@ def pixel_binning_images(images=[], var_images=[], ref_band=None, Dmin_bin=2.0, 
 	tot_npixs = len(rows)
 
 	count_bin = 0
-	del_r = 2
 	cumul_npixs_in_bin = 0
 	while len(rows)>0:
 		# center pixel of a bin
@@ -556,7 +581,25 @@ def pixel_binning_images(images=[], var_images=[], ref_band=None, Dmin_bin=2.0, 
 					stat_increase = 0
 				
 				else:
-					if (len(cumul_rows)+cumul_npixs_in_bin) == tot_npixs:
+					# check remaining pixels
+					rows_rest, cols_rest = np.where((gal_region==1) & (pixbin_map==0))
+					tflux = np.sum(map_flux_trans[rows_rest,cols_rest], axis=0)
+					tflux_err2 = np.sum(np.square(map_flux_err_trans[rows_rest,cols_rest]), axis=0)
+					tSNR = tflux/np.sqrt(tflux_err2)
+					tidx = np.where(tSNR-SN_threshold>=0)
+
+					if len(tidx[0]) < nbands:
+						# bin all remaining pixels:
+						count_bin = count_bin + 1
+						pixbin_map[rows_rest,cols_rest] = count_bin
+						map_bin_flux[rows_rest,cols_rest] = tflux
+						map_bin_flux_err[rows_rest,cols_rest] = np.sqrt(tflux_err2)
+						cumul_npixs_in_bin = cumul_npixs_in_bin + len(rows_rest)
+
+						stat_increase = 0
+						break
+
+					elif (len(cumul_rows)+cumul_npixs_in_bin) == tot_npixs:
 						# get bin
 						count_bin = count_bin + 1
 						pixbin_map[cumul_rows,cumul_cols] = count_bin
@@ -594,9 +637,7 @@ def pixel_binning_images(images=[], var_images=[], ref_band=None, Dmin_bin=2.0, 
 		str_temp = 'fil%d' % bb
 		hdr[str_temp] = header[str_temp]
 
-	primary_hdu = fits.PrimaryHDU(header=hdr)
-	hdul.append(primary_hdu)
-	hdul.append(fits.ImageHDU(pixbin_map, name='bin_map'))
+	hdul.append(fits.ImageHDU(data=pixbin_map, header=hdr, name='bin_map'))
 	hdul.append(fits.ImageHDU(map_bin_flux_trans, name='bin_flux'))
 	hdul.append(fits.ImageHDU(map_bin_flux_err_trans, name='bin_fluxerr'))
 

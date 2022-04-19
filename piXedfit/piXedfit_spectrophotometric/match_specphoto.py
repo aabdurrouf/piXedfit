@@ -260,18 +260,15 @@ if rank == 0:
 
 	# Store into FITS file 
 	hdul = fits.HDUList()
-	primary_hdu = fits.PrimaryHDU(header=header)
-	hdul.append(primary_hdu)
-	hdul.append(fits.ImageHDU(photo_gal_region, name='photo_region'))
-	hdul.append(fits.ImageHDU(spec_gal_region, name='spec_region'))
-	hdul.append(fits.ImageHDU(photo_flux, name='photo_flux'))
+	hdul.append(fits.ImageHDU(data=photo_flux, header=header, name='photo_flux'))
 	hdul.append(fits.ImageHDU(photo_flux_err, name='photo_fluxerr'))
 	hdul.append(fits.ImageHDU(spec_wave, name='wave'))
 	hdul.append(fits.ImageHDU(map_rescaled_spec_flux, name='spec_flux'))
 	hdul.append(fits.ImageHDU(map_rescaled_spec_flux_err , name='spec_fluxerr'))
+	hdul.append(fits.ImageHDU(photo_gal_region, name='photo_region'))
+	hdul.append(fits.ImageHDU(spec_gal_region, name='spec_region'))
 	hdul.append(fits.ImageHDU(map_bfit_mod_spec_wave, name='mod_wave'))
 	hdul.append(fits.ImageHDU(map_bfit_mod_spec_flux_trans, name='mod_flux'))
-
 	# write to fits file
 	hdul.writeto(name_out_fits, overwrite=True)
 
