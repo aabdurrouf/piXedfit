@@ -7,6 +7,15 @@ from astropy.io import fits
 __all__ = ["pixel_binning", "pixel_binning_images"]
 
 
+def redchi2_two_seds(sed1_f=[], sed1_ferr=[], sed2_f=[], sed2_ferr=[]):
+	top = np.sum(sed2_f*sed1_f/(np.square(sed1_ferr)+np.square(sed2_ferr)))
+	bottom = np.sum(np.square(sed1_f)/(np.square(sed1_ferr)+np.square(sed2_ferr)))
+	norm = top/bottom
+
+	red_chi2 = np.sum(np.square(sed2_f-(norm*sed1_f))/(np.square(sed1_ferr)+np.square(sed2_ferr)))/len(sed1_f)
+
+	return red_chi2
+
 
 def pixel_binning(fits_fluxmap=None, ref_band=None, Dmin_bin=2.0, SNR=[], redc_chi2_limit=4.0, del_r=2.0, name_out_fits=None):
 	"""Function for performing pixel binning, a proses of combining neighboring pixels to increase signal-to-noise ratios of the 
@@ -58,11 +67,54 @@ def pixel_binning(fits_fluxmap=None, ref_band=None, Dmin_bin=2.0, SNR=[], redc_c
 		map_spec_flux_err_trans = np.transpose(map_spec_flux_err, axes=(1,2,0))
 	hdu.close()
 
+	# number of filters
+	nbands = int(header['nfilters'])
+
 	# transpose from (wave,y,x) -> (y,x,wave)
 	map_flux_trans = np.transpose(map_flux, axes=(1,2,0))
 	map_flux_err_trans = np.transpose(map_flux_err, axes=(1,2,0))
 
-	nbands = int(header['nfilters'])
+	# modify negative fluxes in a given band with the minimum flux in that band
+	# this is only used in calculating chi-square for the evaluation of the SED shape similarity  
+	map_flux_corr = map_flux
+	for bb in range(0,nbands):
+		rows, cols = np.where((map_flux[bb]>0) & (gal_region==1))
+		lowest = np.min(map_flux[bb][rows,cols])
+
+		rows, cols = np.where((map_flux[bb]<0) & (gal_region==1))
+		map_flux_corr[bb][rows,cols] = lowest
+
+	# find systematic error factor
+	rows, cols = np.where(gal_region==1)
+	idx = np.unravel_index(map_flux[ref_band][rows,cols].argmax(), map_flux[ref_band][rows,cols].shape)
+	yc, xc = rows[idx[0]], cols[idx[0]]
+	
+	status_add = 1
+	factor = 0.01
+	while status_add == 1:
+		sed1_f = map_flux_trans[yc][xc]
+		sed1_ferr = np.sqrt(np.square(map_flux_err_trans[yc][xc]) + np.square(factor*sed1_f))
+		pix_chi2 = []
+		for yy in range(yc-2,yc+2):
+			for xx in range(xc-2,xc+2):
+				if yy!=yc and xx!=xc:
+					sed2_f = map_flux_trans[yy][xx]
+					sed2_ferr = np.sqrt(np.square(map_flux_err_trans[yy][xx]) + np.square(factor*sed2_f))
+					red_chi2 = redchi2_two_seds(sed1_f=sed1_f, sed1_ferr=sed1_ferr, sed2_f=sed2_f, sed2_ferr=sed2_ferr)
+					pix_chi2.append(red_chi2)
+		pix_chi2 = np.asarray(pix_chi2)
+		if np.median(pix_chi2)<=2.0:
+			status_add = 0
+
+		factor = factor + 0.01
+	# apply the factor
+	map_flux_err_corr = np.sqrt( np.square(map_flux_err) + np.square(factor*map_flux))
+
+	# transpose from (band,y,x) -> (y,x,band)
+	map_flux_corr_trans = np.transpose(map_flux_corr, axes=(1,2,0))
+	map_flux_err_corr_trans = np.transpose(map_flux_err_corr, axes=(1,2,0))
+
+	# get reference band for pixel brightness
 	if ref_band == None:
 		ref_band = int((nbands-1)/2)
 	else:
@@ -180,23 +232,25 @@ def pixel_binning(fits_fluxmap=None, ref_band=None, Dmin_bin=2.0, SNR=[], redc_c
 				rows1 = rows1 + ymin
 				cols1 = cols1 + xmin
 
+				# check similarity of SED shape
 				cent_pix_SED_flux = np.zeros((dim_y,dim_x,nbands))
 				cent_pix_SED_flux_err = np.zeros((dim_y,dim_x,nbands))
 				norm0 = np.zeros((nbands,dim_y,dim_x))
 
-				cent_pix_SED_flux[rows1,cols1] = map_flux_trans[bin_y_cent][bin_x_cent]
-				cent_pix_SED_flux_err[rows1,cols1] = map_flux_err_trans[bin_y_cent][bin_x_cent]
+				cent_pix_SED_flux[rows1,cols1] = map_flux_corr_trans[bin_y_cent][bin_x_cent]
+				cent_pix_SED_flux_err[rows1,cols1] = map_flux_err_corr_trans[bin_y_cent][bin_x_cent]
 
-				top0 = np.sum(map_flux_trans[rows1,cols1]*cent_pix_SED_flux[rows1,cols1]/(np.square(map_flux_err_trans[rows1,cols1])+np.square(cent_pix_SED_flux_err[rows1,cols1])),axis=1)
-				bottom0 = np.sum(np.square(cent_pix_SED_flux[rows1,cols1])/(np.square(map_flux_err_trans[rows1,cols1])+np.square(cent_pix_SED_flux_err[rows1,cols1])),axis=1)
+				top0 = np.sum(map_flux_corr_trans[rows1,cols1]*cent_pix_SED_flux[rows1,cols1]/(np.square(map_flux_err_corr_trans[rows1,cols1])+np.square(cent_pix_SED_flux_err[rows1,cols1])),axis=1)
+				bottom0 = np.sum(np.square(cent_pix_SED_flux[rows1,cols1])/(np.square(map_flux_err_corr_trans[rows1,cols1])+np.square(cent_pix_SED_flux_err[rows1,cols1])),axis=1)
 				for bb in range(0,nbands):
 					norm0[bb][rows1,cols1] = top0/bottom0
 				# transpose from (band,y,x) -> (y,x,band)
 				norm0_trans = np.transpose(norm0, axes=(1,2,0))
-				pix_chi2 = np.sum(np.square(map_flux_trans[rows1,cols1]-(norm0_trans[rows1,cols1]*cent_pix_SED_flux[rows1,cols1]))/(np.square(map_flux_err_trans[rows1,cols1])+np.square(cent_pix_SED_flux_err[rows1,cols1])),axis=1)
+				pix_chi2 = np.sum(np.square(map_flux_corr_trans[rows1,cols1]-(norm0_trans[rows1,cols1]*cent_pix_SED_flux[rows1,cols1]))/(np.square(map_flux_err_corr_trans[rows1,cols1])+np.square(cent_pix_SED_flux_err[rows1,cols1])),axis=1)
 
 				idx_sel = np.where((pix_chi2/nbands)<=redc_chi2_limit)
 
+				# cut, only select pixels with similar SED shape to the central brightest pixel
 				rows1_cut = rows1[idx_sel[0]]
 				cols1_cut = cols1[idx_sel[0]]
 
@@ -421,6 +475,50 @@ def pixel_binning_images(images=[], var_images=[], ref_band=None, Dmin_bin=2.0, 
 		map_flux_err[bb] = np.sqrt(hdu[0].data)
 		hdu.close()
 
+	# transpose from (wave,y,x) -> (y,x,wave)
+	map_flux_trans = np.transpose(map_flux, axes=(1,2,0))
+	map_flux_err_trans = np.transpose(map_flux_err, axes=(1,2,0))
+
+	# modify negative fluxes in a given band with the minimum flux in that band
+	# this is only used in calculating chi-square for the evaluation of the SED shape similarity  
+	map_flux_corr = map_flux
+	for bb in range(0,nbands):
+		rows, cols = np.where((map_flux[bb]>0) & (gal_region==1))
+		lowest = np.min(map_flux[bb][rows,cols])
+
+		rows, cols = np.where((map_flux[bb]<0) & (gal_region==1))
+		map_flux_corr[bb][rows,cols] = lowest
+
+	# find systematic error factor
+	rows, cols = np.where(gal_region==1)
+	idx = np.unravel_index(map_flux[ref_band][rows,cols].argmax(), map_flux[ref_band][rows,cols].shape)
+	yc, xc = rows[idx[0]], cols[idx[0]]
+	
+	status_add = 1
+	factor = 0.01
+	while status_add == 1:
+		sed1_f = map_flux_trans[yc][xc]
+		sed1_ferr = np.sqrt(np.square(map_flux_err_trans[yc][xc]) + np.square(factor*sed1_f))
+		pix_chi2 = []
+		for yy in range(yc-2,yc+2):
+			for xx in range(xc-2,xc+2):
+				if yy!=yc and xx!=xc:
+					sed2_f = map_flux_trans[yy][xx]
+					sed2_ferr = np.sqrt(np.square(map_flux_err_trans[yy][xx]) + np.square(factor*sed2_f))
+					red_chi2 = redchi2_two_seds(sed1_f=sed1_f, sed1_ferr=sed1_ferr, sed2_f=sed2_f, sed2_ferr=sed2_ferr)
+					pix_chi2.append(red_chi2)
+		pix_chi2 = np.asarray(pix_chi2)
+		if np.median(pix_chi2)<=2.0:
+			status_add = 0
+
+		factor = factor + 0.01
+	# apply the factor
+	map_flux_err_corr = np.sqrt( np.square(map_flux_err) + np.square(factor*map_flux))
+
+	# transpose from (band,y,x) -> (y,x,band)
+	map_flux_corr_trans = np.transpose(map_flux_corr, axes=(1,2,0))
+	map_flux_err_corr_trans = np.transpose(map_flux_err_corr, axes=(1,2,0))
+
 	# reference band for measuring pixel brightness
 	if ref_band == None:
 		if nbands == 1:
@@ -549,16 +647,16 @@ def pixel_binning_images(images=[], var_images=[], ref_band=None, Dmin_bin=2.0, 
 					cent_pix_SED_flux_err = np.zeros((dim_y,dim_x,nbands))
 					norm0 = np.zeros((nbands,dim_y,dim_x))
 
-					cent_pix_SED_flux[rows1,cols1] = map_flux_trans[bin_y_cent][bin_x_cent]
-					cent_pix_SED_flux_err[rows1,cols1] = map_flux_err_trans[bin_y_cent][bin_x_cent]
+					cent_pix_SED_flux[rows1,cols1] = map_flux_corr_trans[bin_y_cent][bin_x_cent]
+					cent_pix_SED_flux_err[rows1,cols1] = map_flux_err_corr_trans[bin_y_cent][bin_x_cent]
 
-					top0 = np.sum(map_flux_trans[rows1,cols1]*cent_pix_SED_flux[rows1,cols1]/(np.square(map_flux_err_trans[rows1,cols1])+np.square(cent_pix_SED_flux_err[rows1,cols1])),axis=1)
-					bottom0 = np.sum(np.square(cent_pix_SED_flux[rows1,cols1])/(np.square(map_flux_err_trans[rows1,cols1])+np.square(cent_pix_SED_flux_err[rows1,cols1])),axis=1)
+					top0 = np.sum(map_flux_corr_trans[rows1,cols1]*cent_pix_SED_flux[rows1,cols1]/(np.square(map_flux_err_corr_trans[rows1,cols1])+np.square(cent_pix_SED_flux_err[rows1,cols1])),axis=1)
+					bottom0 = np.sum(np.square(cent_pix_SED_flux[rows1,cols1])/(np.square(map_flux_err_corr_trans[rows1,cols1])+np.square(cent_pix_SED_flux_err[rows1,cols1])),axis=1)
 					for bb in range(0,nbands):
 						norm0[bb][rows1,cols1] = top0/bottom0
 					# transpose from (band,y,x) -> (y,x,band)
 					norm0_trans = np.transpose(norm0, axes=(1,2,0))
-					pix_chi2 = np.sum(np.square(map_flux_trans[rows1,cols1]-(norm0_trans[rows1,cols1]*cent_pix_SED_flux[rows1,cols1]))/(np.square(map_flux_err_trans[rows1,cols1])+np.square(cent_pix_SED_flux_err[rows1,cols1])),axis=1)
+					pix_chi2 = np.sum(np.square(map_flux_corr_trans[rows1,cols1]-(norm0_trans[rows1,cols1]*cent_pix_SED_flux[rows1,cols1]))/(np.square(map_flux_err_corr_trans[rows1,cols1])+np.square(cent_pix_SED_flux_err[rows1,cols1])),axis=1)
 
 					idx_sel = np.where((pix_chi2/nbands)<=redc_chi2_limit)
 
