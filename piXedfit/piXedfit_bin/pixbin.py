@@ -197,12 +197,15 @@ def pixel_binning(fits_fluxmap=None, ref_band=None, Dmin_bin=2.0, SNR=[], redc_c
 
 				idx_sel = np.where((pix_chi2/nbands)<=redc_chi2_limit)
 
-				cumul_rows = cumul_rows + rows1[idx_sel[0]].tolist()
-				cumul_cols = cumul_cols + cols1[idx_sel[0]].tolist()
+				rows1_cut = rows1[idx_sel[0]]
+				cols1_cut = cols1[idx_sel[0]]
+
+				cumul_rows = cumul_rows + rows1_cut.tolist()
+				cumul_cols = cumul_cols + cols1_cut.tolist()
 
 				# get total fluxes
-				tot_bin_flux = tot_bin_flux + np.sum(map_flux_trans[rows1,cols1], axis=0)
-				tot_bin_flux_err2 = tot_bin_flux_err2 + np.sum(np.square(map_flux_err_trans[rows1,cols1]), axis=0)
+				tot_bin_flux = tot_bin_flux + np.sum(map_flux_trans[rows1_cut,cols1_cut], axis=0)
+				tot_bin_flux_err2 = tot_bin_flux_err2 + np.sum(np.square(map_flux_err_trans[rows1_cut,cols1_cut]), axis=0)
 
 				tot_SNR = tot_bin_flux/np.sqrt(tot_bin_flux_err2)
 				idx0 = np.where(tot_SNR-SN_threshold>=0)
@@ -538,8 +541,8 @@ def pixel_binning_images(images=[], var_images=[], ref_band=None, Dmin_bin=2.0, 
 				cols1 = cols1 + xmin
 
 				if nbands==0:
-					cumul_rows = cumul_rows + rows1.tolist()
-					cumul_cols = cumul_cols + cols1.tolist()
+					rows1_cut = rows1
+					cols1_cut = cols1
 				else:
 					# check similarity of SED shape
 					cent_pix_SED_flux = np.zeros((dim_y,dim_x,nbands))
@@ -559,13 +562,16 @@ def pixel_binning_images(images=[], var_images=[], ref_band=None, Dmin_bin=2.0, 
 
 					idx_sel = np.where((pix_chi2/nbands)<=redc_chi2_limit)
 
-					cumul_rows = cumul_rows + rows1[idx_sel[0]].tolist()
-					cumul_cols = cumul_cols + cols1[idx_sel[0]].tolist()
+					rows1_cut = rows1[idx_sel[0]]
+					cols1_cut = cols1[idx_sel[0]]
 
+					
+				cumul_rows = cumul_rows + rows1_cut.tolist()
+				cumul_cols = cumul_cols + cols1_cut.tolist()
 
 				# get total fluxes
-				tot_bin_flux = tot_bin_flux + np.sum(map_flux_trans[rows1,cols1], axis=0)
-				tot_bin_flux_err2 = tot_bin_flux_err2 + np.sum(np.square(map_flux_err_trans[rows1,cols1]), axis=0)
+				tot_bin_flux = tot_bin_flux + np.sum(map_flux_trans[rows1_cut,cols1_cut], axis=0)
+				tot_bin_flux_err2 = tot_bin_flux_err2 + np.sum(np.square(map_flux_err_trans[rows1_cut,cols1_cut]), axis=0)
 
 				tot_SNR = tot_bin_flux/np.sqrt(tot_bin_flux_err2)
 				idx0 = np.where(tot_SNR-SN_threshold>=0)
