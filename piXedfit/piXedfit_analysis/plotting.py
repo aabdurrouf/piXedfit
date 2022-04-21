@@ -1,9 +1,8 @@
 import numpy as np
-import math
+from math import pow
 import sys, os
-import random
 import fsps
-import operator
+from operator import itemgetter
 import matplotlib
 matplotlib.use('agg')
 from astropy.io import fits
@@ -180,7 +179,7 @@ def plot_SED_rdsps(name_sampler_fits=None, logscale_x=True, logscale_y=True, xra
 		nparams = nparams0 + 1
 
 		# get best-fit parameters
-		idx, min_val = min(enumerate(data_samplers['chi2']), key=operator.itemgetter(1))
+		idx, min_val = min(enumerate(data_samplers['chi2']), key=itemgetter(1))
 		bfit_chi2 = data_samplers['chi2'][idx]
 		bfit_params = {}
 		for pp in range(0,nparams):
@@ -325,343 +324,11 @@ def plot_SED_rdsps(name_sampler_fits=None, logscale_x=True, logscale_y=True, xra
 		# total
 		plt.plot(spec_wave,spec_total,lw=lw,color='black',zorder=11,label='total')
 
-		plt.legend(fontsize=int(fontsize_legend), loc=2, ncol=2)
+		plt.legend(fontsize=int(fontsize_legend), ncol=2)
 
 	elif decompose==0 or decompose==False:
 		# total
 		plt.plot(spec_wave,spec_total,lw=lw,color='black',zorder=9)
-
-	# plot best-fit model photometric SED and observed SED:
-	if wunit==0 or wunit=='angstrom':
-		plt.scatter(photo_cwave,bfit_photo_SED, s=markersize, marker='s', lw=2, edgecolor='gray', color='none', zorder=9)
-
-		plt.errorbar(photo_cwave,obs_fluxes,yerr=obs_flux_err,color=photo_color,markersize=1,fmt='o',zorder=10)
-		plt.scatter(photo_cwave,obs_fluxes, s=markersize, marker='s', lw=2, edgecolor=photo_color, color='none', zorder=11)
-	elif wunit==1 or wunit=='micron':
-		plt.scatter(photo_cwave/1.0e+4,bfit_photo_SED, s=markersize, marker='s', lw=2, edgecolor='gray', color='none', zorder=9)
-
-		plt.errorbar(photo_cwave/1.0e+4,obs_fluxes,yerr=obs_flux_err,color=photo_color,markersize=1,fmt='o',zorder=10)
-		plt.scatter(photo_cwave/1.0e+4,obs_fluxes, s=markersize, marker='s', lw=3, edgecolor=photo_color, color='none', zorder=11)
-
-	f1.text(0.25, 0.9, "reduced $\chi^2 = %.3f$" % (bfit_chi2/nbands),verticalalignment='bottom', horizontalalignment='right',
-	        transform=f1.transAxes,color='black', fontsize=20)	
-
-	plt.subplots_adjust(left=0.1, right=0.98, bottom=0.15, top=0.98)
-
-	if name_plot==None:
-		name_sampler_fits1 = name_sampler_fits.replace('.fits','')
-		name_plot = "sed_%s.png" % (name_sampler_fits1)
-		
-	plt.savefig(name_plot)
-
-	return name_plot,spec_wave,spec_total,spec_stellar,spec_nebe,spec_duste,spec_agn
-
-
-
-def old_plot_SED_rdsps(name_sampler_fits=None, logscale_x=True, logscale_y=True, xrange=None, yrange=None, wunit='micron', funit='erg/s/cm2/A', 
-	decompose=1, plot_true=0, true_params = {'log_sfr': -99.0,'log_mass': -99.0,'log_dustmass':-99.0,'log_fagn':-99.0,'log_tauagn':-99.0,
-	'log_qpah': -99.0,'log_umin': -99.0,'log_gamma': -99.0,'dust1':-99.0,'dust2': -99.0, 'dust_index':-99.0,'log_mw_age':-99.0,'log_age': -99.0, 
-	'log_alpha':-99.0,'log_beta':-99.0, 'log_t0': -99.0, 'log_tau': -99.0,'logzsol': -99.0,'z': -99.0}, xticks=None, photo_color='red', 
-	fontsize_tick=18, fontsize_label=25, fontsize_legend=18, markersize=100, lw=2.0, name_plot=None):
-
-	"""Function for producing an SED plot from a fitting result obtained with the RDSPS method. 
-	In this case, the best-fit model SED in the plot is the one with lowest chi-square from the input set of pre-calculated model SEDs in the fitting. 
-
-	:param name_sampler_fits: (Mandatory, default: None)
-		Name of input FITS file containing model SEDs and their probabilities. This FITS file must be output of :func:`singleSEDfit` or :func:`SEDfit_from_binmap` functions.
-
-	:param logscale_x: (optional, default: True)
-		Flag stating whether the x-axis is plotted in logarithmic scale (value: True) or not (value: False).
-
-	:param logscale_y: (optional, default: True)
-		Flag stating whether the y-axis is plotted in logarithmic scale (value: True) or not (value: False).
-
-	:param xrange: (optional, default: None)
-		Range in x-axis. The accepted format is: [xmin,xmax]. If xrange=None, the range will be defined based on 
-		the wavelength range covered by the observed photometric SED.
-
-	:param yrange: (optional, default: None)
-		Range in y-axis. The accepted format is: [ymin,ymax]. If yrange=None, the range will be defined based on
-		the fluxes range covered by the observed photometric SED.  
-	
-	:param wunit: (default: 'micron')
-		Wavelength unit. Options are: (1)0 or 'angstrom' for Angstrom unit and (2)1 or 'micron' for micron unit.
-
-	:param funit: (default: 'erg/s/cm2/A')
-		Flux unit. Options are: (1)0 or 'erg/s/cm2/A', (2)1 or 'erg/s/cm2', and (3)2 or 'Jy'.
-
-	:param decompose: (default: 1)
-		Flag stating whether the best-fit model SED is broken-down into its components (value: 1 or True) or not (value: 0 or False).
-
-	:param plot_true: (optional, default: 0)
-		Flag stating whether to plot true model SED (in case available) or not. Options are: (1)0 or False and (2)1 or True.
-
-	:param true_params: (optional)
-		True values of parameters in case available. It should be in a dictionary format as shown in the default set. Only releavant if plot_true=1.
-
-	:param xticks: (optional, default: None)
-		List of ticks values in x-axis. If None, the default from matplotlib is used. If xticks is not None, the accepted input is in list format  
-		xticks = []. The unit should be the same as the input wunit.
-
-	:param photo_color: (optional, default: 'red')
-		Color of photometric fluxes points (in string). The accepted input is the same as that available in matplotlib.
-
-	:param fontsize_tick: (optional, default: 20)
-		Fontsize for the tick. Only relevant if xticks is not None. 
-	
-	:param fontsize_label: (optional, default: 25)
-		Fontsize for the x- and y-axis labels. 
-
-	:param fontsize_legend: (optional, default: 18)
-		Fontsize for the legend.
-
-	:param markersize: (optional, default: 100)
-		Size of the maarkers associated with the observed and model SEDs.
-
-	:param lw: (optional, default: 1)
-		Line width of the model SEDs.
-	
-	:param name_plot: (optional, default: None)
-		Name of the output plot. This is optional parameter.
-
-		
-	
-	:returns name_plot:
-		Name of the output plot.
-
-	:returns spec_wave:
-		Wavelength grids of the total best-fit model spectrum.
-
-	:returns spec_total:
-		Fluxes grids of the total best-fit model spectrum.
-
-	:returns spec_stellar:
-		Stellar emission component of the best-fit model spectrum.
-
-	:returns spec_nebe:
-		Nebular emission component of the best-fit model spectrum.
-
-	:returns spec_duste:
-		Dust emission component of the best-fit model spectrum.
-
-	:returns spec_agn:
-		AGN dusty torus emission component of the best-fit model spectrum.
-	"""
-
-	def_params = ['logzsol','log_tau','log_t0','log_alpha','log_beta', 'log_age','dust_index','dust1','dust2',
-					'log_gamma','log_umin', 'log_qpah', 'z', 'log_fagn','log_tauagn', 'log_mass']
-
-	def_params_val={'log_mass':0.0,'z':0.001,'log_fagn':-3.0,'log_tauagn':1.0,'log_qpah':0.54,'log_umin':0.0,'log_gamma':-2.0,
-				'dust1':0.5,'dust2':0.5,'dust_index':-0.7,'log_age':1.0,'log_alpha':0.1,'log_beta':0.1,'log_t0':0.4,
-				'log_tau':0.4,'logzsol':0.0}
-
-	# open the FITS file:
-	hdu = fits.open(name_sampler_fits)
-	header_samplers = hdu[0].header
-	data_samplers = hdu[1].data
-	hdu.close()
-
-	# some parameters 
-	imf = int(header_samplers['imf'])
-	sfh_form = header_samplers['sfh_form']
-	dust_ext_law = header_samplers['dust_ext_law']
-	duste_switch = header_samplers['duste_stat']
-	add_neb_emission = int(header_samplers['add_neb_emission'])
-	add_agn = header_samplers['add_agn']
-	add_igm_absorption = header_samplers['add_igm_absorption']
-	if add_igm_absorption == 1:
-		igm_type = int(header_samplers['igm_type'])
-	elif add_igm_absorption == 0:
-		igm_type = 0
-
-	if duste_switch == 'duste':
-		if 'dust_index' in header_samplers:
-			def_params_val['dust_index'] = float(header_samplers['dust_index'])
-
-	# redshift
-	free_z = int(header_samplers['free_z'])
-	if free_z == 0:
-		gal_z = float(header_samplers['gal_z'])
-		def_params_val['z'] = gal_z
-
-	# cosmology parameter
-	cosmo = header_samplers['cosmo']
-	H0 = float(header_samplers['H0'])
-	Om0 = float(header_samplers['Om0'])
-
-	# filters and observed SED
-	nbands = int(header_samplers['nfilters'])
-	filters = []
-	obs_fluxes = np.zeros(nbands)
-	obs_flux_err = np.zeros(nbands)
-	for bb in range(0,nbands):
-		str_temp = 'fil%d' % bb
-		filters.append(header_samplers[str_temp])
-		str_temp = 'flux%d' % bb
-		obs_fluxes[bb] = float(header_samplers[str_temp])
-		str_temp = 'flux_err%d' % bb
-		obs_flux_err[bb] = float(header_samplers[str_temp])
-
-	# central wavelength of all filters
-	#photo_cwave = filtering.cwave_filters(filters)
-	photo_cwave = cwave_filters(filters)
-
-	# get list parameters
-	nparams0 = int(header_samplers['nparams'])
-	params = []
-	for pp in range(0,nparams0):
-		str_temp = 'param%d' % pp
-		params.append(header_samplers[str_temp])
-	params.append('log_mass')
-	nparams = nparams0 + 1
-
-	# get best-fit parameters
-	idx, min_val = min(enumerate(data_samplers['chi2']), key=operator.itemgetter(1))
-	bfit_chi2 = data_samplers['chi2'][idx]
-	bfit_params = {}
-	for pp in range(0,nparams):
-		bfit_params[params[pp]] = data_samplers[params[pp]][idx]
-
-	# call fsps
-	global sp
-	sp = fsps.StellarPopulation(zcontinuous=1, imf_type=imf)
-
-	# generate the spectrum
-	params_val = def_params_val
-	for pp in range(0,nparams):
-		params_val[params[pp]] = bfit_params[params[pp]]
-
-	spec_SED = generate_modelSED_spec_decompose(sp=sp,params_val=params_val, imf=imf, duste_switch=duste_switch,
-							add_neb_emission=add_neb_emission,dust_ext_law=dust_ext_law,add_agn=add_agn,add_igm_absorption=add_igm_absorption,
-							igm_type=igm_type,cosmo=cosmo,H0=H0,Om0=Om0,sfh_form=sfh_form,funit=funit)
-
-	# get the photometric SED:
-	bfit_photo_SED = filtering(spec_SED['wave'],spec_SED['flux_total'],filters)
-
-	if wunit==0 or wunit=='angstrom':
-		spec_wave = spec_SED['wave']
-	elif wunit==1 or wunit=='micron':
-		spec_wave = spec_SED['wave']/1.0e+4
-
-	# plotting:
-	fig1 = plt.figure(figsize=(14,7))
-	f1 = plt.subplot()
-	if logscale_y == True:
-		f1.set_yscale('log')
-	if logscale_x == True:
-		f1.set_xscale('log')
-	plt.setp(f1.get_yticklabels(), fontsize=int(fontsize_tick))
-	plt.setp(f1.get_xticklabels(), fontsize=int(fontsize_tick))
-
-	if wunit==0 or wunit=='angstrom':
-		plt.xlabel(r'Wavelength $[\AA]$', fontsize=int(fontsize_label))
-	elif wunit==1 or wunit=='micron':
-		plt.xlabel(r'Wavelength [$\mu$m]', fontsize=int(fontsize_label))
-
-	if funit=='erg/s/cm2/A' or funit==0:
-		plt.ylabel(r'$F_{\lambda}$ [erg $s^{-1}cm^{-2}\AA^{-1}$]', fontsize=int(fontsize_label))
-	elif funit=='erg/s/cm2' or funit==1:
-		plt.ylabel(r'$\lambda F_{\lambda}$ [erg $s^{-1}cm^{-2}$]', fontsize=int(fontsize_label))
-	elif funit=='Jy' or funit==2:
-		plt.ylabel(r'$F_{\nu}$ [Jy]', fontsize=int(fontsize_label))
-	else:
-		print ("The input funit is not recognized!")
-		sys.exit()
-
-	if xticks != None:
-		plt.xticks(xticks)
-
-	for axis in [f1.xaxis]:
-		axis.set_major_formatter(ScalarFormatter())
-	if xrange == None:
-		if wunit==0 or wunit=='angstrom':
-			plt.xlim(min(photo_cwave)*0.7,max(photo_cwave)*1.3)
-		elif wunit==1 or wunit=='micron':
-			plt.xlim(min(photo_cwave)*0.7/1e+4,max(photo_cwave)*1.3/1e+4)
-	elif xrange != None:
-		plt.xlim(xrange[0],xrange[1])
-
-	# Convert unit of observed SED:
-	if funit=='erg/s/cm2/A' or funit==0:
-		obs_fluxes = obs_fluxes
-		obs_flux_err = obs_flux_err
-	elif funit=='erg/s/cm2' or funit==1:
-		obs_fluxes = np.asarray(obs_fluxes)*np.asarray(photo_cwave)
-		obs_flux_err = np.asarray(obs_flux_err)*np.asarray(photo_cwave)
-	elif funit=='Jy' or funit==2:
-		obs_fluxes = np.asarray(obs_fluxes)*np.asarray(photo_cwave)*np.asarray(photo_cwave)/1.0e-23/2.998e+18
-		obs_flux_err = np.asarray(obs_flux_err)*np.asarray(photo_cwave)*np.asarray(photo_cwave)/1.0e-23/2.998e+18
-	else:
-		print ("The input funit is not recognized!")
-		sys.exit()
-
-	if yrange == None:
-		plt.ylim(min(obs_fluxes)*0.5,max(obs_fluxes)*1.8)
-	if yrange != None:
-		plt.ylim(yrange[0],yrange[1])
-
-
-	# alocate arrays:
-	spec_total = spec_SED['flux_total']
-	spec_stellar = []
-	spec_nebe = []
-	spec_duste = []
-	spec_agn = []
-
-	if decompose==1 or decompose==True:
-		spec_stellar = spec_SED['flux_stellar']
-		spec_nebe = spec_SED['flux_nebe']
-		spec_duste = spec_SED['flux_duste']
-		spec_agn = spec_SED['flux_agn']
-
-		# stellar emission
-		plt.plot(spec_wave,spec_stellar,lw=lw,color='darkorange',label='stellar emission')
-		if add_neb_emission == 1:
-			# nebular emission
-			plt.plot(spec_wave,spec_nebe,lw=lw,color='darkcyan',label='nebular emission')
-		if duste_switch == 1 or duste_switch == 'duste':
-			# dust emission
-			plt.plot(spec_wave,spec_duste,lw=lw,color='darkred',label='dust emission')
-		if add_agn == 1:
-			# AGN dusty torus emission
-			plt.plot(spec_wave,spec_agn,lw=lw,color='darkgreen',label='AGN torus emission')
-
-		# total
-		plt.plot(spec_wave,spec_total,lw=lw,color='black',zorder=11,label='total')
-
-		plt.legend(fontsize=int(fontsize_legend), loc=2, ncol=2)
-
-	elif decompose==0 or decompose==False:
-		# total
-		plt.plot(spec_wave,spec_total,lw=lw,color='black',zorder=9)
-
-	# plot true SED if required:
-	if plot_true==1 or plot_true==True:
-		params_val = def_params_val
-		for pp in range(0,nparams):
-			params_val[params[pp]] = true_params[params[pp]]
-
-		spec_SED = generate_modelSED_spec_decompose(sp=sp,params_val=params_val, imf=imf, duste_switch=duste_switch,
-							add_neb_emission=add_neb_emission,dust_ext_law=dust_ext_law,add_agn=add_agn,add_igm_absorption=add_igm_absorption,
-							igm_type=igm_type,cosmo=cosmo,H0=H0,Om0=Om0,sfh_form=sfh_form,funit=funit)
-
-		if wunit==0 or wunit=='angstrom':
-			wave0 = spec_SED['wave']
-		elif wunit==1 or wunit=='micron':
-			wave0 = spec_SED['wave']/1.0e+4
-
-		if decompose==1 or decompose==True:
-			# stellar emission
-			plt.plot(wave0,spec_SED['flux_stellar'],lw=lw,color='darkorange',linestyle='--')
-			# nebular emission
-			plt.plot(wave0,spec_SED['flux_nebe'],lw=lw,color='darkcyan',linestyle='--')
-			# dust emission
-			plt.plot(wave0,spec_SED['flux_duste'],lw=lw,color='darkred',linestyle='--')
-			# AGN dusty torus emission
-			plt.plot(wave0,spec_SED['flux_agn'],lw=lw,color='darkgreen',linestyle='--')
-
-		# total:
-		plt.plot(wave0,spec_SED['flux_total'],lw=lw,color='black',linestyle='--',zorder=10)
 
 	# plot best-fit model photometric SED and observed SED:
 	if wunit==0 or wunit=='angstrom':
@@ -856,7 +523,7 @@ def plot_SED_rdsps_with_residual(name_sampler_fits=None, logscale_x=True, logsca
 		nparams = nparams0 + 1
 
 		# get best-fit parameters
-		idx, min_val = min(enumerate(data_samplers['chi2']), key=operator.itemgetter(1))
+		idx, min_val = min(enumerate(data_samplers['chi2']), key=itemgetter(1))
 		bfit_chi2 = data_samplers['chi2'][idx]
 		bfit_params = {}
 		for pp in range(0,nparams):
@@ -921,6 +588,8 @@ def plot_SED_rdsps_with_residual(name_sampler_fits=None, logscale_x=True, logsca
 
 	if logscale_y == True:
 		f1.set_yscale('log')
+	if logscale_x == True:
+		f1.set_xscale('log')
 	
 	plt.setp(f1.get_yticklabels(), fontsize=int(fontsize_tick))
 
@@ -1000,7 +669,7 @@ def plot_SED_rdsps_with_residual(name_sampler_fits=None, logscale_x=True, logsca
 		# total
 		plt.plot(spec_wave,spec_total,lw=lw,color='black',zorder=11,label='total')
 
-		plt.legend(fontsize=int(fontsize_legend), loc=2, ncol=2)
+		plt.legend(fontsize=int(fontsize_legend), ncol=2)
 
 	elif decompose==0 or decompose==False:
 		# total
@@ -1250,7 +919,7 @@ def old_plot_SED_rdsps_with_residual(name_sampler_fits=None, logscale_x=True, lo
 	nparams = nparams0 + 1
 
 	# get best-fit parameters
-	idx, min_val = min(enumerate(data_samplers['chi2']), key=operator.itemgetter(1))
+	idx, min_val = min(enumerate(data_samplers['chi2']), key=itemgetter(1))
 	bfit_chi2 = data_samplers['chi2'][idx]
 	bfit_params = {}
 	for pp in range(0,nparams):
@@ -2663,18 +2332,18 @@ def plot_sfh_mcmc(name_sampler_fits=None, nchains=200, del_t=0.05, plot_true=0, 
 		#idx = random.randint(0,nsamplers-1)
 		idx = idx_sel[0][int(rand_idx[ii])]
 
-		age = math.pow(10.0,data_samplers['log_age'][idx])
-		tau = math.pow(10.0,data_samplers['log_tau'][idx])
+		age = pow(10.0,data_samplers['log_age'][idx])
+		tau = pow(10.0,data_samplers['log_tau'][idx])
 		t0 = 0.0
 		alpha = 0.0
 		beta = 0.0
 		if sfh_form=='log_normal_sfh' or sfh_form=='gaussian_sfh':
-			t0 = math.pow(10.0,data_samplers['log_t0'][idx])
+			t0 = pow(10.0,data_samplers['log_t0'][idx])
 		if sfh_form=='double_power_sfh':
-			alpha = math.pow(10.0,data_samplers['log_alpha'][idx])
-			beta = math.pow(10.0,data_samplers['log_beta'][idx])
+			alpha = pow(10.0,data_samplers['log_alpha'][idx])
+			beta = pow(10.0,data_samplers['log_beta'][idx])
 
-		formed_mass = math.pow(10.0,data_samplers['log_mass'][idx])
+		formed_mass = pow(10.0,data_samplers['log_mass'][idx])
 
 		t,SFR_t0 = construct_SFH(sfh_form=sfh_form,t0=t0,tau=tau,alpha=alpha,beta=beta,age=age,formed_mass=formed_mass)
 		t_back0 = np.abs(t - age)
@@ -2727,17 +2396,17 @@ def plot_sfh_mcmc(name_sampler_fits=None, nchains=200, del_t=0.05, plot_true=0, 
 	# plot true sfh if required:
 	if plot_true==1 or plot_true==True:
 		if len(true_SFH_lbt) == 0:
-			true_tau = math.pow(10.0,true_params['log_tau'])
-			true_age = math.pow(10.0,true_params['log_age'])
-			true_mass = math.pow(10.0,true_params['log_mass'])
+			true_tau = pow(10.0,true_params['log_tau'])
+			true_age = pow(10.0,true_params['log_age'])
+			true_mass = pow(10.0,true_params['log_mass'])
 			true_t0 = 0
 			true_alpha = 0
 			true_beta = 0
 			if sfh_form=='log_normal_sfh' or sfh_form=='gaussian_sfh':
-				true_t0 = math.pow(10.0,true_params['log_t0'])
+				true_t0 = pow(10.0,true_params['log_t0'])
 			if sfh_form=='double_power_sfh':
-				true_alpha = math.pow(10.0,true_params['log_alpha'])
-				true_beta = math.pow(10.0,true_params['log_beta'])
+				true_alpha = pow(10.0,true_params['log_alpha'])
+				true_beta = pow(10.0,true_params['log_beta'])
 
 			t,SFR_t = construct_SFH(sfh_form=sfh_form,t0=true_t0,tau=true_tau,alpha=true_alpha,
 														beta=true_beta,age=true_age,formed_mass=true_mass)
@@ -2898,7 +2567,7 @@ def plot_SED_rdsps_save_PDF(name_sampler_fits=[], logscale_x=True, logscale_y=Tr
 			nparams = nparams0 + 1
 
 			# get best-fit parameters
-			idx, min_val = min(enumerate(data_samplers['chi2']), key=operator.itemgetter(1))
+			idx, min_val = min(enumerate(data_samplers['chi2']), key=itemgetter(1))
 			bfit_chi2 = data_samplers['chi2'][idx]
 			bfit_params = {}
 			for pp in range(0,nparams):

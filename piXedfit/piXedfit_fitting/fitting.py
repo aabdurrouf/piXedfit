@@ -12,7 +12,7 @@ os.environ["OMP_NUM_THREADS"] = "1"
 __all__ = ["singleSEDfit", "SEDfit_from_binmap", "SEDfit_pixels_from_fluxmap", "inferred_params_mcmc_list", 
 			"inferred_params_rdsps_list","get_inferred_params_mcmc", "map_params_mcmc", "get_inferred_params_rdsps", 
 			"map_params_rdsps", "map_params_rdsps_from_list",  "map_params_fit_pixels_mcmc", 
-			"map_params_fit_pixels_rdsps"]
+			"map_params_fit_pixels_rdsps", "get_params"]
 
 
 def nproc_reduced(nproc,nwalkers,nsteps,nsteps_cut):
@@ -771,47 +771,74 @@ def SEDfit_from_binmap(fits_binmap=None,binid_range=[],bin_ids=[],filters=None,s
 			count_id = count_id + 1
 
 	elif fit_method=='rdsps' or fit_method=='RDSPS':
-		# input SEDs
-		name_inputSEDs = "input_SEDs_%d.dat" % (randint(0,10000))
-		file_out = open(name_inputSEDs,"w")
-		for idx_bin in bin_ids:
+		# single bin
+		if len(bin_ids) == 1:
+			name_SED_txt = "inputSED_file%d.dat" % (randint(0,10000))
+			file_out = open(name_SED_txt,"w")
 			for bb in range(0,nbands):
-				file_out.write("%e  " % obs_flux_all[int(idx_bin)][bb])
-			for bb in range(0,nbands-1):
-				file_out.write("%e  " % obs_flux_err_all[int(idx_bin)][bb])
-			file_out.write("%e\n" % obs_flux_err_all[int(idx_bin)][nbands-1])
-		file_out.close()
-		os.system('mv %s %s' % (name_inputSEDs,temp_dir))
+				file_out.write("%e  %e\n" % (obs_flux_all[int(bin_ids[0])][bb],obs_flux_err_all[int(bin_ids[0])][bb]))
+			file_out.close()
+			os.system('mv %s %s' % (name_SED_txt,temp_dir))
 
-		# name outputs:
-		if len(name_out_fits) == 0:
-			name_outs = "name_outs_%d.dat" % (randint(0,10000))
-			file_out = open(name_outs,"w")
+			# output files name:
+			if len(name_out_fits) == 0:
+				name_out_fits0 = "rdsps_bin%d.fits" % (bin_ids[0]+1)
+			else:
+				name_out_fits0 = name_out_fits[0]
+
+			if store_full_samplers==1 or store_full_samplers==True:
+				os.system("mpirun -n %d python %s./rdsps_pcmod.py %s %s %s %s" % (nproc_new,CODE_dir,name_filters_list,name_config,name_SED_txt,
+																				name_out_fits0))
+			elif store_full_samplers==0 or store_full_samplers==False:
+				os.system("mpirun -n %d python %s./rdsps_pcmod_nsamp.py %s %s %s %s" % (nproc_new,CODE_dir,name_filters_list,name_config,name_SED_txt,
+																				name_out_fits0))
+			else:
+				print ("Input store_full_samplers not recognized!")
+				sys.exit()
+
+		# more than one bins
+		else:
+			# input SEDs
+			name_inputSEDs = "input_SEDs_%d.dat" % (randint(0,10000))
+			file_out = open(name_inputSEDs,"w")
 			for idx_bin in bin_ids:
-				name0 = "rdsps_bin%d.fits" % (idx_bin+1)
-				file_out.write("%s\n" % name0)
+				for bb in range(0,nbands):
+					file_out.write("%e  " % obs_flux_all[int(idx_bin)][bb])
+				for bb in range(0,nbands-1):
+					file_out.write("%e  " % obs_flux_err_all[int(idx_bin)][bb])
+				file_out.write("%e\n" % obs_flux_err_all[int(idx_bin)][nbands-1])
 			file_out.close()
-		else:
-			name_outs = "name_outs_%d.dat" % (randint(0,10000))
-			file_out = open(name_outs,"w")
-			for zz in range(0,len(name_out_fits)):
-				file_out.write("%s\n" % name_out_fits[zz])
-			file_out.close()
+			os.system('mv %s %s' % (name_inputSEDs,temp_dir))
 
-		os.system('mv %s %s' % (name_outs,temp_dir))
+			# name outputs:
+			if len(name_out_fits) == 0:
+				name_outs = "name_outs_%d.dat" % (randint(0,10000))
+				file_out = open(name_outs,"w")
+				for idx_bin in bin_ids:
+					name0 = "rdsps_bin%d.fits" % (idx_bin+1)
+					file_out.write("%s\n" % name0)
+				file_out.close()
+			else:
+				name_outs = "name_outs_%d.dat" % (randint(0,10000))
+				file_out = open(name_outs,"w")
+				for zz in range(0,len(name_out_fits)):
+					file_out.write("%s\n" % name_out_fits[zz])
+				file_out.close()
 
-		if store_full_samplers==1 or store_full_samplers==True:
-			os.system("mpirun -n %d python %s./rdsps_pcmod_bulk.py %s %s %s %s" % (nproc_new,CODE_dir,name_filters_list,name_config,
-																				name_inputSEDs,name_outs))
-		elif store_full_samplers==0 or store_full_samplers==False:
-			os.system("mpirun -n %d python %s./rdsps_pcmod_nsamp_bulk.py %s %s %s %s" % (nproc_new,CODE_dir,name_filters_list,name_config,
-																				name_inputSEDs,name_outs))
-		else:
-			print ("Input store_full_samplers not recognized!")
-			sys.exit()
+			os.system('mv %s %s' % (name_outs,temp_dir))
 
-		os.system("rm %s%s" % (temp_dir,name_inputSEDs))
-		os.system("rm %s%s" % (temp_dir,name_outs))
+			if store_full_samplers==1 or store_full_samplers==True:
+				os.system("mpirun -n %d python %s./rdsps_pcmod_bulk.py %s %s %s %s" % (nproc_new,CODE_dir,name_filters_list,name_config,
+																					name_inputSEDs,name_outs))
+			elif store_full_samplers==0 or store_full_samplers==False:
+				os.system("mpirun -n %d python %s./rdsps_pcmod_nsamp_bulk.py %s %s %s %s" % (nproc_new,CODE_dir,name_filters_list,name_config,
+																					name_inputSEDs,name_outs))
+			else:
+				print ("Input store_full_samplers not recognized!")
+				sys.exit()
+
+			os.system("rm %s%s" % (temp_dir,name_inputSEDs))
+			os.system("rm %s%s" % (temp_dir,name_outs))
 
 	else:
 		print ("Input fit_method is not recognized!")
@@ -992,7 +1019,7 @@ def SEDfit_pixels_from_fluxmap(fits_fluxmap=None,x_range=[],y_range=[],filters=N
 		xmin, xmax = 0, dim_x
 	else:
 		if x_range[0]<0 or x_range[1]>dim_x:
-			print ("Can't perform SED fitting to region beyond the dimension of the data cube!")
+			print ("Can't perform SED fitting to region beyond the region of the data cube!")
 			sys.exit()
 		else:
 			xmin, xmax = x_range[0], x_range[1] 
@@ -1001,7 +1028,7 @@ def SEDfit_pixels_from_fluxmap(fits_fluxmap=None,x_range=[],y_range=[],filters=N
 		ymin, ymax = 0, dim_y
 	else:
 		if y_range[0]<0 or y_range[1]>dim_y:
-			print ("Can't perform SED fitting to region beyond the dimension of the data cube!")
+			print ("Can't perform SED fitting to region beyond the region of the data cube!")
 			sys.exit()
 		else:
 			ymin, ymax = y_range[0], y_range[1]
@@ -1565,10 +1592,7 @@ def map_params_mcmc(fits_binmap=None, bin_ids=[], name_sampler_fits=[], fits_flu
 
 	:param refband_Mdust: (default: None)
 		Index of band/filter in the multiband set that is used for reference in dividing map of dust mass in bin space into map of dust mass in pixel space.
-		If None, the band with longest wavelength is selected.
-
-	:param bin_id_exclude: (optional, default: [])
-		Indexes of bins that are going to be excluded or ignored in the derivation of the maps of properties. 
+		If None, the band with longest wavelength is selected. 
 
 	:param name_out_fits: (optional, default: None)
 		Desired name for the output FITS file.   
@@ -1785,7 +1809,7 @@ def get_inferred_params_rdsps(list_name_sampler_fits=[], bin_excld_flag=[], perc
 
 
 def map_params_rdsps(fits_binmap=None, bin_ids=[], name_sampler_fits=[], fits_fluxmap=None, refband_SFR=None, refband_SM=None, 
-	refband_Mdust=None, bin_id_exclude=[], perc_chi2=10.0, name_out_fits=None):
+	refband_Mdust=None, perc_chi2=10.0, name_out_fits=None):
 	"""Function for calculating maps of properties from the fitting results obtained with the RDSPS method.
 
 	:param fits_binmap: (Mandatory, default=None)
@@ -1812,9 +1836,6 @@ def map_params_rdsps(fits_binmap=None, bin_ids=[], name_sampler_fits=[], fits_fl
 	:param refband_Mdust: (default: None)
 		Index of band/filter in the multiband set that is used for reference in dividing map of dust mass in bin space into map of dust mass in pixel space.
 		If None, the band with longest wavelength is selected.
-
-	:param bin_id_exclude: (optional, default: [])
-		Indexes of bins that are going to be excluded or ignored in the derivation of the maps of properties.
 
 	:param perc_chi2: (optional, default=5.0)
 		A parameter that set the percentile cut of the random model SEDs. The cut is applied after the models are sorted based on their chi-square values. 
@@ -2020,9 +2041,6 @@ def map_params_rdsps_from_list(fits_binmap=None, fits_fluxmap=None, fit_results=
 	:param refband_Mdust: (default: None)
 		Index of band/filter in the multiband set that is used for reference in dividing map of dust mass in bin space into map of dust mass in pixel space.
 		If None, the band with longest wavelength is selected.
-
-	:param bin_id_exclude: (optional, default: [])
-		Indexes of bins that are going to be excluded or ignored in the derivation of the maps of properties.
 
 	:param idx_exclude: (optional, defult: [])
 		List of model indexes that are intended to be exlcuded in the calculation of posterior-weighted averaging.
@@ -2425,5 +2443,44 @@ def map_params_fit_pixels_rdsps(fits_fluxmap=None, pix_x=[], pix_y=[], name_samp
 
 	return name_out_fits
 
+
+def get_params(free_z, sfh_form, duste_switch, dust_ext_law, add_agn, fix_dust_index):
+
+	params = ['logzsol', 'log_tau']
+	# SFH
+	if sfh_form == 'log_normal_sfh' or sfh_form == 'gaussian_sfh':
+		params.append('log_t0')
+	elif sfh_form == 'double_power_sfh':
+		params.append('log_alpha')
+		params.append('log_beta')
+	params.append('log_age')
+
+	# dust attenuation
+	if dust_ext_law == 'CF2000':
+		if fix_dust_index == 0:
+			params.append('dust_index')
+		params.append('dust1')
+	params.append('dust2')
+
+	# dust emission
+	if duste_switch == 'duste':
+		params.append('log_gamma')
+		params.append('log_umin')
+		params.append('log_qpah')
+
+	# AGN:
+	if add_agn == 1:
+		params.append('log_fagn')
+		params.append('log_tauagn')
+
+	# redshift
+	if free_z == 1:
+		params.append('z')
+
+	params.append('log_mass')
+
+	nparams = len(params)
+
+	return params, nparams
 
 

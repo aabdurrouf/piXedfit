@@ -92,10 +92,10 @@ def bayesian_sedfit_gauss():
 
 		count = count + 1
 
-		sys.stdout.write('\r')
-		sys.stdout.write('rank: %d  Calculation process: %d from %d  --->  %d%%' % (rank,count,len(recvbuf_idx),count*100/len(recvbuf_idx)))
-		sys.stdout.flush()
-	sys.stdout.write('\n')
+		#sys.stdout.write('\r')
+		#sys.stdout.write('rank: %d  Calculation process: %d from %d  --->  %d%%' % (rank,count,len(recvbuf_idx),count*100/len(recvbuf_idx)))
+		#sys.stdout.flush()
+	#sys.stdout.write('\n')
 
 	mod_params = np.zeros((nparams,numDataPerRank*size))
 	mod_fluxes = np.zeros((nbands,numDataPerRank*size))
@@ -138,7 +138,7 @@ def bayesian_sedfit_gauss():
 		for bb in range(0,nbands):
 			fluxes[bb] = mod_fluxes[bb][idx0]
 
-		print ("reduced chi2 value of the best-fitting model: %lf" % (mod_chi2[idx0]/nbands))
+		#print ("reduced chi2 value of the best-fitting model: %lf" % (mod_chi2[idx0]/nbands))
 		if mod_chi2[idx0]/nbands > redcd_chi2:  
 			sys_err_frac = 0.01
 			while sys_err_frac <= 0.5:
@@ -147,7 +147,7 @@ def bayesian_sedfit_gauss():
 				if chi2/nbands <= redcd_chi2:
 					break
 				sys_err_frac = sys_err_frac + 0.01
-			print ("After adding %lf fraction to systematic error, reduced chi2 of best-fit model becomes: %lf" % (sys_err_frac,chi2/nbands))
+			#print ("After adding %lf fraction to systematic error, reduced chi2 of best-fit model becomes: %lf" % (sys_err_frac,chi2/nbands))
 			status_add_err[0] = 1
 		elif mod_chi2[idx0]/nbands <= redcd_chi2:
 			status_add_err[0] = 0
@@ -303,10 +303,10 @@ def bayesian_sedfit_student_t():
 
 		count = count + 1
 
-		sys.stdout.write('\r')
-		sys.stdout.write('rank: %d  Calculation process: %d from %d  --->  %d%%' % (rank,count,len(recvbuf_idx),count*100/len(recvbuf_idx)))
-		sys.stdout.flush()
-	sys.stdout.write('\n')
+		#sys.stdout.write('\r')
+		#sys.stdout.write('rank: %d  Calculation process: %d from %d  --->  %d%%' % (rank,count,len(recvbuf_idx),count*100/len(recvbuf_idx)))
+		#sys.stdout.flush()
+	#sys.stdout.write('\n')
 
 	mod_params = np.zeros((nparams,numDataPerRank*size))
 	mod_fluxes = np.zeros((nbands,numDataPerRank*size))
@@ -348,7 +348,7 @@ def bayesian_sedfit_student_t():
 		for bb in range(0,nbands):
 			fluxes[bb] = mod_fluxes[bb][idx0]
 
-		print ("reduced chi2 value of the best-fitting model: %lf" % (mod_chi2[idx0]/nbands))
+		#print ("reduced chi2 value of the best-fitting model: %lf" % (mod_chi2[idx0]/nbands))
 		if mod_chi2[idx0]/nbands > redcd_chi2: 
 			sys_err_frac = 0.01
 			while sys_err_frac <= 0.5:
@@ -357,7 +357,7 @@ def bayesian_sedfit_student_t():
 				if chi2/nbands <= redcd_chi2:
 					break
 				sys_err_frac = sys_err_frac + 0.01
-			print ("After adding %lf fraction to systematic error, reduced chi2 of best-fit model becomes: %lf" % (sys_err_frac,chi2/nbands))
+			#print ("After adding %lf fraction to systematic error, reduced chi2 of best-fit model becomes: %lf" % (sys_err_frac,chi2/nbands))
 
 			status_add_err[0] = 1
 

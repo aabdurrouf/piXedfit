@@ -13,7 +13,7 @@ sys.path.insert(0, PIXEDFIT_HOME)
 
 from piXedfit.utils.posteriors import model_leastnorm, calc_chi2, gauss_prob, gauss_prob_reduced, student_t_prob
 from piXedfit.piXedfit_model import calc_mw_age, generate_modelSED_spec_decompose
-from piXedfit.utils.filtering import cwave_filters
+from piXedfit.utils.filtering import cwave_filters, filtering
 
 
 def bayesian_sedfit_gauss():
@@ -93,10 +93,10 @@ def bayesian_sedfit_gauss():
 
 		count = count + 1
 
-		sys.stdout.write('\r')
-		sys.stdout.write('rank: %d  Calculation process: %d from %d  --->  %d%%' % (rank,count,len(recvbuf_idx),count*100/len(recvbuf_idx)))
-		sys.stdout.flush()
-	sys.stdout.write('\n')
+		#sys.stdout.write('\r')
+		#sys.stdout.write('rank: %d  Calculation process: %d from %d  --->  %d%%' % (rank,count,len(recvbuf_idx),count*100/len(recvbuf_idx)))
+		#sys.stdout.flush()
+	#sys.stdout.write('\n')
 
 	mod_params = np.zeros((nparams,numDataPerRank*size))
 	mod_fluxes = np.zeros((nbands,numDataPerRank*size))
@@ -139,7 +139,7 @@ def bayesian_sedfit_gauss():
 		for bb in range(0,nbands):
 			fluxes[bb] = mod_fluxes[bb][idx0]
 
-		print ("reduced chi2 value of the best-fitting model: %lf" % (mod_chi2[idx0]/nbands))
+		#print ("reduced chi2 value of the best-fitting model: %lf" % (mod_chi2[idx0]/nbands))
 		if mod_chi2[idx0]/nbands > redcd_chi2:  
 			sys_err_frac = 0.01
 			while sys_err_frac <= 0.5:
@@ -148,7 +148,7 @@ def bayesian_sedfit_gauss():
 				if chi2/nbands <= redcd_chi2:
 					break
 				sys_err_frac = sys_err_frac + 0.01
-			print ("After adding %lf fraction to systematic error, reduced chi2 of best-fit model becomes: %lf" % (sys_err_frac,chi2/nbands))
+			#print ("After adding %lf fraction to systematic error, reduced chi2 of best-fit model becomes: %lf" % (sys_err_frac,chi2/nbands))
 			status_add_err[0] = 1
 		elif mod_chi2[idx0]/nbands <= redcd_chi2:
 			status_add_err[0] = 0
@@ -304,10 +304,10 @@ def bayesian_sedfit_student_t():
 
 		count = count + 1
 
-		sys.stdout.write('\r')
-		sys.stdout.write('rank: %d  Calculation process: %d from %d  --->  %d%%' % (rank,count,len(recvbuf_idx),count*100/len(recvbuf_idx)))
-		sys.stdout.flush()
-	sys.stdout.write('\n')
+		#sys.stdout.write('\r')
+		#sys.stdout.write('rank: %d  Calculation process: %d from %d  --->  %d%%' % (rank,count,len(recvbuf_idx),count*100/len(recvbuf_idx)))
+		#sys.stdout.flush()
+	#sys.stdout.write('\n')
 
 	mod_params = np.zeros((nparams,numDataPerRank*size))
 	mod_fluxes = np.zeros((nbands,numDataPerRank*size))
@@ -349,7 +349,7 @@ def bayesian_sedfit_student_t():
 		for bb in range(0,nbands):
 			fluxes[bb] = mod_fluxes[bb][idx0]
 
-		print ("reduced chi2 value of the best-fitting model: %lf" % (mod_chi2[idx0]/nbands))
+		#print ("reduced chi2 value of the best-fitting model: %lf" % (mod_chi2[idx0]/nbands))
 		if mod_chi2[idx0]/nbands > redcd_chi2: 
 			sys_err_frac = 0.01
 			while sys_err_frac <= 0.5:
@@ -358,7 +358,7 @@ def bayesian_sedfit_student_t():
 				if chi2/nbands <= redcd_chi2:
 					break
 				sys_err_frac = sys_err_frac + 0.01
-			print ("After adding %lf fraction to systematic error, reduced chi2 of best-fit model becomes: %lf" % (sys_err_frac,chi2/nbands))
+			#print ("After adding %lf fraction to systematic error, reduced chi2 of best-fit model becomes: %lf" % (sys_err_frac,chi2/nbands))
 
 			status_add_err[0] = 1
 
@@ -508,7 +508,7 @@ def store_to_fits(sampler_params=None,sampler_log_mass=None,sampler_log_sfr=None
 				'dust1':0.5,'dust2':0.5,'dust_index':-0.7,'log_age':1.0,'log_alpha':0.1,'log_beta':0.1,'log_t0':0.4,
 				'log_tau':0.4,'logzsol':0.0}
 
-	idx, min_val = min(enumerate(mod_chi2), key=operator.itemgetter(1))
+	idx, min_val = min(enumerate(mod_chi2), key=itemgetter(1))
 	# best-fit chi-square
 	bfit_chi2 = mod_chi2[idx]
 
@@ -523,7 +523,7 @@ def store_to_fits(sampler_params=None,sampler_log_mass=None,sampler_log_sfr=None
 
 	spec_SED = generate_modelSED_spec_decompose(sp=sp,params_val=params_val, imf=imf, duste_switch=duste_switch,
 							add_neb_emission=add_neb_emission,dust_ext_law=dust_ext_law,add_agn=add_agn,add_igm_absorption=add_igm_absorption,
-							igm_type=igm_type,cosmo=cosmo_str,H0=H0,Om0=Om0,sfh_form=sfh_form,funit=='erg/s/cm2/A')
+							igm_type=igm_type,cosmo=cosmo_str,H0=H0,Om0=Om0,sfh_form=sfh_form,funit='erg/s/cm2/A')
 
 	# get the photometric SED:
 	bfit_photo_SED = filtering(spec_SED['wave'],spec_SED['flux_total'],filters)
@@ -748,6 +748,7 @@ dust_ext_law = header_randmod['dust_ext_law']
 global add_igm_absorption,igm_type
 add_igm_absorption = int(header_randmod['add_igm_absorption'])
 #igm_type = int(header_randmod['igm_type'])
+igm_type = 0
 if add_igm_absorption == 1:
 	igm_type = int(header_randmod['igm_type'])
 

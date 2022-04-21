@@ -388,23 +388,6 @@ def calc_sampler_SFR_othSFH(nsamples=0,sampler_params=None):
 		SFR_t = np.delete(SFR_t, idx_excld[0])
 		if len(t)>0:
 			sampler_log_sfr0[int(count)] = log10(SFR_t[len(t)-1])
-		
-		#idx_sel = np.where(t>=age-0.01)		# SFR is average SFR grids within the last 10Myr
-		
-		#if len(idx_sel[0])>0:
-		#	SFR_sel = [SFR_t[i] for i in idx_sel[0]]
-		#	sampler_log_sfr0[int(count)] = math.log10(np.mean(SFR_sel))
-		#else:
-		#	sampler_log_sfr0[int(count)] = -99.0
-		#sampler_log_sfr0[int(count)] = math.log10(SFR_t[len(t)-1])
-		
-		#if len(idx_sel[0])>0:
-		#	SFR_sel = [SFR_t[i] for i in idx_sel[0]]
-		#	sampler_log_sfr0[int(count)] = np.log10(np.mean(SFR_sel))
-		#elif max(t)>age-0.5:
-		#	sampler_log_sfr0[int(count)] = math.log10(SFR_t[len(t)-1])
-		#else:
-		#	sampler_log_sfr0[int(count)] = 1.0e-33
 
 		count = count + 1
 		sys.stdout.write('\r')
