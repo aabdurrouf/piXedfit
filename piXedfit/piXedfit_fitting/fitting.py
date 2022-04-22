@@ -1683,21 +1683,26 @@ def maps_parameters(fits_binmap=None, bin_ids=[], name_sampler_fits=[], fits_flu
 	pix_flux_err = hdu['flux_err'].data*unit_pix
 	hdu.close()
 
-	hdu = fits.open(name_sampler_fits[0])
 	# inspect whether the FITS fitting results contains sampler chains or only the inferred parameters
+	# and whether the fitting was carried out using the MCMC or RDSPS method
+	hdu = fits.open(name_sampler_fits[0])
 	header_samplers = hdu[0].header
 	if header_samplers['col1'] == 'rows':
 		store_full_samplers = 0
+		if len(hdu[1].data['rows'])==2:
+			fit_method = 'rdsps'
+		elif len(hdu[1].data['rows'])==3:
+			fit_method = 'mcmc'
 	elif header_samplers['col1'] == 'id':
 		store_full_samplers = 1
-	# mcmc or rdsps fitting method
-	ncols = int(header_samplers['ncols'])
-	str_temp = 'col%d' % ncols
-	if header_samplers[str_temp] == 'prob':
-		fit_method = 'rdsps'
-	else:
-		fit_method = 'mcmc'
+		ncols = int(header_samplers['ncols'])
+		str_temp = 'col%d' % ncols
+		if header_samplers[str_temp] == 'prob':
+			fit_method = 'rdsps'
+		else:
+			fit_method = 'mcmc'
 	hdu.close()
+
 
 	if fit_method == 'rdsps':
 		indexes = ["mean", "mean_err"]
@@ -1741,10 +1746,6 @@ def maps_parameters(fits_binmap=None, bin_ids=[], name_sampler_fits=[], fits_flu
 		hdr = fits.Header()
 		hdr['gal_z'] = gal_z
 		hdr['nbins'] = nbins
-		hdr['nfilters'] = nbands
-		for bb in range(0,nbands):
-			str_temp = 'fil%d' % int(bb)
-			hdr[str_temp] = filters[bb]
 		count_HDU = 2
 		# bin space
 		for pp in range(0,nparams):
@@ -1985,20 +1986,24 @@ def maps_parameters_fit_pixels(fits_fluxmap=None, pix_x=[], pix_y=[], name_sampl
 	dim_y = galaxy_region.shape[0]
 	dim_x = galaxy_region.shape[1]
 
+	# inspect whether the FITS fitting results contains sampler chains or only the inferred parameters
+	# and whether the fitting was carried out using the MCMC or RDSPS method
 	hdu = fits.open(name_sampler_fits[0])
 	header_samplers = hdu[0].header
-	# inspect whether the FITS fitting results contains sampler chains or only the inferred parameters
 	if header_samplers['col1'] == 'rows':
 		store_full_samplers = 0
+		if len(hdu[1].data['rows'])==2:
+			fit_method = 'rdsps'
+		elif len(hdu[1].data['rows'])==3:
+			fit_method = 'mcmc'
 	elif header_samplers['col1'] == 'id':
 		store_full_samplers = 1
-	# mcmc or rdsps fitting method
-	ncols = int(header_samplers['ncols'])
-	str_temp = 'col%d' % ncols
-	if header_samplers[str_temp] == 'prob':
-		fit_method = 'rdsps'
-	else:
-		fit_method = 'mcmc'
+		ncols = int(header_samplers['ncols'])
+		str_temp = 'col%d' % ncols
+		if header_samplers[str_temp] == 'prob':
+			fit_method = 'rdsps'
+		else:
+			fit_method = 'mcmc'
 	hdu.close()
 
 	if fit_method=='rdsps':

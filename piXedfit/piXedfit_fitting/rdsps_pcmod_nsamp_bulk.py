@@ -425,6 +425,36 @@ def bayesian_sedfit_student_t():
 def store_to_fits(sampler_params=None,sampler_log_mass=None,sampler_log_sfr=None,sampler_log_mw_age=None,
 	sampler_logdustmass=None,sampler_log_fagn_bol=None,mod_chi2=None,mod_prob=None,name_sampler_fits0=None):
 
+	#==> Get best-fit model spectrum
+	def_params_val={'log_mass':0.0,'z':0.001,'log_fagn':-3.0,'log_tauagn':1.0,'log_qpah':0.54,'log_umin':0.0,'log_gamma':-2.0,
+				'dust1':0.5,'dust2':0.5,'dust_index':-0.7,'log_age':1.0,'log_alpha':0.1,'log_beta':0.1,'log_t0':0.4,
+				'log_tau':0.4,'logzsol':0.0}
+
+	# redshift
+	if free_z == 0:
+		def_params_val['z'] = gal_z
+
+	idx, min_val = min(enumerate(mod_chi2), key=itemgetter(1))
+	# best-fit chi-square
+	bfit_chi2 = mod_chi2[idx]
+
+	# call fsps
+	sp = fsps.StellarPopulation(zcontinuous=1, imf_type=imf)
+
+	# generate the spectrum
+	params_val = def_params_val
+	for pp in range(0,nparams):
+		params_val[params[pp]] = sampler_params[params[pp]][idx]
+	params_val['log_mass'] = sampler_log_mass[idx]
+
+	spec_SED = generate_modelSED_spec_decompose(sp=sp,params_val=params_val, imf=imf, duste_switch=duste_switch,
+							add_neb_emission=add_neb_emission,dust_ext_law=dust_ext_law,add_agn=add_agn,add_igm_absorption=add_igm_absorption,
+							igm_type=igm_type,cosmo=cosmo_str,H0=H0,Om0=Om0,sfh_form=sfh_form,funit='erg/s/cm2/A')
+
+	# get the photometric SED:
+	bfit_photo_SED = filtering(spec_SED['wave'],spec_SED['flux_total'],filters)
+
+
 	#==> Get best-fit parameters
 	crit_chi2 = np.percentile(mod_chi2, perc_chi2)
 	idx_sel = np.where((mod_chi2<=crit_chi2) & (sampler_log_sfr>-29.0) & (np.isnan(mod_prob)==False) & (np.isinf(mod_prob)==False))
@@ -484,32 +514,6 @@ def store_to_fits(sampler_params=None,sampler_log_mass=None,sampler_log_sfr=None
 		std_val = sqrt(abs(mean_val2 - (mean_val**2)))
 		log_fagn_bol_mean = mean_val
 		log_fagn_bol_std = std_val
-
-
-	#==> Get best-fit model spectrum
-	def_params_val={'log_mass':0.0,'z':0.001,'log_fagn':-3.0,'log_tauagn':1.0,'log_qpah':0.54,'log_umin':0.0,'log_gamma':-2.0,
-				'dust1':0.5,'dust2':0.5,'dust_index':-0.7,'log_age':1.0,'log_alpha':0.1,'log_beta':0.1,'log_t0':0.4,
-				'log_tau':0.4,'logzsol':0.0}
-
-	idx, min_val = min(enumerate(mod_chi2), key=itemgetter(1))
-	# best-fit chi-square
-	bfit_chi2 = mod_chi2[idx]
-
-	# call fsps
-	sp = fsps.StellarPopulation(zcontinuous=1, imf_type=imf)
-
-	# generate the spectrum
-	params_val = def_params_val
-	for pp in range(0,nparams):
-		params_val[params[pp]] = sampler_params[params[pp]][idx]
-	params_val['log_mass'] = sampler_log_mass[idx]
-
-	spec_SED = generate_modelSED_spec_decompose(sp=sp,params_val=params_val, imf=imf, duste_switch=duste_switch,
-							add_neb_emission=add_neb_emission,dust_ext_law=dust_ext_law,add_agn=add_agn,add_igm_absorption=add_igm_absorption,
-							igm_type=igm_type,cosmo=cosmo_str,H0=H0,Om0=Om0,sfh_form=sfh_form,funit='erg/s/cm2/A')
-
-	# get the photometric SED:
-	bfit_photo_SED = filtering(spec_SED['wave'],spec_SED['flux_total'],filters)
 
 
 	# store to FITS file

@@ -13,7 +13,7 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 from astropy.cosmology import *
 
-from ..piXedfit_model import generate_modelSED_spec_decompose, construct_SFH
+from ..piXedfit_model import generate_modelSED_spec_decompose, construct_SFH, convert_unit_spec_from_ergscm2A
 from ..utils.filtering import cwave_filters, filtering
 from ..utils.posteriors import plot_triangle_posteriors
 
@@ -448,13 +448,6 @@ def plot_SED_rdsps_with_residual(name_sampler_fits=None, logscale_x=True, logsca
 
 	from matplotlib.gridspec import GridSpec
 
-	def_params = ['logzsol','log_tau','log_t0','log_alpha','log_beta', 'log_age','dust_index','dust1','dust2',
-					'log_gamma','log_umin', 'log_qpah', 'z', 'log_fagn','log_tauagn', 'log_mass']
-
-	def_params_val={'log_mass':0.0,'z':0.001,'log_fagn':-3.0,'log_tauagn':1.0,'log_qpah':0.54,'log_umin':0.0,'log_gamma':-2.0,
-				'dust1':0.5,'dust2':0.5,'dust_index':-0.7,'log_age':1.0,'log_alpha':0.1,'log_beta':0.1,'log_t0':0.4,
-				'log_tau':0.4,'logzsol':0.0}
-
 	# open the FITS file:
 	hdu = fits.open(name_sampler_fits)
 	header_samplers = hdu[0].header
@@ -483,20 +476,26 @@ def plot_SED_rdsps_with_residual(name_sampler_fits=None, logscale_x=True, logsca
 	# central wavelength of all filters
 	photo_cwave = cwave_filters(filters)
 
+	# some parameters 
+	imf = int(header_samplers['imf'])
+	sfh_form = header_samplers['sfh_form']
+	dust_ext_law = header_samplers['dust_ext_law']
+	duste_switch = header_samplers['duste_stat']
+	add_neb_emission = int(header_samplers['add_neb_emission'])
+	add_agn = header_samplers['add_agn']
+	add_igm_absorption = header_samplers['add_igm_absorption']
+	if add_igm_absorption == 1:
+		igm_type = int(header_samplers['igm_type'])
+	elif add_igm_absorption == 0:
+		igm_type = 0
 
 	if store_full_samplers == 1:
-		# some parameters 
-		imf = int(header_samplers['imf'])
-		sfh_form = header_samplers['sfh_form']
-		dust_ext_law = header_samplers['dust_ext_law']
-		duste_switch = header_samplers['duste_stat']
-		add_neb_emission = int(header_samplers['add_neb_emission'])
-		add_agn = header_samplers['add_agn']
-		add_igm_absorption = header_samplers['add_igm_absorption']
-		if add_igm_absorption == 1:
-			igm_type = int(header_samplers['igm_type'])
-		elif add_igm_absorption == 0:
-			igm_type = 0
+		def_params = ['logzsol','log_tau','log_t0','log_alpha','log_beta', 'log_age','dust_index','dust1','dust2',
+					'log_gamma','log_umin', 'log_qpah', 'z', 'log_fagn','log_tauagn', 'log_mass']
+
+		def_params_val={'log_mass':0.0,'z':0.001,'log_fagn':-3.0,'log_tauagn':1.0,'log_qpah':0.54,'log_umin':0.0,'log_gamma':-2.0,
+					'dust1':0.5,'dust2':0.5,'dust_index':-0.7,'log_age':1.0,'log_alpha':0.1,'log_beta':0.1,'log_t0':0.4,
+					'log_tau':0.4,'logzsol':0.0}
 
 		if duste_switch == 'duste':
 			if 'dust_index' in header_samplers:
@@ -565,17 +564,22 @@ def plot_SED_rdsps_with_residual(name_sampler_fits=None, logscale_x=True, logsca
 		spec_SED['flux_duste'] = []
 		spec_SED['flux_agn'] = []
 
-		spec_SED['flux_total'] = data_bfit_spec['flux_total']
-		spec_SED['flux_stellar'] = data_bfit_spec['flux_stellar']
-		if header_samplers['add_neb_emission'] == 1:
-			spec_SED['flux_nebe'] = data_bfit_spec['flux_nebe']
-		if header_samplers['duste_stat'] == 1:
-			spec_SED['flux_duste'] = data_bfit_spec['flux_duste']
-		if header_samplers['add_agn'] == 1:
-			spec_SED['flux_agn'] = data_bfit_spec['flux_agn']
+		spec_SED['flux_total'] = convert_unit_spec_from_ergscm2A(data_bfit_spec['wave'],data_bfit_spec['flux_total'],funit=funit)
+
+		if decompose==1 or decompose==True:
+			spec_SED['flux_stellar'] = convert_unit_spec_from_ergscm2A(data_bfit_spec['wave'],data_bfit_spec['flux_stellar'],funit=funit)
+			if add_neb_emission == 1:
+				spec_SED['flux_nebe'] = convert_unit_spec_from_ergscm2A(data_bfit_spec['wave'],data_bfit_spec['flux_nebe'],funit=funit)
+			if duste_switch == 'duste':
+				spec_SED['flux_duste'] = convert_unit_spec_from_ergscm2A(data_bfit_spec['wave'],data_bfit_spec['flux_duste'],funit=funit)
+			if add_agn == 1:
+				spec_SED['flux_agn'] = convert_unit_spec_from_ergscm2A(data_bfit_spec['wave'],data_bfit_spec['flux_agn'],funit=funit)
 
 		# get best-fit photometric SED
-		bfit_photo_SED = data_bfit_photo['flux']
+		bfit_photo_SED = convert_unit_spec_from_ergscm2A(photo_cwave,data_bfit_photo['flux'],funit=funit)
+
+		# get chi2
+		bfit_chi2 = float(header_samplers['redcd_chi2'])*nbands
 
 
 	# plotting
@@ -746,7 +750,6 @@ def plot_SED_rdsps_with_residual(name_sampler_fits=None, logscale_x=True, logsca
 	plt.savefig(name_plot)
 
 	return name_plot,spec_wave,spec_total,spec_stellar,spec_nebe,spec_duste,spec_agn,residuals
-
 
 
 
