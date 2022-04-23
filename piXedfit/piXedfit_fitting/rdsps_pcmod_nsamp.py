@@ -474,7 +474,7 @@ def store_to_fits(sampler_params=None,sampler_log_mass=None,sampler_log_sfr=None
 
 	#==> Get best-fit parameters
 	crit_chi2 = np.percentile(mod_chi2, perc_chi2)
-	idx_sel = np.where((mod_chi2<=crit_chi2) & (sampler_log_sfr>-29.0) & (np.isnan(mod_prob)==False) & (np.isinf(mod_prob)==False))
+	idx_sel = np.where((mod_chi2<=crit_chi2) & (sampler_log_sfr>-29.0) & (np.isnan(mod_prob)==False) & (np.isinf(mod_prob)==False) & (mod_prob>0))
 
 	array_prob = mod_prob[idx_sel[0]]
 	tot_prob = np.sum(array_prob)

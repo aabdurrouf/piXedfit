@@ -1448,7 +1448,7 @@ def inferred_params_rdsps_list(list_name_fits=[], perc_chi2=10.0, name_out_fits=
 		hdu.close()
 
 		crit_chi2 = np.percentile(data_samplers['chi2'], perc_chi2)
-		idx_sel = np.where((data_samplers['chi2']<=crit_chi2) & (data_samplers['log_sfr']>-29.0) & (np.isnan(data_samplers['prob'])==False) & (np.isinf(data_samplers['prob'])==False))
+		idx_sel = np.where((data_samplers['chi2']<=crit_chi2) & (data_samplers['log_sfr']>-29.0) & (np.isnan(data_samplers['prob'])==False) & (np.isinf(data_samplers['prob'])==False) & (data_samplers['prob']>0))
 
 		array_prob = data_samplers['prob'][idx_sel[0]]
 		tot_prob = np.sum(array_prob)
@@ -1597,7 +1597,7 @@ def get_inferred_params_rdsps(list_name_sampler_fits=[], bin_excld_flag=[], perc
 			hdu.close()
 
 			crit_chi2 = np.percentile(data_samplers['chi2'], perc_chi2)
-			idx_sel = np.where((data_samplers['chi2']<=crit_chi2) & (data_samplers['log_sfr']>-29.0) & (np.isnan(data_samplers['prob'])==False) & (np.isinf(data_samplers['prob'])==False))
+			idx_sel = np.where((data_samplers['chi2']<=crit_chi2) & (data_samplers['log_sfr']>-29.0) & (np.isnan(data_samplers['prob'])==False) & (np.isinf(data_samplers['prob'])==False) & (data_samplers['prob']>0))
 
 			array_prob = data_samplers['prob'][idx_sel[0]]
 			tot_prob = np.sum(array_prob)
