@@ -12,7 +12,7 @@ Dependencies
 *	`NumPy <https://numpy.org/>`_, `SciPy <https://www.scipy.org/>`_, `astropy <https://docs.astropy.org/en/stable/>`_, `matplotlib <https://matplotlib.org/>`_
 *	`FSPS <https://github.com/cconroy20/fsps>`_, `Python-FSPS <https://dfm.io/python-fsps/current/>`_, `mpi4py <https://mpi4py.readthedocs.io/en/stable/index.html#>`_ 
 *	`photutils <https://photutils.readthedocs.io/en/stable/>`_ and `reproject <https://reproject.readthedocs.io/en/stable/>`_ if you want to use :mod:`piXedfit_images` OR :mod:`piXedfit_spectrophotometric` modules for doing images processing OR spatial matching (i.e., combining) between multiband imaging data and integral field spectroscopic (IFS) data
-*	`SExtractor <https://sextractor.readthedocs.io/en/latest/index.html>`_ and the Python wrpper `sewpy <https://sewpy.readthedocs.io/en/latest/>`_ if you want to use sources extraction and segmentation features of SExtractor for defining galaxy's region of interest. This is incorporated in :func:`segmentation_sextractor` and :func:`galaxy_region` functions in the :class:`images_processing` class. So, to be able to used those functions, SExtractor and sewpy should be installed
+*	`SEP <https://sep.readthedocs.io/en/v1.0.x/index.html>`_ if you want to use sources extraction and segmentation features of SExtractor for defining galaxy's region of interest in the image processing. 
 *	`emcee <https://emcee.readthedocs.io/en/stable/>`_ and `schwimmbad <https://github.com/adrn/schwimmbad>`_ if you want to use MCMC method for SED fitting with the :mod:`piXefit_fitting` module
 
 

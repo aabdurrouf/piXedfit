@@ -12,7 +12,8 @@ __all__ = ["sort_filters", "kpc_per_pixel", "k_lmbd_Fitz1986_LMC", "EBV_foregrou
 			"var_img_from_weight_img", "segm_sextractor", "mask_region_bgmodel", "subtract_background", "get_psf_fwhm",
 			"get_largest_FWHM_PSF", "ellipse_fit", "draw_ellipse", "ellipse_sma", "crop_ellipse_galregion",
 			"crop_ellipse_galregion_fits", "crop_stars", "crop_stars_galregion_fits",  "crop_image_given_radec", 
-			"segm_sep", "crop_image_given_xy", "check_avail_kernel", "create_kernel_gaussian"]
+			"segm_sep", "crop_image_given_xy", "check_avail_kernel", "create_kernel_gaussian",
+			"raise_errors", "get_img_pixsizes", "in_kernels", "get_flux_or_sb"]
 
 
 def sort_filters(filters):
@@ -946,60 +947,115 @@ def get_largest_FWHM_PSF(filters=None):
 	return idx_fil_max
 
 
-def old_get_largest_FWHM_PSF(filters=None, col_fwhm_psf=None, seeing_wfcam_y=None, seeing_wfcam_j=None, seeing_wfcam_h=None, seeing_wfcam_k=None,
-	seeing_vircam_z=None, seeing_vircam_y=None, seeing_vircam_j=None, seeing_vircam_h=None, seeing_vircam_ks=None):
-	"""A function to find a band that has largest PSF size
-	"""
-	if col_fwhm_psf == None:
-		col_fwhm_psf = {}
-		col_fwhm_psf['galex_fuv'] = 4.48
-		col_fwhm_psf['galex_nuv'] = 5.05
-		col_fwhm_psf['sdss_u'] = 1.4
-		col_fwhm_psf['sdss_g'] = 1.4
-		col_fwhm_psf['sdss_r'] = 1.2
-		col_fwhm_psf['sdss_i'] = 1.2
-		col_fwhm_psf['sdss_z'] = 1.2
-		col_fwhm_psf['2mass_j'] = 3.4
-		col_fwhm_psf['2mass_h'] = 3.4
-		col_fwhm_psf['2mass_k'] = 3.5
+def calc_pixsize(fits_image):
+	from astropy.wcs.utils import proj_plane_pixel_area
+	from astropy.wcs import WCS
 
-		col_fwhm_psf['wfcam_y'] = seeing_wfcam_y
-		col_fwhm_psf['wfcam_j'] = seeing_wfcam_j
-		col_fwhm_psf['wfcam_h'] = seeing_wfcam_h
-		col_fwhm_psf['wfcam_k'] = seeing_wfcam_k
+	h = fits.open(fits_image)
+	w = WCS(h[0].header)
+	area = proj_plane_pixel_area(w)
+	pixsize_deg = np.sqrt(area)
+	pixsize_arcsec = pixsize_deg*3600.0
+	h.close()
+	
+	return pixsize_arcsec
 
-		col_fwhm_psf['vircam_z'] = seeing_vircam_z
-		col_fwhm_psf['vircam_y'] = seeing_vircam_y
-		col_fwhm_psf['vircam_j'] = seeing_vircam_j
-		col_fwhm_psf['vircam_h'] = seeing_vircam_h
-		col_fwhm_psf['vircam_ks'] = seeing_vircam_ks
 
-		col_fwhm_psf['spitzer_irac_36'] = 1.9
-		col_fwhm_psf['spitzer_irac_45'] = 1.81
-		col_fwhm_psf['spitzer_irac_58'] = 2.11
-		col_fwhm_psf['spitzer_irac_80'] = 2.82
-		col_fwhm_psf['spitzer_mips_24'] = 6.43
-		col_fwhm_psf['spitzer_mips_70'] = 18.74
-		col_fwhm_psf['spitzer_mips_160'] = 38.78
-		col_fwhm_psf['herschel_pacs_70'] = 5.67
-		col_fwhm_psf['herschel_pacs_100'] = 7.04
-		col_fwhm_psf['herschel_pacs_160'] = 11.18
-		col_fwhm_psf['herschel_spire_250'] = 18.15
-		col_fwhm_psf['herschel_spire_350'] = 24.88
-		col_fwhm_psf['herschel_spire_500'] = 36.09
-		col_fwhm_psf['wise_w1'] = 5.79
-		col_fwhm_psf['wise_w2'] = 6.37
-		col_fwhm_psf['wise_w3'] = 6.60
-		col_fwhm_psf['wise_w4'] = 11.89
+def get_img_pixsizes(img_pixsizes,filters,sci_img,flux_or_sb,flag_psfmatch,flag_reproject):
 
-	nbands = len(filters)
-	max_fwhm = -10.0
-	for bb in range(0,nbands):
-		if col_fwhm_psf[filters[bb]] > max_fwhm:
-			max_fwhm = col_fwhm_psf[filters[bb]]
-			idx_fil_max = bb
+	img_pixsizes1 = {}
 
-	return idx_fil_max
+	if bool(img_pixsizes)==True:
+		for bb in range(0,len(filters)):
+			if filters[bb] in img_pixsizes:
+				img_pixsizes1[filters[bb]] = img_pixsizes[filters[bb]]
+			else:
+				if flag_psfmatch==1 and flag_reproject==1 and flux_or_sb[filters[bb]]==0:
+					img_pixsizes1[filters[bb]] = -99.0
+				else:
+					img_pixsizes1[filters[bb]] = calc_pixsize(sci_img[filters[bb]])
+	else:
+		for bb in range(0,len(filters)):
+			if flag_psfmatch==1 and flag_reproject==1 and flux_or_sb[filters[bb]]==0:
+				img_pixsizes1[filters[bb]] = -99.0
+			else:
+				img_pixsizes1[filters[bb]] = calc_pixsize(sci_img[filters[bb]])
+
+	return img_pixsizes1
+
+
+def raise_errors(filters, kernels, flag_psfmatch, img_unit, img_scale):
+	unknown = unknown_images(filters)
+	if len(unknown)>0:
+		if bool(kernels)==False and flag_psfmatch==0:
+			print ("PSF matching kernels for the following filters are not available by default. In this case, input kernels should be supplied!")
+			print (unknown)
+			sys.exit()
+
+		if bool(img_unit)==False or bool(img_scale)==False:
+			print ("Unit of the following imaging data are not recognized. In this case, input img_unit and img_scale should be provided!")
+			print (unknown)
+			sys.exit()
+
+def in_kernels(kernels,sorted_filters):
+	kernels1 = {}
+	if bool(kernels) == False:
+		for ii in range(0,len(sorted_filters)):
+			kernels1[sorted_filters[ii]] = None
+	else:
+		for ii in range(0,len(sorted_filters)):
+			if sorted_filters[ii] in kernels:
+				kernels1[sorted_filters[ii]] = kernels[sorted_filters[ii]]
+			else:
+				kernels1[sorted_filters[ii]] = None
+
+	return kernels1
+
+def get_flux_or_sb(filters,img_unit):
+	flux_or_sb0 = {}
+	flux_or_sb0['galex_fuv'] = 0
+	flux_or_sb0['galex_nuv'] = 0
+	flux_or_sb0['sdss_u'] = 0
+	flux_or_sb0['sdss_g'] = 0
+	flux_or_sb0['sdss_r'] = 0
+	flux_or_sb0['sdss_i'] = 0
+	flux_or_sb0['sdss_z'] = 0
+	flux_or_sb0['2mass_j'] = 0
+	flux_or_sb0['2mass_h'] = 0
+	flux_or_sb0['2mass_k'] = 0
+	flux_or_sb0['wise_w1'] = 0
+	flux_or_sb0['spitzer_irac_36'] = 1
+	flux_or_sb0['spitzer_irac_45'] = 1
+	flux_or_sb0['wise_w2'] = 0
+	flux_or_sb0['spitzer_irac_58'] = 1
+	flux_or_sb0['spitzer_irac_80'] = 1
+	flux_or_sb0['wise_w3'] = 0
+	flux_or_sb0['wise_w4'] = 0
+	flux_or_sb0['spitzer_mips_24'] = 1
+	flux_or_sb0['herschel_pacs_70'] = 0
+	flux_or_sb0['herschel_pacs_160'] = 0
+	flux_or_sb0['herschel_spire_250'] = 1
+	flux_or_sb0['herschel_spire_350'] = 1
+
+	flux_or_sb = {}
+	for bb in range(0,len(filters)):
+		if filters[bb] in flux_or_sb0:
+			flux_or_sb[filters[bb]] = flux_or_sb0[filters[bb]]
+		else:
+			if filters[bb] in img_unit:
+				if img_unit[filters[bb]] == 'erg/s/cm2/A' or img_unit[filters[bb]] == 'Jy':
+					flux_or_sb[filters[bb]] = 0
+				elif img_unit[filters[bb]] == 'MJy/sr':
+					flux_or_sb[filters[bb]] =  1
+				else:
+					print ("Inputted img_unit[%s] is not recognized!" % filters[bb])
+					sys.exit()
+			else:
+				print ("Input img_unit is required for this imaging data!")
+				sys.exit()
+
+	return flux_or_sb
+
 
 
 def create_kernel_gaussian(psf_fwhm_init=None, psf_fwhm_final=None, alpha_cosbell=1.5, pixsize_PSF_target=0.25, size=[101,101]):

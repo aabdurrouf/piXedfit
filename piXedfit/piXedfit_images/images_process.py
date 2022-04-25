@@ -9,7 +9,7 @@ from reproject import reproject_exact
 from photutils.psf.matching import resize_psf
 
 from ..utils.filtering import cwave_filters
-from .images_utils import sort_filters, k_lmbd_Fitz1986_LMC, unknown_images, check_avail_kernel, get_psf_fwhm, get_largest_FWHM_PSF, crop_2D_data, ellipse_sma  
+from .images_utils import *  
 
 global PIXEDFIT_HOME
 PIXEDFIT_HOME = os.environ['PIXEDFIT_HOME']
@@ -33,8 +33,22 @@ class images_processing:
 	:param var_img:
 		Dictionary containing names of the variance images.
 
-	:param img_unit:
-		Dictionary containing units of the input imaging data. The options aree: (1)0 if the image is in a flux unit, and (2)1 if the image is in surface brightness unit.
+	:param gal_ra:
+		Coordinate Right Ascension (RA) of the target galaxy.
+
+	:param gal_dec:
+		Coordinate Declination (DEC) of the target galaxy.
+
+	:param img_unit: (optional)
+		Unit of pixel value in the multiband images. The input format is python dictionary. 
+		This input will only be considered (and required) if the input images are not among the default list of recognized imaging data 
+		in piXedfit (i.e. GALEX, SDSS, 2MASS, WISE, Spitzer, and Herschel).  
+		The allowed units are: (1)"erg/s/cm2/A", (2) "Jy", and (3) "MJy/sr".
+
+	:param img_scale: (optional)
+		Scale of the pixel value with respect to the unit in img_unit. For instance, if image is in unit of MJy, 
+		the img_unit can be set to be "Jy" and img_scale is set to be 1e+6. This input is only relevant if the input images are not among the default list of recognized images 
+		in piXedfit. The format of this input should be in python dictionary.  
 
 	:param flag_psfmatch:
 		Flag stating whether the multiband imaging data have been PSF-matched or not. The options are: (1) 0 means hasn't been PSF-matched, and (2)1 means has been PSF-matched.
@@ -46,22 +60,18 @@ class images_processing:
 		Flag stating whether the multiband imaging data have been cropped around the target galaxy. The options are: (1)0 means not yet, and (2)1 means has been cropped. 
 		If flag_crop=0, cropping will be done according to the input stamp_size. If flag_crop=1, cropping will not be done. 
 
-	:param img_pixsizes:
-		Dictionary containing pixel sizes (in arcsecond) of the input imaging data.
+	:param img_pixsizes: (optional)
+		Pixel sizes (in arcsecond) of the input imaging data. This input should be in dictionary format. 
+		If not provided, pixel size will be calculated based on the WCS information in the header of the FITS file.
 
-	:param kernels: (optional, default: None)
+	:param kernels: (optional)
 		Dictionary containing names of FITS files for the kernels to be used for the PSF matching process. 
-		If None, internal convolution kernels in **piXedfit** will be used. 
+		If None, internal convolution kernels in **piXedfit** will be used, given that the imaging data is recognized by piXedfit. 
+		Otherwise, input kernels should be supplied.  
 		If external kerenels avaiable, the input should be in dictionary format like the input sci_img, 
 		but the number of element should be Nb-1, where Nb is the number of photometric bands.   
 
-	:param gal_ra:
-		Coordinate Right Ascension (RA) of the target galaxy.
-
-	:param gal_dec:
-		Coordinate Declination (DEC) of the target galaxy.
-
-	:param gal_z: (default: None)
+	:param gal_z:
 		Galaxy's redshift. This is not used in any calculation during the image processing and calculating fluxes maps
 		But only intended to be saved in the heder of the produced FITS file. 
 
@@ -73,37 +83,33 @@ class images_processing:
 		If False, those files will not be removed.   
 	"""
 
-	def __init__(self,filters=[],sci_img={},var_img={},img_unit={},flag_psfmatch=0,flag_reproject=0,flag_crop=0, 
-				img_pixsizes={},kernels=None,gal_ra=None,gal_dec=None,gal_z=None,stamp_size=[101,101],remove_files=True):
+	def __init__(self,filters=[],sci_img={},var_img={},gal_ra=None,gal_dec=None,img_unit={},img_scale={},flag_psfmatch=0,
+				flag_reproject=0,flag_crop=0, img_pixsizes={}, kernels={}, gal_z=None, stamp_size=[101,101],remove_files=True):
 
-		unknown = unknown_images(filters)
-		if len(unknown)>0 and kernels==None and flag_psfmatch==0:
-			print ("PSF matching kernels for the following filters are not available by default. In this case, input kernels should be supplied!")
-			print (unknown)
-			sys.exit()
+		raise_errors(filters, kernels, flag_psfmatch, img_unit, img_scale)
 
 		# sorting filters:
 		sorted_filters = sort_filters(filters)
 
+		kernels = in_kernels(kernels,sorted_filters)
+		flux_or_sb = get_flux_or_sb(filters,img_unit)
+		img_pixsizes = get_img_pixsizes(img_pixsizes,filters,sci_img,flux_or_sb,flag_psfmatch,flag_reproject)
+
 		self.filters = sorted_filters
 		self.sci_img = sci_img
 		self.var_img = var_img
+		self.gal_ra = gal_ra
+		self.gal_dec = gal_dec
+		self.flux_or_sb = flux_or_sb
 		self.img_unit = img_unit
+		self.img_scale = img_scale
 		self.flag_psfmatch = flag_psfmatch
 		self.flag_reproject = flag_reproject
 		self.flag_crop = flag_crop
 		self.img_pixsizes = img_pixsizes	
-		self.gal_ra = gal_ra
-		self.gal_dec = gal_dec
 		self.gal_z = gal_z
 		self.stamp_size = stamp_size
 		self.remove_files = remove_files
-
-		# kernels:
-		if kernels == None:
-			kernels = {}
-			for ii in range(0,len(sorted_filters)):
-				kernels[sorted_filters[ii]] = None
 		self.kernels = kernels
 
 	def reduced_stamps(self):
@@ -139,7 +145,7 @@ class images_processing:
 		flag_reproject = self.flag_reproject
 		flag_crop = self.flag_crop
 		img_pixsizes = self.img_pixsizes
-		img_unit = self.img_unit
+		flux_or_sb = self.flux_or_sb
 		kernels = self.kernels	
 		gal_ra = self.gal_ra
 		gal_dec = self.gal_dec
@@ -403,11 +409,11 @@ class images_processing:
 				if bb != idfil_align:
 					#++> science image
 					hdu = fits.open(psfmatch_sci_img_name[filters[bb]])
-					if img_unit[filters[bb]] == 0: 							# flux
+					if flux_or_sb[filters[bb]] == 0: 							# flux
 						data_image = hdu[0].data/img_pixsizes[filters[bb]]/img_pixsizes[filters[bb]]
 						align_data_image0, footprint = reproject_exact((data_image,hdu[0].header), header_for_align)
 						align_data_image = align_data_image0*img_pixsizes[filters[idfil_align]]*img_pixsizes[filters[idfil_align]]
-					elif img_unit[filters[bb]] == 1:  						# surface brightness
+					elif flux_or_sb[filters[bb]] == 1:  						# surface brightness
 						data_image = hdu[0].data
 						align_data_image, footprint = reproject_exact((data_image,hdu[0].header), header_for_align)
 					name_out = "stamp_%s" % psfmatch_sci_img_name[filters[bb]]
@@ -418,11 +424,11 @@ class images_processing:
 
 					#++> variance image
 					hdu = fits.open(psfmatch_var_img_name[filters[bb]])
-					if img_unit[filters[bb]] == 0:  						# flux
+					if flux_or_sb[filters[bb]] == 0:  						# flux
 						data_image = hdu[0].data/img_pixsizes[filters[bb]]/img_pixsizes[filters[bb]]
 						align_data_image0, footprint = reproject_exact((data_image,hdu[0].header), header_for_align)
 						align_data_image = align_data_image0*img_pixsizes[filters[idfil_align]]*img_pixsizes[filters[idfil_align]]
-					elif img_unit[filters[bb]] == 1:  						# surface brightness
+					elif flux_or_sb[filters[bb]] == 1:  						# surface brightness
 						data_image = hdu[0].data
 						align_data_image, footprint = reproject_exact((data_image,hdu[0].header), header_for_align)
 					name_out = "stamp_%s" % psfmatch_var_img_name[filters[bb]]
@@ -647,7 +653,15 @@ class images_processing:
 		var_img = self.var_img	
 		gal_ra = self.gal_ra
 		gal_dec = self.gal_dec
-		gal_z = self.gal_z			
+		gal_z = self.gal_z
+
+		flag_psfmatch = self.flag_psfmatch
+		flag_reproject = self.flag_reproject
+
+
+
+		img_unit = self.img_unit
+		img_scale = self.img_scale		
 
 		# get image dimension and example of stamp_img
 		str_temp = "name_img_%s" % filters[0]
@@ -836,7 +850,7 @@ class images_processing:
 					f0 = np.sqrt(np.absolute(var_img_data[rows,cols]))*2.350443e-5*img_pixsizes[filters[int(idfil_align)]]*img_pixsizes[filters[int(idfil_align)]]   # in unit of Jy
 					map_flux_err[bb][rows,cols] = f0*1.0e-23*2.998e+18*Gal_dust_corr_factor/eff_wave[filters[bb]]/eff_wave[filters[bb]]   		# in erg/s/cm^2/Ang.
 					
-				### in case the data is in Jy/pixel or Jy --> this is not surface brightness unit but flux density
+				### in case the data is in Jy/pixel or Jy
 				elif unit_spire == 'Jy_per_pixel':
 					map_flux[bb][rows,cols] = sci_img_data[rows,cols]*1.0e-23*2.998e+18*Gal_dust_corr_factor/eff_wave[filters[bb]]/eff_wave[filters[bb]]		# in erg/s/cm^2/Ang.
 					map_flux_err[bb][rows,cols] = np.sqrt(np.absolute(var_img_data[rows,cols]))*1.0e-23*2.998e+18*Gal_dust_corr_factor/eff_wave[filters[bb]]/eff_wave[filters[bb]]	# in erg/s/cm^2/Ang.
@@ -845,10 +859,25 @@ class images_processing:
 					print ("unit of Herschel images is not recognized!")
 					sys.exit()
 
-			#--> other images: assumed they are already in erg/s/cm^2/A
 			else:
-				map_flux[bb][rows,cols] = sci_img_data[rows,cols]*Gal_dust_corr_factor
-				map_flux_err[bb][rows,cols] = np.sqrt(np.absolute(var_img_data[rows,cols]))*Gal_dust_corr_factor
+				if img_unit[filters[bb]]=='erg/s/cm2/A':
+					map_flux[bb][rows,cols] = sci_img_data[rows,cols]*Gal_dust_corr_factor*img_scale[filters[bb]]
+					map_flux_err[bb][rows,cols] = np.sqrt(np.absolute(var_img_data[rows,cols]))*Gal_dust_corr_factor*img_scale[filters[bb]]
+
+				elif img_unit[filters[bb]]=='Jy':
+					map_flux[bb][rows,cols] = sci_img_data[rows,cols]*1.0e-23*2.998e+18*Gal_dust_corr_factor*img_scale[filters[bb]]/eff_wave[filters[bb]]/eff_wave[filters[bb]]
+					map_flux_err[bb][rows,cols] = np.sqrt(np.absolute(var_img_data[rows,cols]))*1.0e-23*2.998e+18*Gal_dust_corr_factor*img_scale[filters[bb]]/eff_wave[filters[bb]]/eff_wave[filters[bb]]
+
+				elif img_unit[filters[bb]]=='MJy/sr':
+					f0 = sci_img_data[rows,cols]*2.350443e-5*img_pixsizes[filters[int(idfil_align)]]*img_pixsizes[filters[int(idfil_align)]]							# in unit of Jy
+					map_flux[bb][rows,cols] = f0*1.0e-23*2.998e+18*Gal_dust_corr_factor*img_scale[filters[bb]]/eff_wave[filters[bb]]/eff_wave[filters[bb]]   			# in erg/s/cm^2/Ang.
+
+					f0 = np.sqrt(np.absolute(var_img_data[rows,cols]))*2.350443e-5*img_pixsizes[filters[int(idfil_align)]]*img_pixsizes[filters[int(idfil_align)]]   	# in unit of Jy
+					map_flux_err[bb][rows,cols] = f0*1.0e-23*2.998e+18*Gal_dust_corr_factor*img_scale[filters[bb]]/eff_wave[filters[bb]]/eff_wave[filters[bb]]   		# in erg/s/cm^2/Ang.
+
+				else:
+					print ("Inputted img_unit[%s] is not recognized!" % filters[bb])
+					sys.exit()
 
 			### end for bb: nbands
 
@@ -870,20 +899,30 @@ class images_processing:
 		hdul = fits.HDUList()
 		hdr = fits.Header()
 		hdr['nfilters'] = nbands
-		hdr['RA'] = gal_ra
-		hdr['DEC'] = gal_dec
+		if gal_ra != None:
+			hdr['RA'] = gal_ra
+
+		if gal_dec != None:
+			hdr['DEC'] = gal_dec
+
 		if gal_z != None:
 			hdr['z'] = gal_z
 		elif gal_z == None:
 			hdr['z'] = 0
+
 		hdr['unit'] = scale_unit
 		hdr['bunit'] = 'erg/s/cm^2/A'
 		hdr['GalEBV'] = Gal_EBV
 		hdr['struct'] = '(band,y,x)'
-		hdr['fsamp'] = fil_align
-		hdr['pixsize'] = final_pix_size
-		hdr['fpsfmtch'] = fil_psfmatch
-		hdr['psffwhm'] = final_psf_fwhm
+
+		if flag_reproject == 0:
+			hdr['fsamp'] = fil_align
+		if final_pix_size > 0:
+			hdr['pixsize'] = final_pix_size
+		if flag_psfmatch == 0:
+			hdr['fpsfmtch'] = fil_psfmatch
+			hdr['psffwhm'] = final_psf_fwhm
+
 		hdr['specphot'] = 0
 		for bb in range(0,nbands):
 			str_temp = 'fil%d' % bb

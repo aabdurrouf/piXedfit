@@ -1978,8 +1978,6 @@ def maps_parameters_fit_pixels(fits_fluxmap=None, pix_x=[], pix_y=[], name_sampl
 	hdu = fits.open(fits_fluxmap)
 	galaxy_region = hdu['galaxy_region'].data
 
-
-
 	gal_z = float(hdu[0].header['z'])
 	hdu.close()
 
