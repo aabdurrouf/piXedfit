@@ -339,7 +339,7 @@ def get_gain_dark_variance(band,run,camcol):
     return gain, dark_variance
 
 
-def var_img_sdss(fits_image=None,filter_name=None,name_out_fits=None):
+def var_img_sdss(fits_image,filter_name=None,name_out_fits=None):
 	"""A function for calculating variance image of an SDSS image
 
 	:param fits_image:
@@ -404,17 +404,17 @@ def var_img_sdss(fits_image=None,filter_name=None,name_out_fits=None):
 	return name_out_fits
 
 
-def var_img_GALEX(filter_name='galex_fuv',sci_img=None,skybg_img=None,name_out_fits=None):
+def var_img_GALEX(sci_img=None,skybg_img=None,filter_name='galex_fuv',name_out_fits=None):
 	"""Function for calculating and producing a variance image of an GALEX image
-
-	:param filter_name: (default: 'galex_fuv')
-		Filter name in string. Allowed options are: 'galex_fuv' and 'galex_nuv'.
 
 	:param sci_img: (default: None)
 		FITS file containing the science image.
 
 	:param skybg_img: (default: None)
 		FITS file of the background image.
+
+	:param filter_name: (default: 'galex_fuv')
+		Filter name in string. Allowed options are: 'galex_fuv' and 'galex_nuv'.
 
 	:param name_out: (default: None)
 		Desired name for the output variance image.
@@ -510,18 +510,18 @@ def var_img_2MASS(sci_img=None,skyrms_img=None,skyrms_img_data=[],skyrms_value=N
 	return name_out_fits
 
 
-def var_img_WISE(filter_name='wise_w1',sci_img=None,unc_img=None,skyrms_img=None,name_out_fits=None):
+def var_img_WISE(sci_img=None,unc_img=None,filter_name='wise_w1',skyrms_img=None,name_out_fits=None):
 	"""Function for deriving variance image of an WISE image. The uncertainty estimation is based on information from
 	http://wise2.ipac.caltech.edu/docs/release/allsky/expsup/sec2_3f.html
-
-	:param filter_name: (default: 'wise_w1')
-		Filter name. Options are: 'wise_w1', 'wise_w2', 'wise_w3', and 'wise_w4'
 
 	:param sci_img:
 		FITS file containing the science image.
 
 	:param unc_img:
 		FITS file containing the uncertainty image.
+
+	:param filter_name: (default: 'wise_w1')
+		Filter name. Options are: 'wise_w1', 'wise_w2', 'wise_w3', and 'wise_w4'
 
 	:param skyrms_img:
 		FITS file containing the RMS background image.
@@ -581,7 +581,7 @@ def var_img_WISE(filter_name='wise_w1',sci_img=None,unc_img=None,skyrms_img=None
 	return name_out_fits
 
 
-def var_img_from_unc_img(unc_image=None, header=None, name_out_fits=None):
+def var_img_from_unc_img(unc_image, header=None, name_out_fits=None):
 	"""Function for creating variance image from an input of uncertainty image.
 
 	:param unc_img:
@@ -609,7 +609,7 @@ def var_img_from_unc_img(unc_image=None, header=None, name_out_fits=None):
 	return name_out_fits
 
 
-def var_img_from_weight_img(wht_image=None, header=None, name_out_fits=None):
+def var_img_from_weight_img(wht_image, header=None, name_out_fits=None):
 	"""Function for creating variance image from an input of weight image, which is defined as inverse variance.
 
 	:param wht_image:
@@ -633,35 +633,6 @@ def var_img_from_weight_img(wht_image=None, header=None, name_out_fits=None):
 	fits.writeto(name_out_fits, var_image, header=header, overwrite=True)
 
 	return name_out_fits
-
-  
-def segm_sextractor(fits_image=None,detect_thresh=1.5,detect_minarea=20,
-	deblend_nthresh=32.0,deblend_mincont=0.005):
-	"""A function to get segmentation map of a galaxy using SExtractor.
-	This function uses sewpy Python wrapper.
-	"""
-
-	#if sewpypath == None:
-	#	print ("sewpypath should be specified!. It is a path to sewpy installation directory.")
-	#	sys.exit()
-
-	#sys.path.insert(0, os.path.abspath(sewpypath))
-	import logging
-	logging.basicConfig(format='%(levelname)s: %(name)s(%(funcName)s): %(message)s', level=logging.DEBUG)
-	import sewpy
-	sexpath='sex'
-	name_segm = "segm_temp.fits"
-	sew = sewpy.SEW(params=["X_IMAGE", "Y_IMAGE", "FLUX_APER(3)", "FLAGS"],
-			config={"DETECT_THRESH":detect_thresh, "DETECT_MINAREA":detect_minarea, "DEBLEND_NTHRESH":deblend_nthresh,
-			"DEBLEND_MINCONT":deblend_mincont, "CHECKIMAGE_TYPE":"SEGMENTATION", 
-			"CHECKIMAGE_NAME":name_segm},sexpath=sexpath)
-	out = sew(fits_image)
-	# get the segmentation map in a form of 2D array:
-	hdu = fits.open(name_segm)
-	segm_map = hdu[0].data
-	hdu.close()
-
-	return segm_map
 
 
 
@@ -709,7 +680,7 @@ def mask_region_bgmodel(fits_image=None, thresh=1.5, var=None, minarea=5, deblen
 
 
 
-def subtract_background(fits_image=None, hdu_idx=0, sigma=3.0, box_size=None, mask_region=[], mask_sources=True, 
+def subtract_background(fits_image, hdu_idx=0, sigma=3.0, box_size=None, mask_region=[], mask_sources=True, 
 	var=None, thresh=1.5, minarea=5, deblend_nthresh=32, deblend_cont=0.005):
 	"""Function for estimating 2D background and subtracting it from the input image. This function also produce RMS image. 
 	This function adopts the Background2D function from the photutils package. To estimate 2D background, 
@@ -1095,10 +1066,10 @@ def ellipse_fit(data=None, init_x0=None, init_y0=None, init_sma=10.0,
 	:param data:
 		Input of 2D array containing data of the image in a particular band.
 
-	:param init_x0: (default: None)
+	:param init_x0: 
 		Initial estimate for the central coordinate in x-axis of the elliptical isophote. If None, the init_x0 is taken from the central coordinate of the image.  
 
-	:param init_y0: (default: None)
+	:param init_y0: 
 		Initial estimate for the central coordinate in y-axis of the elliptical isophote. If None, the init_y0 is taken from the central coordinate of the image.
 
 	:param init_sma: (default: 10.0)
@@ -1291,7 +1262,7 @@ def crop_ellipse_galregion(gal_region0,x_cent,y_cent,ell,pa,rmax):
 
 
 
-def crop_ellipse_galregion_fits(input_fits=None,x_cent=None,y_cent=None,
+def crop_ellipse_galregion_fits(input_fits,x_cent=None,y_cent=None,
 								ell=None,pa=None,rmax=25.0,name_out_fits=None):
 	"""Function for cropping a galaxy's region within a desired ellipse aperture and produce a new FITS file.
 	The input should be the FITS file of reduced maps of multiband fluxes (output of the :func:`flux_map` method in the :class:`images_processing` class).
@@ -1410,53 +1381,13 @@ def crop_stars(gal_region=[],x_cent=[],y_cent=[],radius=[]):
 		xx_norm, yy_norm = xx-x_cent[ii], yy-y_cent[ii]
 		data2D_rad = np.sqrt(np.square(xx_norm) + np.square(yy_norm))
 
-		rows, cols = np.where(data2D_rad<=radius[ii])
+		rows, cols = np.where((data2D_rad<=radius[ii]) & (gal_region==1))
 		gal_region[rows,cols] = 0
 
 	return gal_region
 
 
-def old_crop_stars(gal_region0=[],x_cent=[],y_cent=[],radius=[]):
-	"""A function for cropping foreground stars within a galaxy's region of interst.
-	The input is aa galaxy region in 2D array with values of either 1 (meaning 
-	that the pixel is belong to the galaxy's region) or 0 (meaning 
-	that the pixel is not belong to the galaxy's region)   
-
-	:param gal_region0:
-		The 2D array of input galaxy's region.
-
-	:param x_cent and y_cent:
-		Arrays containing central coordinates of the stars.
-
-	:param radius:
-		Arrays containing the estimated radii of the stars.
-
-	:returns gal_region:
-		2D array containing output galaxy's region after stars subtraction. 
-	"""
-	nstars = len(x_cent)
-
-	dim_y = gal_region0.shape[0]
-	dim_x = gal_region0.shape[1]
-
-	gal_region = gal_region0
-	for yy in range(0,dim_y):
-		for xx in range(0,dim_x):
-
-			if gal_region[yy][xx] == 1:
-				status_in = 0
-				for ii in range(0,nstars):
-					rad = sqrt((yy-y_cent[ii])**2.0 + (xx-x_cent[ii])**2.0)
-					if rad<=radius[ii]:
-						status_in = status_in + 1
-
-				if status_in>0:
-					gal_region[yy][xx] = 0
-
-	return gal_region
-
-
-def crop_stars_galregion_fits(input_fits=None,output_fits=None,x_cent=[],y_cent=[],radius=[]):
+def crop_stars_galregion_fits(input_fits,output_fits=None,x_cent=[],y_cent=[],radius=[]):
 	"""A function for cropping foreground stars within a galaxy's region of interst.
 	The input is a FITS file of reduced multiband fluxes maps output of flux_map() function
 
