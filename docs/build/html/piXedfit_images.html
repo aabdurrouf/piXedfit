@@ -183,7 +183,7 @@
 <span id="pixedfit-images"></span><h1>piXedfit_images<a class="headerlink" href="#module-piXedfit.piXedfit_images" title="Permalink to this headline">¶</a></h1>
 <dl class="py function">
 <dt id="piXedfit.piXedfit_images.crop_stars_galregion_fits">
-<code class="sig-prename descclassname">piXedfit.piXedfit_images.</code><code class="sig-name descname">crop_stars_galregion_fits</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">input_fits</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">output_fits</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">x_cent</span><span class="o">=</span><span class="default_value">[]</span></em>, <em class="sig-param"><span class="n">y_cent</span><span class="o">=</span><span class="default_value">[]</span></em>, <em class="sig-param"><span class="n">radius</span><span class="o">=</span><span class="default_value">[]</span></em><span class="sig-paren">)</span><a class="headerlink" href="#piXedfit.piXedfit_images.crop_stars_galregion_fits" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">piXedfit.piXedfit_images.</code><code class="sig-name descname">crop_stars_galregion_fits</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">input_fits</span></em>, <em class="sig-param"><span class="n">output_fits</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">x_cent</span><span class="o">=</span><span class="default_value">[]</span></em>, <em class="sig-param"><span class="n">y_cent</span><span class="o">=</span><span class="default_value">[]</span></em>, <em class="sig-param"><span class="n">radius</span><span class="o">=</span><span class="default_value">[]</span></em><span class="sig-paren">)</span><a class="headerlink" href="#piXedfit.piXedfit_images.crop_stars_galregion_fits" title="Permalink to this definition">¶</a></dt>
 <dd><p>A function for cropping foreground stars within a galaxy’s region of interst.
 The input is a FITS file of reduced multiband fluxes maps output of flux_map() function</p>
 <dl class="field-list simple">
@@ -383,7 +383,7 @@ As output, a fits file containing a background image is produced</p>
 
 <dl class="py function">
 <dt id="piXedfit.piXedfit_images.subtract_background">
-<code class="sig-prename descclassname">piXedfit.piXedfit_images.</code><code class="sig-name descname">subtract_background</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">fits_image</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">hdu_idx</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">sigma</span><span class="o">=</span><span class="default_value">3.0</span></em>, <em class="sig-param"><span class="n">box_size</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">mask_region</span><span class="o">=</span><span class="default_value">[]</span></em>, <em class="sig-param"><span class="n">mask_sources</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">var</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">thresh</span><span class="o">=</span><span class="default_value">1.5</span></em>, <em class="sig-param"><span class="n">minarea</span><span class="o">=</span><span class="default_value">5</span></em>, <em class="sig-param"><span class="n">deblend_nthresh</span><span class="o">=</span><span class="default_value">32</span></em>, <em class="sig-param"><span class="n">deblend_cont</span><span class="o">=</span><span class="default_value">0.005</span></em><span class="sig-paren">)</span><a class="headerlink" href="#piXedfit.piXedfit_images.subtract_background" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">piXedfit.piXedfit_images.</code><code class="sig-name descname">subtract_background</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">fits_image</span></em>, <em class="sig-param"><span class="n">hdu_idx</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">sigma</span><span class="o">=</span><span class="default_value">3.0</span></em>, <em class="sig-param"><span class="n">box_size</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">mask_region</span><span class="o">=</span><span class="default_value">[]</span></em>, <em class="sig-param"><span class="n">mask_sources</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">var</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">thresh</span><span class="o">=</span><span class="default_value">1.5</span></em>, <em class="sig-param"><span class="n">minarea</span><span class="o">=</span><span class="default_value">5</span></em>, <em class="sig-param"><span class="n">deblend_nthresh</span><span class="o">=</span><span class="default_value">32</span></em>, <em class="sig-param"><span class="n">deblend_cont</span><span class="o">=</span><span class="default_value">0.005</span></em><span class="sig-paren">)</span><a class="headerlink" href="#piXedfit.piXedfit_images.subtract_background" title="Permalink to this definition">¶</a></dt>
 <dd><p>Function for estimating 2D background and subtracting it from the input image. This function also produce RMS image.
 This function adopts the Background2D function from the photutils package. To estimate 2D background,
 the input image is gridded and sigma clipping is done to each bin/grid. Then 2D interpolation is performed to
@@ -451,17 +451,17 @@ Desired name for the output FITS file. It is not mandatory parameter.</p></li>
 
 <dl class="py function">
 <dt id="piXedfit.piXedfit_images.var_img_GALEX">
-<code class="sig-prename descclassname">piXedfit.piXedfit_images.</code><code class="sig-name descname">var_img_GALEX</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">filter_name</span><span class="o">=</span><span class="default_value">'galex_fuv'</span></em>, <em class="sig-param"><span class="n">sci_img</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">skybg_img</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">name_out_fits</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#piXedfit.piXedfit_images.var_img_GALEX" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">piXedfit.piXedfit_images.</code><code class="sig-name descname">var_img_GALEX</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">sci_img</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">skybg_img</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">filter_name</span><span class="o">=</span><span class="default_value">'galex_fuv'</span></em>, <em class="sig-param"><span class="n">name_out_fits</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#piXedfit.piXedfit_images.var_img_GALEX" title="Permalink to this definition">¶</a></dt>
 <dd><p>Function for calculating and producing a variance image of an GALEX image</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>filter_name</strong> – (default: ‘galex_fuv’)
-Filter name in string. Allowed options are: ‘galex_fuv’ and ‘galex_nuv’.</p></li>
 <li><p><strong>sci_img</strong> – (default: None)
 FITS file containing the science image.</p></li>
 <li><p><strong>skybg_img</strong> – (default: None)
 FITS file of the background image.</p></li>
+<li><p><strong>filter_name</strong> – (default: ‘galex_fuv’)
+Filter name in string. Allowed options are: ‘galex_fuv’ and ‘galex_nuv’.</p></li>
 <li><p><strong>name_out</strong> – (default: None)
 Desired name for the output variance image.</p></li>
 </ul>
@@ -474,16 +474,16 @@ Desired name for the output variance image.</p></li>
 
 <dl class="py function">
 <dt id="piXedfit.piXedfit_images.var_img_WISE">
-<code class="sig-prename descclassname">piXedfit.piXedfit_images.</code><code class="sig-name descname">var_img_WISE</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">filter_name</span><span class="o">=</span><span class="default_value">'wise_w1'</span></em>, <em class="sig-param"><span class="n">sci_img</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">unc_img</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">skyrms_img</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">name_out_fits</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#piXedfit.piXedfit_images.var_img_WISE" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">piXedfit.piXedfit_images.</code><code class="sig-name descname">var_img_WISE</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">sci_img</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">unc_img</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">filter_name</span><span class="o">=</span><span class="default_value">'wise_w1'</span></em>, <em class="sig-param"><span class="n">skyrms_img</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">name_out_fits</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#piXedfit.piXedfit_images.var_img_WISE" title="Permalink to this definition">¶</a></dt>
 <dd><p>Function for deriving variance image of an WISE image. The uncertainty estimation is based on information from
 <a class="reference external" href="http://wise2.ipac.caltech.edu/docs/release/allsky/expsup/sec2_3f.html">http://wise2.ipac.caltech.edu/docs/release/allsky/expsup/sec2_3f.html</a></p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>filter_name</strong> – (default: ‘wise_w1’)
-Filter name. Options are: ‘wise_w1’, ‘wise_w2’, ‘wise_w3’, and ‘wise_w4’</p></li>
 <li><p><strong>sci_img</strong> – FITS file containing the science image.</p></li>
 <li><p><strong>unc_img</strong> – FITS file containing the uncertainty image.</p></li>
+<li><p><strong>filter_name</strong> – (default: ‘wise_w1’)
+Filter name. Options are: ‘wise_w1’, ‘wise_w2’, ‘wise_w3’, and ‘wise_w4’</p></li>
 <li><p><strong>skyrms_img</strong> – FITS file containing the RMS background image.</p></li>
 <li><p><strong>name_out</strong> – Desired name for the output FITS file.</p></li>
 </ul>
@@ -496,7 +496,7 @@ Filter name. Options are: ‘wise_w1’, ‘wise_w2’, ‘wise_w3’, and ‘wi
 
 <dl class="py function">
 <dt id="piXedfit.piXedfit_images.var_img_from_unc_img">
-<code class="sig-prename descclassname">piXedfit.piXedfit_images.</code><code class="sig-name descname">var_img_from_unc_img</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">unc_image</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">header</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">name_out_fits</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#piXedfit.piXedfit_images.var_img_from_unc_img" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">piXedfit.piXedfit_images.</code><code class="sig-name descname">var_img_from_unc_img</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">unc_image</span></em>, <em class="sig-param"><span class="n">header</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">name_out_fits</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#piXedfit.piXedfit_images.var_img_from_unc_img" title="Permalink to this definition">¶</a></dt>
 <dd><p>Function for creating variance image from an input of uncertainty image.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -514,7 +514,7 @@ Input FITS file header. This is optional parameter.</p></li>
 
 <dl class="py function">
 <dt id="piXedfit.piXedfit_images.var_img_from_weight_img">
-<code class="sig-prename descclassname">piXedfit.piXedfit_images.</code><code class="sig-name descname">var_img_from_weight_img</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">wht_image</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">header</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">name_out_fits</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#piXedfit.piXedfit_images.var_img_from_weight_img" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">piXedfit.piXedfit_images.</code><code class="sig-name descname">var_img_from_weight_img</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">wht_image</span></em>, <em class="sig-param"><span class="n">header</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">name_out_fits</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#piXedfit.piXedfit_images.var_img_from_weight_img" title="Permalink to this definition">¶</a></dt>
 <dd><p>Function for creating variance image from an input of weight image, which is defined as inverse variance.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -532,7 +532,7 @@ Input FITS file header. This is optional parameter. This is optional parameter.<
 
 <dl class="py function">
 <dt id="piXedfit.piXedfit_images.var_img_sdss">
-<code class="sig-prename descclassname">piXedfit.piXedfit_images.</code><code class="sig-name descname">var_img_sdss</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">fits_image</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">filter_name</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">name_out_fits</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#piXedfit.piXedfit_images.var_img_sdss" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">piXedfit.piXedfit_images.</code><code class="sig-name descname">var_img_sdss</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">fits_image</span></em>, <em class="sig-param"><span class="n">filter_name</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">name_out_fits</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#piXedfit.piXedfit_images.var_img_sdss" title="Permalink to this definition">¶</a></dt>
 <dd><p>A function for calculating variance image of an SDSS image</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
