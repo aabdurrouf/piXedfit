@@ -56,21 +56,7 @@ def bayesian_sedfit_gauss():
 		if add_agn == 1:
 			sampler_log_fagn_bol_temp[int(count)] = data_randmod['log_fagn_bol'][int(ii)]
 
-		### calculate MW-age:
-		formed_mass = pow(10.0,data_randmod['log_mass'][int(ii)])
-		age = pow(10.0,data_randmod['log_age'][int(ii)])
-		tau = pow(10.0,data_randmod['log_tau'][int(ii)])
-		t0 = 0.0
-		alpha = 0.0
-		beta = 0.0
-		if sfh_form == 'log_normal_sfh' or sfh_form == 'gaussian_sfh':
-			t0 = pow(10.0,data_randmod['log_t0'][int(ii)])
-		if sfh_form == 'double_power_sfh':
-			alpha = pow(10.0,data_randmod['log_alpha'][int(ii)])
-			beta = pow(10.0,data_randmod['log_beta'][int(ii)])
-		mw_age = calc_mw_age(sfh_form=sfh_form,tau=tau,t0=t0,alpha=alpha,beta=beta,
-					age=age,formed_mass=formed_mass)
-		sampler_log_mw_age_temp[int(count)] = log10(mw_age)
+		sampler_log_mw_age_temp[int(count)] = data_randmod['log_mw_age'][int(ii)]
 
 		### calculate chi-square and prob.
 		chi2 = calc_chi2(obs_fluxes,obs_flux_err,mod_fluxes0)
@@ -87,10 +73,10 @@ def bayesian_sedfit_gauss():
 
 		count = count + 1
 		
-		sys.stdout.write('\r')
-		sys.stdout.write('rank: %d  Calculation process: %d from %d  --->  %d%%' % (rank,count,len(recvbuf_idx),count*100/len(recvbuf_idx)))
-		sys.stdout.flush()
-	sys.stdout.write('\n')
+		#sys.stdout.write('\r')
+		#sys.stdout.write('rank: %d  Calculation process: %d from %d  --->  %d%%' % (rank,count,len(recvbuf_idx),count*100/len(recvbuf_idx)))
+		#sys.stdout.flush()
+	#sys.stdout.write('\n')
 
 	mod_params = np.zeros((nparams,numDataPerRank*size))
 	mod_fluxes = np.zeros((nbands,numDataPerRank*size))
@@ -263,21 +249,7 @@ def bayesian_sedfit_student_t():
 		if add_agn == 1:
 			sampler_log_fagn_bol_temp[int(count)] = data_randmod['log_fagn_bol'][int(ii)]
 
-		# calculate mass-weighted age
-		formed_mass = pow(10.0,data_randmod['log_mass'][int(ii)])
-		age = pow(10.0,data_randmod['log_age'][int(ii)])
-		tau = pow(10.0,data_randmod['log_tau'][int(ii)])
-		t0 = 0.0
-		alpha = 0.0
-		beta = 0.0
-		if sfh_form == 'log_normal_sfh' or sfh_form == 'gaussian_sfh':
-			t0 = pow(10.0,data_randmod['log_t0'][int(ii)])
-		if sfh_form == 'double_power_sfh':
-			alpha = pow(10.0,data_randmod['log_alpha'][int(ii)])
-			beta = pow(10.0,data_randmod['log_beta'][int(ii)])
-		mw_age = calc_mw_age(sfh_form=sfh_form,tau=tau,t0=t0,alpha=alpha,beta=beta,
-											age=age,formed_mass=formed_mass)
-		sampler_log_mw_age_temp[int(count)] = log10(mw_age)
+		sampler_log_mw_age_temp[int(count)] = data_randmod['log_mw_age'][int(ii)]
 
 		# calculate chi-square and prob.
 		chi2 = calc_chi2(obs_fluxes,obs_flux_err,mod_fluxes0)
@@ -291,10 +263,10 @@ def bayesian_sedfit_student_t():
 
 		count = count + 1
 
-		sys.stdout.write('\r')
-		sys.stdout.write('rank: %d  Calculation process: %d from %d  --->  %d%%' % (rank,count,len(recvbuf_idx),count*100/len(recvbuf_idx)))
-		sys.stdout.flush()
-	sys.stdout.write('\n')
+		#sys.stdout.write('\r')
+		#sys.stdout.write('rank: %d  Calculation process: %d from %d  --->  %d%%' % (rank,count,len(recvbuf_idx),count*100/len(recvbuf_idx)))
+		#sys.stdout.flush()
+	#sys.stdout.write('\n')
 
 	mod_params = np.zeros((nparams,numDataPerRank*size))
 	mod_fluxes = np.zeros((nbands,numDataPerRank*size))
@@ -618,15 +590,6 @@ global add_igm_absorption,igm_type
 add_igm_absorption = int(header_randmod['add_igm_absorption'])
 if add_igm_absorption == 1:
 	igm_type = int(header_randmod['igm_type'])
-
-# whether dust_index is fixed or not
-#global fix_dust_index, fix_dust_index_val
-#if float(config_data['pr_dust_index_min']) == float(config_data['pr_dust_index_max']):     # dust_index is fixed
-#	fix_dust_index = 1
-#	fix_dust_index_val = float(config_data['pr_dust_index_min'])
-#elif float(config_data['pr_dust_index_min']) != float(config_data['pr_dust_index_max']):   # dust_index varies
-#	fix_dust_index = 0
-#	fix_dust_index_val = 0
 
 global add_agn 
 add_agn = int(header_randmod['add_agn'])

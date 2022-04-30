@@ -22,8 +22,6 @@ def bayesian_sedfit_gauss():
 	data_randmod = hdu[1].data
 	hdu.close()
 
-	#redcd_chi2 = float(config_data['redc_chi2_initfit'])
-
 	numDataPerRank = int(npmod_seds/size)
 	idx_mpi = np.linspace(0,npmod_seds-1,npmod_seds)
 	recvbuf_idx = np.empty(numDataPerRank, dtype='d')
@@ -62,21 +60,7 @@ def bayesian_sedfit_gauss():
 		if add_agn == 1:
 			sampler_log_fagn_bol_temp[int(count)] = data_randmod['log_fagn_bol'][int(ii)]
 
-		# calculate MW-age
-		formed_mass = pow(10.0,data_randmod['log_mass'][int(ii)])
-		age = pow(10.0,data_randmod['log_age'][int(ii)])
-		tau = pow(10.0,data_randmod['log_tau'][int(ii)])
-		t0 = 0.0
-		alpha = 0.0
-		beta = 0.0
-		if sfh_form == 'log_normal_sfh' or sfh_form == 'gaussian_sfh':
-			t0 = pow(10.0,data_randmod['log_t0'][int(ii)])
-		if sfh_form == 'double_power_sfh':
-			alpha = pow(10.0,data_randmod['log_alpha'][int(ii)])
-			beta = pow(10.0,data_randmod['log_beta'][int(ii)])
-		mw_age = calc_mw_age(sfh_form=sfh_form,tau=tau,t0=t0,alpha=alpha,beta=beta,
-											age=age,formed_mass=formed_mass)
-		sampler_log_mw_age_temp[int(count)] = log10(mw_age)
+		sampler_log_mw_age_temp[int(count)] = data_randmod['log_mw_age'][int(ii)]
 
 		# calculate chi-square and prob
 		chi2 = calc_chi2(obs_fluxes,obs_flux_err,mod_fluxes0)
@@ -236,8 +220,6 @@ def bayesian_sedfit_student_t():
 	data_randmod = hdu[1].data
 	hdu.close()
 
-	#redcd_chi2 = float(config_data['redc_chi2_initfit'])
-
 	numDataPerRank = int(npmod_seds/size)
 	idx_mpi = np.linspace(0,npmod_seds-1,npmod_seds)
 	recvbuf_idx = np.empty(numDataPerRank, dtype='d')
@@ -276,21 +258,7 @@ def bayesian_sedfit_student_t():
 		if add_agn == 1:
 			sampler_log_fagn_bol_temp[int(count)] = data_randmod['log_fagn_bol'][int(ii)]
 
-		# mass-weighted age
-		formed_mass = pow(10.0,data_randmod['log_mass'][int(ii)])
-		age = pow(10.0,data_randmod['log_age'][int(ii)])
-		tau = pow(10.0,data_randmod['log_tau'][int(ii)])
-		t0 = 0.0
-		alpha = 0.0
-		beta = 0.0
-		if sfh_form == 'log_normal_sfh' or sfh_form == 'gaussian_sfh':
-			t0 = pow(10.0,data_randmod['log_t0'][int(ii)])
-		if sfh_form == 'double_power_sfh':
-			alpha = pow(10.0,data_randmod['log_alpha'][int(ii)])
-			beta = pow(10.0,data_randmod['log_beta'][int(ii)])
-		mw_age = calc_mw_age(sfh_form=sfh_form,tau=tau,t0=t0,alpha=alpha,beta=beta,
-											age=age,formed_mass=formed_mass)
-		sampler_log_mw_age_temp[int(count)] = log10(mw_age)
+		sampler_log_mw_age_temp[int(count)] = data_randmod['log_mw_age'][int(ii)]
 
 		# calculate chi-square and prob.
 		chi2 = calc_chi2(obs_fluxes,obs_flux_err,mod_fluxes0)
@@ -689,7 +657,6 @@ size = comm.Get_size()
 rank = comm.Get_rank() 
 
 # configuration file
-#global config_data
 config_file = str(sys.argv[2])
 data = np.genfromtxt(temp_dir+config_file, dtype=str)
 config_data = {}

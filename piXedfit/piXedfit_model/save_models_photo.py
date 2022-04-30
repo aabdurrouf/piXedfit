@@ -1,8 +1,6 @@
 import numpy as np 
-import math
-import sys
-import os
-import random 
+from math import log10, pow
+import sys, os 
 import fsps
 from mpi4py import MPI
 from astropy.io import fits
@@ -14,9 +12,7 @@ sys.path.insert(0, PIXEDFIT_HOME)
 
 from piXedfit.utils.filtering import match_filters_array
 from piXedfit.piXedfit_model import generate_modelSED_spec_fit, generate_modelSED_propphoto_nomwage_fit, calc_mw_age 
-
-#global cosmo
-#cosmo = FlatLambdaCDM(H0=70, Om0=0.3)
+from piXedfit.piXedfit_fitting import get_params
 
 ## USAGE: mpirun -np [npros] python ./save_models_calc.py (1)name_filters_list (2)name_config
 
@@ -32,8 +28,8 @@ dir_file = PIXEDFIT_HOME+'/data/temp/'
 data = np.genfromtxt(dir_file+config_file, dtype=str)
 config_data = {}
 for ii in range(0,len(data[:,0])):
-	str_temp = data[:,0][int(ii)]
-	config_data[str_temp] = data[:,1][int(ii)]
+	str_temp = data[:,0][ii]
+	config_data[str_temp] = data[:,1][ii]
 
 # filters
 global filters, nbands
@@ -163,9 +159,6 @@ global def_params, def_params_val
 def_params = ['logzsol','log_tau','log_t0','log_alpha','log_beta','log_age','dust_index','dust1','dust2','log_gamma',
 				'log_umin', 'log_qpah', 'z', 'log_fagn','log_tauagn']     # no normalization
 
-#def_params_val={'log_mass':0.0,'z':-99.0,'log_fagn':-99.0,'log_tauagn':-99.0,'log_qpah':-99.0,'log_umin':-99.0,
-#					'log_gamma':-99.0,'dust1':-99.0,'dust2':-99.0,'dust_index':-99.0,'log_age':-99.0,
-#					'log_alpha':-99.0, 'log_beta':-99.0, 'log_t0':-99.0,'log_tau':-99.0,'logzsol':-99.0}
 def_params_val={'log_mass':0.0,'z':0.001,'log_fagn':-3.0,'log_tauagn':1.0,'log_qpah':0.54,'log_umin':0.0,'log_gamma':-2.0,
 				'dust1':0.5,'dust2':0.5,'dust_index':-0.7,'log_age':1.0,'log_alpha':0.1,'log_beta':0.1,'log_t0':0.4,
 				'log_tau':0.4,'logzsol':0.0}
@@ -233,369 +226,15 @@ elif sfh_form=='log_normal_sfh' or sfh_form=='gaussian_sfh' or sfh_form=='double
 		sp.params["dust_type"] = 2  
 		sp.params["dust1"] = 0
 
-## get number of parameters
+# get number of parameters:
 global params, nparams
-if free_z == 0:
-	if sfh_form == 'tau_sfh' or sfh_form == 'delayed_tau_sfh':
-		if duste_switch == 'noduste':
-			if dust_ext_law == 'Cal2000':
-				if add_agn == 0:
-					# fix-z, mainSFH, noduste, Cal2000, noAGN
-					params = ['logzsol','log_tau','log_age','dust2']
-					nparams = len(params)
-				elif add_agn == 1:
-					# fix-z, mainSFH, noduste, Cal2000, AGN
-					params = ['logzsol','log_tau','log_age','dust2','log_fagn','log_tauagn']
-					nparams = len(params)
-			elif dust_ext_law == 'CF2000':
-				if fix_dust_index == 1:
-					if add_agn == 0:
-						# fix-z, mainSFH, noduste, CF2000, fix dust_index, noAGN
-						params = ['logzsol','log_tau','log_age','dust1','dust2']
-						nparams = len(params)
-					elif add_agn == 1:
-						# fix-z, mainSFH, noduste, CF2000, fix dust_index, AGN
-						params = ['logzsol','log_tau','log_age','dust1','dust2','log_fagn','log_tauagn']
-						nparams = len(params)
-				elif fix_dust_index == 0:
-					if add_agn == 0:
-						# fix-z, mainSFH, noduste, CF2000, vary dust_index, noAGN
-						params = ['logzsol','log_tau','log_age','dust_index','dust1','dust2']
-						nparams = len(params)
-					elif add_agn == 1:
-						# fix-z, mainSFH, noduste, CF2000, vary dust_index, AGN
-						params = ['logzsol','log_tau','log_age','dust_index','dust1','dust2','log_fagn','log_tauagn']
-						nparams = len(params)
-		elif duste_switch == 'duste':
-			if dust_ext_law == 'Cal2000':
-				if add_agn == 0:
-					# fix-z, mainSFH, duste, Cal2000, noAGN
-					params = ['logzsol','log_tau','log_age','dust2','log_gamma','log_umin','log_qpah']
-					nparams = len(params)
-				elif add_agn == 1:
-					# fix-z, mainSFH, duste, Cal2000, AGN
-					params = ['logzsol','log_tau','log_age','dust2','log_gamma','log_umin','log_qpah','log_fagn','log_tauagn']
-					nparams = len(params)
-			elif dust_ext_law == 'CF2000':
-				if fix_dust_index == 1:
-					if add_agn == 0:
-						# fix-z, mainSFH, duste, CF2000, fix dust_index, noAGN
-						params = ['logzsol','log_tau','log_age','dust1','dust2','log_gamma','log_umin','log_qpah']
-						nparams = len(params)
-					elif add_agn == 1:
-						# fix-z, mainSFH, duste, CF2000, fix dust_index, AGN
-						params = ['logzsol','log_tau','log_age','dust1','dust2','log_gamma','log_umin','log_qpah','log_fagn','log_tauagn']
-						nparams = len(params)
-				elif fix_dust_index == 0:
-					if add_agn == 0:
-						# fix-z, mainSFH, duste, CF2000, vary dust_index, noAGN
-						params = ['logzsol','log_tau','log_age','dust_index','dust1','dust2','log_gamma','log_umin','log_qpah']
-						nparams = len(params)
-					elif add_agn == 1:
-						# fix-z, mainSFH, duste, CF2000, vary dust_index, AGN
-						params = ['logzsol','log_tau','log_age','dust_index','dust1','dust2','log_gamma','log_umin','log_qpah','log_fagn','log_tauagn']
-						nparams = len(params)
-
-	elif sfh_form == 'log_normal_sfh' or sfh_form == 'gaussian_sfh':
-		if duste_switch == 'noduste':
-			if dust_ext_law == 'Cal2000':
-				if add_agn == 0:
-					# fix-z, otherSFH, noduste, Cal2000, noAGN
-					params = ['logzsol','log_tau','log_t0','log_age','dust2']
-					nparams = len(params)
-				elif add_agn == 1:
-					# fix-z, otherSFH, noduste, Cal2000, AGN
-					params = ['logzsol','log_tau','log_t0','log_age','dust2','log_fagn','log_tauagn']
-					nparams = len(params)
-			elif dust_ext_law == 'CF2000':
-				if fix_dust_index == 1:
-					if add_agn == 0:
-						# fix-z, mainSFH, noduste, CF2000, fix dust_index, noAGN
-						params = ['logzsol','log_tau','log_t0','log_age','dust1','dust2']
-						nparams = len(params)
-					elif add_agn == 1:
-						# fix-z, mainSFH, noduste, CF2000, fix dust_index, AGN
-						params = ['logzsol','log_tau','log_t0','log_age','dust1','dust2','log_fagn','log_tauagn']
-						nparams = len(params)
-				elif fix_dust_index == 0:
-					if add_agn == 0:
-						# fix-z, mainSFH, noduste, CF2000, vary dust_index, noAGN
-						params = ['logzsol','log_tau','log_t0','log_age','dust_index','dust1','dust2']
-						nparams = len(params)
-					elif add_agn == 1:
-						# fix-z, mainSFH, noduste, CF2000, vary dust_index, AGN
-						params = ['logzsol','log_tau','log_t0','log_age','dust_index','dust1','dust2','log_fagn','log_tauagn']
-						nparams = len(params)
-		elif duste_switch == 'duste':
-			if dust_ext_law == 'Cal2000':
-				if add_agn == 0:
-					# fix-z, mainSFH, duste, Cal2000, noAGN
-					params = ['logzsol','log_tau','log_t0','log_age','dust2','log_gamma','log_umin','log_qpah']
-					nparams = len(params)
-				elif add_agn == 1:
-					# fix-z, mainSFH, duste, Cal2000, AGN
-					params = ['logzsol','log_tau','log_t0','log_age','dust2','log_gamma','log_umin','log_qpah','log_fagn','log_tauagn']
-					nparams = len(params)
-			elif dust_ext_law == 'CF2000':
-				if fix_dust_index == 1:
-					if add_agn == 0:
-						# fix-z, mainSFH, duste, CF2000, fix dust_index, noAGN
-						params = ['logzsol','log_tau','log_t0','log_age','dust1','dust2','log_gamma','log_umin','log_qpah']
-						nparams = len(params)
-					elif add_agn == 1:
-						# fix-z, mainSFH, duste, CF2000, fix dust_index, AGN
-						params = ['logzsol','log_tau','log_t0','log_age','dust1','dust2','log_gamma','log_umin','log_qpah','log_fagn','log_tauagn']
-						nparams = len(params)
-				elif fix_dust_index == 0:
-					if add_agn == 0:
-						# fix-z, mainSFH, duste, CF2000, vary dust_index, noAGN
-						params = ['logzsol','log_tau','log_t0','log_age','dust_index','dust1','dust2','log_gamma','log_umin','log_qpah']
-						nparams = len(params)
-					elif add_agn == 1:
-						# fix-z, mainSFH, duste, CF2000, vary dust_index, AGN
-						params = ['logzsol','log_tau','log_t0','log_age','dust_index','dust1','dust2','log_gamma','log_umin','log_qpah','log_fagn','log_tauagn']
-						nparams = len(params)
-
-	elif sfh_form == 'double_power_sfh':
-		if duste_switch == 'noduste':
-			if dust_ext_law == 'Cal2000':
-				if add_agn == 0:
-					# fix-z, mainSFH, noduste, Cal2000, noAGN
-					params = ['logzsol','log_tau','log_alpha','log_beta','log_age','dust2']
-					nparams = len(params)
-				elif add_agn == 1:
-					# fix-z, mainSFH, noduste, Cal2000, AGN
-					params = ['logzsol','log_tau','log_alpha','log_beta','log_age','dust2','log_fagn','log_tauagn']
-					nparams = len(params)
-			elif dust_ext_law == 'CF2000':
-				if fix_dust_index == 1:
-					if add_agn == 0:
-						# fix-z, mainSFH, noduste, CF2000, fix dust_index, noAGN
-						params = ['logzsol','log_tau','log_alpha','log_beta','log_age','dust1','dust2']
-						nparams = len(params)
-					elif add_agn == 1:
-						# fix-z, mainSFH, noduste, CF2000, fix dust_index, AGN
-						params = ['logzsol','log_tau','log_alpha','log_beta','log_age','dust1','dust2','log_fagn','log_tauagn']
-						nparams = len(params)
-				elif fix_dust_index == 0:
-					if add_agn == 0:
-						# fix-z, mainSFH, noduste, CF2000, vary dust_index, noAGN
-						params = ['logzsol','log_tau','log_alpha','log_beta','log_age','dust_index','dust1','dust2']
-						nparams = len(params)
-					elif add_agn == 1:
-						# fix-z, mainSFH, noduste, CF2000, vary dust_index, AGN
-						params = ['logzsol','log_tau','log_alpha','log_beta','log_age','dust_index','dust1','dust2','log_fagn','log_tauagn']
-						nparams = len(params)
-		elif duste_switch == 'duste':
-			if dust_ext_law == 'Cal2000':
-				if add_agn == 0:
-					# fix-z, mainSFH, duste, Cal2000, noAGN
-					params = ['logzsol','log_tau','log_alpha','log_beta','log_age','dust2','log_gamma','log_umin','log_qpah']
-					nparams = len(params)
-				elif add_agn == 1:
-					# fix-z, mainSFH, duste, Cal2000, AGN
-					params = ['logzsol','log_tau','log_alpha','log_beta','log_age','dust2','log_gamma','log_umin','log_qpah','log_fagn','log_tauagn']
-					nparams = len(params)
-			elif dust_ext_law == 'CF2000':
-				if fix_dust_index == 1:
-					if add_agn == 0:
-						# fix-z, mainSFH, duste, CF2000, fix dust_index, noAGN
-						params = ['logzsol','log_tau','log_alpha','log_beta','log_age','dust1','dust2','log_gamma','log_umin','log_qpah']
-						nparams = len(params)
-					elif add_agn == 1:
-						# fix-z, mainSFH, duste, CF2000, fix dust_index, AGN
-						params = ['logzsol','log_tau','log_alpha','log_beta','log_age','dust1','dust2','log_gamma','log_umin','log_qpah','log_fagn','log_tauagn']
-						nparams = len(params)
-				elif fix_dust_index == 0:
-					if add_agn == 0:
-						# fix-z, mainSFH, duste, CF2000, vary dust_index, noAGN
-						params = ['logzsol','log_tau','log_alpha','log_beta','log_age','dust_index','dust1','dust2','log_gamma','log_umin','log_qpah']
-						nparams = len(params)
-					elif add_agn == 1:
-						# fix-z, mainSFH, duste, CF2000, vary dust_index, AGN
-						params = ['logzsol','log_tau','log_alpha','log_beta','log_age','dust_index','dust1','dust2','log_gamma','log_umin','log_qpah','log_fagn','log_tauagn']
-						nparams = len(params)
-
-elif free_z == 1:
-	if sfh_form == 'tau_sfh' or sfh_form == 'delayed_tau_sfh':
-		if duste_switch == 'noduste':
-			if dust_ext_law == 'Cal2000':
-				if add_agn == 0:
-					# free-z, mainSFH, noduste, Cal2000, noAGN
-					params = ['logzsol','log_tau','log_age','dust2','z']
-					nparams = len(params)
-				elif add_agn == 1:
-					# free-z, mainSFH, noduste, Cal2000, AGN
-					params = ['logzsol','log_tau','log_age','dust2','log_fagn','log_tauagn','z']
-					nparams = len(params)
-			elif dust_ext_law == 'CF2000':
-				if fix_dust_index == 1:
-					if add_agn == 0:
-						# free-z, mainSFH, noduste, CF2000, fix dust_index, noAGN
-						params = ['logzsol','log_tau','log_age','dust1','dust2','z']
-						nparams = len(params)
-					elif add_agn == 1:
-						# free-z, mainSFH, noduste, CF2000, fix dust_index, AGN
-						params = ['logzsol','log_tau','log_age','dust1','dust2','log_fagn','log_tauagn','z']
-						nparams = len(params)
-				elif fix_dust_index == 0:
-					if add_agn == 0:
-						# free-z, mainSFH, noduste, CF2000, vary dust_index, noAGN
-						params = ['logzsol','log_tau','log_age','dust_index','dust1','dust2','z']
-						nparams = len(params)
-					elif add_agn == 1:
-						# free-z, mainSFH, noduste, CF2000, vary dust_index, AGN
-						params = ['logzsol','log_tau','log_age','dust_index','dust1','dust2','log_fagn','log_tauagn','z']
-						nparams = len(params)
-		elif duste_switch == 'duste':
-			if dust_ext_law == 'Cal2000':
-				if add_agn == 0:
-					# free-z, mainSFH, duste, Cal2000, noAGN
-					params = ['logzsol','log_tau','log_age','dust2','log_gamma','log_umin','log_qpah','z']
-					nparams = len(params)
-				elif add_agn == 1:
-					# free-z, mainSFH, duste, Cal2000, AGN
-					params = ['logzsol','log_tau','log_age','dust2','log_gamma','log_umin','log_qpah','log_fagn','log_tauagn','z']
-					nparams = len(params)
-			elif dust_ext_law == 'CF2000':
-				if fix_dust_index == 1:
-					if add_agn == 0:
-						# free-z, mainSFH, duste, CF2000, fix dust_index, noAGN
-						params = ['logzsol','log_tau','log_age','dust1','dust2','log_gamma','log_umin','log_qpah','z']
-						nparams = len(params)
-					elif add_agn == 1:
-						# free-z, mainSFH, duste, CF2000, fix dust_index, AGN
-						params = ['logzsol','log_tau','log_age','dust1','dust2','log_gamma','log_umin','log_qpah','log_fagn','log_tauagn','z']
-						nparams = len(params)
-				elif fix_dust_index == 0:
-					if add_agn == 0:
-						# free-z, mainSFH, duste, CF2000, vary dust_index, noAGN
-						params = ['logzsol','log_tau','log_age','dust_index','dust1','dust2','log_gamma','log_umin','log_qpah','z']
-						nparams = len(params)
-					elif add_agn == 1:
-						# free-z, mainSFH, duste, CF2000, vary dust_index, AGN
-						params = ['logzsol','log_tau','log_age','dust_index','dust1','dust2','log_gamma','log_umin','log_qpah','log_fagn','log_tauagn','z']
-						nparams = len(params)
-
-	elif sfh_form == 'log_normal_sfh' or sfh_form == 'gaussian_sfh':
-		if duste_switch == 'noduste':
-			if dust_ext_law == 'Cal2000':
-				if add_agn == 0:
-					# free-z, otherSFH, noduste, Cal2000, noAGN
-					params = ['logzsol','log_tau','log_t0','log_age','dust2','z']
-					nparams = len(params)
-				elif add_agn == 1:
-					# free-z, otherSFH, noduste, Cal2000, AGN
-					params = ['logzsol','log_tau','log_t0','log_age','dust2','log_fagn','log_tauagn','z']
-					nparams = len(params)
-			elif dust_ext_law == 'CF2000':
-				if fix_dust_index == 1:
-					if add_agn == 0:
-						# free-z, mainSFH, noduste, CF2000, fix dust_index, noAGN
-						params = ['logzsol','log_tau','log_t0','log_age','dust1','dust2','z']
-						nparams = len(params)
-					elif add_agn == 1:
-						# free-z, mainSFH, noduste, CF2000, fix dust_index, AGN
-						params = ['logzsol','log_tau','log_t0','log_age','dust1','dust2','log_fagn','log_tauagn','z']
-						nparams = len(params)
-				elif fix_dust_index == 0:
-					if add_agn == 0:
-						# free-z, mainSFH, noduste, CF2000, vary dust_index, noAGN
-						params = ['logzsol','log_tau','log_t0','log_age','dust_index','dust1','dust2','z']
-						nparams = len(params)
-					elif add_agn == 1:
-						# free-z, mainSFH, noduste, CF2000, vary dust_index, AGN
-						params = ['logzsol','log_tau','log_t0','log_age','dust_index','dust1','dust2','log_fagn','log_tauagn','z']
-						nparams = len(params)
-		elif duste_switch == 'duste':
-			if dust_ext_law == 'Cal2000':
-				if add_agn == 0:
-					# free-z, mainSFH, duste, Cal2000, noAGN
-					params = ['logzsol','log_tau','log_t0','log_age','dust2','log_gamma','log_umin','log_qpah','z']
-					nparams = len(params)
-				elif add_agn == 1:
-					# free-z, mainSFH, duste, Cal2000, AGN
-					params = ['logzsol','log_tau','log_t0','log_age','dust2','log_gamma','log_umin','log_qpah','log_fagn','log_tauagn','z']
-					nparams = len(params)
-			elif dust_ext_law == 'CF2000':
-				if fix_dust_index == 1:
-					if add_agn == 0:
-						# free-z, mainSFH, duste, CF2000, fix dust_index, noAGN
-						params = ['logzsol','log_tau','log_t0','log_age','dust1','dust2','log_gamma','log_umin','log_qpah','z']
-						nparams = len(params)
-					elif add_agn == 1:
-						# free-z, mainSFH, duste, CF2000, fix dust_index, AGN
-						params = ['logzsol','log_tau','log_t0','log_age','dust1','dust2','log_gamma','log_umin','log_qpah','log_fagn','log_tauagn','z']
-						nparams = len(params)
-				elif fix_dust_index == 0:
-					if add_agn == 0:
-						# free-z, mainSFH, duste, CF2000, vary dust_index, noAGN
-						params = ['logzsol','log_tau','log_t0','log_age','dust_index','dust1','dust2','log_gamma','log_umin','log_qpah','z']
-						nparams = len(params)
-					elif add_agn == 1:
-						# free-z, mainSFH, duste, CF2000, vary dust_index, AGN
-						params = ['logzsol','log_tau','log_t0','log_age','dust_index','dust1','dust2','log_gamma','log_umin','log_qpah','log_fagn','log_tauagn','z']       ### 14 parameters
-						nparams = len(params)
-
-	elif sfh_form == 'double_power_sfh':
-		if duste_switch == 'noduste':
-			if dust_ext_law == 'Cal2000':
-				if add_agn == 0:
-					# free-z, mainSFH, noduste, Cal2000, noAGN
-					params = ['logzsol','log_tau','log_alpha','log_beta','log_age','dust2','z']
-					nparams = len(params)
-				elif add_agn == 1:
-					# free-z, mainSFH, noduste, Cal2000, AGN
-					params = ['logzsol','log_tau','log_alpha','log_beta','log_age','dust2','log_fagn','log_tauagn','z']
-					nparams = len(params)
-			elif dust_ext_law == 'CF2000':
-				if fix_dust_index == 1:
-					if add_agn == 0:
-						# free-z, mainSFH, noduste, CF2000, fix dust_index, noAGN
-						params = ['logzsol','log_tau','log_alpha','log_beta','log_age','dust1','dust2','z']
-						nparams = len(params)
-					elif add_agn == 1:
-						# free-z, mainSFH, noduste, CF2000, fix dust_index, AGN
-						params = ['logzsol','log_tau','log_alpha','log_beta','log_age','dust1','dust2','log_fagn','log_tauagn','z']
-						nparams = len(params)
-				elif fix_dust_index == 0:
-					if add_agn == 0:
-						# free-z, mainSFH, noduste, CF2000, vary dust_index, noAGN
-						params = ['logzsol','log_tau','log_alpha','log_beta','log_age','dust_index','dust1','dust2','z']
-						nparams = len(params)
-					elif add_agn == 1:
-						# free-z, mainSFH, noduste, CF2000, vary dust_index, AGN
-						params = ['logzsol','log_tau','log_alpha','log_beta','log_age','dust_index','dust1','dust2','log_fagn','log_tauagn','z']
-						nparams = len(params)
-		elif duste_switch == 'duste':
-			if dust_ext_law == 'Cal2000':
-				if add_agn == 0:
-					# free-z, mainSFH, duste, Cal2000, noAGN
-					params = ['logzsol','log_tau','log_alpha','log_beta','log_age','dust2','log_gamma','log_umin','log_qpah','z']
-					nparams = len(params)
-				elif add_agn == 1:
-					# free-z, mainSFH, duste, Cal2000, AGN
-					params = ['logzsol','log_tau','log_alpha','log_beta','log_age','dust2','log_gamma','log_umin','log_qpah','log_fagn','log_tauagn','z']
-					nparams = len(params)
-			elif dust_ext_law == 'CF2000':
-				if fix_dust_index == 1:
-					if add_agn == 0:
-						# free-z, mainSFH, duste, CF2000, fix dust_index, noAGN
-						params = ['logzsol','log_tau','log_alpha','log_beta','log_age','dust1','dust2','log_gamma','log_umin','log_qpah','z']
-						nparams = len(params)
-					elif add_agn == 1:
-						# free-z, mainSFH, duste, CF2000, fix dust_index, AGN
-						params = ['logzsol','log_tau','log_alpha','log_beta','log_age','dust1','dust2','log_gamma','log_umin','log_qpah','log_fagn','log_tauagn','z']
-						nparams = len(params)
-				elif fix_dust_index == 0:
-					if add_agn == 0:
-						# free-z, mainSFH, duste, CF2000, vary dust_index, noAGN
-						params = ['logzsol','log_tau','log_alpha','log_beta','log_age','dust_index','dust1','dust2','log_gamma','log_umin','log_qpah','z']
-						nparams = len(params)
-					elif add_agn == 1:
-						# free-z, mainSFH, duste, CF2000, vary dust_index, AGN
-						params = ['logzsol','log_tau','log_alpha','log_beta','log_age','dust_index','dust1','dust2','log_gamma','log_umin','log_qpah','log_fagn','log_tauagn','z']
-						nparams = len(params)
+params0, nparams0 = get_params(free_z, sfh_form, duste_switch, dust_ext_law, add_agn, fix_dust_index)
+params = params0[:int(nparams0-1)]
+nparams = len(params)
+if rank == 0:
+	print ("parameters: ")
+	print (params)
+	print ("number of parameters: %d" % nparams)
 
 global params_fsps, nparams_fsps
 params_fsps = []
@@ -609,10 +248,10 @@ global priors_min, priors_max
 priors_min = np.zeros(nparams)
 priors_max = np.zeros(nparams)
 for ii in range(0,nparams): 
-	str_temp = 'pr_%s_min' % params[int(ii)]
-	priors_min[int(ii)] = float(config_data[str_temp])
-	str_temp = 'pr_%s_max' % params[int(ii)]
-	priors_max[int(ii)] = float(config_data[str_temp])
+	str_temp = 'pr_%s_min' % params[ii]
+	priors_min[ii] = float(config_data[str_temp])
+	str_temp = 'pr_%s_max' % params[ii]
+	priors_max[ii] = float(config_data[str_temp])
 
 # if redshift is fix: free_z=0, match wavelength points of transmission curves with that of spectrum at a given redshift
 global trans_fltr_int
@@ -667,33 +306,33 @@ for ii in recvbuf_idx:
 	if np.isnan(SED_prop['SM'])==True or SED_prop['SM']<=0.0:
 		mod_log_mass_temp[int(count)] = 1.0e-33
 	else:
-		mod_log_mass_temp[int(count)] = math.log10(SED_prop['SM'])
+		mod_log_mass_temp[int(count)] = log10(SED_prop['SM'])
 
 	if np.isnan(SED_prop['SFR'])==True or SED_prop['SFR']<=0.0:
 		mod_log_sfr_temp[int(count)] = 1.0e-33
 	else:
-		mod_log_sfr_temp[int(count)] = math.log10(SED_prop['SFR'])
+		mod_log_sfr_temp[int(count)] = log10(SED_prop['SFR'])
 
 	if duste_switch == 'duste':
 		if np.isnan(SED_prop['dust_mass'])==True or SED_prop['dust_mass']<=0.0:
 			mod_log_dustmass_temp[int(count)] = 1.0e-33
 		else:
-			mod_log_dustmass_temp[int(count)] = math.log10(SED_prop['dust_mass']) ################# 
+			mod_log_dustmass_temp[int(count)] = log10(SED_prop['dust_mass'])  
 
 	if add_agn == 1:
 		mod_log_fagn_bol_temp[int(count)] = SED_prop['log_fagn_bol']
 
 	# calculate mass-weighted age
-	age = math.pow(10.0,params_val['log_age'])
-	tau = math.pow(10.0,params_val['log_tau'])
-	t0 = math.pow(10.0,params_val['log_t0'])
-	alpha = math.pow(10.0,params_val['log_alpha'])
-	beta = math.pow(10.0,params_val['log_beta'])
-	mw_age = calc_mw_age(sfh_form=sfh_form,tau=tau,t0=t0,alpha=alpha,beta=beta,
-					age=age,formed_mass=SED_prop['SM'])
+	age = pow(10.0,params_val['log_age'])
+	tau = pow(10.0,params_val['log_tau'])
+	t0 = pow(10.0,params_val['log_t0'])
+	alpha = pow(10.0,params_val['log_alpha'])
+	beta = pow(10.0,params_val['log_beta'])
+	mw_age = calc_mw_age(sfh_form=sfh_form,tau=tau,t0=t0,alpha=alpha,beta=beta,age=age,formed_mass=SED_prop['SM'])
+	mod_log_mw_age_temp[int(count)] = np.log10(mw_age)
 
 	for bb in range(0,nbands):
-		mod_fluxes_temp[int(bb)][int(count)] = fluxes[int(bb)]
+		mod_fluxes_temp[bb][int(count)] = fluxes[bb]
 
 	count = count + 1
 
@@ -723,10 +362,10 @@ if add_agn == 1:
 	comm.Gather(mod_log_fagn_bol_temp, mod_log_fagn_bol, root=0)
 
 for pp in range(0,nparams):
-	comm.Gather(mod_params_temp[int(pp)], mod_params[int(pp)], root=0)
+	comm.Gather(mod_params_temp[pp], mod_params[pp], root=0)
 
 for bb in range(0,nbands):
-	comm.Gather(mod_fluxes_temp[int(bb)], mod_fluxes[int(bb)], root=0)
+	comm.Gather(mod_fluxes_temp[bb], mod_fluxes[bb], root=0)
 
 # store into a FITS file
 if rank == 0:
@@ -749,27 +388,27 @@ if rank == 0:
 		hdr['igm_type'] = igm_type
 	hdr['nfilters'] = nbands
 	for bb in range(0,nbands):
-		str_temp = 'fil%d' % int(bb)
-		hdr[str_temp] = filters[int(bb)]
+		str_temp = 'fil%d' % bb
+		hdr[str_temp] = filters[bb]
 	hdr['gal_z'] = gal_z
 	hdr['nrows'] = npmod_seds
 	hdr['nparams'] = nparams
 	for pp in range(0,nparams):
-		str_temp = 'param%d' % int(pp)
-		hdr[str_temp] = params[int(pp)]
+		str_temp = 'param%d' % pp
+		hdr[str_temp] = params[pp]
 
 	for pp in range(0,nparams):
-		str_temp = 'pr_%s_min' % params[int(pp)]
-		hdr[str_temp] = priors_min[int(pp)]
-		str_temp = 'pr_%s_max' % params[int(pp)]
-		hdr[str_temp] = priors_max[int(pp)]
+		str_temp = 'pr_%s_min' % params[pp]
+		hdr[str_temp] = priors_min[pp]
+		str_temp = 'pr_%s_max' % params[pp]
+		hdr[str_temp] = priors_max[pp]
 
 	hdr['col1'] = 'id'
 	col_count = 1
 	for pp in range(0,nparams):
 		col_count = col_count + 1
 		str_temp = 'col%d' % col_count
-		hdr[str_temp] = params[int(pp)]
+		hdr[str_temp] = params[pp]
 
 	col_count = col_count + 1
 	str_temp = 'col%d' % col_count
@@ -796,7 +435,7 @@ if rank == 0:
 	for bb in range(0,nbands):
 		col_count = col_count + 1
 		str_temp = 'col%d' % col_count
-		hdr[str_temp] = filters[int(bb)]
+		hdr[str_temp] = filters[bb]
 
 	hdr['ncols'] = col_count
 
@@ -805,7 +444,7 @@ if rank == 0:
 	cols0.append(col)
 
 	for pp in range(0,nparams):
-		col = fits.Column(name=params[int(pp)], format='D', array=np.array(mod_params[int(pp)]))
+		col = fits.Column(name=params[pp], format='D', array=np.array(mod_params[pp]))
 		cols0.append(col)
 
 	col = fits.Column(name='log_mass', format='D', array=np.array(mod_log_mass))
@@ -826,7 +465,7 @@ if rank == 0:
 		cols0.append(col)
 
 	for bb in range(0,nbands):
-		col = fits.Column(name=filters[int(bb)], format='D', array=np.array(mod_fluxes[int(bb)]))
+		col = fits.Column(name=filters[bb], format='D', array=np.array(mod_fluxes[bb]))
 		cols0.append(col)
 
 	cols = fits.ColDefs(cols0)
