@@ -17,7 +17,8 @@ with np.errstate(divide='ignore'):
     np.float64(1.0) / 0.0
 
 
-__all__ = ["generate_modelSED_propspecphoto_fit", "generate_modelSED_spec_fit", "generate_modelSED_specphoto_fit", "generate_modelSED_propspecphoto_nomwage_fit"]
+__all__ = ["generate_modelSED_propspecphoto_fit", "generate_modelSED_spec_fit", "generate_modelSED_specphoto_fit", 
+		"generate_modelSED_propspecphoto_nomwage_fit", "generate_modelSED_spec_restframe_props"]
 
 
 def generate_modelSED_propspecphoto_fit(sp=None,imf_type=1,sfh_form='delayed_tau_sfh',filters=['galex_fuv','galex_nuv','sdss_u',
@@ -259,6 +260,111 @@ def generate_modelSED_spec_fit(sp=None,imf_type=1,sfh_form='delayed_tau_sfh',add
 	return spec_SED
 
 
+def generate_modelSED_spec_restframe_props(sp=None,imf_type=1,sfh_form='delayed_tau_sfh',add_agn=1,params_fsps=['logzsol', 'log_tau', 
+	'log_age', 'dust_index', 'dust1', 'dust2', 'log_gamma', 'log_umin', 'log_qpah','log_fagn', 'log_tauagn'], 
+	params_val={'log_mass':0.0,'z':-99.0,'log_fagn':-99.0,'log_tauagn':-99.0,'log_qpah':-99.0,'log_umin':-99.0,'log_gamma':-99.0,
+	'dust1':-99.0,'dust2':-99.0,'dust_index':-99.0,'log_age':-99.0,'log_alpha':-99.0,'log_beta':-99.0,'log_t0':-99.0,
+	'log_tau':-99.0,'logzsol':-99.0}):
+	"""A function to generate model spectroscopic SED
+
+	:param sp:
+		Initialization of FSPS, such as sp=fsps.StellarPopulation()
+
+	:param imf_type:
+		Choice for the IMF. Choices are: [0:Salpeter(1955), 1:Chabrier(2003), 2:Kroupa(2001)]
+
+	:param sfh_form:
+		Choice for the parametric SFH model. 
+		Options are: ['tau_sfh', 'delayed_tau_sfh', 'log_normal_sfh', 'gaussian_sfh', 'double_power_sfh']
+
+	:param params_val:
+		A dictionary of parameters values.
+	"""
+	
+	params_assoc_fsps = {'logzsol':"logzsol", 'log_tau':"tau", 'log_age':"tage", 'dust_index':"dust_index", 'dust1':"dust1", 'dust2':"dust2",
+					'log_gamma':"duste_gamma", 'log_umin':"duste_umin", 'log_qpah':"duste_qpah",'log_fagn':"fagn", 'log_tauagn':"agn_tau"}
+	status_log = {'logzsol':0, 'log_tau':1, 'log_age':1, 'dust_index':0, 'dust1':0, 'dust2':0, 'log_gamma':1, 'log_umin':1, 
+				'log_qpah':1,'log_fagn':1, 'log_tauagn':1}
+
+	# get stellar mass:
+	formed_mass = math.pow(10.0,params_val['log_mass'])
+	t0 = math.pow(10.0,params_val['log_t0'])
+	tau = math.pow(10.0,params_val['log_tau'])
+	age = math.pow(10.0,params_val['log_age'])
+	alpha = math.pow(10.0,params_val['log_alpha'])
+	beta = math.pow(10.0,params_val['log_beta'])
+
+	# input model parameters to FSPS:
+	nparams_fsps = len(params_fsps)
+	for pp in range(0,nparams_fsps):
+		str_temp = params_assoc_fsps[params_fsps[pp]]
+		if status_log[params_fsps[pp]] == 0:
+			sp.params[str_temp] = params_val[params_fsps[pp]]
+		elif status_log[params_fsps[pp]] == 1:
+			sp.params[str_temp] = math.pow(10.0,params_val[params_fsps[pp]])
+
+	sp.params['imf_type'] = imf_type
+	# gas phase metallicity:
+	sp.params['gas_logz'] = params_val['logzsol']
+
+	# generate the SED:
+	if sfh_form=='tau_sfh' or sfh_form=='delayed_tau_sfh' or sfh_form==0 or sfh_form==1:
+		wave, extnc_spec = sp.get_spectrum(peraa=True,tage=age) 	# spectrum in L_sun/AA
+		mass = sp.stellar_mass 
+		dust_mass0 = sp.dust_mass   								# in solar mass/norm
+
+		if add_agn == 1:
+			# total bolometric luminosity including AGN
+			lbol_agn = calc_bollum_from_spec_rest(spec_wave=wave, spec_lum=extnc_spec)
+
+			# bolometric luminosity excluding AGN
+			sp.params["fagn"] = 0.0
+			wave9, spec9 = sp.get_spectrum(peraa=True,tage=age) 			# spectrum in L_sun/AA
+			lbol_noagn = calc_bollum_from_spec_rest(spec_wave=wave9,spec_lum=spec9)
+
+			# get fraction of AGN luminosity from the total bolometric luminosity
+			fagn_bol = (lbol_agn-lbol_noagn)/lbol_agn
+			log_fagn_bol = np.log10(fagn_bol)
+		else:
+			log_fagn_bol = -10.0
+
+	elif sfh_form=='log_normal_sfh' or sfh_form=='gaussian_sfh' or sfh_form=='double_power_sfh' or sfh_form==2 or sfh_form==3 or sfh_form==4:
+		SFR_fSM,mass,wave,extnc_spec,dust_mass0 = csp_spec_restframe_fit(sp=sp,sfh_form=sfh_form,formed_mass=formed_mass,
+																age=age,tau=tau,t0=t0,alpha=alpha,beta=beta)
+
+		if add_agn == 1:
+			# total bolometric luminosity including AGN
+			lbol_agn = calc_bollum_from_spec_rest(spec_wave=wave,spec_lum=extnc_spec)
+
+			# bolometric luminosity excluding AGN
+			sp.params["fagn"] = 0.0		
+			SFR_fSM9,mass9,wave9,spec9,dust_mass9 = csp_spec_restframe_fit(sp=sp,sfh_form=sfh_form,formed_mass=formed_mass,
+																	age=age,tau=tau,t0=t0,alpha=alpha,beta=beta)
+			lbol_noagn = calc_bollum_from_spec_rest(spec_wave=wave9,spec_lum=spec9)
+
+			# get fraction of AGN luminosity from the total bolometric luminosity
+			fagn_bol = (lbol_agn-lbol_noagn)/lbol_agn
+			log_fagn_bol = np.log10(fagn_bol)
+		else:
+			log_fagn_bol = -10.0
+
+	# normalize
+	norm0 = formed_mass/mass
+	spec_flux = extnc_spec*norm0
+	dust_mass = dust_mass0*norm0
+
+	# calculate SFR:
+	SFR_exp = 1.0/np.exp(age/tau)
+	if sfh_form=='tau_sfh' or sfh_form==0:
+		SFR_fSM = formed_mass*SFR_exp/tau/(1.0-SFR_exp)/1e+9
+	elif sfh_form=='delayed_tau_sfh' or sfh_form==1:
+		SFR_fSM = formed_mass*age*SFR_exp/((tau*tau)-((age*tau)+(tau*tau))*SFR_exp)/1e+9
+
+	# calculate mass-weighted age
+	mw_age = calc_mw_age(sfh_form=sfh_form, tau=tau, t0=t0, alpha=alpha, beta=beta, age=age, formed_mass=formed_mass)
+
+	return wave, spec_flux, formed_mass, SFR_fSM, dust_mass, log_fagn_bol, mw_age  
+
 
 def generate_modelSED_specphoto_fit(sp=None,imf_type=1,sfh_form='delayed_tau_sfh',filters=['galex_fuv','galex_nuv','sdss_u',
 	'sdss_g','sdss_r','sdss_i','sdss_z'],add_igm_absorption=0,igm_type=1,params_fsps=['logzsol', 'log_tau', 'log_age', 
@@ -447,7 +553,7 @@ def generate_modelSED_propspecphoto_nomwage_fit(sp=None,imf_type=1,sfh_form='del
 
 	# filtering:
 	if free_z == 1:
-		photo_SED_flux = filtering(redsh_wave,redsh_spec,filters) ##########
+		photo_SED_flux = filtering(redsh_wave,redsh_spec,filters)
 	elif free_z == 0:
 		photo_SED_flux = filtering_match_filters_array(redsh_wave,redsh_spec,filters,trans_fltr_int)
 	# get central wavelength of all filters:

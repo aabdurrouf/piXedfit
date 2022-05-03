@@ -21,7 +21,8 @@ PIXEDFIT_HOME = os.environ['PIXEDFIT_HOME']
 
 
 __all__ = ["generate_modelSED_propspecphoto", "generate_modelSED_spec", "generate_modelSED_photo", "generate_modelSED_specphoto", 
-			"generate_modelSED_spec_decompose", "generate_modelSED_specphoto_decompose","save_models", "generate_mockSED", "add_fagn_bol_samplers"]
+			"generate_modelSED_spec_decompose", "generate_modelSED_specphoto_decompose","save_models", "generate_mockSED", 
+			"add_fagn_bol_samplers", "save_models_spec_h5"]
 
 def generate_modelSED_propspecphoto(sp=None,imf_type=1,duste_switch=1,add_neb_emission=1,dust_ext_law='Cal2000',
 	sfh_form='delayed_tau_sfh',add_agn=0,filters=['galex_fuv','galex_nuv','sdss_u','sdss_g','sdss_r','sdss_i','sdss_z'],
@@ -1125,6 +1126,131 @@ def save_models(gal_z=None,filters=[],specphoto=0,spec_sigma=5.0,wave_range=[300
 
 	return name_out_fits
 
+
+
+def save_models_spec_h5(imf_type=1,sfh_form=4,dust_ext_law=1,duste_switch=0,add_neb_emission=1,add_agn=0,gas_logu=-2.0,
+	nmodels=100000,logzsol_range=[-2.0,0.2],log_tau_range=[-1.0,1.5],log_age_range=[-1.0,1.14],log_alpha_range=[-2.0,2.0],
+	log_beta_range=[-2.0,2.0],log_t0_range=[-1.0,1.14],dust_index_range=[-0.7,-0.7],dust1_range=[0.0,3.0],dust2_range=[0.0,3.0],
+	log_gamma_range=[-3.0,-0.824],log_umin_range=[-1.0,1.176],log_qpah_range=[-1.0,0.845],log_fagn_range=[-5.0,0.48],
+	log_tauagn_range=[0.70,2.18],nproc=10,name_out=None):
+	"""Function for generating rest-frame model spectra.  
+
+	:param imf_type: (default: 1)
+		Choice for the IMF. Options are: (1)0 for Salpeter(1955), (2)1 for Chabrier(2003), and (3)2 for Kroupa(2001).
+
+	:param sfh_form: (default: 1)
+		Choice for the SFH model. Options are: (1)0 or 'tau_sfh', (2)1 or 'delayed_tau_sfh', (3)2 or 'log_normal_sfh', (4)3 or 'gaussian_sfh', and (5)4 or 'double_power_sfh'.
+
+	:param dust_ext_law: (default: 1)
+		Choice for the dust attenuation law. Options are: (1)'CF2000' or 0 for Charlot & Fall (2000), (2)'Cal2000' or 1 for Calzetti et al. (2000).
+
+	:param duste_switch: (default: 0)
+		Switch for the dust emission modeling. Options are: (1)0 means turn off, and (2)1 means turn on.
+
+	:param add_neb_emission: (default: 1)
+		Switch for the nebular emission modeling. Options are: (1)0 means turn off, and (2)1 means turn on.
+
+	:param add_agn: (default: 0)
+		Switch for the AGN dusty torus emission modeling. Options are: (1)0 means turn off, and (2)1 means turn on.
+
+	:param gas_logu: (default: -2.0)
+		Gas ionization parameter in log scale.
+
+	:param nmodels: (default: 100000)
+		Number of model SEDs to be generated.
+
+	:param nproc: (default: 10)
+		Number of processors (cores) to be used in the calculation.
+
+	:param name_out: (optional, default:None)
+		Desired name for the output FITS file.
+
+	:returns name_out:
+		Output FITS file.
+	"""
+
+	# make configuration file:
+	name_config = "config_file%d.dat" % (random.randint(0,10000))
+	file_out = open(name_config,"w")
+	file_out.write("imf_type %d\n" % imf_type)
+	file_out.write("add_neb_emission %d\n" % add_neb_emission)
+	file_out.write("gas_logu %lf\n" % gas_logu)
+
+	# SFH choice
+	if sfh_form=='tau_sfh' or sfh_form==0:
+		sfh_form1 = 0
+	elif sfh_form=='delayed_tau_sfh' or sfh_form==1:
+		sfh_form1 = 1
+	elif sfh_form=='log_normal_sfh' or sfh_form==2:
+		sfh_form1 = 2
+	elif sfh_form=='gaussian_sfh' or sfh_form==3:
+		sfh_form1 = 3
+	elif sfh_form=='double_power_sfh' or sfh_form==4:
+		sfh_form1 = 4
+	else:
+		print ("SFH choice is not recognized!")
+		sys.exit()
+	file_out.write("sfh_form %d\n" % sfh_form1)
+
+	# dust law
+	if dust_ext_law=='CF2000' or dust_ext_law==0:
+		dust_ext_law1 = 0
+	elif dust_ext_law=='Cal2000' or dust_ext_law==1:
+		dust_ext_law1 = 1
+	else:
+		print ("dust_ext_law is not recognized!")
+		sys.exit()
+	file_out.write("dust_ext_law %d\n" % dust_ext_law1)
+
+	file_out.write("duste_switch %d\n" % duste_switch)
+	file_out.write("add_agn %d\n" % add_agn)
+	file_out.write("nmodels %d\n" % nmodels)
+	file_out.write("pr_logzsol_min %lf\n" % logzsol_range[0])
+	file_out.write("pr_logzsol_max %lf\n" % logzsol_range[1])
+	file_out.write("pr_log_tau_min %lf\n" % log_tau_range[0])
+	file_out.write("pr_log_tau_max %lf\n" % log_tau_range[1])
+	file_out.write("pr_log_t0_min %lf\n" % log_t0_range[0])
+	file_out.write("pr_log_t0_max %lf\n" % log_t0_range[1])
+	file_out.write("pr_log_alpha_min %lf\n" % log_alpha_range[0])
+	file_out.write("pr_log_alpha_max %lf\n" % log_alpha_range[1])
+	file_out.write("pr_log_beta_min %lf\n" % log_beta_range[0])
+	file_out.write("pr_log_beta_max %lf\n" % log_beta_range[1])
+	file_out.write("pr_log_age_min %lf\n" % log_age_range[0])
+	file_out.write("pr_log_age_max %lf\n" % log_age_range[1])
+	file_out.write("pr_dust_index_min %lf\n" % dust_index_range[0])
+	file_out.write("pr_dust_index_max %lf\n" % dust_index_range[1])
+	file_out.write("pr_dust1_min %lf\n" % dust1_range[0])
+	file_out.write("pr_dust1_max %lf\n" % dust1_range[1])
+	file_out.write("pr_dust2_min %lf\n" % dust2_range[0])
+	file_out.write("pr_dust2_max %lf\n" % dust2_range[1])
+	file_out.write("pr_log_gamma_min %lf\n" % log_gamma_range[0])
+	file_out.write("pr_log_gamma_max %lf\n" % log_gamma_range[1])
+	file_out.write("pr_log_umin_min %lf\n" % log_umin_range[0])
+	file_out.write("pr_log_umin_max %lf\n" % log_umin_range[1])
+	file_out.write("pr_log_qpah_min %lf\n" % log_qpah_range[0])
+	file_out.write("pr_log_qpah_max %lf\n" % log_qpah_range[1])
+	file_out.write("pr_log_fagn_min %lf\n" % log_fagn_range[0])
+	file_out.write("pr_log_fagn_max %lf\n" % log_fagn_range[1])
+	file_out.write("pr_log_tauagn_min %lf\n" % log_tauagn_range[0])
+	file_out.write("pr_log_tauagn_max %lf\n" % log_tauagn_range[1])
+
+	# output files name:
+	if name_out == None:
+		name_out = "random_modelSEDs.hdf5"
+	file_out.write("name_out %s\n" % name_out)  
+	file_out.close()
+	# store configuration file into temp directory:
+	dir_file = PIXEDFIT_HOME+'/data/temp/'
+	os.system('mv %s %s' % (name_config,dir_file))
+
+	# call the fitting functions:
+	CODE_dir = PIXEDFIT_HOME+'/piXedfit/piXedfit_model/'
+	os.system("mpirun -n %d python %s./save_models_spec_h5.py %s" % (nproc,CODE_dir,name_config))
+
+	# free disk space:
+	os.system("rm %s%s" % (dir_file,name_config))
+
+	return name_out
 
 
 def generate_mockSED(sp=None, imf_type=1,filters=['galex_fuv', 'galex_nuv', 'sdss_u', 'sdss_g', 'sdss_r', 'sdss_i', 'sdss_z'],duste_switch=1,

@@ -121,7 +121,7 @@ def generate_modelSED_photo_fit(sp=None,imf_type=1,sfh_form='delayed_tau_sfh',fi
 
 	# filtering:
 	if free_z == 1:
-		photo_SED_flux = filtering(redsh_wave,redsh_spec,filters) ##########
+		photo_SED_flux = filtering(redsh_wave,redsh_spec,filters)
 	elif free_z == 0:
 		photo_SED_flux = filtering_match_filters_array(redsh_wave,redsh_spec,filters,trans_fltr_int)
 	# get central wavelength of all filters:

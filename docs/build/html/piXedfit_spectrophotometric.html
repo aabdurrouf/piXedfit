@@ -183,7 +183,7 @@
 <span id="pixedfit-spectrophotometric"></span><h1>piXedfit_spectrophotometric<a class="headerlink" href="#module-piXedfit.piXedfit_spectrophotometric" title="Permalink to this headline">¶</a></h1>
 <dl class="py function">
 <dt id="piXedfit.piXedfit_spectrophotometric.match_specphoto">
-<code class="sig-prename descclassname">piXedfit.piXedfit_spectrophotometric.</code><code class="sig-name descname">match_specphoto</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">specphoto_file</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">spec_sigma</span><span class="o">=</span><span class="default_value">3.5</span></em>, <em class="sig-param"><span class="n">name_saved_randmod</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">nproc</span><span class="o">=</span><span class="default_value">10</span></em>, <em class="sig-param"><span class="n">del_wave_nebem</span><span class="o">=</span><span class="default_value">10.0</span></em>, <em class="sig-param"><span class="n">name_out_fits</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#piXedfit.piXedfit_spectrophotometric.match_specphoto" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">piXedfit.piXedfit_spectrophotometric.</code><code class="sig-name descname">match_specphoto</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">specphoto_file</span></em>, <em class="sig-param"><span class="n">spec_sigma</span><span class="o">=</span><span class="default_value">3.5</span></em>, <em class="sig-param"><span class="n">name_saved_randmod</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">nproc</span><span class="o">=</span><span class="default_value">10</span></em>, <em class="sig-param"><span class="n">del_wave_nebem</span><span class="o">=</span><span class="default_value">10.0</span></em>, <em class="sig-param"><span class="n">name_out_fits</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#piXedfit.piXedfit_spectrophotometric.match_specphoto" title="Permalink to this definition">¶</a></dt>
 <dd><p>Function for correcting wavelength-dependent mismatch between IFS data and the multiwavelength photometric data.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -208,7 +208,7 @@ Desired name for the output FITS file.</p></li>
 
 <dl class="py function">
 <dt id="piXedfit.piXedfit_spectrophotometric.specphoto_califagalexsdss2masswise">
-<code class="sig-prename descclassname">piXedfit.piXedfit_spectrophotometric.</code><code class="sig-name descname">specphoto_califagalexsdss2masswise</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">photo_fluxmap</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">califa_file</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">pixsize_califa</span><span class="o">=</span><span class="default_value">1.0</span></em>, <em class="sig-param"><span class="n">spec_sigma</span><span class="o">=</span><span class="default_value">2.6</span></em>, <em class="sig-param"><span class="n">name_out_fits</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#piXedfit.piXedfit_spectrophotometric.specphoto_califagalexsdss2masswise" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">piXedfit.piXedfit_spectrophotometric.</code><code class="sig-name descname">specphoto_califagalexsdss2masswise</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">photo_fluxmap</span></em>, <em class="sig-param"><span class="n">califa_file</span></em>, <em class="sig-param"><span class="n">smoothing_spectra</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">kernel_sigma</span><span class="o">=</span><span class="default_value">2.6</span></em>, <em class="sig-param"><span class="n">name_out_fits</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#piXedfit.piXedfit_spectrophotometric.specphoto_califagalexsdss2masswise" title="Permalink to this definition">¶</a></dt>
 <dd><p>Function for matching (spatially on pixel scales) between IFS data cube from CALIFA and the multiwavelength imaging
 data (12 bands from GALEX, SDSS, 2MASS, and WISE).</p>
 <dl class="field-list simple">
@@ -216,10 +216,10 @@ data (12 bands from GALEX, SDSS, 2MASS, and WISE).</p>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>photo_fluxmap</strong> – Input 3D data cube of photometry. This should have the same format as the output of <a class="reference internal" href="piXedfit_images.html#piXedfit.piXedfit_images.images_processing.flux_map" title="piXedfit.piXedfit_images.images_processing.flux_map"><code class="xref py py-func docutils literal notranslate"><span class="pre">piXedfit.piXedfit_images.images_processing.flux_map()</span></code></a>.</p></li>
 <li><p><strong>califa_file</strong> – Input CALIFA data cube.</p></li>
-<li><p><strong>pixsize_califa</strong> – (default: 1.0)
-Pixel size (in arcsec) of CALIFA data cube.</p></li>
-<li><p><strong>spec_sigma</strong> – (default: 2.6)
-Spectral resolution (in Angstrom) of CALIFA IFS data.</p></li>
+<li><p><strong>smoothing_spectra</strong> – (default: False)
+If True, spectrum of each pixel will be smoothed by convolving it with a Gaussian kernel with a standard deviation given by the input kernel_sigma.</p></li>
+<li><p><strong>kernel_sigma</strong> – (default: 2.6)
+Standard deviation of the kernel to be convolved with the spectrum of each pixel.</p></li>
 <li><p><strong>name_out_fits</strong> – Name of output FITS file.</p></li>
 </ul>
 </dd>
@@ -228,7 +228,7 @@ Spectral resolution (in Angstrom) of CALIFA IFS data.</p></li>
 
 <dl class="py function">
 <dt id="piXedfit.piXedfit_spectrophotometric.specphoto_mangagalexsdss2masswise">
-<code class="sig-prename descclassname">piXedfit.piXedfit_spectrophotometric.</code><code class="sig-name descname">specphoto_mangagalexsdss2masswise</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">photo_fluxmap</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">manga_file</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">pixsize_manga</span><span class="o">=</span><span class="default_value">0.5</span></em>, <em class="sig-param"><span class="n">spec_sigma</span><span class="o">=</span><span class="default_value">3.5</span></em>, <em class="sig-param"><span class="n">name_out_fits</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#piXedfit.piXedfit_spectrophotometric.specphoto_mangagalexsdss2masswise" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">piXedfit.piXedfit_spectrophotometric.</code><code class="sig-name descname">specphoto_mangagalexsdss2masswise</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">photo_fluxmap</span></em>, <em class="sig-param"><span class="n">manga_file</span></em>, <em class="sig-param"><span class="n">smoothing_spectra</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">kernel_sigma</span><span class="o">=</span><span class="default_value">3.5</span></em>, <em class="sig-param"><span class="n">name_out_fits</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#piXedfit.piXedfit_spectrophotometric.specphoto_mangagalexsdss2masswise" title="Permalink to this definition">¶</a></dt>
 <dd><p>Function for matching (spatially on pixel scales) between IFS data cube from MaNGA and the multiwavelength imaging
 data (12 bands from GALEX, SDSS, 2MASS, and WISE).</p>
 <dl class="field-list simple">
@@ -236,10 +236,10 @@ data (12 bands from GALEX, SDSS, 2MASS, and WISE).</p>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>photo_fluxmap</strong> – Input 3D data cube of photometry. This should have the same format as the output of <a class="reference internal" href="piXedfit_images.html#piXedfit.piXedfit_images.images_processing.flux_map" title="piXedfit.piXedfit_images.images_processing.flux_map"><code class="xref py py-func docutils literal notranslate"><span class="pre">piXedfit.piXedfit_images.images_processing.flux_map()</span></code></a>.</p></li>
 <li><p><strong>manga_file</strong> – Input MaNGA data cube.</p></li>
-<li><p><strong>pixsize_manga</strong> – (default: 0.5)
-Pixel size (in arcsec) of MaNGA data cube.</p></li>
-<li><p><strong>spec_sigma</strong> – (default: 3.5)
-Spectral resolution (in Angstrom) of MaNGA IFS data.</p></li>
+<li><p><strong>smoothing_spectra</strong> – (default: False)
+If True, spectrum of each pixel will be smoothed by convolving it with a Gaussian kernel with a standard deviation given by the input kernel_sigma.</p></li>
+<li><p><strong>kernel_sigma</strong> – (default: 3.5)
+Standard deviation of the kernel to be convolved with the spectrum of each pixel.</p></li>
 <li><p><strong>name_out_fits</strong> – Name of output FITS file.</p></li>
 </ul>
 </dd>
