@@ -12,10 +12,11 @@ global PIXEDFIT_HOME
 PIXEDFIT_HOME = os.environ['PIXEDFIT_HOME']
 
 
-__all__ = ["specphoto_califagalexsdss2masswise", "specphoto_mangagalexsdss2masswise", "match_specphoto"]
+__all__ = ["specphoto_califagalexsdss2masswise", "specphoto_mangagalexsdss2masswise", 
+			"match_imgifs_spatial", "match_imgifs_spectral"]
 
 
-def specphoto_califagalexsdss2masswise(photo_fluxmap, califa_file, smoothing_spectra=False, kernel_sigma=2.6, name_out_fits=None):
+def specphoto_califagalexsdss2masswise(photo_fluxmap, califa_file, spec_smoothing=False, kernel_sigma=2.6, name_out_fits=None):
 	"""Function for matching (spatially on pixel scales) between IFS data cube from CALIFA and the multiwavelength imaging 
 	data (12 bands from GALEX, SDSS, 2MASS, and WISE). 
 
@@ -25,7 +26,7 @@ def specphoto_califagalexsdss2masswise(photo_fluxmap, califa_file, smoothing_spe
 	:param califa_file:
 		Input CALIFA data cube.
 
-	:param smoothing_spectra: (default: False)
+	:param spec_smoothing: (default: False)
 		If True, spectrum of each pixel will be smoothed by convolving it with a Gaussian kernel with a standard deviation given by the input kernel_sigma.  
 
 	:param kernel_sigma: (default: 2.6)
@@ -102,7 +103,7 @@ def specphoto_califagalexsdss2masswise(photo_fluxmap, califa_file, smoothing_spe
 	gal_region_rows, gal_region_cols = np.where(gal_region>0.4*nwaves)
 	gal_region[gal_region_rows,gal_region_cols] = 1
 
-	if smoothing_spectra == True:
+	if spec_smoothing==True or spec_smoothing==1:
 		#=> smooting the spectra
 		wave_lin = np.linspace(int(min_wave), int(max_wave), int(max_wave)-int(min_wave)+1)
 		spec_kernel = Gaussian1DKernel(stddev=kernel_sigma)
@@ -267,7 +268,7 @@ def specphoto_califagalexsdss2masswise(photo_fluxmap, califa_file, smoothing_spe
 	return name_out_fits
 
 
-def specphoto_mangagalexsdss2masswise(photo_fluxmap, manga_file, smoothing_spectra=False, kernel_sigma=3.5, name_out_fits=None):
+def specphoto_mangagalexsdss2masswise(photo_fluxmap, manga_file, spec_smoothing=False, kernel_sigma=3.5, name_out_fits=None):
 	
 	"""Function for matching (spatially on pixel scales) between IFS data cube from MaNGA and the multiwavelength imaging 
 	data (12 bands from GALEX, SDSS, 2MASS, and WISE). 
@@ -278,7 +279,7 @@ def specphoto_mangagalexsdss2masswise(photo_fluxmap, manga_file, smoothing_spect
 	:param manga_file:
 		Input MaNGA data cube.
 
-	:param smoothing_spectra: (default: False)
+	:param spec_smoothing: (default: False)
 		If True, spectrum of each pixel will be smoothed by convolving it with a Gaussian kernel with a standard deviation given by the input kernel_sigma. 
 
 	:param kernel_sigma: (default: 3.5)
@@ -340,7 +341,7 @@ def specphoto_mangagalexsdss2masswise(photo_fluxmap, manga_file, smoothing_spect
 	rows, cols = np.where(rimg<=0.0)
 	mask_region[rows,cols] = 1
 
-	if smoothing_spectra == True:
+	if spec_smoothing==True or spec_smoothing==1:
 		#=> spectral smooting
 		wave_lin = np.linspace(int(min(wave)),int(max(wave)),int(max(wave))-int(min(wave))+1)
 		# Gaussian kernel
@@ -496,9 +497,43 @@ def specphoto_mangagalexsdss2masswise(photo_fluxmap, manga_file, smoothing_spect
 	return name_out_fits
 
 
+def match_imgifs_spatial(photo_fluxmap,ifs_data,ifs_source='manga',spec_smoothing=False,kernel_sigma=3.5,name_out_fits=None):
+	
+	"""Function for matching (spatially, pixel-by-pixel) between an IFS data cube and a post-processed multiwavelength imaging 
+	data that is produced using the piXedfit_image module.  
 
-def match_specphoto(specphoto_file, spec_sigma=3.5, name_saved_randmod=None, nproc=10,
-					del_wave_nebem=10.0, name_out_fits=None):
+	:param photo_fluxmap:
+		Input 3D data cube of photometry. This should have the same format as the output of :func:`piXedfit.piXedfit_images.images_processing.flux_map`.
+
+	:param ifs_data:
+		Integral Field Spectroscopy (IFS) data cube.
+
+	:param ifs_source: (default: 'manga')
+		The survey from which the IFS data is taken. Options are: 'manga' and 'califa'. 
+
+	:param spec_smoothing: (default: False)
+		If True, spectrum of each pixel will be smoothed by convolving it with a Gaussian kernel with a standard deviation given by the input kernel_sigma. 
+
+	:param kernel_sigma: (default: 3.5)
+		Standard deviation of the kernel to be convolved with the spectrum of each pixel.
+
+	:param name_out_fits:
+		Name of output FITS file.
+	"""
+
+	if ifs_source=='manga':
+		specphoto_mangagalexsdss2masswise(photo_fluxmap,ifs_data,spec_smoothing=spec_smoothing,
+										kernel_sigma=kernel_sigma,name_out_fits=name_out_fits)
+	elif ifs_source=='califa':
+		specphoto_califagalexsdss2masswise(photo_fluxmap,ifs_data,spec_smoothing=spec_smoothing,
+										kernel_sigma=kernel_sigma,name_out_fits=name_out_fits)
+	else:
+		print ("The inputted ifs_source is not recognized!")
+		sys.exit()
+
+
+def match_imgifs_spectral(specphoto_file, spec_sigma=3.5, nproc=10, del_wave_nebem=10.0, cosmo=0, 
+					H0=70.0, Om0=0.3, name_out_fits=None):
 
 	"""Function for correcting wavelength-dependent mismatch between IFS data and the multiwavelength photometric data. 
 	
@@ -508,12 +543,6 @@ def match_specphoto(specphoto_file, spec_sigma=3.5, name_saved_randmod=None, npr
 	:param spec_sigma: (default: 3.5).
 		Spectral resolution of the IFS data in Angstrom.
 
-	:param name_saved_randmod:
-		FITS file that contains random model SED templates to be used for fitting photometric SED. 
-		The best-fit model spectra will then be used as references for correcting wavelength-dependent mismatch 
-		between the IFS spectra and the photometric SEDs.This FITS file should have the same format as 
-		the output of the :func:`piXedfit.piXedfit_model.save_models` function.
-
 	:param nproc:
 		Number of cores for calculation.
 
@@ -521,17 +550,60 @@ def match_specphoto(specphoto_file, spec_sigma=3.5, name_saved_randmod=None, npr
 		The range (+/-) around emission lines in the model spectra that will be removed in producing continuum-only spectrum. 
 		This will be used as reference in correcting the wavelength-dependent mismatch between the IFS spectra and photometric SEDs.    
 
+	:param cosmo: (default: 0)
+		Choices for the cosmology. Options are: (1)'flat_LCDM' or 0, (2)'WMAP5' or 1, (3)'WMAP7' or 2, (4)'WMAP9' or 3, (5)'Planck13' or 4, (6)'Planck15' or 5.
+		These options are similar to the choices available in the `Astropy Cosmology <https://docs.astropy.org/en/stable/cosmology/#built-in-cosmologies>`_ package.
+
+	:param H0: (default: 70.0)
+		The Hubble constant at z=0. Only relevant when cosmo='flat_LCDM' is chosen.
+
+	:param Om0: (default: 0.3)
+		The Omega matter at z=0.0. Only relevant when cosmo='flat_LCDM' is chosen.
+
 	:param name_out_fits: (optional).
 		Desired name for the output FITS file.
 
 	"""
 
+	dir_file = PIXEDFIT_HOME+'/data/temp/'
 	CODE_dir = PIXEDFIT_HOME+'/piXedfit/piXedfit_spectrophotometric/'
+
+	# make configuration file
+	name_config = "config_file%d.dat" % (random.randint(0,10000))
+	file_out = open(name_config,"w")
+	file_out.write("specphoto_file %s\n" % specphoto_file)
+	file_out.write("spec_sigma %lf\n" % spec_sigma)
+	file_out.write("del_wave_nebem %lf\n" % del_wave_nebem)
+
+	# cosmology
+	if cosmo=='flat_LCDM' or cosmo==0:
+		cosmo1 = 0
+	elif cosmo=='WMAP5' or cosmo==1:
+		cosmo1 = 1
+	elif cosmo=='WMAP7' or cosmo==2:
+		cosmo1 = 2
+	elif cosmo=='WMAP9' or cosmo==3:
+		cosmo1 = 3
+	elif cosmo=='Planck13' or cosmo==4:
+		cosmo1 = 4
+	elif cosmo=='Planck15' or cosmo==5:
+		cosmo1 = 5
+	#elif cosmo=='Planck18' or cosmo==6:
+	#	cosmo1 = 6
+	else:
+		print ("Input cosmo is not recognized!")
+		sys.exit()
+	file_out.write("cosmo %d\n" % cosmo1)
+	file_out.write("H0 %lf\n" % H0)
+	file_out.write("Om0 %lf\n" % Om0)
 
 	if name_out_fits==None:
 		name_out_fits= "corr_%s" % specphoto_file
-	os.system("mpirun -n %d python %s./match_specphoto.py %s %s %lf %s %lf" % (nproc,CODE_dir,specphoto_file,name_saved_randmod,
-																			spec_sigma,name_out_fits,del_wave_nebem))
+	file_out.write("name_out_fits %s\n" % name_out_fits)
+	file_out.close()
+
+	os.system('mv %s %s' % (name_config,dir_file))
+	os.system("mpirun -n %d python %s./mtch_sph_fnal.py %s" % (nproc,CODE_dir,name_config))
 
 	return name_out_fits
 

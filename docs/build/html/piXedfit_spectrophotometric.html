@@ -87,23 +87,25 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="list_imaging_data.html">List of imaging data</a></li>
-<li class="toctree-l1"><a class="reference internal" href="list_kernels_psf.html">Available convolution kernels and PSFs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="list_kernels_psf.html">Convolution kernels and PSFs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ingredients_model.html">SED modeling</a></li>
 <li class="toctree-l1"><a class="reference internal" href="image_pros.html">Image processing</a></li>
-<li class="toctree-l1"><a class="reference internal" href="image_ifs_match.html">Matching imaging data with IFS data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="image_ifs_match.html">Spatial Matching imaging+IFS data</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pixel_binning.html">Pixel binning</a></li>
-<li class="toctree-l1"><a class="reference internal" href="ingredients_model.html">Ingredients in SED modeling</a></li>
 <li class="toctree-l1"><a class="reference internal" href="gen_model_SEDs.html">Generating model SEDs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="fit_res_SEDs.html">Fitting spatially resolved SEDs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="fit_ing_SEDs.html">Fitting integrated SEDs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="plot_fitres.html">Plotting fitting results</a></li>
-<li class="toctree-l1"><a class="reference internal" href="get_maps_prop.html">Obtaining spatially resolved maps of properties</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fit_res_SEDs.html">Fitting spatially resolved SED</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fit_ing_SEDs.html">Fitting integrated SED</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_fitres.html">Analyze fitting results</a></li>
+<li class="toctree-l1"><a class="reference internal" href="get_maps_prop.html">Get maps of spatially resolved properties</a></li>
 </ul>
-<p class="caption"><span class="caption-text">Demonstrations and tutorials</span></p>
+<p class="caption"><span class="caption-text">Tutorials</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="demos_img_pros.html">Demonstration of image processing</a></li>
-<li class="toctree-l1"><a class="reference internal" href="demos_pixel_binning.html">Demonstration of the pixel binning process</a></li>
-<li class="toctree-l1"><a class="reference internal" href="demos_sed_fitting.html">Demonstration of SED fitting</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tutorials.html">Tutorials</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Demonstrations</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="demos_pixel_binning.html">Pixel binning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demos_sed_fitting.html">SED fitting</a></li>
 </ul>
 <p class="caption"><span class="caption-text">API reference</span></p>
 <ul class="current">
@@ -182,8 +184,30 @@
   <div class="section" id="module-piXedfit.piXedfit_spectrophotometric">
 <span id="pixedfit-spectrophotometric"></span><h1>piXedfit_spectrophotometric<a class="headerlink" href="#module-piXedfit.piXedfit_spectrophotometric" title="Permalink to this headline">¶</a></h1>
 <dl class="py function">
-<dt id="piXedfit.piXedfit_spectrophotometric.match_specphoto">
-<code class="sig-prename descclassname">piXedfit.piXedfit_spectrophotometric.</code><code class="sig-name descname">match_specphoto</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">specphoto_file</span></em>, <em class="sig-param"><span class="n">spec_sigma</span><span class="o">=</span><span class="default_value">3.5</span></em>, <em class="sig-param"><span class="n">name_saved_randmod</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">nproc</span><span class="o">=</span><span class="default_value">10</span></em>, <em class="sig-param"><span class="n">del_wave_nebem</span><span class="o">=</span><span class="default_value">10.0</span></em>, <em class="sig-param"><span class="n">name_out_fits</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#piXedfit.piXedfit_spectrophotometric.match_specphoto" title="Permalink to this definition">¶</a></dt>
+<dt id="piXedfit.piXedfit_spectrophotometric.match_imgifs_spatial">
+<code class="sig-prename descclassname">piXedfit.piXedfit_spectrophotometric.</code><code class="sig-name descname">match_imgifs_spatial</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">photo_fluxmap</span></em>, <em class="sig-param"><span class="n">ifs_data</span></em>, <em class="sig-param"><span class="n">ifs_source</span><span class="o">=</span><span class="default_value">'manga'</span></em>, <em class="sig-param"><span class="n">spec_smoothing</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">kernel_sigma</span><span class="o">=</span><span class="default_value">3.5</span></em>, <em class="sig-param"><span class="n">name_out_fits</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#piXedfit.piXedfit_spectrophotometric.match_imgifs_spatial" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function for matching (spatially, pixel-by-pixel) between an IFS data cube and a post-processed multiwavelength imaging
+data that is produced using the piXedfit_image module.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>photo_fluxmap</strong> – Input 3D data cube of photometry. This should have the same format as the output of <a class="reference internal" href="piXedfit_images.html#piXedfit.piXedfit_images.images_processing.flux_map" title="piXedfit.piXedfit_images.images_processing.flux_map"><code class="xref py py-func docutils literal notranslate"><span class="pre">piXedfit.piXedfit_images.images_processing.flux_map()</span></code></a>.</p></li>
+<li><p><strong>ifs_data</strong> – Integral Field Spectroscopy (IFS) data cube.</p></li>
+<li><p><strong>ifs_source</strong> – (default: ‘manga’)
+The survey from which the IFS data is taken. Options are: ‘manga’ and ‘califa’.</p></li>
+<li><p><strong>spec_smoothing</strong> – (default: False)
+If True, spectrum of each pixel will be smoothed by convolving it with a Gaussian kernel with a standard deviation given by the input kernel_sigma.</p></li>
+<li><p><strong>kernel_sigma</strong> – (default: 3.5)
+Standard deviation of the kernel to be convolved with the spectrum of each pixel.</p></li>
+<li><p><strong>name_out_fits</strong> – Name of output FITS file.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="piXedfit.piXedfit_spectrophotometric.match_imgifs_spectral">
+<code class="sig-prename descclassname">piXedfit.piXedfit_spectrophotometric.</code><code class="sig-name descname">match_imgifs_spectral</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">specphoto_file</span></em>, <em class="sig-param"><span class="n">spec_sigma</span><span class="o">=</span><span class="default_value">3.5</span></em>, <em class="sig-param"><span class="n">nproc</span><span class="o">=</span><span class="default_value">10</span></em>, <em class="sig-param"><span class="n">del_wave_nebem</span><span class="o">=</span><span class="default_value">10.0</span></em>, <em class="sig-param"><span class="n">cosmo</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">H0</span><span class="o">=</span><span class="default_value">70.0</span></em>, <em class="sig-param"><span class="n">Om0</span><span class="o">=</span><span class="default_value">0.3</span></em>, <em class="sig-param"><span class="n">name_out_fits</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#piXedfit.piXedfit_spectrophotometric.match_imgifs_spectral" title="Permalink to this definition">¶</a></dt>
 <dd><p>Function for correcting wavelength-dependent mismatch between IFS data and the multiwavelength photometric data.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -191,56 +215,19 @@
 <li><p><strong>specphoto_file</strong> – Input spec+photo FITS file, which is an output from previous step: specphoto_califagalexsdss2masswise or specphoto_mangagalexsdss2masswise.</p></li>
 <li><p><strong>spec_sigma</strong> – (default: 3.5).
 Spectral resolution of the IFS data in Angstrom.</p></li>
-<li><p><strong>name_saved_randmod</strong> – FITS file that contains random model SED templates to be used for fitting photometric SED.
-The best-fit model spectra will then be used as references for correcting wavelength-dependent mismatch
-between the IFS spectra and the photometric SEDs.This FITS file should have the same format as
-the output of the <code class="xref py py-func docutils literal notranslate"><span class="pre">piXedfit.piXedfit_model.save_models()</span></code> function.</p></li>
 <li><p><strong>nproc</strong> – Number of cores for calculation.</p></li>
 <li><p><strong>del_wave_nebem</strong> – (default: 15.0 Angstrom).
 The range (+/-) around emission lines in the model spectra that will be removed in producing continuum-only spectrum.
 This will be used as reference in correcting the wavelength-dependent mismatch between the IFS spectra and photometric SEDs.</p></li>
+<li><p><strong>cosmo</strong> – (default: 0)
+Choices for the cosmology. Options are: (1)’flat_LCDM’ or 0, (2)’WMAP5’ or 1, (3)’WMAP7’ or 2, (4)’WMAP9’ or 3, (5)’Planck13’ or 4, (6)’Planck15’ or 5.
+These options are similar to the choices available in the <a class="reference external" href="https://docs.astropy.org/en/stable/cosmology/#built-in-cosmologies">Astropy Cosmology</a> package.</p></li>
+<li><p><strong>H0</strong> – (default: 70.0)
+The Hubble constant at z=0. Only relevant when cosmo=’flat_LCDM’ is chosen.</p></li>
+<li><p><strong>Om0</strong> – (default: 0.3)
+The Omega matter at z=0.0. Only relevant when cosmo=’flat_LCDM’ is chosen.</p></li>
 <li><p><strong>name_out_fits</strong> – (optional).
 Desired name for the output FITS file.</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt id="piXedfit.piXedfit_spectrophotometric.specphoto_califagalexsdss2masswise">
-<code class="sig-prename descclassname">piXedfit.piXedfit_spectrophotometric.</code><code class="sig-name descname">specphoto_califagalexsdss2masswise</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">photo_fluxmap</span></em>, <em class="sig-param"><span class="n">califa_file</span></em>, <em class="sig-param"><span class="n">smoothing_spectra</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">kernel_sigma</span><span class="o">=</span><span class="default_value">2.6</span></em>, <em class="sig-param"><span class="n">name_out_fits</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#piXedfit.piXedfit_spectrophotometric.specphoto_califagalexsdss2masswise" title="Permalink to this definition">¶</a></dt>
-<dd><p>Function for matching (spatially on pixel scales) between IFS data cube from CALIFA and the multiwavelength imaging
-data (12 bands from GALEX, SDSS, 2MASS, and WISE).</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>photo_fluxmap</strong> – Input 3D data cube of photometry. This should have the same format as the output of <a class="reference internal" href="piXedfit_images.html#piXedfit.piXedfit_images.images_processing.flux_map" title="piXedfit.piXedfit_images.images_processing.flux_map"><code class="xref py py-func docutils literal notranslate"><span class="pre">piXedfit.piXedfit_images.images_processing.flux_map()</span></code></a>.</p></li>
-<li><p><strong>califa_file</strong> – Input CALIFA data cube.</p></li>
-<li><p><strong>smoothing_spectra</strong> – (default: False)
-If True, spectrum of each pixel will be smoothed by convolving it with a Gaussian kernel with a standard deviation given by the input kernel_sigma.</p></li>
-<li><p><strong>kernel_sigma</strong> – (default: 2.6)
-Standard deviation of the kernel to be convolved with the spectrum of each pixel.</p></li>
-<li><p><strong>name_out_fits</strong> – Name of output FITS file.</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt id="piXedfit.piXedfit_spectrophotometric.specphoto_mangagalexsdss2masswise">
-<code class="sig-prename descclassname">piXedfit.piXedfit_spectrophotometric.</code><code class="sig-name descname">specphoto_mangagalexsdss2masswise</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">photo_fluxmap</span></em>, <em class="sig-param"><span class="n">manga_file</span></em>, <em class="sig-param"><span class="n">smoothing_spectra</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">kernel_sigma</span><span class="o">=</span><span class="default_value">3.5</span></em>, <em class="sig-param"><span class="n">name_out_fits</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#piXedfit.piXedfit_spectrophotometric.specphoto_mangagalexsdss2masswise" title="Permalink to this definition">¶</a></dt>
-<dd><p>Function for matching (spatially on pixel scales) between IFS data cube from MaNGA and the multiwavelength imaging
-data (12 bands from GALEX, SDSS, 2MASS, and WISE).</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>photo_fluxmap</strong> – Input 3D data cube of photometry. This should have the same format as the output of <a class="reference internal" href="piXedfit_images.html#piXedfit.piXedfit_images.images_processing.flux_map" title="piXedfit.piXedfit_images.images_processing.flux_map"><code class="xref py py-func docutils literal notranslate"><span class="pre">piXedfit.piXedfit_images.images_processing.flux_map()</span></code></a>.</p></li>
-<li><p><strong>manga_file</strong> – Input MaNGA data cube.</p></li>
-<li><p><strong>smoothing_spectra</strong> – (default: False)
-If True, spectrum of each pixel will be smoothed by convolving it with a Gaussian kernel with a standard deviation given by the input kernel_sigma.</p></li>
-<li><p><strong>kernel_sigma</strong> – (default: 3.5)
-Standard deviation of the kernel to be convolved with the spectrum of each pixel.</p></li>
-<li><p><strong>name_out_fits</strong> – Name of output FITS file.</p></li>
 </ul>
 </dd>
 </dl>
