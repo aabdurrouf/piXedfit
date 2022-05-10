@@ -2,6 +2,7 @@ import numpy as np
 from math import log10, pow
 import sys, os 
 import fsps
+import h5py
 from mpi4py import MPI
 from astropy.io import fits
 from astropy.cosmology import *
@@ -10,11 +11,11 @@ global PIXEDFIT_HOME
 PIXEDFIT_HOME = os.environ['PIXEDFIT_HOME']
 sys.path.insert(0, PIXEDFIT_HOME)
 
-from piXedfit.utils.filtering import interp_filters_curves
-from piXedfit.piXedfit_model import generate_modelSED_spec_fit, generate_modelSED_propphoto_nomwage_fit, calc_mw_age 
+from piXedfit.utils.filtering import match_filters_array
+from piXedfit.piXedfit_model import generate_modelSED_spec_fit, generate_modelSED_propphoto_nomwage_fit, calc_mw_age, generate_modelSED_spec_restframe_props 
 from piXedfit.piXedfit_fitting import get_params
 
-## USAGE: mpirun -np [npros] python ./save_models_photo.py (1)name_filters_list (2)name_config
+## USAGE: mpirun -np [npros] python ./save_models_spec_h5.py (1)name_config
 
 global comm, size, rank
 comm = MPI.COMM_WORLD
@@ -23,20 +24,13 @@ rank = comm.Get_rank()
 
 # configuration file
 global config_data
-config_file = str(sys.argv[2])
+config_file = str(sys.argv[1])
 dir_file = PIXEDFIT_HOME+'/data/temp/'
 data = np.genfromtxt(dir_file+config_file, dtype=str)
 config_data = {}
 for ii in range(0,len(data[:,0])):
 	str_temp = data[:,0][ii]
 	config_data[str_temp] = data[:,1][ii]
-
-# filters
-global filters, nbands
-dir_file = PIXEDFIT_HOME+'/data/temp/'
-name_filters = str(sys.argv[1])
-filters = np.genfromtxt(dir_file+name_filters, dtype=str)
-nbands = len(filters)
 
 # nebular emission
 global add_neb_emission
@@ -59,10 +53,6 @@ elif int(config_data['sfh_form']) == 3:
 elif int(config_data['sfh_form']) == 4:
 	sfh_form = 'double_power_sfh'
 
-# redshift
-global gal_z
-gal_z = float(config_data['gal_z'])
-
 global imf
 imf = int(config_data['imf_type'])
 
@@ -80,12 +70,7 @@ if int(config_data['dust_ext_law']) == 0:
 elif int(config_data['dust_ext_law']) == 1:
 	dust_ext_law = 'Cal2000'
 
-# igm absorption
-global add_igm_absorption,igm_type
-add_igm_absorption = int(config_data['add_igm_absorption'])
-igm_type = int(config_data['igm_type'])
-
-# dust_index is set fix or not
+# whether dust_index is set fix or not
 global fix_dust_index, fix_dust_index_val
 if float(config_data['pr_dust_index_min']) == float(config_data['pr_dust_index_max']):     # dust_index is fixed
 	fix_dust_index = 1
@@ -94,62 +79,16 @@ elif float(config_data['pr_dust_index_min']) != float(config_data['pr_dust_index
 	fix_dust_index = 0
 	fix_dust_index_val = 0
 
-# AGN
+# AGN dusty torus
 global add_agn 
 add_agn = int(config_data['add_agn'])
 
-# number of model SEDs to be be generated
+# number of model SEDs that will be generated
 global nmodels
 nmodels = int(int(config_data['nmodels'])/size)*size
-if rank == 0:
-	print ("Number of random model SEDs to be generated: %d" % nmodels)
 
 # name of output fits file
-name_fits = config_data['name_out_fits']
-
-# cosmology
-# The choices are: [0:flat_LCDM, 1:WMAP5, 2:WMAP7, 3:WMAP9, 4:Planck13, 5:Planck15]
-global cosmo_str, H0, Om0
-cosmo = int(config_data['cosmo'])
-if cosmo==0: 
-	cosmo_str = 'flat_LCDM' 
-elif cosmo==1:
-	cosmo_str = 'WMAP5'
-elif cosmo==2:
-	cosmo_str = 'WMAP7'
-elif cosmo==3:
-	cosmo_str = 'WMAP9'
-elif cosmo==4:
-	cosmo_str = 'Planck13'
-elif cosmo==5:
-	cosmo_str = 'Planck15'
-#elif cosmo==6:
-#	cosmo_str = 'Planck18'
-else:
-	print ("The cosmo input is not recognized!")
-	sys.exit()
-H0 = float(config_data['H0'])
-Om0 = float(config_data['Om0'])
-
-global free_z, DL_Gpc, trans_fltr_int
-free_z = 0
-# calculate luminosity distance
-if cosmo_str=='flat_LCDM':
-	cosmo1 = FlatLambdaCDM(H0=H0, Om0=Om0)
-	DL_Gpc0 = cosmo1.luminosity_distance(gal_z)      # in unit of Mpc
-elif cosmo_str=='WMAP5':
-	DL_Gpc0 = WMAP5.luminosity_distance(gal_z)
-elif cosmo_str=='WMAP7':
-	DL_Gpc0 = WMAP7.luminosity_distance(gal_z)
-elif cosmo_str=='WMAP9':
-	DL_Gpc0 = WMAP9.luminosity_distance(gal_z)
-elif cosmo_str=='Planck13':
-	DL_Gpc0 = Planck13.luminosity_distance(gal_z)
-elif cosmo_str=='Planck15':
-	DL_Gpc0 = Planck15.luminosity_distance(gal_z)
-#elif cosmo_str=='Planck18':
-#	DL_Gpc0 = Planck18.luminosity_distance(gl_z)
-DL_Gpc = DL_Gpc0.value/1.0e+3
+name_out = config_data['name_out']
 
 # default parameter set
 global def_params, def_params_val
@@ -164,8 +103,6 @@ if fix_dust_index == 1:
 	def_params_val['dust_index'] = fix_dust_index_val
 if fix_dust_index == 0:
 	def_params_val['dust_index'] = -0.7
-if free_z == 0:
-	def_params_val['z'] = gal_z
 
 global def_params_fsps, params_assoc_fsps, status_log
 def_params_fsps = ['logzsol', 'log_tau', 'log_age', 'dust_index', 'dust1', 'dust2', 'log_gamma', 'log_umin', 
@@ -225,8 +162,9 @@ elif sfh_form=='log_normal_sfh' or sfh_form=='gaussian_sfh' or sfh_form=='double
 
 # get number of parameters:
 global params, nparams
+free_z = 0
 params0, nparams0 = get_params(free_z, sfh_form, duste_switch, dust_ext_law, add_agn, fix_dust_index)
-params = params0[:int(nparams0-1)]
+params = params0[:int(nparams0-1)]   # exclude log_mass because models are normalized to solar mass
 nparams = len(params)
 if rank == 0:
 	print ("parameters: ")
@@ -241,7 +179,6 @@ for ii in range(0,len(def_params_fsps)):
 			params_fsps.append(params[jj])
 nparams_fsps = len(params_fsps)
 
-# ranges of the parameters
 global priors_min, priors_max
 priors_min = np.zeros(nparams)
 priors_max = np.zeros(nparams)
@@ -251,14 +188,20 @@ for ii in range(0,nparams):
 	str_temp = 'pr_%s_max' % params[ii]
 	priors_max[ii] = float(config_data[str_temp])
 
-global interp_filters_waves, interp_filters_trans
-interp_filters_waves,interp_filters_trans = interp_filters_curves(filters)
-
-# calculation
+# Generate random models uniformly drawn within the input ranges
 numDataPerRank = int(nmodels/size)
 idx_mpi = np.linspace(0,nmodels-1,nmodels)
 recvbuf_idx = np.empty(numDataPerRank, dtype='d')
 comm.Scatter(idx_mpi, recvbuf_idx, root=0)
+
+# get number of wavelength grids
+global nwaves
+params_val = def_params_val
+for pp in range(0,nparams-1):  # log_mass is excluded
+	params_val[params[pp]] = priors_min[pp]
+wave, spec_flux, formed_mass, SFR_fSM, dust_mass, log_fagn_bol, mw_age = generate_modelSED_spec_restframe_props(sp=sp,imf_type=imf,sfh_form=sfh_form,
+																				  add_agn=add_agn,params_fsps=params_fsps, params_val=params_val)
+nwaves = len(wave)
 
 mod_params_temp = np.zeros((nparams,numDataPerRank))
 mod_log_mass_temp = np.zeros(numDataPerRank)
@@ -269,7 +212,10 @@ if duste_switch == 'duste':
 if add_agn == 1:
 	mod_log_fagn_bol_temp = np.zeros(numDataPerRank)
 
-mod_fluxes_temp = np.zeros((nbands,numDataPerRank))
+mod_fluxes_temp = np.zeros((nwaves,numDataPerRank))
+
+# wavelength
+mod_spec_wave = np.zeros(nwaves)
 
 count = 0
 for ii in recvbuf_idx:
@@ -279,47 +225,25 @@ for ii in recvbuf_idx:
 		mod_params_temp[pp][int(count)] = temp_val
 		params_val[params[pp]] = temp_val
 
-	SED_prop,fluxes = generate_modelSED_propphoto_nomwage_fit(sp=sp,imf_type=imf,sfh_form=sfh_form,filters=filters,
-												add_igm_absorption=add_igm_absorption,igm_type=igm_type,params_fsps=params_fsps,
-												params_val=params_val,DL_Gpc=DL_Gpc,cosmo=cosmo_str,H0=H0,Om0=Om0,
-												interp_filters_waves=interp_filters_waves,
-												interp_filters_trans=interp_filters_trans)
-
-	if np.isnan(SED_prop['SM'])==True or SED_prop['SM']<=0.0:
-		mod_log_mass_temp[int(count)] = 1.0e-33
-	else:
-		mod_log_mass_temp[int(count)] = log10(SED_prop['SM'])
-
-	if np.isnan(SED_prop['SFR'])==True or SED_prop['SFR']<=0.0:
-		mod_log_sfr_temp[int(count)] = 1.0e-33
-	else:
-		mod_log_sfr_temp[int(count)] = log10(SED_prop['SFR'])
-
-	if duste_switch == 'duste':
-		if np.isnan(SED_prop['dust_mass'])==True or SED_prop['dust_mass']<=0.0:
-			mod_log_dustmass_temp[int(count)] = 1.0e-33
-		else:
-			mod_log_dustmass_temp[int(count)] = log10(SED_prop['dust_mass'])  
-
-	if add_agn == 1:
-		mod_log_fagn_bol_temp[int(count)] = SED_prop['log_fagn_bol']
-
-	# calculate mass-weighted age
-	age = pow(10.0,params_val['log_age'])
-	tau = pow(10.0,params_val['log_tau'])
-	t0 = pow(10.0,params_val['log_t0'])
-	alpha = pow(10.0,params_val['log_alpha'])
-	beta = pow(10.0,params_val['log_beta'])
-	mw_age = calc_mw_age(sfh_form=sfh_form,tau=tau,t0=t0,alpha=alpha,beta=beta,age=age,formed_mass=SED_prop['SM'])
+	wave, spec_flux, formed_mass, SFR_fSM, dust_mass, log_fagn_bol, mw_age = generate_modelSED_spec_restframe_props(sp=sp,imf_type=imf,sfh_form=sfh_form,
+																				  add_agn=add_agn,params_fsps=params_fsps, params_val=params_val)
+	mod_log_mass_temp[int(count)] = log10(formed_mass)
+	mod_log_sfr_temp[int(count)] = log10(SFR_fSM)
 	mod_log_mw_age_temp[int(count)] = np.log10(mw_age)
 
-	for bb in range(0,nbands):
-		mod_fluxes_temp[bb][int(count)] = fluxes[bb]
+	if duste_switch == 'duste':
+		mod_log_dustmass_temp[int(count)] = log10(dust_mass)  
+
+	if add_agn == 1:
+		mod_log_fagn_bol_temp[int(count)] = log_fagn_bol
+
+	mod_fluxes_temp[:,int(count)] = spec_flux
+	mod_spec_wave = wave
 
 	count = count + 1
 
 	sys.stdout.write('\r')
-	sys.stdout.write('rank: %d  Calculation process: %d from %d  --->  %d%%' % (rank,count,len(recvbuf_idx),count*100/len(recvbuf_idx)))
+	sys.stdout.write('rank: %d  Calculation process: %d from %d --> %d%%' % (rank,count,len(recvbuf_idx),count*100/len(recvbuf_idx)))
 	sys.stdout.flush()
 sys.stdout.write('\n')
 
@@ -333,7 +257,7 @@ if add_agn == 1:
 	mod_log_fagn_bol = np.zeros(nmodels)
 
 mod_params = np.zeros((nparams,nmodels))
-mod_fluxes = np.zeros((nbands,nmodels))
+mod_fluxes = np.zeros((nwaves,nmodels))
 
 comm.Gather(mod_log_mass_temp, mod_log_mass, root=0)
 comm.Gather(mod_log_sfr_temp, mod_log_sfr, root=0)
@@ -346,117 +270,87 @@ if add_agn == 1:
 for pp in range(0,nparams):
 	comm.Gather(mod_params_temp[pp], mod_params[pp], root=0)
 
-for bb in range(0,nbands):
+for bb in range(0,nwaves):
 	comm.Gather(mod_fluxes_temp[bb], mod_fluxes[bb], root=0)
 
-# store into a FITS file
+# transpose from (wave,id) -> (id,wave)
+mod_fluxes_trans = np.transpose(mod_fluxes, axes=(1,0))
+
+# store into HDF5 file
 if rank == 0:
-	hdr = fits.Header()
-	hdr['imf_type'] = imf
-	hdr['sfh_form'] = sfh_form
-	hdr['dust_ext_law'] = dust_ext_law
-	hdr['duste_switch'] = duste_switch
-	hdr['add_neb_emission'] = add_neb_emission
-	hdr['gas_logu'] = gas_logu
-	hdr['add_agn'] = add_agn
-	hdr['add_igm_absorption'] = add_igm_absorption
-	if duste_switch == 'duste':
-		if fix_dust_index == 1:
-			hdr['dust_index'] = fix_dust_index_val
-	hdr['cosmo'] = cosmo_str
-	hdr['H0'] = H0
-	hdr['Om0'] = Om0
-	if add_igm_absorption == 1:
-		hdr['igm_type'] = igm_type
-	hdr['nfilters'] = nbands
-	for bb in range(0,nbands):
-		str_temp = 'fil%d' % bb
-		hdr[str_temp] = filters[bb]
-	hdr['gal_z'] = gal_z
-	hdr['nrows'] = nmodels
-	hdr['nparams'] = nparams
-	for pp in range(0,nparams):
-		str_temp = 'param%d' % pp
-		hdr[str_temp] = params[pp]
+	with h5py.File(name_out, 'w') as f:
+		m = f.create_group('mod')
 
-	for pp in range(0,nparams):
-		str_temp = 'pr_%s_min' % params[pp]
-		hdr[str_temp] = priors_min[pp]
-		str_temp = 'pr_%s_max' % params[pp]
-		hdr[str_temp] = priors_max[pp]
+		# info
+		m.attrs['imf_type'] = imf 
+		m.attrs['sfh_form'] = sfh_form
+		m.attrs['dust_ext_law'] = dust_ext_law
+		m.attrs['duste_switch'] = duste_switch
+		m.attrs['add_neb_emission'] = add_neb_emission
+		m.attrs['gas_logu'] = gas_logu
+		m.attrs['add_agn'] = add_agn
+		m.attrs['funit'] = 'L_sun/A'
+		if duste_switch=='duste' or duste_switch==1:
+			if fix_dust_index == 1:
+				m.attrs['dust_index'] = fix_dust_index_val
+		m.attrs['nmodels'] = nmodels
+		m.attrs['nparams'] = nparams
+		for pp in range(0,nparams):
+			str_temp = 'par%d' % pp
+			m.attrs[str_temp] = params[pp]
 
-	hdr['col1'] = 'id'
-	col_count = 1
-	for pp in range(0,nparams):
-		col_count = col_count + 1
-		str_temp = 'col%d' % col_count
-		hdr[str_temp] = params[pp]
+		add_par = 0
+		str_temp = 'par%d' % (nparams+add_par)
+		m.attrs[str_temp] = 'log_mass'
 
-	col_count = col_count + 1
-	str_temp = 'col%d' % col_count
-	hdr[str_temp] = 'log_mass'
+		add_par = add_par + 1
+		str_temp = 'par%d' % (nparams+add_par)
+		m.attrs[str_temp] = 'log_sfr'
 
-	col_count = col_count + 1
-	str_temp = 'col%d' % col_count
-	hdr[str_temp] = 'log_sfr'
+		add_par = add_par + 1
+		str_temp = 'par%d' % (nparams+add_par)
+		m.attrs[str_temp] = 'log_mw_age'
 
-	col_count = col_count + 1
-	str_temp = 'col%d' % col_count
-	hdr[str_temp] = 'log_mw_age'
+		if duste_switch == 'duste':
+			add_par = add_par + 1
+			str_temp = 'par%d' % (nparams+add_par)
+			m.attrs[str_temp] = 'log_dustmass'
 
-	if duste_switch == 'duste':
-		col_count = col_count + 1
-		str_temp = 'col%d' % col_count
-		hdr[str_temp] = 'log_dustmass'
+		if add_agn == 1:
+			add_par = add_par + 1
+			str_temp = 'par%d' % (nparams+add_par)
+			m.attrs[str_temp] = 'log_fagn_bol'
 
-	if add_agn == 1:
-		col_count = col_count + 1
-		str_temp = 'col%d' % col_count
-		hdr[str_temp] = 'log_fagn_bol'
+		m.attrs['nparams_all'] = int(nparams+add_par)
 
-	for bb in range(0,nbands):
-		col_count = col_count + 1
-		str_temp = 'col%d' % col_count
-		hdr[str_temp] = filters[bb]
+		for pp in range(0,nparams):
+			str_temp = 'pr_%s_min' % params[pp]
+			m.attrs[str_temp] = priors_min[pp]
+			str_temp = 'pr_%s_max' % params[pp]
+			m.attrs[str_temp] = priors_max[pp]
 
-	hdr['ncols'] = col_count
+		# parameters
+		p = m.create_group('par')
+		for pp in range(0,int(nparams)):
+			p.create_dataset(params[pp], data=np.array(mod_params[pp]), compression="gzip")
 
-	cols0 = []
-	col = fits.Column(name='id', format='K', array=np.array(idx_mpi))
-	cols0.append(col)
+		p.create_dataset('log_mass', data=np.array(mod_log_mass), compression="gzip")
+		p.create_dataset('log_sfr', data=np.array(mod_log_sfr), compression="gzip")
+		p.create_dataset('log_mw_age', data=np.array(mod_log_mw_age), compression="gzip")
 
-	for pp in range(0,nparams):
-		col = fits.Column(name=params[pp], format='D', array=np.array(mod_params[pp]))
-		cols0.append(col)
+		if duste_switch == 'duste':
+			p.create_dataset('log_dustmass', data=np.array(mod_log_dustmass), compression="gzip")
 
-	col = fits.Column(name='log_mass', format='D', array=np.array(mod_log_mass))
-	cols0.append(col)
+		if add_agn == 1:
+			p.create_dataset('log_fagn_bol', data=np.array(mod_log_fagn_bol), compression="gzip") 
 
-	col = fits.Column(name='log_sfr', format='D', array=np.array(mod_log_sfr))
-	cols0.append(col)
+		# spectra
+		s = m.create_group('spec')
 
-	col = fits.Column(name='log_mw_age', format='D', array=np.array(mod_log_mw_age))
-	cols0.append(col)
-
-	if duste_switch == 'duste':
-		col = fits.Column(name='log_dustmass', format='D', array=np.array(mod_log_dustmass))
-		cols0.append(col)
-
-	if add_agn == 1:
-		col = fits.Column(name='log_fagn_bol', format='D', array=np.array(mod_log_fagn_bol))
-		cols0.append(col)
-
-	for bb in range(0,nbands):
-		col = fits.Column(name=filters[bb], format='D', array=np.array(mod_fluxes[bb]))
-		cols0.append(col)
-
-	cols = fits.ColDefs(cols0)
-	hdu = fits.BinTableHDU.from_columns(cols)
-	primary_hdu = fits.PrimaryHDU(header=hdr)
-
-	hdul = fits.HDUList([primary_hdu, hdu])
-	hdul.writeto(name_fits, overwrite=True)
-
+		s.create_dataset('wave', data=np.array(mod_spec_wave), compression="gzip") 
+		for ii in range(0,nmodels):
+			str_temp = 'f%d' % ii
+			s.create_dataset(str_temp, data=np.array(mod_fluxes_trans[ii]), compression="gzip")
 
 
 

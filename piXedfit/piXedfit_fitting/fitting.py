@@ -10,7 +10,7 @@ PIXEDFIT_HOME = os.environ['PIXEDFIT_HOME']
 os.environ["OMP_NUM_THREADS"] = "1"
 
 __all__ = ["singleSEDfit", "SEDfit_from_binmap", "SEDfit_pixels_from_fluxmap", "inferred_params_mcmc_list", 
-			"inferred_params_rdsps_list","get_inferred_params_mcmc", "get_inferred_params_rdsps", "maps_parameters",
+			"inferred_params_rdsps_list","get_inferred_params_mcmc", "get_inferred_params_rdsps", "maps_parameters", 
 			"maps_parameters_fit_pixels", "get_params"]
 
 
@@ -24,13 +24,9 @@ def nproc_reduced(nproc,nwalkers,nsteps,nsteps_cut):
 	return nproc_new
 
 
-def singleSEDfit(obs_flux=[],obs_flux_err=[],filters=[],gal_z=-99.0,imf_type=1,sfh_form=4,dust_ext_law=1,add_igm_absorption=0,igm_type=0,
-	duste_switch=0,add_neb_emission=1,add_agn=0,gas_logu=-2.0,logzsol_range=[-2.0,0.2],log_tau_range=[-1.0,1.2],log_age_range=[-1.0,1.14],
-	log_alpha_range=[-2.0,2.0],log_beta_range=[-2.0,2.0],log_t0_range=[-1.0,1.14],dust_index_range=[-0.7,-0.7],dust1_range=[0.0,3.0],dust2_range=[0.0,3.0],
-	log_gamma_range=[-3.0,-0.824],log_umin_range=[-1.0,1.176],log_qpah_range=[-1.0,0.845], z_range=[-99.0,-99.0],log_fagn_range=[-5.0,0.48],
-	log_tauagn_range=[0.70,2.18],del_lognorm=[-2.0,2.0],fit_method='mcmc',likelihood='gauss', dof=2.0, gauss_likelihood_form=0, name_saved_randmod=None, 
-	redc_chi2_initfit=2.0, nwalkers=100, nsteps=600, nsteps_cut=50, width_initpos=0.08, nproc=10, cosmo=0,H0=70.0,Om0=0.3,perc_chi2=10.0, 
-	store_full_samplers=1, name_out_fits=None):
+def singleSEDfit(obs_flux, obs_flux_err, filters, models_spec=None, fit_method='mcmc', gal_z=None, z_range=[0.0,1.0], 
+	nrands_z=10, add_igm_absorption=0, igm_type=1, likelihood='gauss', dof=2.0, gauss_likelihood_form=1, nwalkers=100, 
+	nsteps=600, nsteps_cut=50, nproc=10, perc_chi2=90.0, cosmo=0, H0=70.0, Om0=0.3, store_full_samplers=1, name_out_fits=None):
 	"""Function for performing SED fitting to a single photometric SED.
 
 	:param obs_flux:
@@ -40,45 +36,25 @@ def singleSEDfit(obs_flux=[],obs_flux_err=[],filters=[],gal_z=-99.0,imf_type=1,s
 		1D array containing the multiband flux errors. The number of elements should be the same as that of the input filters.
 
 	:param filters:
-		1D list of photometric filters names. The accepted naming for the filters can be seen using :func:`list_filters` function in the :mod:`utils.filtering` module. 
+		List of photometric filters names. The accepted naming for the filters can be seen using :func:`list_filters` function in the :mod:`utils.filtering` module. 
 
-	:param gal_z: (**Mandatory input, in the current version**)
-		Redshift of the galaxy. If gal_z=-99.0, then redshift is set to be a free parameter in the fitting. As for the current version of **piXedfit**, photo-z hasn't been implemented.   
-
-	:param imf_type: (default: 1)
-		Choice for the IMF. Should be integer. Options are: (1)0 for Salpeter (1955), (2)1 for Chabrier (2003), and (3)2 for Kroupa (2001).
-
-	:param sfh_form: (default: 4)
-		Choice for the SFH model. Options are: (1)0 or 'tau_sfh', (2)1 or 'delayed_tau_sfh', (3)2 or 'log_normal_sfh', (4)3 or 'gaussian_sfh', (5)4 or 'double_power_sfh'.
-
-	:param dust_ext_law: (default: 1)
-		Choice for the dust attenuation law. Options are: (1)'CF2000' or 0 for Charlot & Fall (2000), (2)'Cal2000' or 1 for Calzetti et al. (2000).
-
-	:param add_igm_absorption: (default: 0)
-		Choice for turning on (value: 1) or off (value: 0) the IGM absorption modeling.
-
-	:param igm_type: (default: 0)
-		Choice for the IGM absorption model. Only relevant if add_igm_absorption=1. Options are: (1)0 or 'madau1995' for Madau (1995), and (2)1 or 'inoue2014' for Inoue et al. (2014).
-
-	:param duste_switch: (default: 0)
-		Choice for turning on (value: 1) or off (value: 0) the dust emission modeling.
-
-	:param add_neb_emission: (default: 1)
-		Choice for turning on (1) or off (0) the nebular emission modeling.
-
-	:param add_agn: (default: 0)
-		Choice for turning on (1) or off (0) the AGN dusty torus emission modeling.
-
-	:param gas_logu: (default: -2.0)
-		Gas ionization parameter in logarithmic scale.
-
-	:param del_lognorm: (default: [-2.0,2.0])
-		Left and right width for the prior range in normalization (i.e., M*), 
-		such that the prior range in M* is log(M*)=[log(s_best)+del_lognorm[0],log(s_best)+del_lognorm[1]].
-		Only relevant if fit_method='mcmc'.
+	:param models_spec:
 
 	:param fit_method: (default: 'mcmc')
 		Choice for the fitting method. Options are: (1)'mcmc', and (2)'rdsps'.
+
+	:param gal_z: 
+		Redshift of the galaxy. If gal_z=None, then redshift is set to be a free parameter in the fitting. As for the current version of **piXedfit**, photo-z hasn't been implemented.   
+		
+	:param z_range: (default: [0.0,1.0])
+
+	:param nrands_z: (default: 10)
+
+	:param add_igm_absorption: (default: 0)
+		Switch for the IGM absorption. Options are: (1)0 means turn off, and (2)1 means turn on.
+
+	:param igm_type: (default: 1)
+		Choice for the IGM absorption model. Options are: (1)0 or 'madau1995' for Madau (1995), and (2)1 or 'inoue2014' for Inoue et al. (2014).
 	
 	:param likelihood: (default: 'gauss')
 		Choice of likelihood function for the RDSPS method. Only relevant if the fit_method='rdsps'. Options are: (1)'gauss', and (2) 'student_t'.
@@ -91,16 +67,6 @@ def singleSEDfit(obs_flux=[],obs_flux_err=[],filters=[],gal_z=-99.0,imf_type=1,s
 		Only relevant for 2 cases: (1) fit_method='rdsps' and likelihood='gauss', and (2) fit_method='mcmc'.
 		gauss_likelihood_form=0 means the Gaussian likelihood function uses the original/full Gaussian function form, whereas gauss_likelihood_form=1 means the likelihood function uses simplified form: P=exp(-0.5*chi^2).
 
-	:param name_saved_randmod: (Mandatory)
-		Name of the FITS file that contains pre-calculated model SEDs. This is mandatory, meaning that a set of model SEDs (stored in FITS file) should be 
-		generated before performing SED fitting. The task of generatig set of random model SEDs can be done using :func:`save_models` function in :mod:`piXedfit_model` module.
-
-	:param redc_chi2_initfit: (default: 2.0)
-		Desired reduced chi-square of the best-fit model SED in the initial fitting. This is set to estimate bulk systemtic error associated with 
-		the input SED and models. It is quite possible that flux uncertainties of observed SEDs are underestimated because of underestimating or not accounting for the systematic errors. 
-		These systematic errors can be due to both observational factors (e.g., associated with images processing, PSF-matching, spatial resampling and reprojection) and SED modeling aspects.
-		See Section 4.1. (2nd last paragraph) in `Abdurro'uf et al. (2021) <https://ui.adsabs.harvard.edu/abs/2021arXiv210109717A/abstract>`_.      
-
 	:param nwalkers: (default: 100)
 		Number of walkers to be set in the MCMC process. This parameter is only applicable if fit_method='mcmc'.
 
@@ -110,12 +76,12 @@ def singleSEDfit(obs_flux=[],obs_flux_err=[],filters=[],gal_z=-99.0,imf_type=1,s
 	:param nsteps_cut: (default: 50)
 		Number of first steps of each walkers that will be cut when constructing the final sampler chains. Only relevant if fit_method='mcmc'.
 
-	:param width_initpos: (default: 0.08)
-		A factor to be multiplied with the piror range in order to set width (i.e.,sigma) of the gaussian "ball" (i.e., distribution) representing inital positions of the MCMC walkers.
-		Only relevant if fit_method='mcmc'. See Section 4.2.1 in `Abdurro'uf et al. (2021) <https://ui.adsabs.harvard.edu/abs/2021arXiv210109717A/abstract>`_.
-
 	:param nproc: (default: 10)
 		Number of processors (cores) to be used in the calculation.
+
+	:param perc_chi2: (default: 90.0)
+		Lowest chi-square Percentage from the full model SEDs that are considered in the calculation of posterior-weighted averaging. 
+		This parameter is only relevant for the RDSPS fitting method and it is not applicable for the MCMC method.
 
 	:param cosmo: (default: 0)
 		Choices for the cosmology. Options are: (1)'flat_LCDM' or 0, (2)'WMAP5' or 1, (3)'WMAP7' or 2, (4)'WMAP9' or 3, (5)'Planck13' or 4, (6)'Planck15' or 5.
@@ -127,19 +93,12 @@ def singleSEDfit(obs_flux=[],obs_flux_err=[],filters=[],gal_z=-99.0,imf_type=1,s
 	:param Om0: (default: 0.3)
 		The Omega matter at z=0.0. Only relevant when cosmo='flat_LCDM' is chosen.
 
-	:param perc_chi2: (default: 10.0)
-		Lowest chi-square Percentage from the full model SEDs that are considered in the calculation of posterior-weighted averaging. 
-		This parameter is only relevant for the RDSPS fitting method and it is not applicable for the MCMC method.
-
 	:param store_full_samplers: (default: 1 or True)
 		Flag indicating whether full sampler models will be stored into the output FITS file or not. 
 		Options are: (a) 1 or True and (b) 0 or False.
 
 	:param name_out_fits: (optional, default: None)
 		Name of output FITS file. This parameter is optional. 
-	
-	:returns name_out_fits:
-		Output FITS file.
 	"""
 
 	CODE_dir = PIXEDFIT_HOME+'/piXedfit/piXedfit_fitting/'
@@ -155,8 +114,8 @@ def singleSEDfit(obs_flux=[],obs_flux_err=[],filters=[],gal_z=-99.0,imf_type=1,s
 	# make text file containing list of filters:
 	name_filters_list = "filters_list%d.dat" % (randint(0,10000))
 	file_out = open(name_filters_list,"w")
-	for ii in range(0,nbands):
-		file_out.write("%s\n" % filters[ii]) 
+	for bb in range(0,nbands):
+		file_out.write("%s\n" % filters[bb]) 
 	file_out.close()
 	os.system('mv %s %s' % (name_filters_list,temp_dir))
 
@@ -168,87 +127,10 @@ def singleSEDfit(obs_flux=[],obs_flux_err=[],filters=[],gal_z=-99.0,imf_type=1,s
 	# make configuration file:
 	name_config = "config_file%d.dat" % (randint(0,10000))
 	file_out = open(name_config,"w")
-	file_out.write("imf_type %d\n" % imf_type)
-	file_out.write("add_neb_emission %d\n" % add_neb_emission)
-	file_out.write("gas_logu %lf\n" % gas_logu)
-	file_out.write("add_igm_absorption %d\n" % add_igm_absorption)
-
-	# SFH choice
-	if sfh_form=='tau_sfh' or sfh_form==0:
-		sfh_form1 = 0
-	elif sfh_form=='delayed_tau_sfh' or sfh_form==1:
-		sfh_form1 = 1
-	elif sfh_form=='log_normal_sfh' or sfh_form==2:
-		sfh_form1 = 2
-	elif sfh_form=='gaussian_sfh' or sfh_form==3:
-		sfh_form1 = 3
-	elif sfh_form=='double_power_sfh' or sfh_form==4:
-		sfh_form1 = 4
-	else:
-		print ("SFH choice is not recognized!")
-		sys.exit()
-	file_out.write("sfh_form %d\n" % sfh_form1)
-
-	# dust law
-	if dust_ext_law=='CF2000' or dust_ext_law==0:
-		dust_ext_law1 = 0
-	elif dust_ext_law=='Cal2000' or dust_ext_law==1:
-		dust_ext_law1 = 1
-	else:
-		print ("dust_ext_law is not recognized!")
-		sys.exit()
-	file_out.write("dust_ext_law %d\n" % dust_ext_law1)
-
-	# IGM type
-	if igm_type=='madau1995' or igm_type==0:
-		igm_type1 = 0
-	elif igm_type=='inoue2014' or igm_type==1:
-		igm_type1 = 1
-	else:
-		print ("igm_type is not recognized!")
-		sys.exit()
-	file_out.write("igm_type %d\n" % igm_type1)
-
-	file_out.write("duste_switch %d\n" % duste_switch)
-	file_out.write("add_agn %d\n" % add_agn)
-	file_out.write("pr_logzsol_min %lf\n" % logzsol_range[0])
-	file_out.write("pr_logzsol_max %lf\n" % logzsol_range[1])
-	file_out.write("pr_log_tau_min %lf\n" % log_tau_range[0])
-	file_out.write("pr_log_tau_max %lf\n" % log_tau_range[1])
-	file_out.write("pr_log_alpha_min %lf\n" % log_alpha_range[0])
-	file_out.write("pr_log_alpha_max %lf\n" % log_alpha_range[1])
-	file_out.write("pr_log_beta_min %lf\n" % log_beta_range[0])
-	file_out.write("pr_log_beta_max %lf\n" % log_beta_range[1])
-	file_out.write("pr_log_t0_min %lf\n" % log_t0_range[0])
-	file_out.write("pr_log_t0_max %lf\n" % log_t0_range[1])
-	file_out.write("pr_log_age_min %lf\n" % log_age_range[0])
-	file_out.write("pr_log_age_max %lf\n" % log_age_range[1])
-	file_out.write("pr_dust_index_min %lf\n" % dust_index_range[0])
-	file_out.write("pr_dust_index_max %lf\n" % dust_index_range[1])
-	file_out.write("pr_dust1_min %lf\n" % dust1_range[0])
-	file_out.write("pr_dust1_max %lf\n" % dust1_range[1])
-	file_out.write("pr_dust2_min %lf\n" % dust2_range[0])
-	file_out.write("pr_dust2_max %lf\n" % dust2_range[1])
-	file_out.write("pr_z_min %lf\n" % z_range[0])
-	file_out.write("pr_z_max %lf\n" % z_range[1])
-	file_out.write("pr_log_gamma_min %lf\n" % log_gamma_range[0])
-	file_out.write("pr_log_gamma_max %lf\n" % log_gamma_range[1])
-	file_out.write("pr_log_umin_min %lf\n" % log_umin_range[0])
-	file_out.write("pr_log_umin_max %lf\n" % log_umin_range[1])
-	file_out.write("pr_log_qpah_min %lf\n" % log_qpah_range[0])
-	file_out.write("pr_log_qpah_max %lf\n" % log_qpah_range[1])
-	file_out.write("pr_log_fagn_min %lf\n" % log_fagn_range[0])
-	file_out.write("pr_log_fagn_max %lf\n" % log_fagn_range[1])
-	file_out.write("pr_log_tauagn_min %lf\n" % log_tauagn_range[0])
-	file_out.write("pr_log_tauagn_max %lf\n" % log_tauagn_range[1])
-	file_out.write("pr_del_lognorm_min %lf\n" % del_lognorm[0])
-	file_out.write("pr_del_lognorm_max %lf\n" % del_lognorm[1])
 	file_out.write("nwalkers %d\n" % nwalkers)
 	file_out.write("nsteps %d\n" % nsteps)
 	file_out.write("nsteps_cut %d\n" % nsteps_cut)
-	file_out.write("width_initpos %lf\n" % width_initpos)
 	file_out.write("ori_nproc %d\n" % nproc)
-	file_out.write("redc_chi2_initfit %lf\n" % redc_chi2_initfit)
 
 	# cosmology
 	if cosmo=='flat_LCDM' or cosmo==0:
@@ -269,21 +151,39 @@ def singleSEDfit(obs_flux=[],obs_flux_err=[],filters=[],gal_z=-99.0,imf_type=1,s
 		print ("Input cosmo is not recognized!")
 		sys.exit()
 	file_out.write("cosmo %d\n" % cosmo1)
-
 	file_out.write("H0 %lf\n" % H0)
 	file_out.write("Om0 %lf\n" % Om0)
+
 	if fit_method=='rdsps' or fit_method=='RDSPS':
 		file_out.write("likelihood %s\n" % likelihood)
 		file_out.write("dof %lf\n" % dof)
 
-	if name_saved_randmod == None:
-		print ("name_saved_randmod is mandatory input!")
+	if models_spec == None:
+		print ("models_spec input is required!")
 		sys.exit()
-	file_out.write("name_saved_randmod %s\n" % name_saved_randmod)
+	file_out.write("models_spec %s\n" % models_spec)
 
 	file_out.write("gauss_likelihood_form %d\n" % gauss_likelihood_form)
 	# redshift
+	if gal_z==None or gal_z<=0.0:
+		gal_z = -99.0
+		free_z = 1
+	else:
+		free_z = 0
 	file_out.write("gal_z %lf\n" % gal_z)
+	file_out.write("pr_z_min %lf\n" % z_range[0])
+	file_out.write("pr_z_max %lf\n" % z_range[1])
+	file_out.write("nrands_z %d\n" % nrands_z)
+
+	file_out.write("add_igm_absorption %d\n" % add_igm_absorption)
+	if igm_type=='madau1995' or igm_type==0:
+		igm_type1 = 0
+	elif igm_type=='inoue2014' or igm_type==1:
+		igm_type1 = 1
+	else:
+		print ("igm_type is not recognized!")
+		sys.exit()
+	file_out.write("igm_type %d\n" % igm_type1)
 
 	if fit_method=='rdsps':
 		file_out.write("perc_chi2 %lf\n" % perc_chi2)
@@ -296,57 +196,51 @@ def singleSEDfit(obs_flux=[],obs_flux_err=[],filters=[],gal_z=-99.0,imf_type=1,s
 	# input SED text file
 	name_SED_txt = "inputSED_file%d.dat" % (randint(0,20000))
 	file_out = open(name_SED_txt,"w")
-	for ii in range(0,nbands):
-		file_out.write("%e  %e\n" % (obs_flux[ii],obs_flux_err[ii]))
+	for bb in range(0,nbands):
+		file_out.write("%e  %e\n" % (obs_flux[bb],obs_flux_err[bb]))
 	file_out.close()
 	os.system('mv %s %s' % (name_SED_txt,temp_dir))
 
-	# more..
-	random_int = (randint(0,10000))
-	name_params_list = "params_list_%d.dat" % random_int
-	name_sampler_list = "sampler_%d.dat" % random_int
-	name_modif_obs_photo_SED = "modif_obs_photo_SED_%d.dat" % random_int
-
 	# output files name:
 	if name_out_fits == None:
-		random_int = (randint(0,10000))
+		random_int = (randint(0,20000))
 		if fit_method=='mcmc' or fit_method=='MCMC':
 			name_out_fits = "mcmc_fit%d.fits" % random_int
 		elif fit_method=='rdsps' or fit_method=='RDSPS':
 			name_out_fits = "rdsps_fit%d.fits" % random_int
 
 	if fit_method=='mcmc' or fit_method=='MCMC':
+		random_int = (randint(0,20000))
+		name_samplers_hdf5 = "samplers_%d.hdf5" % random_int
+
+		os.system("mpirun -n %d python %s./mc_p1.py %s %s %s %s" % (nproc,CODE_dir,name_filters_list,name_config,
+																							name_SED_txt,name_samplers_hdf5))
+		os.system('mv %s %s' % (name_samplers_hdf5,temp_dir))
+		
 		if store_full_samplers==1 or store_full_samplers==True:
-			os.system("mpirun -n %d python %s./mcmc_pcmod_p1.py %s %s %s %s %s %s" % (nproc,CODE_dir,name_filters_list,name_config,
-																							name_SED_txt,name_params_list,name_sampler_list,
-																							name_modif_obs_photo_SED))
-			os.system('mv %s %s' % (name_params_list,temp_dir))
-			os.system('mv %s %s' % (name_sampler_list,temp_dir))
-			os.system('mv %s %s' % (name_modif_obs_photo_SED,temp_dir))
-			os.system("mpirun -n %d python %s./mcmc_pcmod_p2.py %s %s %s %s %s %s" % (nproc_new,CODE_dir,name_filters_list,name_config,
-																						name_params_list,name_sampler_list,
-																						name_modif_obs_photo_SED,name_out_fits))
+			os.system("mpirun -n %d python %s./mc_p2.py %s %s %s %s" % (nproc_new,CODE_dir,name_filters_list,name_config,
+																						name_samplers_hdf5,name_out_fits))
 		elif store_full_samplers==0 or store_full_samplers==False:
-			os.system("mpirun -n %d python %s./mcmc_pcmod_nsamp_p1.py %s %s %s %s %s %s" % (nproc,CODE_dir,name_filters_list,name_config,
-																							name_SED_txt,name_params_list,name_sampler_list,
-																							name_modif_obs_photo_SED))
-			os.system('mv %s %s' % (name_params_list,temp_dir))
-			os.system('mv %s %s' % (name_sampler_list,temp_dir))
-			os.system('mv %s %s' % (name_modif_obs_photo_SED,temp_dir))
-			os.system("mpirun -n %d python %s./mcmc_pcmod_nsamp_p2.py %s %s %s %s %s %s" % (nproc_new,CODE_dir,name_filters_list,name_config,
-																						name_params_list,name_sampler_list,
-																						name_modif_obs_photo_SED,name_out_fits))
+			os.system("mpirun -n %d python %s./mc_nsmp_p2.py %s %s %s %s" % (nproc_new,CODE_dir,name_filters_list,name_config,
+																						name_samplers_hdf5,name_out_fits))
 		else:
 			print ("Input store_full_samplers not recognized!")
 			sys.exit()
 
-
 	elif fit_method=='rdsps' or fit_method=='RDSPS':
 		if store_full_samplers==1 or store_full_samplers==True:
-			os.system("mpirun -n %d python %s./rdsps_pcmod.py %s %s %s %s" % (nproc_new,CODE_dir,name_filters_list,name_config,name_SED_txt,
+			if free_z==0:
+				os.system("mpirun -n %d python %s./rd_fz.py %s %s %s %s" % (nproc_new,CODE_dir,name_filters_list,name_config,name_SED_txt,
+																			name_out_fits))
+			elif free_z==1:
+				os.system("mpirun -n %d python %s./rd_vz.py %s %s %s %s" % (nproc_new,CODE_dir,name_filters_list,name_config,name_SED_txt,
 																			name_out_fits))
 		elif store_full_samplers==0 or store_full_samplers==False:
-			os.system("mpirun -n %d python %s./rdsps_pcmod_nsamp.py %s %s %s %s" % (nproc_new,CODE_dir,name_filters_list,name_config,name_SED_txt,
+			if free_z==0:
+				os.system("mpirun -n %d python %s./rd_fz_nsmp.py %s %s %s %s" % (nproc_new,CODE_dir,name_filters_list,name_config,name_SED_txt,
+																			name_out_fits))
+			elif free_z==1:
+				os.system("mpirun -n %d python %s./rd_vz_nsmp.py %s %s %s %s" % (nproc_new,CODE_dir,name_filters_list,name_config,name_SED_txt,
 																			name_out_fits))
 		else:
 			print ("Input store_full_samplers not recognized!")
@@ -359,21 +253,17 @@ def singleSEDfit(obs_flux=[],obs_flux_err=[],filters=[],gal_z=-99.0,imf_type=1,s
 	# free disk space:
 	os.system("rm %s%s" % (temp_dir,name_config))
 	os.system("rm %s%s" % (temp_dir,name_filters_list))
-	os.system("rm %s%s" % (temp_dir,name_params_list))
-	os.system("rm %s%s" % (temp_dir,name_sampler_list))
-	os.system("rm %s%s" % (temp_dir,name_modif_obs_photo_SED))
 	os.system("rm %s%s" % (temp_dir,name_SED_txt))
+	if fit_method=='mcmc' or fit_method=='MCMC':
+		os.system("rm %s%s" % (temp_dir,name_samplers_hdf5))
 
 	return name_out_fits
 
 
-def SEDfit_from_binmap(fits_binmap=None,binid_range=[],bin_ids=[],filters=None,store_full_samplers=1, gal_z=-99.0,imf_type=1,sfh_form=4,
-	dust_ext_law=1,add_igm_absorption=0,igm_type=0,duste_switch=0,add_neb_emission=1,add_agn=0,gas_logu=-2.0,logzsol_range=[-2.0,0.2],
-	log_tau_range=[-1.0,1.2],log_age_range=[-1.0,1.14],log_alpha_range=[-2.0,2.0],log_beta_range=[-2.0,2.0],log_t0_range=[-1.0,1.14],
-	dust_index_range=[-0.7,-0.7],dust1_range=[0.0,3.0],dust2_range=[0.0,3.0],log_gamma_range=[-3.0,-0.824],log_umin_range=[-1.0,1.176],
-	log_qpah_range=[-1.0,0.845], z_range=[-99.0,-99.0],log_fagn_range=[-5.0,0.48],log_tauagn_range=[0.70,2.18],del_lognorm=[-2.0,2.0],
-	fit_method='mcmc',likelihood='gauss', dof=3.0, gauss_likelihood_form=0, name_saved_randmod=None, redc_chi2_initfit=2.0, 
-	nwalkers=100, nsteps=600, nsteps_cut=50, width_initpos=0.08, nproc=10, cosmo=0,H0=70.0,Om0=0.3,perc_chi2=90.0,name_out_fits=[]):
+
+def SEDfit_from_binmap(fits_binmap,binid_range=[],bin_ids=[],models_spec=None,fit_method='mcmc',gal_z=None,z_range=[0.0,1.0],nrands_z=10,
+	add_igm_absorption=0,igm_type=1,likelihood='gauss',dof=3.0,gauss_likelihood_form=1,nwalkers=100,nsteps=600,nsteps_cut=50,nproc=10, 
+	perc_chi2=90.0,cosmo=0,H0=70.0,Om0=0.3,store_full_samplers=1,name_out_fits=[]):
 
 	"""A function for performing SED fitting to set of spatially resolved SEDs from the reduced data cube that is produced after the pixel binning. 
 
@@ -381,57 +271,30 @@ def SEDfit_from_binmap(fits_binmap=None,binid_range=[],bin_ids=[],filters=None,s
 		Input FITS file of reduced data cube after pixel binning. This FITS file is the one that is output by :func:`pixel_binning_photo` function in the :mod:`piXedfit_bin` module. 
 		This is a mandatory parameter.
 
-	:param binid_range: (default: [])
+	:param binid_range:
 		Range of bin IDs that are going to be fit. Allowed format is [idmin,idmax]. The id starts from 0. If empty, [], fitting will be done to SEDs of all spatial bins.
 
-	:param bin_ids: (default: [])
+	:param bin_ids:
 		Bin ids whose the SEDs are going to be fit. Allowed format is a 1D array. The id starts from 0. Both binid_range and bin_ids can't be empty, []. If both of them are not empty, the bin_ids will be used. 
 
-	:param filters: (optional, default: None)
-		List of photometric filters of which the fluxes are considered in the fitting. If filters=None, then the same set of filters as that stored in the header of the input FITS file would be used.
-
-	:param store_full_samplers: (default: 1 or True)
-		Flag indicating whether full sampler models will be stored into the output FITS file or not. 
-		Options are: (a) 1 or True and (b) 0 or False.
-
-	:param gal_z: (default: -99.0)
-		Redshift of the galaxy. If gal_z=-99.0, then redshift is taken from the FITS file. 
-		If still gal_z=-99.0, then redshift is set to be free. **As for the current version of **piXedfit**, photo-z hasn't been implemented**.
-
-	:param imf_type: (default: 1)
-		Choice for the IMF. Should be integer. Options are: (1)0 for Salpeter (1955), (2)1 for Chabrier (2003), and (3)2 for Kroupa (2001).
-
-	:param sfh_form: (default: 4)
-		Choice for the SFH model. Options are: (1)0 or 'tau_sfh', (2)1 or 'delayed_tau_sfh', (3)2 or 'log_normal_sfh', (4)3 or 'gaussian_sfh', (5)4 or 'double_power_sfh'.
-
-	:param dust_ext_law: (default: 1)
-		Choice for the dust attenuation law. Options are: (1)'CF2000' or 0 for Charlot & Fall (2000), (2)'Cal2000' or 1 for Calzetti et al. (2000).
-
-	:param add_igm_absorption: (default: 0)
-		Choice for turning on (value: 1) or off (value: 0) the IGM absorption modeling.
-
-	:param igm_type: (default: 0)
-		Choice for the IGM absorption model. Only relevant if add_igm_absorption=1. Options are: (1)0 or 'madau1995' for Madau (1995), and (2)1 or 'inoue2014' for Inoue et al. (2014).
-
-	:param duste_switch: (default: 0)
-		Choice for turning on (value: 1) or off (value: 0) the dust emission modeling.
-
-	:param add_neb_emission: (default: 1)
-		Choice for turning on (1) or off (0) the nebular emission modeling.
-
-	:param add_agn: (default: 0)
-		Choice for turning on (1) or off (0) the AGN dusty torus emission modeling.
-
-	:param gas_logu: (default: -2.0)
-		Gas ionization parameter in logarithmic scale.
-
-	:param del_lognorm: (default: [-2.0,2.0])
-		Left and right width for the prior range in normalization (i.e., M*), 
-		such that the prior range in M* is log(M*)=[log(s_best)+del_lognorm[0],log(s_best)+del_lognorm[1]].
-		Only relevant if fit_method='mcmc'.
+	:param models_spec: (Mandatory)
 
 	:param fit_method: (default: 'mcmc')
 		Choice for the fitting method. Options are: (1)'mcmc', and (2)'rdsps'.
+
+	:param gal_z:
+		Redshift of the galaxy. If gal_z=None, then redshift is taken from the header of the FITS file. 
+		If gal_z in the FITS file header is negatiive, then redshift is set to be free. 
+
+	:param z_range: (default: [0.0,1.0])
+
+	:param nrands_z: (default: 10)
+
+	:param add_igm_absorption: (default: 0)
+		Switch for the IGM absorption. Options are: (1)0 means turn off, and (2)1 means turn on.
+
+	:param igm_type: (default: 1)
+		Choice for the IGM absorption model. Options are: (1)0 or 'madau1995' for Madau (1995), and (2)1 or 'inoue2014' for Inoue et al. (2014).
 	
 	:param likelihood: (default: 'gauss')
 		Choice of likelihood function for the RDSPS method. Only relevant if the fit_method='rdsps'. Options are: (1)'gauss', and (2) 'student_t'.
@@ -444,16 +307,6 @@ def SEDfit_from_binmap(fits_binmap=None,binid_range=[],bin_ids=[],filters=None,s
 		Only relevant for 2 cases: (1) fit_method='rdsps' and likelihood='gauss', and (2) fit_method='mcmc'.
 		gauss_likelihood_form=0 means the Gaussian likelihood function uses the original/full Gaussian function form, whereas gauss_likelihood_form=1 means the likelihood function uses simplified form: P=exp(-0.5*chi^2).
 
-	:param name_saved_randmod: (Mandatory)
-		Name of the FITS file that contains pre-calculated model SEDs. As for the current version of **piXedfit**, this parameter is mandatory, meaning that a set of model SEDs (stored in FITS file) should be 
-		generated before performing SED fitting. The task of generatig set of random model SEDs can be done using :func:`save_models` function in :mod:`piXedfit_model` module.
-
-	:param redc_chi2_initfit: (default: 2.0)
-		Desired reduced chi-square of the best-fit model SED in the initial fitting. This is set to estimate bulk systemtic error associated with 
-		the input SED and models. It is quite possible that flux uncertainties of observed SEDs are underestimated because of underestimating or not accounting for the systematic errors. 
-		These systematic errors can be due to both observational factors (e.g., associated with images processing, PSF-matching, spatial resampling and reprojection) and SED modeling aspects.
-		See Section 4.1. (2nd last paragraph) in `Abdurro'uf et al. (2021) <https://ui.adsabs.harvard.edu/abs/2021arXiv210109717A/abstract>`_.  
-
 	:param nwalkers: (default: 100)
 		Number of walkers to be set in the MCMC process. This parameter is only applicable if fit_method='mcmc'.
 
@@ -463,12 +316,12 @@ def SEDfit_from_binmap(fits_binmap=None,binid_range=[],bin_ids=[],filters=None,s
 	:param nsteps_cut: (optional, default: 50)
 		Number of first steps of each walkers that will be cut when constructing the final sampler chains. Only relevant if fit_method='mcmc'.
 
-	:param width_initpos: (default: 0.08)
-		A factor to be multiplied with the piror range in order to set width (i.e.,sigma) of the gaussian "ball" (i.e., distribution) representing inital positions of the MCMC walkers.
-		Only relevant if fit_method='mcmc'. See Section 4.2.1 in `Abdurro'uf et al. (2021) <https://ui.adsabs.harvard.edu/abs/2021arXiv210109717A/abstract>`_.
-
 	:param nproc: (default: 10)
 		Number of processors (cores) to be used in the calculation.
+
+	:param perc_chi2: (optional, default: 90.0)
+		Lowest chi-square Percentage from the full model SEDs that are considered in the calculation of posterior-weighted averaging. 
+		This parameter is only relevant for the RDSPS fitting method and it is not applicable for the MCMC method.
 
 	:param cosmo: (default: 0)
 		Choices for the cosmology. Options are: (1)'flat_LCDM' or 0, (2)'WMAP5' or 1, (3)'WMAP7' or 2, (4)'WMAP9' or 3, (5)'Planck13' or 4, (6)'Planck15' or 5.
@@ -480,9 +333,9 @@ def SEDfit_from_binmap(fits_binmap=None,binid_range=[],bin_ids=[],filters=None,s
 	:param Om0: (default: 0.3)
 		The Omega matter at z=0.0. Only relevant when cosmo='flat_LCDM' is chosen.
 
-	:param perc_chi2: (optional, default: 90.0)
-		Lowest chi-square Percentage from the full model SEDs that are considered in the calculation of posterior-weighted averaging. 
-		This parameter is only relevant for the RDSPS fitting method and it is not applicable for the MCMC method.
+	:param store_full_samplers: (default: 1 or True)
+		Flag indicating whether full sampler models will be stored into the output FITS file or not. 
+		Options are: (a) 1 or True and (b) 0 or False.
 
 	:param name_out_fits: (optional, default: [])
 		Names of output FITS files. This parameter is optional. If not empty, it must be in a list format with number of elements is the same as the number of bins to be fit. 
@@ -492,144 +345,48 @@ def SEDfit_from_binmap(fits_binmap=None,binid_range=[],bin_ids=[],filters=None,s
 	CODE_dir = PIXEDFIT_HOME+'/piXedfit/piXedfit_fitting/'
 	temp_dir = PIXEDFIT_HOME+'/data/temp/'
 
-	# open the FITS file of pixel binning
+	# open pixel binning maps
 	hdu = fits.open(fits_binmap)
 	header = hdu[0].header
-	pix_bin_flag = hdu['bin_map'].data
+	bin_map = hdu['bin_map'].data
 	bin_flux = hdu['bin_flux'].data
 	bin_flux_err = hdu['bin_fluxerr'].data
 	hdu.close()
 
-	# redshift
-	if gal_z <= 0:
-		gal_z = float(header['z'])
-	
-	# get original filters
-	nbands_ori = int(header['nfilters'])
-	filters_ori = []
-	for bb in range(0,nbands_ori):
-		str_temp = 'fil%d' % bb
-		filters_ori.append(header[str_temp])
-
-	if filters == None:
-		nbands = nbands_ori
-		filters = filters_ori
-	else:
-		nbands = len(filters)
-
-	idx_fil = np.zeros(nbands)
-	for ii in range(0,nbands):
-		for jj in range(0,nbands_ori):
-			if filters[ii] == filters_ori[jj]:
-				idx_fil[ii] = jj
-	idx_fil = idx_fil.astype(int)
+	# flux scaling
+	unit = float(header['unit'])
 
 	# transpose from (wave,y,x) => (y,x,wave)
-	bin_flux_trans = np.transpose(bin_flux, axes=(1,2,0))
-	bin_flux_err_trans = np.transpose(bin_flux_err, axes=(1,2,0))
+	bin_flux_trans = np.transpose(bin_flux, axes=(1,2,0))*unit
+	bin_flux_err_trans = np.transpose(bin_flux_err, axes=(1,2,0))*unit
 
-	# get observed SEDs of all bins
-	nbins = int(np.max(pix_bin_flag))
-	unit = float(header['unit'])
-	obs_flux_all = np.zeros((nbins,nbands))
-	obs_flux_err_all = np.zeros((nbins,nbands))
-	for bb in range(0,nbins):
-		rows, cols = np.where(pix_bin_flag==bb+1)
-		obs_flux_all[bb] = bin_flux_trans[rows[0]][cols[0]][idx_fil]*unit
-		obs_flux_err_all[bb] = bin_flux_err_trans[rows[0]][cols[0]][idx_fil]*unit
+	# get filters
+	nbands = int(header['nfilters'])
+	filters = []
+	for bb in range(0,nbands):
+		str_temp = 'fil%d' % bb 
+		filters.append(header[str_temp])
 
 	# make text file containing list of filters:
 	name_filters_list = "filters_list%d.dat" % (randint(0,10000))
 	file_out = open(name_filters_list,"w")
-	for ii in range(0,nbands):
-		file_out.write("%s\n" % filters[ii]) 
+	for bb in range(0,nbands):
+		file_out.write("%s\n" % filters[bb]) 
 	file_out.close()
 	os.system('mv %s %s' % (name_filters_list,temp_dir))
+
+	if fit_method=='mcmc' or fit_method=='MCMC':
+		nproc_new = nproc_reduced(nproc,nwalkers,nsteps,nsteps_cut)
+	elif fit_method=='rdsps' or fit_method=='RDSPS':
+		nproc_new = nproc
 
 	# make configuration file:
 	name_config = "config_file%d.dat" % (randint(0,10000))
 	file_out = open(name_config,"w")
-	file_out.write("imf_type %d\n" % imf_type)
-
-	# SFH choice
-	if sfh_form=='tau_sfh' or sfh_form==0:
-		sfh_form1 = 0
-	elif sfh_form=='delayed_tau_sfh' or sfh_form==1:
-		sfh_form1 = 1
-	elif sfh_form=='log_normal_sfh' or sfh_form==2:
-		sfh_form1 = 2
-	elif sfh_form=='gaussian_sfh' or sfh_form==3:
-		sfh_form1 = 3
-	elif sfh_form=='double_power_sfh' or sfh_form==4:
-		sfh_form1 = 4
-	else:
-		print ("SFH choice is not recognized!")
-		sys.exit()
-	file_out.write("sfh_form %d\n" % sfh_form1)
-
-	# dust law
-	if dust_ext_law=='CF2000' or dust_ext_law==0:
-		dust_ext_law1 = 0
-	elif dust_ext_law=='Cal2000' or dust_ext_law==1:
-		dust_ext_law1 = 1
-	else:
-		print ("dust_ext_law is not recognized!")
-		sys.exit()
-	file_out.write("dust_ext_law %d\n" % dust_ext_law1)
-
-	# IGM type
-	if igm_type=='madau1995' or igm_type==0:
-		igm_type1 = 0
-	elif igm_type=='inoue2014' or igm_type==1:
-		igm_type1 = 1
-	else:
-		print ("igm_type is not recognized!")
-		sys.exit()
-	file_out.write("igm_type %d\n" % igm_type1)
-
-	file_out.write("add_neb_emission %d\n" % add_neb_emission)
-	file_out.write("gas_logu %lf\n" % gas_logu)
-	file_out.write("add_igm_absorption %d\n" % add_igm_absorption)
-	file_out.write("duste_switch %d\n" % duste_switch)
-	file_out.write("add_agn %d\n" % add_agn)
-	file_out.write("pr_logzsol_min %lf\n" % logzsol_range[0])
-	file_out.write("pr_logzsol_max %lf\n" % logzsol_range[1])
-	file_out.write("pr_log_tau_min %lf\n" % log_tau_range[0])
-	file_out.write("pr_log_tau_max %lf\n" % log_tau_range[1])
-	file_out.write("pr_log_alpha_min %lf\n" % log_alpha_range[0])
-	file_out.write("pr_log_alpha_max %lf\n" % log_alpha_range[1])
-	file_out.write("pr_log_beta_min %lf\n" % log_beta_range[0])
-	file_out.write("pr_log_beta_max %lf\n" % log_beta_range[1])
-	file_out.write("pr_log_t0_min %lf\n" % log_t0_range[0])
-	file_out.write("pr_log_t0_max %lf\n" % log_t0_range[1])
-	file_out.write("pr_log_age_min %lf\n" % log_age_range[0])
-	file_out.write("pr_log_age_max %lf\n" % log_age_range[1])
-	file_out.write("pr_dust_index_min %lf\n" % dust_index_range[0])
-	file_out.write("pr_dust_index_max %lf\n" % dust_index_range[1])
-	file_out.write("pr_dust1_min %lf\n" % dust1_range[0])
-	file_out.write("pr_dust1_max %lf\n" % dust1_range[1])
-	file_out.write("pr_dust2_min %lf\n" % dust2_range[0])
-	file_out.write("pr_dust2_max %lf\n" % dust2_range[1])
-	file_out.write("pr_z_min %lf\n" % z_range[0])
-	file_out.write("pr_z_max %lf\n" % z_range[1])
-	file_out.write("pr_log_gamma_min %lf\n" % log_gamma_range[0])
-	file_out.write("pr_log_gamma_max %lf\n" % log_gamma_range[1])
-	file_out.write("pr_log_umin_min %lf\n" % log_umin_range[0])
-	file_out.write("pr_log_umin_max %lf\n" % log_umin_range[1])
-	file_out.write("pr_log_qpah_min %lf\n" % log_qpah_range[0])
-	file_out.write("pr_log_qpah_max %lf\n" % log_qpah_range[1])
-	file_out.write("pr_log_fagn_min %lf\n" % log_fagn_range[0])
-	file_out.write("pr_log_fagn_max %lf\n" % log_fagn_range[1])
-	file_out.write("pr_log_tauagn_min %lf\n" % log_tauagn_range[0])
-	file_out.write("pr_log_tauagn_max %lf\n" % log_tauagn_range[1])
-	file_out.write("pr_del_lognorm_min %lf\n" % del_lognorm[0])
-	file_out.write("pr_del_lognorm_max %lf\n" % del_lognorm[1])
 	file_out.write("nwalkers %d\n" % nwalkers)
 	file_out.write("nsteps %d\n" % nsteps)
 	file_out.write("nsteps_cut %d\n" % nsteps_cut)
-	file_out.write("width_initpos %lf\n" % width_initpos)
 	file_out.write("ori_nproc %d\n" % nproc)
-	file_out.write("redc_chi2_initfit %lf\n" % redc_chi2_initfit)
 
 	# cosmology
 	if cosmo=='flat_LCDM' or cosmo==0:
@@ -650,35 +407,49 @@ def SEDfit_from_binmap(fits_binmap=None,binid_range=[],bin_ids=[],filters=None,s
 		print ("Input cosmo is not recognized!")
 		sys.exit()
 	file_out.write("cosmo %d\n" % cosmo1)
-
 	file_out.write("H0 %lf\n" % H0)
 	file_out.write("Om0 %lf\n" % Om0)
-	
+
 	if fit_method=='rdsps' or fit_method=='RDSPS':
 		file_out.write("likelihood %s\n" % likelihood)
 		file_out.write("dof %lf\n" % dof)
 
-	if name_saved_randmod == None:
-		print ("name_saved_randmod is mandatory input!")
+	if models_spec == None:
+		print ("models_spec input is required!")
 		sys.exit()
-	file_out.write("name_saved_randmod %s\n" % name_saved_randmod)
+	file_out.write("models_spec %s\n" % models_spec)
 
 	file_out.write("gauss_likelihood_form %d\n" % gauss_likelihood_form)
 	# redshift
+	if gal_z==None or gal_z<=0.0:
+		gal_z = float(header['z'])
+		if gal_z<=0.0:
+			gal_z = -99.0
+			free_z = 1
+	else:
+		free_z = 0
 	file_out.write("gal_z %lf\n" % gal_z)
+	file_out.write("pr_z_min %lf\n" % z_range[0])
+	file_out.write("pr_z_max %lf\n" % z_range[1])
+	file_out.write("nrands_z %d\n" % nrands_z)
+
+	file_out.write("add_igm_absorption %d\n" % add_igm_absorption)
+	if igm_type=='madau1995' or igm_type==0:
+		igm_type1 = 0
+	elif igm_type=='inoue2014' or igm_type==1:
+		igm_type1 = 1
+	else:
+		print ("igm_type is not recognized!")
+		sys.exit()
+	file_out.write("igm_type %d\n" % igm_type1)
 
 	if fit_method=='rdsps':
-		file_out.write("perc_chi2 %lf\n" % perc_chi2) 
+		file_out.write("perc_chi2 %lf\n" % perc_chi2)
 
 	file_out.close()
 
-	# store configuration file into temp directory
+	# move configuration file into temp directory:
 	os.system('mv %s %s' % (name_config,temp_dir))
-
-	if fit_method=='mcmc' or fit_method=='MCMC':
-		nproc_new = nproc_reduced(nproc,nwalkers,nsteps,nsteps_cut)
-	elif fit_method=='rdsps' or fit_method=='RDSPS':
-		nproc_new = nproc
 
 	nbins_calc = 0
 	if len(bin_ids)>0:
@@ -711,14 +482,13 @@ def SEDfit_from_binmap(fits_binmap=None,binid_range=[],bin_ids=[],filters=None,s
 		count_id = 0
 		for idx_bin in bin_ids:
 			# SED of bin
-			obs_flux = obs_flux_all[int(idx_bin)]
-			obs_flux_err = obs_flux_err_all[int(idx_bin)]
+			rows, cols = np.where(bin_map==idx_bin+1)
 
 			# input SED text file
 			name_SED_txt = "inputSED_file%d.dat" % (randint(0,20000))
 			file_out = open(name_SED_txt,"w")
-			for ii in range(0,nbands):
-				file_out.write("%e  %e\n" % (obs_flux[ii],obs_flux_err[ii]))
+			for bb in range(0,nbands):
+				file_out.write("%e  %e\n" % (bin_flux_trans[rows[0]][cols[0]][bb], bin_flux_err_trans[rows[0]][cols[0]][bb]))
 			file_out.close()
 			os.system('mv %s %s' % (name_SED_txt,temp_dir))
 
@@ -728,85 +498,80 @@ def SEDfit_from_binmap(fits_binmap=None,binid_range=[],bin_ids=[],filters=None,s
 			else:
 				name_out_fits1 = name_out_fits[int(count_id)]
 
-			# more..
-			random_int = (randint(0,10000))
-			name_params_list = "params_list_%d.dat" % random_int
-			name_sampler_list = "sampler_%d.dat" % random_int
-			name_modif_obs_photo_SED = "modif_obs_photo_SED_%d.dat" % random_int
+			random_int = (randint(0,20000))
+			name_samplers_hdf5 = "samplers_%d.hdf5" % random_int
 
+			os.system("mpirun -n %d python %s./mc_p1.py %s %s %s %s" % (nproc,CODE_dir,name_filters_list,name_config,
+																							name_SED_txt,name_samplers_hdf5))
+			os.system('mv %s %s' % (name_samplers_hdf5,temp_dir))
+			
 			if store_full_samplers==1 or store_full_samplers==True:
-				os.system("mpirun -n %d python %s./mcmc_pcmod_p1.py %s %s %s %s %s %s" % (nproc,CODE_dir,name_filters_list,name_config,
-																							name_SED_txt,name_params_list,name_sampler_list,
-																							name_modif_obs_photo_SED))
-				os.system('mv %s %s' % (name_params_list,temp_dir))
-				os.system('mv %s %s' % (name_sampler_list,temp_dir))
-				os.system('mv %s %s' % (name_modif_obs_photo_SED,temp_dir))
-				os.system("mpirun -n %d python %s./mcmc_pcmod_p2.py %s %s %s %s %s %s" % (nproc_new,CODE_dir,name_filters_list,name_config,
-																						name_params_list,name_sampler_list,
-																						name_modif_obs_photo_SED,name_out_fits1))
-				os.system("rm %s%s" % (temp_dir,name_SED_txt))
-				os.system("rm %s%s" % (temp_dir,name_params_list))
-				os.system("rm %s%s" % (temp_dir,name_sampler_list))
-				os.system("rm %s%s" % (temp_dir,name_modif_obs_photo_SED))
-
+				os.system("mpirun -n %d python %s./mc_p2.py %s %s %s %s" % (nproc_new,CODE_dir,name_filters_list,name_config,
+																							name_samplers_hdf5,name_out_fits))
 			elif store_full_samplers==0 or store_full_samplers==False:
-				os.system("mpirun -n %d python %s./mcmc_pcmod_nsamp_p1.py %s %s %s %s %s %s" % (nproc,CODE_dir,name_filters_list,name_config,
-																							name_SED_txt,name_params_list,name_sampler_list,
-																							name_modif_obs_photo_SED))
-				os.system('mv %s %s' % (name_params_list,temp_dir))
-				os.system('mv %s %s' % (name_sampler_list,temp_dir))
-				os.system('mv %s %s' % (name_modif_obs_photo_SED,temp_dir))
-				os.system("mpirun -n %d python %s./mcmc_pcmod_nsamp_p2.py %s %s %s %s %s %s" % (nproc_new,CODE_dir,name_filters_list,name_config,
-																						name_params_list,name_sampler_list,
-																						name_modif_obs_photo_SED,name_out_fits1))
-				os.system("rm %s%s" % (temp_dir,name_SED_txt))
-				os.system("rm %s%s" % (temp_dir,name_params_list))
-				os.system("rm %s%s" % (temp_dir,name_sampler_list))
-				os.system("rm %s%s" % (temp_dir,name_modif_obs_photo_SED))
+				os.system("mpirun -n %d python %s./mc_nsmp_p2.py %s %s %s %s" % (nproc_new,CODE_dir,name_filters_list,name_config,
+																							name_samplers_hdf5,name_out_fits))
 			else:
 				print ("Input store_full_samplers not recognized!")
 				sys.exit()
 
 			count_id = count_id + 1
 
+			os.system("rm %s%s" % (temp_dir,name_SED_txt))
+			os.system("rm %s%s" % (temp_dir,name_samplers_hdf5))
+
 	elif fit_method=='rdsps' or fit_method=='RDSPS':
 		# single bin
 		if len(bin_ids) == 1:
+			rows, cols = np.where(bin_map==int(bin_ids[0])+1)
+
 			name_SED_txt = "inputSED_file%d.dat" % (randint(0,10000))
 			file_out = open(name_SED_txt,"w")
 			for bb in range(0,nbands):
-				file_out.write("%e  %e\n" % (obs_flux_all[int(bin_ids[0])][bb],obs_flux_err_all[int(bin_ids[0])][bb]))
+				file_out.write("%e  %e\n" % (bin_flux_trans[rows[0]][cols[0]][bb],bin_flux_err_trans[rows[0]][cols[0]][bb]))
 			file_out.close()
 			os.system('mv %s %s' % (name_SED_txt,temp_dir))
 
 			# output files name:
 			if len(name_out_fits) == 0:
-				name_out_fits0 = "rdsps_bin%d.fits" % (bin_ids[0]+1)
+				name_out_fits = "rdsps_bin%d.fits" % (bin_ids[0]+1)
 			else:
-				name_out_fits0 = name_out_fits[0]
+				name_out_fits = name_out_fits[0]
 
 			if store_full_samplers==1 or store_full_samplers==True:
-				os.system("mpirun -n %d python %s./rdsps_pcmod.py %s %s %s %s" % (nproc_new,CODE_dir,name_filters_list,name_config,name_SED_txt,
-																				name_out_fits0))
+				if free_z==0:
+					os.system("mpirun -n %d python %s./rd_fz.py %s %s %s %s" % (nproc_new,CODE_dir,name_filters_list,name_config,name_SED_txt,name_out_fits))
+				elif free_z==1:
+					os.system("mpirun -n %d python %s./rd_vz.py %s %s %s %s" % (nproc_new,CODE_dir,name_filters_list,name_config,name_SED_txt,name_out_fits))
 			elif store_full_samplers==0 or store_full_samplers==False:
-				os.system("mpirun -n %d python %s./rdsps_pcmod_nsamp.py %s %s %s %s" % (nproc_new,CODE_dir,name_filters_list,name_config,name_SED_txt,
-																				name_out_fits0))
+				if free_z==0:
+					os.system("mpirun -n %d python %s./rd_fz_nsmp.py %s %s %s %s" % (nproc_new,CODE_dir,name_filters_list,name_config,name_SED_txt,name_out_fits))
+				elif free_z==1:
+					os.system("mpirun -n %d python %s./rd_vz_nsmp.py %s %s %s %s" % (nproc_new,CODE_dir,name_filters_list,name_config,name_SED_txt,name_out_fits))
 			else:
 				print ("Input store_full_samplers not recognized!")
 				sys.exit()
 
-		# more than one bins
+			os.system("rm %s%s" % (temp_dir,name_SED_txt))
+
+		# multiple bins
 		else:
-			# input SEDs
-			name_inputSEDs = "input_SEDs_%d.dat" % (randint(0,10000))
-			file_out = open(name_inputSEDs,"w")
-			for idx_bin in bin_ids:
-				for bb in range(0,nbands):
-					file_out.write("%e  " % obs_flux_all[int(idx_bin)][bb])
-				for bb in range(0,nbands-1):
-					file_out.write("%e  " % obs_flux_err_all[int(idx_bin)][bb])
-				file_out.write("%e\n" % obs_flux_err_all[int(idx_bin)][nbands-1])
-			file_out.close()
+			# input SEDs: store to hdf5 file
+			name_inputSEDs = "input_SEDs_%d.hdf5" % (randint(0,10000))
+			with h5py.File(name_inputSEDs, 'w') as f:
+				m = f.create_group('obs_seds')
+				m.attrs['nbins_calc'] = len(bin_ids)
+
+				fl = m.create_group('flux')
+				fle = m.create_group('flux_err')
+				for ii in range(0,len(bin_ids)):
+					rows, cols = np.where(bin_map==bin_ids[ii]+1)
+					str_temp = 'b%d_f' % ii
+					fl.create_dataset(str_temp, data=np.array(bin_flux_trans[rows[0]][cols[0]]))
+
+					str_temp = 'b%d_ferr' % ii
+					fle.create_dataset(str_temp, data=np.array(bin_flux_err_trans[rows[0]][cols[0]]))
+
 			os.system('mv %s %s' % (name_inputSEDs,temp_dir))
 
 			# name outputs:
@@ -827,11 +592,21 @@ def SEDfit_from_binmap(fits_binmap=None,binid_range=[],bin_ids=[],filters=None,s
 			os.system('mv %s %s' % (name_outs,temp_dir))
 
 			if store_full_samplers==1 or store_full_samplers==True:
-				os.system("mpirun -n %d python %s./rdsps_pcmod_bulk.py %s %s %s %s" % (nproc_new,CODE_dir,name_filters_list,name_config,
+				if free_z==0:
+					os.system("mpirun -n %d python %s./rd_fz_blk.py %s %s %s %s" % (nproc_new,CODE_dir,name_filters_list,name_config,
 																					name_inputSEDs,name_outs))
+				elif free_z==1:
+					os.system("mpirun -n %d python %s./rd_vz_blk.py %s %s %s %s" % (nproc_new,CODE_dir,name_filters_list,name_config,
+																					name_inputSEDs,name_outs))
+
 			elif store_full_samplers==0 or store_full_samplers==False:
-				os.system("mpirun -n %d python %s./rdsps_pcmod_nsamp_bulk.py %s %s %s %s" % (nproc_new,CODE_dir,name_filters_list,name_config,
+				if free_z==0:
+					os.system("mpirun -n %d python %s./rd_fz_nsmp_blk.py %s %s %s %s" % (nproc_new,CODE_dir,name_filters_list,name_config,
 																					name_inputSEDs,name_outs))
+				elif free_z==1:
+					os.system("mpirun -n %d python %s./rd_vz_nsmp_blk.py %s %s %s %s" % (nproc_new,CODE_dir,name_filters_list,name_config,
+																					name_inputSEDs,name_outs))
+
 			else:
 				print ("Input store_full_samplers not recognized!")
 				sys.exit()
@@ -848,13 +623,9 @@ def SEDfit_from_binmap(fits_binmap=None,binid_range=[],bin_ids=[],filters=None,s
 	os.system("rm %s%s" % (temp_dir,name_config))
 
 
-def SEDfit_pixels_from_fluxmap(fits_fluxmap=None,x_range=[],y_range=[],filters=None,gal_z=-99.0,imf_type=1,sfh_form=4,dust_ext_law=1,add_igm_absorption=0,
-	igm_type=0,duste_switch=0,add_neb_emission=1,add_agn=0,gas_logu=-2.0,logzsol_range=[-2.0,0.2],log_tau_range=[-1.0,1.2],log_age_range=[-1.0,1.14],
-	log_alpha_range=[-2.0,2.0],log_beta_range=[-2.0,2.0],log_t0_range=[-1.0,1.14],dust_index_range=[-0.7,-0.7],dust1_range=[0.0,3.0],
-	dust2_range=[0.0,3.0],log_gamma_range=[-3.0,-0.824],log_umin_range=[-1.0,1.176],log_qpah_range=[-1.0,0.845], z_range=[-99.0,-99.0],
-	log_fagn_range=[-5.0,0.48],log_tauagn_range=[0.70,2.18],del_lognorm=[-2.0,2.0],fit_method='mcmc',likelihood='gauss', dof=3.0, 
-	gauss_likelihood_form=0, name_saved_randmod=None, redc_chi2_initfit=2.0, nwalkers=100, nsteps=600, nsteps_cut=50, 
-	width_initpos=0.08, nproc=10, cosmo=0,H0=70.0,Om0=0.3,perc_chi2=10.0,store_full_samplers=1):
+def SEDfit_pixels_from_fluxmap(fits_fluxmap,x_range=[],y_range=[],models_spec=None,fit_method='mcmc',gal_z=None,z_range=[0.0,1.0],nrands_z=10,
+	add_igm_absorption=0, igm_type=1, likelihood='gauss', dof=3.0, gauss_likelihood_form=1, nwalkers=100, nsteps=600,nsteps_cut=50,nproc=10,
+	cosmo=0,H0=70.0,Om0=0.3,perc_chi2=10.0,store_full_samplers=1):
 
 	"""A function for performing SED fitting on pixel-by-pixel basis. 
 
@@ -870,49 +641,24 @@ def SEDfit_pixels_from_fluxmap(fits_fluxmap=None,x_range=[],y_range=[],filters=N
 		Range of y-axis coordinate within which SED fitting will be performed to the pixels. The format is [ymin,ymax]. 
 		If y_range=[], the whole y-axis range of the data cube is considered.
 
-	:param filters: (optional, default: None)
-		List of photometric filters of which the fluxes are considered in the fitting. If filters=None, 
-		then the same set of filters as that in the data cube would be used.
-
-	:param gal_z: (default: -99.0)
-		Redshift of the galaxy. If gal_z=-99.0, then redshift is taken from the FITS file. 
-		If still gal_z=-99.0, then redshift is set to be free. **As for the current version of **piXedfit**, photo-z hasn't been implemented**.
-
-	:param imf_type: (default: 1)
-		Choice for the IMF. Should be integer. Options are: (1)0 for Salpeter (1955), (2)1 for Chabrier (2003), and (3)2 for Kroupa (2001).
-
-	:param sfh_form: (default: 4)
-		Choice for the SFH model. Options are: (1)0 or 'tau_sfh', (2)1 or 'delayed_tau_sfh', (3)2 or 'log_normal_sfh', (4)3 or 'gaussian_sfh', (5)4 or 'double_power_sfh'.
-
-	:param dust_ext_law: (default: 1)
-		Choice for the dust attenuation law. Options are: (1)'CF2000' or 0 for Charlot & Fall (2000), (2)'Cal2000' or 1 for Calzetti et al. (2000).
-
-	:param add_igm_absorption: (default: 0)
-		Choice for turning on (value: 1) or off (value: 0) the IGM absorption modeling.
-
-	:param igm_type: (default: 0)
-		Choice for the IGM absorption model. Only relevant if add_igm_absorption=1. 
-		Options are: (1)0 or 'madau1995' for Madau (1995), and (2)1 or 'inoue2014' for Inoue et al. (2014).
-
-	:param duste_switch: (default: 0)
-		Choice for turning on (value: 1) or off (value: 0) the dust emission modeling.
-
-	:param add_neb_emission: (default: 1)
-		Choice for turning on (1) or off (0) the nebular emission modeling.
-
-	:param add_agn: (default: 0)
-		Choice for turning on (1) or off (0) the AGN dusty torus emission modeling.
-
-	:param gas_logu: (default: -2.0)
-		Gas ionization parameter in logarithmic scale.
-
-	:param del_lognorm: (default: [-2.0,2.0])
-		Left and right width for the prior range in normalization (i.e., M*), 
-		such that the prior range in M* is log(M*)=[log(s_best)+del_lognorm[0],log(s_best)+del_lognorm[1]].
-		Only relevant if fit_method='mcmc'.
+	:param models_spec:
 
 	:param fit_method: (default: 'mcmc')
 		Choice for the fitting method. Options are: (1)'mcmc', and (2)'rdsps'.
+
+	:param gal_z: 
+		Redshift of the galaxy. If gal_z=None, then redshift is taken from the FITS file header. 
+		If gal_z from the header is negative, then redshift is set to be free. **As for the current version of **piXedfit**, photo-z hasn't been implemented**.
+
+	:param z_range:
+
+	:param nrands_z:
+
+	:param add_igm_absorption: (default: 0)
+		Switch for the IGM absorption. Options are: (1)0 means turn off, and (2)1 means turn on.
+
+	:param igm_type: (default: 1)
+		Choice for the IGM absorption model. Options are: (1)0 or 'madau1995' for Madau (1995), and (2)1 or 'inoue2014' for Inoue et al. (2014).
 	
 	:param likelihood: (default: 'gauss')
 		Choice of likelihood function for the RDSPS method. Only relevant if the fit_method='rdsps'. Options are: (1)'gauss', and (2) 'student_t'.
@@ -925,16 +671,6 @@ def SEDfit_pixels_from_fluxmap(fits_fluxmap=None,x_range=[],y_range=[],filters=N
 		Only relevant for 2 cases: (1) fit_method='rdsps' and likelihood='gauss', and (2) fit_method='mcmc'.
 		gauss_likelihood_form=0 means the Gaussian likelihood function uses the original/full Gaussian function form, whereas gauss_likelihood_form=1 means the likelihood function uses simplified form: P=exp(-0.5*chi^2).
 
-	:param name_saved_randmod: (Mandatory)
-		Name of the FITS file that contains pre-calculated model SEDs. As for the current version of **piXedfit**, this parameter is mandatory, meaning that a set of model SEDs (stored in FITS file) should be 
-		generated before performing SED fitting. The task of generatig set of random model SEDs can be done using :func:`save_models` function in :mod:`piXedfit_model` module.
-
-	:param redc_chi2_initfit: (default: 2.0)
-		Desired reduced chi-square of the best-fit model SED in the initial fitting. This is set to estimate bulk systemtic error associated with 
-		the input SED and models. It is quite possible that flux uncertainties of observed SEDs are underestimated because of underestimating or not accounting for the systematic errors. 
-		These systematic errors can be due to both observational factors (e.g., associated with images processing, PSF-matching, spatial resampling and reprojection) and SED modeling aspects.
-		See Section 4.1. (2nd last paragraph) in `Abdurro'uf et al. (2021) <https://ui.adsabs.harvard.edu/abs/2021arXiv210109717A/abstract>`_.  
-
 	:param nwalkers: (default: 100)
 		Number of walkers to be set in the MCMC process. This parameter is only applicable if fit_method='mcmc'.
 
@@ -943,10 +679,6 @@ def SEDfit_pixels_from_fluxmap(fits_fluxmap=None,x_range=[],y_range=[],filters=N
 
 	:param nsteps_cut: (optional, default: 50)
 		Number of first steps of each walkers that will be cut when constructing the final sampler chains. Only relevant if fit_method='mcmc'.
-
-	:param width_initpos: (default: 0.08)
-		A factor to be multiplied with the piror range in order to set width (i.e.,sigma) of the gaussian "ball" (i.e., distribution) representing inital positions of the MCMC walkers.
-		Only relevant if fit_method='mcmc'. See Section 4.2.1 in `Abdurro'uf et al. (2021) <https://ui.adsabs.harvard.edu/abs/2021arXiv210109717A/abstract>`_.
 
 	:param nproc: (default: 10)
 		Number of processors (cores) to be used in the calculation.
@@ -981,37 +713,30 @@ def SEDfit_pixels_from_fluxmap(fits_fluxmap=None,x_range=[],y_range=[],filters=N
 	map_flux_err = hdu['flux_err'].data 
 	hdu.close()
 
+	# flux unit
+	unit = float(header['unit'])
+
+	# transpose from (wave,y,x) => (y,x,wave)
+	map_flux_trans = np.transpose(map_flux, axes=(1,2,0))*unit
+	map_flux_err_trans = np.transpose(map_flux_err, axes=(1,2,0))*unit
+
 	# dimension
 	dim_y = gal_region.shape[0]
 	dim_x = gal_region.shape[1]
 
-	# redshift
-	if gal_z <= 0:
-		gal_z = float(header['z'])
-	
-	# get original filters
-	nbands_ori = int(header['nfilters'])
-	filters_ori = []
-	for bb in range(0,nbands_ori):
+	# filters
+	nbands = int(header['nfilters'])
+	filters = []
+	for bb in range(0,nbands):
 		str_temp = 'fil%d' % bb
-		filters_ori.append(header[str_temp])
-
-	if filters == None:
-		nbands = nbands_ori
-		filters = filters_ori
-	else:
-		nbands = len(filters)
-
-	idx_fil = np.zeros(nbands)
-	for ii in range(0,nbands):
-		for jj in range(0,nbands_ori):
-			if filters[ii] == filters_ori[jj]:
-				idx_fil[ii] = jj
-	idx_fil = idx_fil.astype(int)
-
-	# transpose from (wave,y,x) => (y,x,wave)
-	map_flux_trans = np.transpose(map_flux, axes=(1,2,0))
-	map_flux_err_trans = np.transpose(map_flux_err, axes=(1,2,0))
+		filters.append(header[str_temp])
+	# store to text file
+	name_filters_list = "filters_list%d.dat" % (randint(0,10000))
+	file_out = open(name_filters_list,"w")
+	for bb in range(0,nbands):
+		file_out.write("%s\n" % filters[bb]) 
+	file_out.close()
+	os.system('mv %s %s' % (name_filters_list,temp_dir))
 
 	# Define x- and y-ranges
 	if len(x_range)==0:
@@ -1032,101 +757,13 @@ def SEDfit_pixels_from_fluxmap(fits_fluxmap=None,x_range=[],y_range=[],filters=N
 		else:
 			ymin, ymax = y_range[0], y_range[1]
 
-	# unit of flux:
-	unit = float(header['unit'])
-
-	# make text file containing list of filters:
-	name_filters_list = "filters_list%d.dat" % (randint(0,10000))
-	file_out = open(name_filters_list,"w")
-	for ii in range(0,nbands):
-		file_out.write("%s\n" % filters[ii]) 
-	file_out.close()
-	os.system('mv %s %s' % (name_filters_list,temp_dir))
-
 	# make configuration file:
 	name_config = "config_file%d.dat" % (randint(0,10000))
 	file_out = open(name_config,"w")
-	file_out.write("imf_type %d\n" % imf_type)
-
-	# SFH choice
-	if sfh_form=='tau_sfh' or sfh_form==0:
-		sfh_form1 = 0
-	elif sfh_form=='delayed_tau_sfh' or sfh_form==1:
-		sfh_form1 = 1
-	elif sfh_form=='log_normal_sfh' or sfh_form==2:
-		sfh_form1 = 2
-	elif sfh_form=='gaussian_sfh' or sfh_form==3:
-		sfh_form1 = 3
-	elif sfh_form=='double_power_sfh' or sfh_form==4:
-		sfh_form1 = 4
-	else:
-		print ("SFH choice is not recognized!")
-		sys.exit()
-	file_out.write("sfh_form %d\n" % sfh_form1)
-
-	# dust law
-	if dust_ext_law=='CF2000' or dust_ext_law==0:
-		dust_ext_law1 = 0
-	elif dust_ext_law=='Cal2000' or dust_ext_law==1:
-		dust_ext_law1 = 1
-	else:
-		print ("dust_ext_law is not recognized!")
-		sys.exit()
-	file_out.write("dust_ext_law %d\n" % dust_ext_law1)
-
-	# IGM type
-	if igm_type=='madau1995' or igm_type==0:
-		igm_type1 = 0
-	elif igm_type=='inoue2014' or igm_type==1:
-		igm_type1 = 1
-	else:
-		print ("igm_type is not recognized!")
-		sys.exit()
-	file_out.write("igm_type %d\n" % igm_type1)
-
-	file_out.write("add_neb_emission %d\n" % add_neb_emission)
-	file_out.write("gas_logu %lf\n" % gas_logu)
-	file_out.write("add_igm_absorption %d\n" % add_igm_absorption)
-	file_out.write("duste_switch %d\n" % duste_switch)
-	file_out.write("add_agn %d\n" % add_agn)
-	file_out.write("pr_logzsol_min %lf\n" % logzsol_range[0])
-	file_out.write("pr_logzsol_max %lf\n" % logzsol_range[1])
-	file_out.write("pr_log_tau_min %lf\n" % log_tau_range[0])
-	file_out.write("pr_log_tau_max %lf\n" % log_tau_range[1])
-	file_out.write("pr_log_alpha_min %lf\n" % log_alpha_range[0])
-	file_out.write("pr_log_alpha_max %lf\n" % log_alpha_range[1])
-	file_out.write("pr_log_beta_min %lf\n" % log_beta_range[0])
-	file_out.write("pr_log_beta_max %lf\n" % log_beta_range[1])
-	file_out.write("pr_log_t0_min %lf\n" % log_t0_range[0])
-	file_out.write("pr_log_t0_max %lf\n" % log_t0_range[1])
-	file_out.write("pr_log_age_min %lf\n" % log_age_range[0])
-	file_out.write("pr_log_age_max %lf\n" % log_age_range[1])
-	file_out.write("pr_dust_index_min %lf\n" % dust_index_range[0])
-	file_out.write("pr_dust_index_max %lf\n" % dust_index_range[1])
-	file_out.write("pr_dust1_min %lf\n" % dust1_range[0])
-	file_out.write("pr_dust1_max %lf\n" % dust1_range[1])
-	file_out.write("pr_dust2_min %lf\n" % dust2_range[0])
-	file_out.write("pr_dust2_max %lf\n" % dust2_range[1])
-	file_out.write("pr_z_min %lf\n" % z_range[0])
-	file_out.write("pr_z_max %lf\n" % z_range[1])
-	file_out.write("pr_log_gamma_min %lf\n" % log_gamma_range[0])
-	file_out.write("pr_log_gamma_max %lf\n" % log_gamma_range[1])
-	file_out.write("pr_log_umin_min %lf\n" % log_umin_range[0])
-	file_out.write("pr_log_umin_max %lf\n" % log_umin_range[1])
-	file_out.write("pr_log_qpah_min %lf\n" % log_qpah_range[0])
-	file_out.write("pr_log_qpah_max %lf\n" % log_qpah_range[1])
-	file_out.write("pr_log_fagn_min %lf\n" % log_fagn_range[0])
-	file_out.write("pr_log_fagn_max %lf\n" % log_fagn_range[1])
-	file_out.write("pr_log_tauagn_min %lf\n" % log_tauagn_range[0])
-	file_out.write("pr_log_tauagn_max %lf\n" % log_tauagn_range[1])
-	file_out.write("pr_del_lognorm_min %lf\n" % del_lognorm[0])
-	file_out.write("pr_del_lognorm_max %lf\n" % del_lognorm[1])
 	file_out.write("nwalkers %d\n" % nwalkers)
 	file_out.write("nsteps %d\n" % nsteps)
 	file_out.write("nsteps_cut %d\n" % nsteps_cut)
-	file_out.write("width_initpos %lf\n" % width_initpos)
 	file_out.write("ori_nproc %d\n" % nproc)
-	file_out.write("redc_chi2_initfit %lf\n" % redc_chi2_initfit)
 
 	# cosmology
 	if cosmo=='flat_LCDM' or cosmo==0:
@@ -1149,130 +786,142 @@ def SEDfit_pixels_from_fluxmap(fits_fluxmap=None,x_range=[],y_range=[],filters=N
 	file_out.write("cosmo %d\n" % cosmo1)
 	file_out.write("H0 %lf\n" % H0)
 	file_out.write("Om0 %lf\n" % Om0)
-	
+
 	if fit_method=='rdsps' or fit_method=='RDSPS':
 		file_out.write("likelihood %s\n" % likelihood)
 		file_out.write("dof %lf\n" % dof)
 
-	if name_saved_randmod == None:
-		print ("name_saved_randmod is mandatory input!")
+	if models_spec == None:
+		print ("models_spec input is required!")
 		sys.exit()
-	file_out.write("name_saved_randmod %s\n" % name_saved_randmod)
+	file_out.write("models_spec %s\n" % models_spec)
 
 	file_out.write("gauss_likelihood_form %d\n" % gauss_likelihood_form)
 	# redshift
+	if gal_z==None or gal_z<=0.0:
+		gal_z = float(header['z'])
+		if gal_z<=0.0:
+			gal_z = -99.0
+			free_z = 1
+	else:
+		free_z = 0
 	file_out.write("gal_z %lf\n" % gal_z)
+	file_out.write("pr_z_min %lf\n" % z_range[0])
+	file_out.write("pr_z_max %lf\n" % z_range[1])
+	file_out.write("nrands_z %d\n" % nrands_z)
+
+	file_out.write("add_igm_absorption %d\n" % add_igm_absorption)
+	if igm_type=='madau1995' or igm_type==0:
+		igm_type1 = 0
+	elif igm_type=='inoue2014' or igm_type==1:
+		igm_type1 = 1
+	else:
+		print ("igm_type is not recognized!")
+		sys.exit()
+	file_out.write("igm_type %d\n" % igm_type1)
 
 	if fit_method=='rdsps':
-		file_out.write("perc_chi2 %lf\n" % perc_chi2) 
+		file_out.write("perc_chi2 %lf\n" % perc_chi2)
 
 	file_out.close()
 
-	# store configuration file into temp directory
+	# move to temp dir
 	os.system('mv %s %s' % (name_config,temp_dir))
 
 	if fit_method=='mcmc' or fit_method=='MCMC':
 		nproc_new = nproc_reduced(nproc,nwalkers,nsteps,nsteps_cut)
 	elif fit_method=='rdsps' or fit_method=='RDSPS':
 		nproc_new = nproc
-
 	
 	#==> fitting process
 	if fit_method=='mcmc' or fit_method=='MCMC':
 		for yy in range(ymin,ymax):
 			for xx in range(xmin,xmax):
 				if gal_region[yy][xx] == 1:
-					# observed SED:
-					obs_flux = map_flux_trans[yy][xx][idx_fil]*unit
-					obs_flux_err = map_flux_err_trans[yy][xx][idx_fil]*unit
+					obs_flux = map_flux_trans[yy][xx]
+					obs_flux_err = map_flux_err_trans[yy][xx]
 
 					# input SED text file
 					name_SED_txt = "inputSED_file%d.dat" % (randint(0,20000))
 					file_out = open(name_SED_txt,"w")
-					for ii in range(0,nbands):
-						file_out.write("%e  %e\n" % (obs_flux[ii],obs_flux_err[ii]))
+					for bb in range(0,nbands):
+						file_out.write("%e  %e\n" % (obs_flux[bb],obs_flux_err[bb]))
 					file_out.close()
 					os.system('mv %s %s' % (name_SED_txt,temp_dir))
 
 					# name of output FITS file
 					name_out_fits = "pix_y%d_x%d_mcmc.fits" % (yy,xx)
 
-					# more..
-					random_int = (randint(0,10000))
-					name_params_list = "params_list_%d.dat" % random_int
-					name_sampler_list = "sampler_%d.dat" % random_int
-					name_modif_obs_photo_SED = "modif_obs_photo_SED_%d.dat" % random_int
+					random_int = (randint(0,20000))
+					name_samplers_hdf5 = "samplers_%d.hdf5" % random_int
 
+					os.system("mpirun -n %d python %s./mc_p1.py %s %s %s %s" % (nproc,CODE_dir,name_filters_list,name_config,
+																							name_SED_txt,name_samplers_hdf5))
+					os.system('mv %s %s' % (name_samplers_hdf5,temp_dir))
+					
 					if store_full_samplers==1 or store_full_samplers==True:
-						os.system("mpirun -n %d python %s./mcmc_pcmod_p1.py %s %s %s %s %s %s" % (nproc,CODE_dir,name_filters_list,name_config,
-																									name_SED_txt,name_params_list,name_sampler_list,
-																									name_modif_obs_photo_SED))
-						os.system('mv %s %s' % (name_params_list,temp_dir))
-						os.system('mv %s %s' % (name_sampler_list,temp_dir))
-						os.system('mv %s %s' % (name_modif_obs_photo_SED,temp_dir))
-						os.system("mpirun -n %d python %s./mcmc_pcmod_p2.py %s %s %s %s %s %s" % (nproc_new,CODE_dir,name_filters_list,name_config,
-																								name_params_list,name_sampler_list,
-																								name_modif_obs_photo_SED,name_out_fits))
-						os.system("rm %s%s" % (temp_dir,name_SED_txt))
-						os.system("rm %s%s" % (temp_dir,name_params_list))
-						os.system("rm %s%s" % (temp_dir,name_sampler_list))
-						os.system("rm %s%s" % (temp_dir,name_modif_obs_photo_SED))
-
+						os.system("mpirun -n %d python %s./mc_p2.py %s %s %s %s" % (nproc_new,CODE_dir,name_filters_list,name_config,
+																									name_samplers_hdf5,name_out_fits))
 					elif store_full_samplers==0 or store_full_samplers==False:
-						os.system("mpirun -n %d python %s./mcmc_pcmod_nsamp_p1.py %s %s %s %s %s %s" % (nproc,CODE_dir,name_filters_list,name_config,
-																									name_SED_txt,name_params_list,name_sampler_list,
-																									name_modif_obs_photo_SED))
-						os.system('mv %s %s' % (name_params_list,temp_dir))
-						os.system('mv %s %s' % (name_sampler_list,temp_dir))
-						os.system('mv %s %s' % (name_modif_obs_photo_SED,temp_dir))
-						os.system("mpirun -n %d python %s./mcmc_pcmod_nsamp_p2.py %s %s %s %s %s %s" % (nproc_new,CODE_dir,name_filters_list,name_config,
-																								name_params_list,name_sampler_list,
-																								name_modif_obs_photo_SED,name_out_fits))
-						os.system("rm %s%s" % (temp_dir,name_SED_txt))
-						os.system("rm %s%s" % (temp_dir,name_params_list))
-						os.system("rm %s%s" % (temp_dir,name_sampler_list))
-						os.system("rm %s%s" % (temp_dir,name_modif_obs_photo_SED))
+						os.system("mpirun -n %d python %s./mc_nsmp_p2.py %s %s %s %s" % (nproc_new,CODE_dir,name_filters_list,name_config,
+																									name_samplers_hdf5,name_out_fits))
 					else:
 						print ("Input store_full_samplers not recognized!")
 						sys.exit()
 
+					os.system('rm %s%s' % (temp_dir,name_SED_txt))
+					os.system('rm %s%s' % (temp_dir,name_samplers_hdf5))
+
 	elif fit_method=='rdsps' or fit_method=='RDSPS':
-		# input SEDs
-		name_inputSEDs = "input_SEDs_%d.dat" % (randint(0,10000))
-		file_out1 = open(name_inputSEDs,"w")
-
-		# name output
 		name_outs = "name_outs_%d.dat" % (randint(0,10000))
-		file_out2 = open(name_outs,"w")
+		file_out = open(name_outs,"w")
 
-		for yy in range(ymin,ymax):
-			for xx in range(xmin,xmax):
-				if gal_region[yy][xx] == 1:
-					# observed SED
-					obs_flux = map_flux_trans[yy][xx][idx_fil]*unit
-					obs_flux_err = map_flux_err_trans[yy][xx][idx_fil]*unit
-					for bb in range(0,nbands):
-						file_out1.write("%e  " % obs_flux[bb])
-					for bb in range(0,nbands-1):
-						file_out1.write("%e  " % obs_flux_err[bb])
-					file_out1.write("%e\n" % obs_flux_err[nbands-1])
+		# input SEDs: store to hdf5 file
+		name_inputSEDs = "input_SEDs_%d.hdf5" % (randint(0,10000))
+		with h5py.File(name_inputSEDs, 'w') as f:
+			m = f.create_group('obs_seds')
+			fl = m.create_group('flux')
+			fle = m.create_group('flux_err')
 
-					# name output
-					name0 = "pix_y%d_x%d_rdsps.fits" % (yy,xx)
-					file_out2.write("%s\n" % name0)
+			nbins_calc = 0
+			for yy in range(ymin,ymax):
+				for xx in range(xmin,xmax):
+					if gal_region[yy][xx] == 1:
+						obs_flux = map_flux_trans[yy][xx]
+						obs_flux_err = map_flux_err_trans[yy][xx]
 
-		file_out1.close()
-		file_out2.close()
+						str_temp = 'b%d_f' % nbins_calc
+						fl.create_dataset(str_temp, data=np.array(obs_flux))
+
+						str_temp = 'b%d_ferr' % nbins_calc
+						fle.create_dataset(str_temp, data=np.array(obs_flux_err))
+
+						# name output
+						name0 = "pix_y%d_x%d_rdsps.fits" % (yy,xx)
+						file_out.write("%s\n" % name0)
+
+						nbins_calc = nbins_calc + 1
+
+			m.attrs['nbins_calc'] = nbins_calc
+		file_out.close()
 
 		os.system('mv %s %s' % (name_inputSEDs,temp_dir))
 		os.system('mv %s %s' % (name_outs,temp_dir))
 
 		if store_full_samplers==1 or store_full_samplers==True:
-			os.system("mpirun -n %d python %s./rdsps_pcmod_bulk.py %s %s %s %s" % (nproc_new,CODE_dir,name_filters_list,name_config,
-																				name_inputSEDs,name_outs))
+			if free_z==0:
+				os.system("mpirun -n %d python %s./rd_fz_blk.py %s %s %s %s" % (nproc_new,CODE_dir,name_filters_list,name_config,
+																					name_inputSEDs,name_outs))
+			elif free_z==1:
+				os.system("mpirun -n %d python %s./rd_vz_blk.py %s %s %s %s" % (nproc_new,CODE_dir,name_filters_list,name_config,
+																					name_inputSEDs,name_outs))
 		elif store_full_samplers==0 or store_full_samplers==False:
-			os.system("mpirun -n %d python %s./rdsps_pcmod_nsamp_bulk.py %s %s %s %s" % (nproc_new,CODE_dir,name_filters_list,name_config,
-																				name_inputSEDs,name_outs))
+			if free_z==0:
+				os.system("mpirun -n %d python %s./rd_fz_nsmp_blk.py %s %s %s %s" % (nproc_new,CODE_dir,name_filters_list,name_config,
+																					name_inputSEDs,name_outs))
+			elif free_z==1:
+				os.system("mpirun -n %d python %s./rd_vz_nsmp_blk.py %s %s %s %s" % (nproc_new,CODE_dir,name_filters_list,name_config,
+																					name_inputSEDs,name_outs))
 		else:
 			print ("Input store_full_samplers not recognized!")
 			sys.exit()

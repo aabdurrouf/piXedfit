@@ -23,6 +23,13 @@ def gauss_prob(obs_fluxes,obs_flux_err,mod_fluxes):
 	d = np.asarray(obs_fluxes)
 	derr = np.asarray(obs_flux_err)
 	m = np.asarray(mod_fluxes)
+	data = np.exp(-0.5*(d-m)*(d-m)/derr/derr)/derr/sqrt(2.0*pi)
+	return prod(data)
+
+def old_gauss_prob(obs_fluxes,obs_flux_err,mod_fluxes):
+	d = np.asarray(obs_fluxes)
+	derr = np.asarray(obs_flux_err)
+	m = np.asarray(mod_fluxes)
 
 	idx_excld = np.where((np.isnan(d)==True) | (np.isinf(d)==True) | (np.isnan(derr)==True) | (np.isinf(derr)==True))
 	d = np.delete(d, idx_excld[0])
@@ -33,6 +40,16 @@ def gauss_prob(obs_fluxes,obs_flux_err,mod_fluxes):
 	return prod(data)
 
 def gauss_prob_reduced(obs_fluxes,obs_flux_err,mod_fluxes):
+	d = np.asarray(obs_fluxes)
+	derr = np.asarray(obs_flux_err)
+	m = np.asarray(mod_fluxes)
+
+	chi2 = np.sum((m-d)*(m-d)/derr/derr)
+	prob = np.exp(-0.5*chi2)
+
+	return prob
+
+def old_gauss_prob_reduced(obs_fluxes,obs_flux_err,mod_fluxes):
 	d = np.asarray(obs_fluxes)
 	derr = np.asarray(obs_flux_err)
 	m = np.asarray(mod_fluxes)
@@ -48,6 +65,16 @@ def gauss_prob_reduced(obs_fluxes,obs_flux_err,mod_fluxes):
 	return prob
 
 def gauss_ln_prob(obs_fluxes,obs_flux_err,mod_fluxes):
+	d = np.asarray(obs_fluxes)
+	derr = np.asarray(obs_flux_err)
+	m = np.asarray(mod_fluxes)
+
+	data = np.exp(-0.5*(d-m)*(d-m)/derr/derr)/derr/sqrt(2.0*pi)
+	ln_data = np.log(data)
+	ln_prob = np.sum(ln_data)
+	return ln_prob
+
+def old_gauss_ln_prob(obs_fluxes,obs_flux_err,mod_fluxes):
 	d = np.asarray(obs_fluxes)
 	derr = np.asarray(obs_flux_err)
 	m = np.asarray(mod_fluxes)
@@ -71,6 +98,21 @@ def student_t_prob(dof,t):
 	:param t:
 		Argument in the Student's t function
 	"""
+	base = 1.0 + (t*t/dof)
+	power = -0.5*(dof+1.0)
+	data = gamma(0.5*(dof+1.0))*np.power(base,power)/sqrt(dof*pi)/gamma(0.5*dof)
+	
+	return prod(data)
+
+def old_student_t_prob(dof,t):
+	"""A function for calculating probability/likelihood based on Student's t distribution
+
+	:param dof:
+		Degree of freedom in the Student's t function
+
+	:param t:
+		Argument in the Student's t function
+	"""
 	idx_excld = np.where((np.isnan(t)==True) | (np.isinf(t)==True))
 	t = np.delete(t, idx_excld[0])
 
@@ -80,7 +122,30 @@ def student_t_prob(dof,t):
 	
 	return prod(data)
 
+
 def model_leastnorm(obs_fluxes,obs_flux_err,mod_fluxes):
+	"""A function for calculating model normalization from chi-square minimization
+
+	:param obs_fluxes:
+		Observed multiband photometric fluxes
+
+	:param obs_flux_err:
+		Observed multiband photometric flux uncertainties
+
+	:param mod_fluxes:
+		Model multiband photometric fluxes  
+	"""
+	d = np.asarray(obs_fluxes)
+	derr = np.asarray(obs_flux_err)
+	m = np.asarray(mod_fluxes)
+	
+	u = np.sum(d*m/derr/derr)
+	l = np.sum(m*m/derr/derr) 
+
+	norm = u/l
+	return norm
+
+def old_model_leastnorm(obs_fluxes,obs_flux_err,mod_fluxes):
 	"""A function for calculating model normalization from chi-square minimization
 
 	:param obs_fluxes:
@@ -108,6 +173,25 @@ def model_leastnorm(obs_fluxes,obs_flux_err,mod_fluxes):
 	return norm0
 
 def calc_chi2(obs_fluxes,obs_flux_err,mod_fluxes):
+	"""A function for calculting chi-square 
+
+	:param obs_fluxes:
+		Observed multiband photometric fluxes
+
+	:param obs_flux_err:
+		Observed multiband photometric flux uncertainties
+
+	:param mod_fluxes:
+		Model multiband photometric fluxes
+	"""
+	d = np.asarray(obs_fluxes)
+	derr = np.asarray(obs_flux_err)
+	m = np.asarray(mod_fluxes)
+
+	chi2 = np.sum((m-d)*(m-d)/derr/derr)
+	return chi2
+
+def old_calc_chi2(obs_fluxes,obs_flux_err,mod_fluxes):
 	"""A function for calculting chi-square 
 
 	:param obs_fluxes:
@@ -153,8 +237,24 @@ def calc_modprob_leastnorm_gauss_reduced(obs_fluxes,obs_flux_err,mod_fluxes):
 
 	return prob0,chi2,norm0
 
+
 ### define function to calculate model chi-square:
 def calc_modchi2_leastnorm(obs_fluxes,obs_flux_err,mod_fluxes):
+	"""A function for calculating model chi-square, and normalization. 
+	"""
+	d = np.asarray(obs_fluxes)
+	derr = np.asarray(obs_flux_err)
+	m = np.asarray(mod_fluxes)
+
+	norm0 = model_leastnorm(d,derr,m)
+	mod = norm0*m
+	chi2 = np.sum((mod - d)*(mod - d)/derr/derr)
+
+	return chi2
+
+
+### define function to calculate model chi-square:
+def old_calc_modchi2_leastnorm(obs_fluxes,obs_flux_err,mod_fluxes):
 	"""A function for calculating model chi-square, and normalization. 
 	"""
 	d = np.asarray(obs_fluxes)
@@ -344,8 +444,8 @@ def change_2decimal(x):
 
 # define function to make line histogram plot
 def plot_line_histogram(f,nbins,hist_prob,x_min,x_max,perc_16,perc_50,perc_84):
-	plt.setp(f.get_xticklabels(), visible=False)
-	plt.setp(f.get_yticklabels(), visible=False)
+	#plt.setp(f.get_xticklabels(), visible=False)
+	#plt.setp(f.get_yticklabels(), visible=False)
 
 	max_y = max(hist_prob)*1.1
 
@@ -452,7 +552,7 @@ def plot_triangle_posteriors(param_samplers=[],label_params=[],params_ranges=[],
 			idx = idx + 1
 			if p2 <= p1:
 				f1 = plt.subplot(nparams,nparams,int(idx))
-            	# make 1D PDF:
+				# make 1D PDF:
 				if p1 == p2:
 					val = param_samplers[p1]
 					array_samp = val[np.logical_not(np.isnan(val))]
@@ -482,8 +582,11 @@ def plot_triangle_posteriors(param_samplers=[],label_params=[],params_ranges=[],
 						real_x = np.linspace(x_min,x_max,6)
 						plt.gca().set_xticklabels(change_2decimal(real_x))
 						plt.xticks(rotation='vertical')
+					else:
+						plt.setp(f1.get_xticklabels(), visible=False)
+						plt.setp(f1.get_yticklabels(), visible=False)
 
-            	# make 2D PDF:
+				# make 2D PDF:
 				else:
 					min_margin,max_margin = get_margin(param_samplers[p1])
 					y_min = min_margin

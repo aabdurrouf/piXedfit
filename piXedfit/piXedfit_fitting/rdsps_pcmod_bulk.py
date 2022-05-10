@@ -16,7 +16,7 @@ from piXedfit.piXedfit_model import calc_mw_age
 
 
 def bayesian_sedfit_gauss():
-	redcd_chi2 = float(config_data['redc_chi2_initfit'])
+	redcd_chi2 = 2.0
 
 	numDataPerRank = int(npmod_seds/size)
 	idx_mpi = np.linspace(0,npmod_seds-1,npmod_seds)
@@ -209,7 +209,7 @@ def bayesian_sedfit_gauss():
 
 
 def bayesian_sedfit_student_t():
-	redcd_chi2 = float(config_data['redc_chi2_initfit'])
+	redcd_chi2 = 2.0
 
 	numDataPerRank = int(npmod_seds/size)
 	idx_mpi = np.linspace(0,npmod_seds-1,npmod_seds)

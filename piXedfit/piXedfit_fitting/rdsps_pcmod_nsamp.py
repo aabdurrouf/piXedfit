@@ -765,7 +765,7 @@ for ii in range(0,nparams):
 
 
 global redcd_chi2
-redcd_chi2 = float(config_data['redc_chi2_initfit'])
+redcd_chi2 = 2.0
 
 global perc_chi2
 perc_chi2 = float(config_data['perc_chi2'])

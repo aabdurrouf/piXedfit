@@ -8,7 +8,7 @@ from astropy.io import fits
 from scipy.interpolate import interp1d
 
 from ..utils.redshifting import cosmo_redshifting
-from ..utils.filtering import filtering, cwave_filters, filtering_match_filters_array
+from ..utils.filtering import filtering, cwave_filters
 from ..utils.igm_absorption import igm_att_madau, igm_att_inoue
 from .model_utils import *
 
@@ -21,8 +21,8 @@ PIXEDFIT_HOME = os.environ['PIXEDFIT_HOME']
 
 
 __all__ = ["generate_modelSED_propspecphoto", "generate_modelSED_spec", "generate_modelSED_photo", "generate_modelSED_specphoto", 
-			"generate_modelSED_spec_decompose", "generate_modelSED_specphoto_decompose","save_models", "generate_mockSED", 
-			"add_fagn_bol_samplers", "save_models_spec_h5"]
+			"generate_modelSED_spec_decompose", "generate_modelSED_specphoto_decompose","save_models_photo", "save_models_rest_spec",
+			"add_fagn_bol_samplers"]
 
 def generate_modelSED_propspecphoto(sp=None,imf_type=1,duste_switch=1,add_neb_emission=1,dust_ext_law='Cal2000',
 	sfh_form='delayed_tau_sfh',add_agn=0,filters=['galex_fuv','galex_nuv','sdss_u','sdss_g','sdss_r','sdss_i','sdss_z'],
@@ -227,19 +227,10 @@ def generate_modelSED_propspecphoto(sp=None,imf_type=1,duste_switch=1,add_neb_em
 			redsh_spec = redsh_spec0*trans
 
 	# filtering:
-	#photo_SED_flux = filtering.filtering(redsh_wave,redsh_spec,filters)
 	photo_SED_flux = filtering(redsh_wave,redsh_spec,filters)
 	
 	# get central wavelength of all filters:
-	#photo_cwave = filtering.cwave_filters(filters)
 	photo_cwave = cwave_filters(filters)
-
-	# calculate SFR:
-	#SFR_exp = 1.0/np.exp(age/tau)
-	#if sfh_form=='tau_sfh' or sfh_form==0:
-	#	SFR_fSM = formed_mass*SFR_exp/tau/(1.0-SFR_exp)/1e+9
-	#elif sfh_form=='delayed_tau_sfh' or sfh_form==1:
-	#	SFR_fSM = formed_mass*age*SFR_exp/((tau*tau)-((age*tau)+(tau*tau))*SFR_exp)/1e+9
 
 	# calculate mw-age:
 	mw_age = calc_mw_age(sfh_form=sfh_form,tau=tau,t0=t0,alpha=alpha,beta=beta,
@@ -405,7 +396,6 @@ def generate_modelSED_spec(sp=None,imf_type=1,duste_switch=1,add_neb_emission=1,
 																age=age,tau=tau,t0=t0,alpha=alpha,beta=beta)
 		
 	# redshifting
-	#redsh_wave,redsh_spec0 = redshifting.cosmo_redshifting(cosmo=cosmo,H0=H0,Om0=Om0,z=params_val['z'],wave=wave,spec=extnc_spec)
 	redsh_wave,redsh_spec0 = cosmo_redshifting(cosmo=cosmo,H0=H0,Om0=Om0,z=params_val['z'],wave=wave,spec=extnc_spec)
 
 	# IGM absorption:
@@ -911,29 +901,19 @@ def generate_modelSED_specphoto_decompose(sp=None, imf=1, duste_switch='duste',a
 	return spec_SED,photo_SED
 
 
-def save_models(gal_z=None,filters=[],specphoto=0,spec_sigma=5.0,wave_range=[3000,10000],imf_type=1,sfh_form=4,dust_ext_law=1,
-	add_igm_absorption=0,igm_type=1,duste_switch=0,add_neb_emission=1,add_agn=0,gas_logu=-2.0,npmod_seds=100000, logzsol_range=[-2.0,0.2],
-	log_tau_range=[-1.0,1.5],log_age_range=[-1.0,1.14],log_alpha_range=[-2.0,2.0],log_beta_range=[-2.0,2.0],log_t0_range=[-1.0,1.14],
-	dust_index_range=[-0.7,-0.7],dust1_range=[0.0,3.0],dust2_range=[0.0,3.0],log_gamma_range=[-3.0,-0.824],log_umin_range=[-1.0,1.176],
-	log_qpah_range=[-1.0,0.845],z_range=[0,0], log_fagn_range=[-5.0,0.48],log_tauagn_range=[0.70,2.18],nproc=10,cosmo=0,H0=70.0,Om0=0.3,
-	name_out_fits=None):
+def save_models_photo(filters=[],gal_z=None,imf_type=1,sfh_form=4,dust_ext_law=1,add_igm_absorption=0,igm_type=1,duste_switch=0,
+	add_neb_emission=1,add_agn=0,gas_logu=-2.0,nmodels=100000, logzsol_range=[-2.0,0.2],log_tau_range=[-1.0,1.5],log_age_range=[-1.0,1.14],
+	log_alpha_range=[-2.0,2.0],log_beta_range=[-2.0,2.0],log_t0_range=[-1.0,1.14],dust_index_range=[-0.7,-0.7],dust1_range=[0.0,3.0],
+	dust2_range=[0.0,4.0],log_gamma_range=[-4.0, 0.0],log_umin_range=[-1.0, 1.39],log_qpah_range=[-3.0, 1.0], 
+	log_fagn_range=[-5.0,0.48],log_tauagn_range=[0.7, 2.18],nproc=10,cosmo=0,H0=70.0,Om0=0.3,name_out_fits=None):
 	"""Function for generating pre-calculated model SEDs and store them into a FITS file. This is supposed to be created one for one redshift (i.e, one galaxy or a group of galaxies with similar redshift). 
 	This FITS file can be used in fitting all the spatial bins in the galaxy (or a group of galaxies with similar redshift).  
-
-	:param gal_z: (Mandatory)
-		Galaxy's redshift. This parameter is mandatory.
 
 	:param filters: (default: [])
 		Set of photometric filters. The accepted naming for the filters can be seen using :func:`list_filters` function in the :mod:`utils.filtering` module.
 
-	:param specphoto: (default: 0)
-		Flag stating whether to produce model spectrophotometric SEDs (value:1) or model photometric SEDs (value: 0).
-
-	:param spec_sigma: (defult: 5)
-		Spectral resolution in sigma (in unit of Angstrom). Only relevant if specphoto=1.
-
-	:param wave_range: (default: [3000,10000])
-		Wavelength range of the model spectra to be generated. Only relevant if specphoto=1.   
+	:param gal_z:
+		Galaxy's redshift. This parameter is mandatory.
 
 	:param imf_type: (default: 1)
 		Choice for the IMF. Options are: (1)0 for Salpeter(1955), (2)1 for Chabrier(2003), and (3)2 for Kroupa(2001).
@@ -962,7 +942,7 @@ def save_models(gal_z=None,filters=[],specphoto=0,spec_sigma=5.0,wave_range=[300
 	:param gas_logu: (default: -2.0)
 		Gas ionization parameter in log scale.
 
-	:param npmod_seds: (default: 100000)
+	:param nmodels: (default: 100000)
 		Number of model SEDs to be generated.
 
 	:param nproc: (default: 10)
@@ -985,27 +965,25 @@ def save_models(gal_z=None,filters=[],specphoto=0,spec_sigma=5.0,wave_range=[300
 		Output FITS file.
 	"""
 
-	# get number of filters:
+	dir_file = PIXEDFIT_HOME+'/data/temp/'
+	CODE_dir = PIXEDFIT_HOME+'/piXedfit/piXedfit_model/'
+
+	# number of filters
 	nbands = len(filters)
 
-	# make text file containing list of filters:
+	# store in text file
 	name_filters_list = "filters_list%d.dat" % (random.randint(0,10000))
 	file_out = open(name_filters_list,"w")
 	for ii in range(0,nbands):
 		file_out.write("%s\n" % filters[int(ii)]) 
 	file_out.close()
 
-	# store the text into the temp directory:
-	dir_file = PIXEDFIT_HOME+'/data/temp/'
+	# move the file to temp dir
 	os.system('mv %s %s' % (name_filters_list,dir_file))
 
-	# make configuration file:
+	# make configuration file
 	name_config = "config_file%d.dat" % (random.randint(0,10000))
 	file_out = open(name_config,"w")
-	if specphoto == 1:
-		file_out.write("spec_sigma %lf\n" % spec_sigma)
-		file_out.write("min_wave %lf\n" % wave_range[0])
-		file_out.write("max_wave %lf\n" % wave_range[1])
 	file_out.write("imf_type %d\n" % imf_type)
 	file_out.write("add_neb_emission %d\n" % add_neb_emission)
 	file_out.write("gas_logu %lf\n" % gas_logu)
@@ -1049,7 +1027,7 @@ def save_models(gal_z=None,filters=[],specphoto=0,spec_sigma=5.0,wave_range=[300
 
 	file_out.write("duste_switch %d\n" % duste_switch)
 	file_out.write("add_agn %d\n" % add_agn)
-	file_out.write("npmod_seds %d\n" % npmod_seds)
+	file_out.write("nmodels %d\n" % nmodels)
 	file_out.write("pr_logzsol_min %lf\n" % logzsol_range[0])
 	file_out.write("pr_logzsol_max %lf\n" % logzsol_range[1])
 	file_out.write("pr_log_tau_min %lf\n" % log_tau_range[0])
@@ -1101,38 +1079,27 @@ def save_models(gal_z=None,filters=[],specphoto=0,spec_sigma=5.0,wave_range=[300
 
 	file_out.write("H0 %lf\n" % H0)
 	file_out.write("Om0 %lf\n" % Om0)
-	# output files name:
+	# output files name
 	if name_out_fits == None:
 		name_out_fits = "random_modelSEDs.fits"
 	file_out.write("name_out_fits %s\n" % name_out_fits)
-	# galaxy's redshift:
+	# redshift
 	file_out.write("gal_z %lf\n" % gal_z)  
 	file_out.close()
-	# store configuration file into temp directory:
-	dir_file = PIXEDFIT_HOME+'/data/temp/'
+
 	os.system('mv %s %s' % (name_config,dir_file))
-
-	# call the fitting functions:
-	CODE_dir = PIXEDFIT_HOME+'/piXedfit/piXedfit_model/'
-	if specphoto == 0:
-		os.system("mpirun -n %d python %s./save_models_photo.py %s %s" % (nproc,CODE_dir,name_filters_list,name_config))
-	elif specphoto == 1:
-		os.system("mpirun -n %d python %s./save_models_specphoto.py %s %s" % (nproc,CODE_dir,name_filters_list,name_config))
-
-	# free disk space:
-	dir_file = PIXEDFIT_HOME+'/data/temp/'
+	os.system("mpirun -n %d python %s./save_models_photo.py %s %s" % (nproc,CODE_dir,name_filters_list,name_config))
 	os.system("rm %s%s" % (dir_file,name_config))
 	os.system("rm %s%s" % (dir_file,name_filters_list))
 
 	return name_out_fits
 
 
-
-def save_models_spec_h5(imf_type=1,sfh_form=4,dust_ext_law=1,duste_switch=0,add_neb_emission=1,add_agn=0,gas_logu=-2.0,
+def save_models_rest_spec(imf_type=1,sfh_form=4,dust_ext_law=1,duste_switch=0,add_neb_emission=1,add_agn=0,gas_logu=-2.0,
 	nmodels=100000,logzsol_range=[-2.0,0.2],log_tau_range=[-1.0,1.5],log_age_range=[-1.0,1.14],log_alpha_range=[-2.0,2.0],
-	log_beta_range=[-2.0,2.0],log_t0_range=[-1.0,1.14],dust_index_range=[-0.7,-0.7],dust1_range=[0.0,3.0],dust2_range=[0.0,3.0],
-	log_gamma_range=[-3.0,-0.824],log_umin_range=[-1.0,1.176],log_qpah_range=[-1.0,0.845],log_fagn_range=[-5.0,0.48],
-	log_tauagn_range=[0.70,2.18],nproc=10,name_out=None):
+	log_beta_range=[-2.0,2.0],log_t0_range=[-1.0,1.14],dust_index_range=[-0.7,-0.7],dust1_range=[0.0,3.0],
+	dust2_range=[0.0,4.0],log_gamma_range=[-4.0, 0.0],log_umin_range=[-1.0,1.39],log_qpah_range=[-3.0,1.0],
+	log_fagn_range=[-5.0,0.48],log_tauagn_range=[0.7, 2.18],nproc=10,name_out=None):
 	"""Function for generating rest-frame model spectra.  
 
 	:param imf_type: (default: 1)
@@ -1169,14 +1136,17 @@ def save_models_spec_h5(imf_type=1,sfh_form=4,dust_ext_law=1,duste_switch=0,add_
 		Output FITS file.
 	"""
 
-	# make configuration file:
+	dir_file = PIXEDFIT_HOME+'/data/temp/'
+	CODE_dir = PIXEDFIT_HOME+'/piXedfit/piXedfit_model/'
+
+	# make configuration file
 	name_config = "config_file%d.dat" % (random.randint(0,10000))
 	file_out = open(name_config,"w")
 	file_out.write("imf_type %d\n" % imf_type)
 	file_out.write("add_neb_emission %d\n" % add_neb_emission)
 	file_out.write("gas_logu %lf\n" % gas_logu)
 
-	# SFH choice
+	# SFH
 	if sfh_form=='tau_sfh' or sfh_form==0:
 		sfh_form1 = 0
 	elif sfh_form=='delayed_tau_sfh' or sfh_form==1:
@@ -1239,213 +1209,12 @@ def save_models_spec_h5(imf_type=1,sfh_form=4,dust_ext_law=1,duste_switch=0,add_
 		name_out = "random_modelSEDs.hdf5"
 	file_out.write("name_out %s\n" % name_out)  
 	file_out.close()
-	# store configuration file into temp directory:
-	dir_file = PIXEDFIT_HOME+'/data/temp/'
+
 	os.system('mv %s %s' % (name_config,dir_file))
-
-	# call the fitting functions:
-	CODE_dir = PIXEDFIT_HOME+'/piXedfit/piXedfit_model/'
-	os.system("mpirun -n %d python %s./save_models_spec_h5.py %s" % (nproc,CODE_dir,name_config))
-
-	# free disk space:
+	os.system("mpirun -n %d python %s./save_models_rest_spec.py %s" % (nproc,CODE_dir,name_config))
 	os.system("rm %s%s" % (dir_file,name_config))
 
 	return name_out
-
-
-def generate_mockSED(sp=None, imf_type=1,filters=['galex_fuv', 'galex_nuv', 'sdss_u', 'sdss_g', 'sdss_r', 'sdss_i', 'sdss_z'],duste_switch=1,
-					add_neb_emission=1,dust_ext_law='Cal2000',add_agn=1,add_igm_absorption=0,igm_type=1,sfh_form='delayed_tau_sfh',
-					funit='erg/s/cm2/A',cosmo='flat_LCDM',H0=70.0,Om0=0.3,gas_logu=-2.0, decompose=0, SNR=[], add_randnoise=1, 
-					noise_treat=1,params_val={'log_mass':0.0,'z':0.001,'log_fagn':-3.0,'log_tauagn':1.0,'log_qpah':0.54,
-					'log_umin':0.0,'log_gamma':-2.0,'dust1':0.5,'dust2':0.5,'dust_index':-0.7,'log_age':1.0,'log_alpha':0.1,
-					'log_beta':0.1,'log_t0':0.4,'log_tau':0.4,'logzsol':0.0}):
-	"""Function to generate a simple mock SED (photometry and spectroscopy).
-
-	:param sp:
-		Initialization of FSPS, such as sp=fsps.StellarPopulation()
-
-	:param imf_type:
-		Choice for the IMF. Choices are: [0:Salpeter(1955), 1:Chabrier(2003), 2:Kroupa(2001)]
-
-	:param filters:
-		List of photometric filters.
-
-	:param duste_switch:
-		Choice for turning on (1) or off (0) the dust emission modeling
-
-	:param add_neb_emission:
-		Choice for turning on (1) or off (0) the nebular emission modeling
-
-	:param dust_ext_law: (default: 1)
-		Choice for the dust attenuation law. Options are: (1)'CF2000' or 0 for Charlot & Fall (2000), (2)'Cal2000' or 1 for Calzetti et al. (2000).
-
-	:param add_agn:
-		Choice for turning on (1) or off (0) the AGN dusty torus modeling
-
-	:param add_igm_absorption: (default: 0)
-		Switch for the IGM absorption.
-
-	:param igm_type: (default: 1)
-		Choice for the IGM absorption model. Options are: [0/'madau1995':Madau(1995); 1/'inoue2014':Inoue+(2014)]
-
-	:param sfh_form: (default: 'delayed_tau_sfh')
-		Choice for the parametric SFH model. 
-		Options are: ['tau_sfh', 'delayed_tau_sfh', 'log_normal_sfh', 'gaussian_sfh', 'double_power_sfh', 'arbitrary_sfh']
-
-	:param funit: (default: 'erg/s/cm2/A')
-		Flux unit. Options are: (1)0 or 'erg/s/cm2/A', (2)1 or 'erg/s/cm2', and (3)2 or 'Jy'.
-
-	:param cosmo: (default: 'flat_LCDM')
-		Choices for the cosmological parameters. The choices are: ['flat_LCDM', 'WMAP5', 
-		'WMAP7', 'WMAP9', 'Planck13', 'Planck15'], similar to the choices available in the 
-		Astropy Cosmology package: https://docs.astropy.org/en/stable/cosmology/#built-in-cosmologies.
-		If 'flat_LCDM' is chosen, the input H0 and Om0 should be provided.
-
-	:param H0: (default: 70.0)
-		The Hubble constant at z=0. Only relevant when cosmo='flat_LCDM' is chosen.
-
-	:param Om0: (default: 0.3)
-		The Omega matter at z=0.0. Only relevant when cosmo='flat_LCDM' is chosen.
-
-	:param gas_logu: (default: -2.0)
-		Gas ionization parameter in logarithmic scale.
-
-	:param param_val:
-		A dictionary of parameters values.
-
-	:param decompose: (default: 1)
-		Flag stating whether the mock spectroscopic SED is broken-down into its components (value: 1 or True) or not (value: 0 or False).
-
-	:param SNR:
-		Signal to noise ratios of the mock photometric SEDs is 1D array containing S/N in each filter. It should has the same length as filters.
-
-	:param add_randnoise: (default: 1)
-		Flag to add random Gaussian noises in the photometric fluxes.
-
-	:param noise_treat: (default: 1)
-		Choice in generating random Gaussian noise. Options are: 0 for generating one value from normal distribution, and 1 for generating 100 values from normal distribution then take one from them randomly.
-
-	
-	:returns mock_params:
-		Parameters of mock SED.
-
-	:returns mock_photo_SED:
-		Mock photometric SED.
-
-	:returns mock_spec_SED:
-		Mock spectroscopic SED.
-
-	"""
-
-	# get number of filters:
-	nbands = len(filters)
-	if len(SNR) != nbands:
-		print ("Number of elements in SNR must be the same as that of filters")
-		sys.exit()
-
-	# call fsps
-	if sp == None:
-		sp = fsps.StellarPopulation(zcontinuous=1)
-
-	sp.params['imf_type'] = imf_type
-
-	# generate model SED: total
-	SED_prop,photo_SED,spec_SED = generate_modelSED_propspecphoto(sp=sp,duste_switch=duste_switch,add_neb_emission=add_neb_emission,
-													dust_ext_law=dust_ext_law,sfh_form=sfh_form,add_agn=add_agn,filters=filters,
-													add_igm_absorption=add_igm_absorption,igm_type=igm_type,cosmo=cosmo,H0=H0,Om0=Om0,
-													gas_logu=gas_logu,params_val=params_val)
-	tot_wave = spec_SED['wave']
-	tot_spec = spec_SED['flux'] 
-	#[0/'erg/s/cm2/A', 1/'erg/s/cm2', 2/'Jy']
-	if funit=='erg/s/cm2/A' or funit==0:
-		tot_spec = tot_spec
-	elif funit=='erg/s/cm2' or funit==1:
-		tot_spec = np.asarray(tot_spec)*np.asarray(tot_wave)
-	elif funit=='Jy' or funit==2:
-		tot_spec = np.asarray(tot_spec)*np.asarray(tot_wave)*np.asarray(tot_wave)/1.0e-23/2.998e+18
-	else:
-		print ("The input funit is not recognized!")
-		sys.exit()
-
-	mock_params = {}
-	mock_params['SM'] = SED_prop['SM']
-	#mock_params['survive_mass'] = SED_prop['survive_mass']
-	mock_params['SFR'] = SED_prop['SFR']
-	mock_params['mw_age'] = SED_prop['mw_age'] 
-	mock_params['dust_mass'] = SED_prop['dust_mass']
-	mock_params['log_fagn_bol'] = SED_prop['log_fagn_bol']
-
-	if funit=='erg/s/cm2/A' or funit==0:
-		photo_flux = photo_SED['flux']
-	elif funit == 'erg/s/cm2' or funit==1:
-		photo_flux = np.asarray(photo_SED['flux'])*np.asarray(photo_SED['wave'])
-	elif funit == 'Jy' or funit==2:
-		photo_flux = np.asarray(photo_SED['flux'])*np.asarray(photo_SED['wave'])*np.asarray(photo_SED['wave'])/1.0e-23/2.998e+18
-	else:
-		print ("The input funit is not recognized!")
-		sys.exit()
-
-	mock_photo_SED = {}
-	mock_photo_SED['wave'] = photo_SED['wave']
-
-	# calculate flux errors: if add_randnoise=1
-	if len(SNR) == 0:
-		SNR = np.zeros(nbands) + 10.0
-
-	mock_fluxes_err = np.zeros(nbands)
-	for bb in range(0,nbands):
-		mock_fluxes_err[bb] = photo_flux[bb]/SNR[bb]
-	mock_photo_SED['flux_err'] = mock_fluxes_err
-	# calculate photo. flux:
-	if add_randnoise == 1:
-		photo_flux1 = np.zeros(nbands)
-
-		if noise_treat == 0:
-			for bb in range(0,nbands):
-				photo_flux1[bb] = np.random.normal(photo_flux[bb],mock_fluxes_err[bb],1)
-		elif noise_treat == 1:
-			for bb in range(0,nbands):
-				rand_values = np.random.normal(photo_flux[bb],mock_fluxes_err[bb],100)
-				rand_idx = random.randint(0,99)
-				photo_flux1[bb] = rand_values[int(rand_idx)]
-
-		mock_photo_SED['flux'] = photo_flux1		
-	elif add_randnoise == 0:
-		mock_photo_SED['flux'] = photo_flux
-
-	mock_spec_SED = {}
-	if decompose == 1:
-		mock_spec_SED['tot'] = {}
-		mock_spec_SED['tot']['wave'] = tot_wave
-		mock_spec_SED['tot']['flux'] = tot_spec
-
-		mock_spec_SED['stellar'] = {}
-		mock_spec_SED['duste'] = {}
-		mock_spec_SED['agn'] = {}
-		mock_spec_SED['nebe'] = {}
-	elif decompose == 0:
-		mock_spec_SED['wave'] = tot_wave
-		mock_spec_SED['flux'] = tot_spec
-
-	if decompose == 1:
-		spec_SED = generate_modelSED_spec_decompose(sp=sp,params_val=params_val, imf=imf_type, duste_switch=duste_switch, add_neb_emission=add_neb_emission,
-													dust_ext_law=dust_ext_law, add_agn=add_agn,add_igm_absorption=add_igm_absorption,igm_type=igm_type,sfh_form=sfh_form,
-													funit=funit,cosmo=cosmo,H0=H0,Om0=Om0,gas_logu=gas_logu)
-
-		mock_spec_SED['stellar']['wave'] = spec_SED['wave']
-		mock_spec_SED['stellar']['flux'] = spec_SED['flux_stellar']
-
-		mock_spec_SED['nebe']['wave'] = spec_SED['wave']
-		mock_spec_SED['nebe']['flux'] = spec_SED['flux_nebe']
-
-		mock_spec_SED['duste']['wave'] = spec_SED['wave']
-		mock_spec_SED['duste']['flux'] = spec_SED['flux_duste']
-
-		mock_spec_SED['agn']['wave'] = spec_SED['wave']
-		mock_spec_SED['agn']['flux'] = spec_SED['flux_agn']
-	
-	return mock_params,mock_photo_SED,mock_spec_SED
-
 
 
 def add_fagn_bol_samplers(name_sampler_fits=None, name_out_fits=None, nproc=10):

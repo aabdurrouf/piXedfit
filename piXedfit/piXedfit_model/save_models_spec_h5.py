@@ -70,6 +70,11 @@ if int(config_data['dust_ext_law']) == 0:
 elif int(config_data['dust_ext_law']) == 1:
 	dust_ext_law = 'Cal2000'
 
+# igm absorption
+global add_igm_absorption, igm_type
+add_igm_absorption = int(config_data['add_igm_absorption'])
+igm_type = int(config_data['igm_type'])
+
 # whether dust_index is set fix or not
 global fix_dust_index, fix_dust_index_val
 if float(config_data['pr_dust_index_min']) == float(config_data['pr_dust_index_max']):     # dust_index is fixed
@@ -242,10 +247,10 @@ for ii in recvbuf_idx:
 
 	count = count + 1
 
-	#sys.stdout.write('\r')
-	#sys.stdout.write('rank: %d  Calculation process: %d from %d --> %d%%' % (rank,count,len(recvbuf_idx),count*100/len(recvbuf_idx)))
-	#sys.stdout.flush()
-#sys.stdout.write('\n')
+	sys.stdout.write('\r')
+	sys.stdout.write('rank: %d  Calculation process: %d from %d --> %d%%' % (rank,count,len(recvbuf_idx),count*100/len(recvbuf_idx)))
+	sys.stdout.flush()
+sys.stdout.write('\n')
 
 # gather the scattered data
 mod_log_mass = np.zeros(nmodels)
@@ -289,8 +294,10 @@ if rank == 0:
 		m.attrs['add_neb_emission'] = add_neb_emission
 		m.attrs['gas_logu'] = gas_logu
 		m.attrs['add_agn'] = add_agn
+		m.attrs['add_igm_absorption'] = add_igm_absorption
+		m.attrs['igm_type'] = igm_type
 		m.attrs['funit'] = 'L_sun/A'
-		if duste_switch == 'duste':
+		if duste_switch=='duste' or duste_switch==1:
 			if fix_dust_index == 1:
 				m.attrs['dust_index'] = fix_dust_index_val
 		m.attrs['nmodels'] = nmodels

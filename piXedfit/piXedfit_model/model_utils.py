@@ -8,7 +8,7 @@ from astropy.io import fits
 from scipy.interpolate import interp1d
 
 from ..utils.redshifting import cosmo_redshifting
-from ..utils.filtering import filtering, cwave_filters, filtering_match_filters_array
+from ..utils.filtering import filtering, cwave_filters
 from ..utils.igm_absorption import igm_att_madau, igm_att_inoue
 
 # warning is not logged here. Perfect for clean unit test output
@@ -1003,46 +1003,6 @@ def get_no_nebem_wave_fit(sp=None,z=None,wave=[],del_wave=10.0):
 		flag_excld[idx_excld[0]] = 1
 
 	idx_excld = np.where(flag_excld==1)
-	wave_clean = np.delete(wave, idx_excld[0])
-	waveid_excld = idx_excld[0]
-
-	return wave_clean,waveid_excld
-
-
-
-
-def old_get_no_nebem_wave_fit(sp=None,z=None,wave=[],del_wave=1.0):
-	"""A function to get list of wavelengths (from the input array of wavelengths) that don't have emission line.
-
-	:param z:
-		Redshift
-
-	:param wave:
-		List of wavelengths
-
-	:param del_wave:
-		Assumption for the half of the width of the emission lines. del_wave is in Ang. 
-	"""
-	sp.params["sfh"] = 4
-	sp.params['logzsol'] = -1.0
-	sp.params['gas_logz'] = -1.0
-	sp.params['gas_logu'] = -2.5
-	wave0, spec = sp.get_spectrum(tage=0.001)
-
-	nebem_wave0 = sp.emline_wavelengths
-	nebem_wave = nebem_wave0*(1.0+z)
-	n_nebem_wave = len(nebem_wave)
-
-	nwave = len(wave)
-	status_excld = np.zeros(nwave)
-
-	for ii in range(0,n_nebem_wave):
-		if nebem_wave[ii]>min(wave) and nebem_wave[ii]<max(wave):
-			idx = np.where((wave >= (nebem_wave[ii]-del_wave)) & (wave <= (nebem_wave[ii]+del_wave)))
-			for jj in range(0,len(idx[0])):
-				status_excld[idx[0][jj]] = 1
-
-	idx_excld = np.where(status_excld==1)
 	wave_clean = np.delete(wave, idx_excld[0])
 	waveid_excld = idx_excld[0]
 

@@ -8,7 +8,7 @@ global PIXEDFIT_HOME
 PIXEDFIT_HOME = os.environ['PIXEDFIT_HOME']
 
 __all__ = ["list_filters", "add_filter", "remove_filter", "change_filter_name", "get_filter_curve", "cwave_filters", "filtering", 
-			"match_filters_array", "filtering_match_filters_array"]
+			"match_filters_array", "filtering_match_filters_array", "interp_filters_curves", "filtering_interp_filters"]
 
 def list_filters():
 	"""A function for listing the available filters transmission functions in piXedfit
@@ -320,41 +320,73 @@ def filtering(wave,spec,filters):
 	:returns fluxes:
 		Array of photometric fluxes
 	"""
-
-	nfilters = len(filters)
+	nbands = len(filters)
 	dir_file = PIXEDFIT_HOME+'/data/filters/'
 	hdu = fits.open(dir_file+'filters.fits')
 
-	fluxes = np.zeros(nfilters)
-	for ii in range(0,nfilters):
-		data = hdu[filters[ii]].data
+	fluxes = np.zeros(nbands)
+	for bb in range(0,nbands):
+		data = hdu[filters[bb]].data
 
-		idx_incld = np.where((wave>=min(data['wave'])) & (wave<=max(data['wave'])))
-		idx_min = min(idx_incld[0])
-		idx_max = max(idx_incld[0])
+		min_wave = int(min(data['wave']))
+		max_wave = int(max(data['wave']))
 
-		wave_cut = wave[idx_min:idx_max]
-		spec_cut = spec[idx_min:idx_max]
-		nwave = len(wave_cut)
+		gwave = np.linspace(min_wave,max_wave,max_wave-min_wave+1)
 
-		left = [wave[idx_min]]
-		right = [wave[idx_max]]
-		temp = np.append(left,data['wave'])
-		fil_wave = np.append(temp,right)
+		fil_trans = np.interp(gwave, data['wave'], data['trans'])
+		spec_flux = np.interp(gwave, wave, spec)
 
-		left = [0.0]
-		right = [0.0]
-		temp = np.append(left,data['trans'])
-		fil_trans = np.append(temp,right)
+		tot_u = np.sum(spec_flux*gwave*fil_trans)
+		tot_l = np.sum(gwave*fil_trans)
 
-		interp_trans = np.interp(wave_cut, fil_wave, fil_trans)
-		tot_u = np.sum(spec_cut*wave_cut*interp_trans)
-		tot_l = np.sum(wave_cut*interp_trans)
-		fluxes[ii] = tot_u/tot_l
+		fluxes[bb] = tot_u/tot_l
 
 	hdu.close()
+
 	return fluxes
 
+
+def interp_filters_curves(filters):
+	nbands = len(filters)
+
+	dir_file = PIXEDFIT_HOME+'/data/filters/'
+	hdu = fits.open(dir_file+'filters.fits')
+
+	interp_filters_waves = []
+	interp_filters_trans = []
+	for bb in range(0,nbands):
+		data = hdu[filters[bb]].data
+
+		min_wave = int(min(data['wave']))
+		max_wave = int(max(data['wave']))
+
+		gwave = np.linspace(min_wave,max_wave,max_wave-min_wave+1)
+		interp_filters_waves.append(gwave)
+
+		fil_trans = np.interp(gwave, data['wave'], data['trans'])
+		interp_filters_trans.append(fil_trans)
+
+	hdu.close()
+
+	return interp_filters_waves,interp_filters_trans
+
+
+def filtering_interp_filters(wave,spec,interp_filters_waves,interp_filters_trans):
+	nbands = len(interp_filters_waves)
+
+	fluxes = np.zeros(nbands)
+	for bb in range(0,nbands):
+		gwave = np.asarray(interp_filters_waves[bb])
+		fil_trans = np.asarray(interp_filters_trans[bb])
+
+		spec_flux = np.interp(gwave, wave, spec)
+
+		tot_u = np.sum(spec_flux*gwave*fil_trans)
+		tot_l = np.sum(gwave*fil_trans)
+
+		fluxes[bb] = tot_u/tot_l
+
+	return fluxes
 
 def match_filters_array(sample_spec_wave,filters):
 	"""A function for matching between wavelength in filter transmission curve to the 

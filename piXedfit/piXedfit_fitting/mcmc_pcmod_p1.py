@@ -27,8 +27,8 @@ def initfit(increase_ferr,name_saved_randmod):
 	data_randmod = hdu[1].data
 	hdu.close()
 
-	# define reduced chi2 to be achieved
-	redcd_chi2 = float(config_data['redc_chi2_initfit'])
+	# define reduced chi2 to be achieved in the initial fitting
+	redcd_chi2 = 2.0
 	
 	numDataPerRank = int(npmod_seds/size)
 
@@ -536,13 +536,11 @@ if rank == 0:
 
 #####$$$$$ MCMC SED fitting $$$$$$#########
 # add priors for normalization:
-left0 = float(config_data['pr_del_lognorm_min'])
-right0 = float(config_data['pr_del_lognorm_max'])
-priors_min[int(nparams)-1] = params_chi2min_initfit[int(nparams)-1] + left0 
-priors_max[int(nparams)-1] = params_chi2min_initfit[int(nparams)-1] + right0
+priors_min[int(nparams)-1] = params_chi2min_initfit[int(nparams)-1] - 2.0
+priors_max[int(nparams)-1] = params_chi2min_initfit[int(nparams)-1] + 2.0
 
 init_pos = params_chi2min_initfit
-width_initpos = float(config_data['width_initpos'])
+width_initpos = 0.08
 # modify if an initial point is stack at 0, and it is the lowest value in the prior range
 for pp in range(0,nparams):
 	temp = init_pos[pp]

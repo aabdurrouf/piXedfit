@@ -17,8 +17,6 @@ from piXedfit.utils.filtering import cwave_filters, filtering
 
 
 def bayesian_sedfit_gauss():
-	#redcd_chi2 = float(config_data['redc_chi2_initfit'])
-
 	numDataPerRank = int(npmod_seds/size)
 	idx_mpi = np.linspace(0,npmod_seds-1,npmod_seds)
 	recvbuf_idx = np.empty(numDataPerRank, dtype='d')
@@ -761,7 +759,7 @@ for ii in range(0,nparams):
 	params.append(header_randmod[str_temp])
 
 global redcd_chi2
-redcd_chi2 = float(config_data['redc_chi2_initfit'])
+redcd_chi2 = 2.0
 
 global perc_chi2
 perc_chi2 = float(config_data['perc_chi2'])
