@@ -37,8 +37,8 @@
     
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Matching imaging data with IFS data" href="image_ifs_match.html" />
-    <link rel="prev" title="Available convolution kernels and PSFs" href="list_kernels_psf.html" /> 
+    <link rel="next" title="Spatial Matching imaging+IFS data" href="image_ifs_match.html" />
+    <link rel="prev" title="SED modeling" href="ingredients_model.html" /> 
 </head>
 
 <body class="wy-body-for-nav">
@@ -87,28 +87,21 @@
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="list_imaging_data.html">List of imaging data</a></li>
-<li class="toctree-l1"><a class="reference internal" href="list_kernels_psf.html">Available convolution kernels and PSFs</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Image processing</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#background-subtraction">Background subtraction</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#deriving-variance-images">Deriving variance Images</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#running-image-processing">Running image processing</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#output-format">Output format</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="image_ifs_match.html">Matching imaging data with IFS data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="list_kernels_psf.html">Convolution kernels and PSFs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ingredients_model.html">SED modeling</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Image processing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="image_ifs_match.html">Spatial Matching imaging+IFS data</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pixel_binning.html">Pixel binning</a></li>
-<li class="toctree-l1"><a class="reference internal" href="ingredients_model.html">Ingredients in SED modeling</a></li>
 <li class="toctree-l1"><a class="reference internal" href="gen_model_SEDs.html">Generating model SEDs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="fit_res_SEDs.html">Fitting spatially resolved SEDs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="fit_ing_SEDs.html">Fitting integrated SEDs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="plot_fitres.html">Plotting fitting results</a></li>
-<li class="toctree-l1"><a class="reference internal" href="get_maps_prop.html">Obtaining spatially resolved maps of properties</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fit_res_SEDs.html">Fitting spatially resolved SED</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fit_ing_SEDs.html">Fitting integrated SED</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_fitres.html">Analyze fitting results</a></li>
+<li class="toctree-l1"><a class="reference internal" href="get_maps_prop.html">Get maps of spatially resolved properties</a></li>
 </ul>
-<p class="caption"><span class="caption-text">Demonstrations and tutorials</span></p>
+<p class="caption"><span class="caption-text">Demonstrations</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="demos_img_pros.html">Demonstration of image processing</a></li>
-<li class="toctree-l1"><a class="reference internal" href="demos_pixel_binning.html">Demonstration of the pixel binning process</a></li>
-<li class="toctree-l1"><a class="reference internal" href="demos_sed_fitting.html">Demonstration of SED fitting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demos_pixel_binning.html">Pixel binning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demos_sed_fitting.html">SED fitting</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tutorials.html">Tutorials</a></li>
 </ul>
 <p class="caption"><span class="caption-text">API reference</span></p>
@@ -188,18 +181,6 @@
   <div class="section" id="image-processing">
 <h1>Image processing<a class="headerlink" href="#image-processing" title="Permalink to this headline">¶</a></h1>
 <p>(This page is still under constraction!)</p>
-<div class="section" id="background-subtraction">
-<h2>Background subtraction<a class="headerlink" href="#background-subtraction" title="Permalink to this headline">¶</a></h2>
-</div>
-<div class="section" id="deriving-variance-images">
-<h2>Deriving variance Images<a class="headerlink" href="#deriving-variance-images" title="Permalink to this headline">¶</a></h2>
-</div>
-<div class="section" id="running-image-processing">
-<h2>Running image processing<a class="headerlink" href="#running-image-processing" title="Permalink to this headline">¶</a></h2>
-</div>
-<div class="section" id="output-format">
-<h2>Output format<a class="headerlink" href="#output-format" title="Permalink to this headline">¶</a></h2>
-</div>
 </div>
 
 
@@ -210,10 +191,10 @@
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="image_ifs_match.html" class="btn btn-neutral float-right" title="Matching imaging data with IFS data" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="image_ifs_match.html" class="btn btn-neutral float-right" title="Spatial Matching imaging+IFS data" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="list_kernels_psf.html" class="btn btn-neutral float-left" title="Available convolution kernels and PSFs" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="ingredients_model.html" class="btn btn-neutral float-left" title="SED modeling" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   

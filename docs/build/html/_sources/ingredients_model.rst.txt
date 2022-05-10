@@ -1,4 +1,4 @@
-Ingredients in SED modeling
+SED modeling
 ===========================
 In **piXedfit**, the task of generating model SEDs is done by :mod:`piXedfit_model` module. The SED modeling uses the Flexible Stellar Population Synthesis (`FSPS <https://github.com/cconroy20/fsps>`_) package through the `Python-FSPS <http://dfm.io/python-fsps/current/>`_ as the interface to the Python environment. The FSPS package provides a self-consistent modeling of galaxy's SED through a careful modeling of the physical components that make up the total luminosity output of a galaxy, which consist of stellar emission, nebular emission, dust emission, and emission from the dusty torus heated by the AGN. Since :mod:`piXedfit_model` module uses the FSPS model, every parameter (i.e., ingredient) available in the FSPS is also available in the :mod:`piXedfit_model`.
 

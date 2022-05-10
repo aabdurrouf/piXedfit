@@ -1,4 +1,4 @@
-Demonstration of image processing
+Image processing
 =================================
 
 (This page is still under constraction!)

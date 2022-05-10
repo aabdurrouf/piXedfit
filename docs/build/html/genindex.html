@@ -85,23 +85,25 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="list_imaging_data.html">List of imaging data</a></li>
-<li class="toctree-l1"><a class="reference internal" href="list_kernels_psf.html">Available convolution kernels and PSFs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="list_kernels_psf.html">Convolution kernels and PSFs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ingredients_model.html">SED modeling</a></li>
 <li class="toctree-l1"><a class="reference internal" href="image_pros.html">Image processing</a></li>
-<li class="toctree-l1"><a class="reference internal" href="image_ifs_match.html">Matching imaging data with IFS data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="image_ifs_match.html">Spatial Matching imaging+IFS data</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pixel_binning.html">Pixel binning</a></li>
-<li class="toctree-l1"><a class="reference internal" href="ingredients_model.html">Ingredients in SED modeling</a></li>
 <li class="toctree-l1"><a class="reference internal" href="gen_model_SEDs.html">Generating model SEDs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="fit_res_SEDs.html">Fitting spatially resolved SEDs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="fit_ing_SEDs.html">Fitting integrated SEDs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="plot_fitres.html">Plotting fitting results</a></li>
-<li class="toctree-l1"><a class="reference internal" href="get_maps_prop.html">Obtaining spatially resolved maps of properties</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fit_res_SEDs.html">Fitting spatially resolved SED</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fit_ing_SEDs.html">Fitting integrated SED</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_fitres.html">Analyze fitting results</a></li>
+<li class="toctree-l1"><a class="reference internal" href="get_maps_prop.html">Get maps of spatially resolved properties</a></li>
 </ul>
-<p class="caption"><span class="caption-text">Demonstrations and tutorials</span></p>
+<p class="caption"><span class="caption-text">Tutorials</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="demos_img_pros.html">Demonstration of image processing</a></li>
-<li class="toctree-l1"><a class="reference internal" href="demos_pixel_binning.html">Demonstration of the pixel binning process</a></li>
-<li class="toctree-l1"><a class="reference internal" href="demos_sed_fitting.html">Demonstration of SED fitting</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tutorials.html">Tutorials</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Demonstrations</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="demos_pixel_binning.html">Pixel binning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demos_sed_fitting.html">SED fitting</a></li>
 </ul>
 <p class="caption"><span class="caption-text">API reference</span></p>
 <ul>
@@ -196,10 +198,6 @@
 <h2 id="A">A</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="piXedfit_model.html#piXedfit.piXedfit_model.add_fagn_bol_samplers">add_fagn_bol_samplers() (in module piXedfit.piXedfit_model)</a>
-</li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="utils.html#piXedfit.utils.filtering.add_filter">add_filter() (in module piXedfit.utils.filtering)</a>
 </li>
   </ul></td>
@@ -236,12 +234,10 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="piXedfit_images.html#piXedfit.piXedfit_images.images_processing.galaxy_region">galaxy_region() (piXedfit.piXedfit_images.images_processing method)</a>
 </li>
-      <li><a href="piXedfit_model.html#piXedfit.piXedfit_model.generate_mockSED">generate_mockSED() (in module piXedfit.piXedfit_model)</a>
+      <li><a href="piXedfit_model.html#piXedfit.piXedfit_model.generate_modelSED_photo">generate_modelSED_photo() (in module piXedfit.piXedfit_model)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="piXedfit_model.html#piXedfit.piXedfit_model.generate_modelSED_photo">generate_modelSED_photo() (in module piXedfit.piXedfit_model)</a>
-</li>
       <li><a href="piXedfit_model.html#piXedfit.piXedfit_model.generate_modelSED_spec">generate_modelSED_spec() (in module piXedfit.piXedfit_model)</a>
 </li>
       <li><a href="utils.html#piXedfit.utils.filtering.get_filter_curve">get_filter_curve() (in module piXedfit.utils.filtering)</a>
@@ -398,7 +394,9 @@
 <h2 id="S">S</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="piXedfit_model.html#piXedfit.piXedfit_model.save_models">save_models() (in module piXedfit.piXedfit_model)</a>
+      <li><a href="piXedfit_model.html#piXedfit.piXedfit_model.save_models_photo">save_models_photo() (in module piXedfit.piXedfit_model)</a>
+</li>
+      <li><a href="piXedfit_model.html#piXedfit.piXedfit_model.save_models_rest_spec">save_models_rest_spec() (in module piXedfit.piXedfit_model)</a>
 </li>
       <li><a href="piXedfit_fitting.html#piXedfit.piXedfit_fitting.SEDfit_from_binmap">SEDfit_from_binmap() (in module piXedfit.piXedfit_fitting)</a>
 </li>

@@ -1,8 +1,6 @@
 Installation
 ============
 
-(**Still under active development**)
-
 To use **piXedfit** you need to insall the following dependencies. Some dependencies are only needed for particular tasks. If you are not going to do the tasks, even if those optinal dependencies are not installed, **piXedfit** can still be used normally for doing other tasks.  
 
 Dependencies
@@ -10,7 +8,7 @@ Dependencies
 
 *	**piXedfit** works with Python3
 *	`NumPy <https://numpy.org/>`_, `SciPy <https://www.scipy.org/>`_, `astropy <https://docs.astropy.org/en/stable/>`_, `matplotlib <https://matplotlib.org/>`_
-*	`FSPS <https://github.com/cconroy20/fsps>`_, `Python-FSPS <https://dfm.io/python-fsps/current/>`_, `mpi4py <https://mpi4py.readthedocs.io/en/stable/index.html#>`_ 
+*	`FSPS <https://github.com/cconroy20/fsps>`_, `Python-FSPS <https://dfm.io/python-fsps/current/>`_, `mpi4py <https://mpi4py.readthedocs.io/en/stable/index.html#>`_, `h5py <https://docs.h5py.org/en/stable/index.html>`_ 
 *	`photutils <https://photutils.readthedocs.io/en/stable/>`_ and `reproject <https://reproject.readthedocs.io/en/stable/>`_ if you want to use :mod:`piXedfit_images` OR :mod:`piXedfit_spectrophotometric` modules for doing images processing OR spatial matching (i.e., combining) between multiband imaging data and integral field spectroscopic (IFS) data
 *	`SEP <https://sep.readthedocs.io/en/v1.0.x/index.html>`_ if you want to use sources extraction and segmentation features of SExtractor for defining galaxy's region of interest in the image processing. 
 *	`emcee <https://emcee.readthedocs.io/en/stable/>`_ and `schwimmbad <https://github.com/adrn/schwimmbad>`_ if you want to use MCMC method for SED fitting with the :mod:`piXefit_fitting` module

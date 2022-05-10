@@ -60,10 +60,10 @@ of spaially resolved SED) without the need of using the images processing and pi
    install
    list_imaging_data
    list_kernels_psf
+   ingredients_model
    image_pros
    image_ifs_match
    pixel_binning
-   ingredients_model
    gen_model_SEDs
    fit_res_SEDs
    fit_ing_SEDs
@@ -73,12 +73,17 @@ of spaially resolved SED) without the need of using the images processing and pi
 
 .. toctree::
    :maxdepth: 2
-   :caption: Demonstrations and tutorials
+   :caption: Tutorials
 
-   demos_img_pros
+   tutorials
+
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Demonstrations
+   
    demos_pixel_binning
    demos_sed_fitting
-   tutorials
 
 
 .. toctree::

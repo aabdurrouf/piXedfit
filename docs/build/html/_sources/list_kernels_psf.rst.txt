@@ -1,5 +1,5 @@
-Available convolution kernels and PSFs
-======================================
+Convolution kernels and PSFs
+=============================
 
 The point spread function (PSF) describes the two-dimensional distribution of light in the telescope focal plane for the astronomical point sources. 
 To get reliable multiwavelength photometric SED from a set of multiband images, especially in the analysis of spatially resolved SEDs of galaxies, 

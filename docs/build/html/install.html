@@ -91,22 +91,21 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="list_imaging_data.html">List of imaging data</a></li>
-<li class="toctree-l1"><a class="reference internal" href="list_kernels_psf.html">Available convolution kernels and PSFs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="list_kernels_psf.html">Convolution kernels and PSFs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ingredients_model.html">SED modeling</a></li>
 <li class="toctree-l1"><a class="reference internal" href="image_pros.html">Image processing</a></li>
-<li class="toctree-l1"><a class="reference internal" href="image_ifs_match.html">Matching imaging data with IFS data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="image_ifs_match.html">Spatial Matching imaging+IFS data</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pixel_binning.html">Pixel binning</a></li>
-<li class="toctree-l1"><a class="reference internal" href="ingredients_model.html">Ingredients in SED modeling</a></li>
 <li class="toctree-l1"><a class="reference internal" href="gen_model_SEDs.html">Generating model SEDs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="fit_res_SEDs.html">Fitting spatially resolved SEDs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="fit_ing_SEDs.html">Fitting integrated SEDs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="plot_fitres.html">Plotting fitting results</a></li>
-<li class="toctree-l1"><a class="reference internal" href="get_maps_prop.html">Obtaining spatially resolved maps of properties</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fit_res_SEDs.html">Fitting spatially resolved SED</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fit_ing_SEDs.html">Fitting integrated SED</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_fitres.html">Analyze fitting results</a></li>
+<li class="toctree-l1"><a class="reference internal" href="get_maps_prop.html">Get maps of spatially resolved properties</a></li>
 </ul>
-<p class="caption"><span class="caption-text">Demonstrations and tutorials</span></p>
+<p class="caption"><span class="caption-text">Demonstrations</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="demos_img_pros.html">Demonstration of image processing</a></li>
-<li class="toctree-l1"><a class="reference internal" href="demos_pixel_binning.html">Demonstration of the pixel binning process</a></li>
-<li class="toctree-l1"><a class="reference internal" href="demos_sed_fitting.html">Demonstration of SED fitting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demos_pixel_binning.html">Pixel binning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demos_sed_fitting.html">SED fitting</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tutorials.html">Tutorials</a></li>
 </ul>
 <p class="caption"><span class="caption-text">API reference</span></p>
@@ -185,14 +184,13 @@
             
   <div class="section" id="installation">
 <h1>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h1>
-<p>(<strong>Still under active development</strong>)</p>
 <p>To use <strong>piXedfit</strong> you need to insall the following dependencies. Some dependencies are only needed for particular tasks. If you are not going to do the tasks, even if those optinal dependencies are not installed, <strong>piXedfit</strong> can still be used normally for doing other tasks.</p>
 <div class="section" id="dependencies">
 <h2>Dependencies<a class="headerlink" href="#dependencies" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li><p><strong>piXedfit</strong> works with Python3</p></li>
 <li><p><a class="reference external" href="https://numpy.org/">NumPy</a>, <a class="reference external" href="https://www.scipy.org/">SciPy</a>, <a class="reference external" href="https://docs.astropy.org/en/stable/">astropy</a>, <a class="reference external" href="https://matplotlib.org/">matplotlib</a></p></li>
-<li><p><a class="reference external" href="https://github.com/cconroy20/fsps">FSPS</a>, <a class="reference external" href="https://dfm.io/python-fsps/current/">Python-FSPS</a>, <a class="reference external" href="https://mpi4py.readthedocs.io/en/stable/index.html#">mpi4py</a></p></li>
+<li><p><a class="reference external" href="https://github.com/cconroy20/fsps">FSPS</a>, <a class="reference external" href="https://dfm.io/python-fsps/current/">Python-FSPS</a>, <a class="reference external" href="https://mpi4py.readthedocs.io/en/stable/index.html#">mpi4py</a>, <a class="reference external" href="https://docs.h5py.org/en/stable/index.html">h5py</a></p></li>
 <li><p><a class="reference external" href="https://photutils.readthedocs.io/en/stable/">photutils</a> and <a class="reference external" href="https://reproject.readthedocs.io/en/stable/">reproject</a> if you want to use <code class="xref py py-mod docutils literal notranslate"><span class="pre">piXedfit_images</span></code> OR <code class="xref py py-mod docutils literal notranslate"><span class="pre">piXedfit_spectrophotometric</span></code> modules for doing images processing OR spatial matching (i.e., combining) between multiband imaging data and integral field spectroscopic (IFS) data</p></li>
 <li><p><a class="reference external" href="https://sep.readthedocs.io/en/v1.0.x/index.html">SEP</a> if you want to use sources extraction and segmentation features of SExtractor for defining galaxy’s region of interest in the image processing.</p></li>
 <li><p><a class="reference external" href="https://emcee.readthedocs.io/en/stable/">emcee</a> and <a class="reference external" href="https://github.com/adrn/schwimmbad">schwimmbad</a> if you want to use MCMC method for SED fitting with the <code class="xref py py-mod docutils literal notranslate"><span class="pre">piXefit_fitting</span></code> module</p></li>

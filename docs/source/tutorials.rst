@@ -3,22 +3,13 @@ Tutorials
 
 (This page is still under constraction!)
 
-Image processing
-----------------
+Analysis of FUV--FIR images
+---------------------------
 
 
-Spatial matching between imaging data and IFS data
---------------------------------------------------
+Analysis of FUV--NIR images
+---------------------------
 
 
-Pixel binning
--------------
-
-
-SED fitting
------------
-
-
-
-Making corner plot, SED plot, and SFH plot
-------------------------------------------
+Analysis of FUV--NIR images and IFS data
+----------------------------------------

@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Ingredients in SED modeling &mdash; piXedfit 1.0 documentation</title>
+  <title>SED modeling &mdash; piXedfit 1.0 documentation</title>
   
 
   
@@ -37,8 +37,8 @@
     
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Generating model SEDs" href="gen_model_SEDs.html" />
-    <link rel="prev" title="Pixel binning" href="pixel_binning.html" /> 
+    <link rel="next" title="Image processing" href="image_pros.html" />
+    <link rel="prev" title="Available convolution kernels and PSFs" href="list_kernels_psf.html" /> 
 </head>
 
 <body class="wy-body-for-nav">
@@ -88,27 +88,26 @@
 <li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="list_imaging_data.html">List of imaging data</a></li>
 <li class="toctree-l1"><a class="reference internal" href="list_kernels_psf.html">Available convolution kernels and PSFs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="image_pros.html">Image processing</a></li>
-<li class="toctree-l1"><a class="reference internal" href="image_ifs_match.html">Matching imaging data with IFS data</a></li>
-<li class="toctree-l1"><a class="reference internal" href="pixel_binning.html">Pixel binning</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Ingredients in SED modeling</a><ul>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">SED modeling</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#ssp-model">SSP model</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#choices-for-the-sfh">Choices for the SFH</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#dust-emission-and-agn-components">Dust emission and AGN components</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#igm-absoption-redshifting-and-convolving-with-filters">IGM absoption, redshifting, and convolving with filters</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="image_pros.html">Image processing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="image_ifs_match.html">Matching imaging data with IFS data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pixel_binning.html">Pixel binning</a></li>
 <li class="toctree-l1"><a class="reference internal" href="gen_model_SEDs.html">Generating model SEDs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="fit_res_SEDs.html">Fitting spatially resolved SEDs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="fit_ing_SEDs.html">Fitting integrated SEDs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="plot_fitres.html">Plotting fitting results</a></li>
-<li class="toctree-l1"><a class="reference internal" href="get_maps_prop.html">Obtaining spatially resolved maps of properties</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fit_res_SEDs.html">Fitting spatially resolved SED</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fit_ing_SEDs.html">Fitting integrated SED</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_fitres.html">Analyze fitting results</a></li>
+<li class="toctree-l1"><a class="reference internal" href="get_maps_prop.html">Obtain maps of spatially resolved properties</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Demonstrations and tutorials</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="demos_img_pros.html">Demonstration of image processing</a></li>
-<li class="toctree-l1"><a class="reference internal" href="demos_pixel_binning.html">Demonstration of the pixel binning process</a></li>
-<li class="toctree-l1"><a class="reference internal" href="demos_sed_fitting.html">Demonstration of SED fitting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demos_pixel_binning.html">Pixel binning process</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demos_sed_fitting.html">SED fitting</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tutorials.html">Tutorials</a></li>
 </ul>
 <p class="caption"><span class="caption-text">API reference</span></p>
@@ -166,7 +165,7 @@
     
       <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
         
-      <li>Ingredients in SED modeling</li>
+      <li>SED modeling</li>
     
     
       <li class="wy-breadcrumbs-aside">
@@ -185,8 +184,8 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <div class="section" id="ingredients-in-sed-modeling">
-<h1>Ingredients in SED modeling<a class="headerlink" href="#ingredients-in-sed-modeling" title="Permalink to this headline">¶</a></h1>
+  <div class="section" id="sed-modeling">
+<h1>SED modeling<a class="headerlink" href="#sed-modeling" title="Permalink to this headline">¶</a></h1>
 <p>In <strong>piXedfit</strong>, the task of generating model SEDs is done by <code class="xref py py-mod docutils literal notranslate"><span class="pre">piXedfit_model</span></code> module. The SED modeling uses the Flexible Stellar Population Synthesis (<a class="reference external" href="https://github.com/cconroy20/fsps">FSPS</a>) package through the <a class="reference external" href="http://dfm.io/python-fsps/current/">Python-FSPS</a> as the interface to the Python environment. The FSPS package provides a self-consistent modeling of galaxy’s SED through a careful modeling of the physical components that make up the total luminosity output of a galaxy, which consist of stellar emission, nebular emission, dust emission, and emission from the dusty torus heated by the AGN. Since <code class="xref py py-mod docutils literal notranslate"><span class="pre">piXedfit_model</span></code> module uses the FSPS model, every parameter (i.e., ingredient) available in the FSPS is also available in the <code class="xref py py-mod docutils literal notranslate"><span class="pre">piXedfit_model</span></code>.</p>
 <div class="section" id="ssp-model">
 <h2>SSP model<a class="headerlink" href="#ssp-model" title="Permalink to this headline">¶</a></h2>
@@ -242,10 +241,10 @@ The following figure shows examples of SFHs formed with the 5 SFH choices. All t
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="gen_model_SEDs.html" class="btn btn-neutral float-right" title="Generating model SEDs" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="image_pros.html" class="btn btn-neutral float-right" title="Image processing" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="pixel_binning.html" class="btn btn-neutral float-left" title="Pixel binning" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="list_kernels_psf.html" class="btn btn-neutral float-left" title="Available convolution kernels and PSFs" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   

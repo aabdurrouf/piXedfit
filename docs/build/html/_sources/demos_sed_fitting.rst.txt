@@ -1,5 +1,5 @@
-Demonstration of SED fitting
-============================
+SED fitting
+============
 
 The MCMC process
 ----------------

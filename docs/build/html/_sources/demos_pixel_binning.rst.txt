@@ -1,5 +1,5 @@
-Demonstration of the pixel binning process
-==========================================
+Pixel binning
+==============
 
 The animation below shows demonstration of how our new pixel binning scheme works. The pixel binning is done using the :mod:`piXedfit_bin` module. Basically, the pixel binning starts from a brightest pixel (in a reference band, that is selected by the user) then surrounding pixels (within a certain dimeter) that have SEDs with similar shape as the SED of the brightest pixel are binned together. If the resulted S/N in each band is still lower than a given S/N threshold, then the bin's size is grown gradually with increment radius of 2 pixels until the S/N thresholds in all bands are achieved.
 

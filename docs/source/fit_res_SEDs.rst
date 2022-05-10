@@ -1,4 +1,4 @@
-Fitting spatially resolved SEDs
-===============================
+Fitting spatially resolved SED
+==============================
 
 (This page is still under constraction!)

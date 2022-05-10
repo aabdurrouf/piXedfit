@@ -1,4 +1,4 @@
-Obtaining spatially resolved maps of properties
-================================================
+Get maps of spatially resolved properties
+=========================================
 
 (This page is still under constraction!)

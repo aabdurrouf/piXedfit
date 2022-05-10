@@ -2,4 +2,4 @@ piXedfit_model
 ==============
 
 .. automodule:: piXedfit.piXedfit_model
-   :members: save_models, generate_modelSED_spec, generate_modelSED_photo, add_fagn_bol_samplers, generate_mockSED
+   :members: save_models_photo, save_models_rest_spec, generate_modelSED_spec, generate_modelSED_photo
