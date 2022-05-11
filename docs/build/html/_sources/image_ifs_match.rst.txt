@@ -1,5 +1,5 @@
-Spatial Matching imaging+IFS data
-=================================
+Spatial and Spectral Matching of imaging+IFS data
+=================================================
 
 (This page is still under constraction!)
 
@@ -28,8 +28,10 @@ Spectral matching
 
 		from piXedfit.piXedfit_spectrophotometric import match_imgifs_spectral
 
-		specphoto_file = "specphoto_fluxmap_ngc309.fits"
-		name_out_fits = "corr_%s" % specphoto_file
+		# spectrophotometric data cube produced in the previous step
+		specphoto_file = "specphoto_fluxmap_ngc309.fits"		 
+		name_out_fits = "corr_%s" % specphoto_file 		# name of output file
 
-		match_imgifs_spectral(specphoto_file, spec_sigma=2.6, nproc=20, 
+		spec_sigma = 2.6 					# spectral resolution of CALIFA data
+		match_imgifs_spectral(specphoto_file, spec_sigma=spec_sigma, nproc=20, 
 					name_out_fits=name_out_fits)

@@ -17,13 +17,12 @@ def redchi2_two_seds(sed1_f=[], sed1_ferr=[], sed2_f=[], sed2_ferr=[]):
 	return red_chi2
 
 
-def pixel_binning(fits_fluxmap=None, ref_band=None, Dmin_bin=2.0, SNR=[], redc_chi2_limit=4.0, del_r=2.0, name_out_fits=None):
+def pixel_binning(fits_fluxmap, ref_band=None, Dmin_bin=2.0, SNR=[], redc_chi2_limit=4.0, del_r=2.0, name_out_fits=None):
 	"""Function for performing pixel binning, a proses of combining neighboring pixels to increase signal-to-noise ratios of the 
 	spatially resolved SEDs.  
 
 	:param fits_fluxmap:
-		Input maps of multiband fluxes and fluxes uncertainties in a FITS file format.
-		This FITS file should have the same format as the output of the :py:func:`flux_map` function (:py:mod:`piXedfit_images` module).
+		Input FITS file containing either photometric or spectrophotometric data cube.
 
 	:param ref_band: 
 		Index of a band/filter that will be used as a reference in finding the brightest pixels. 
@@ -422,7 +421,7 @@ def pixel_binning(fits_fluxmap=None, ref_band=None, Dmin_bin=2.0, SNR=[], redc_c
 
 
 
-def pixel_binning_images(images=[], var_images=[], ref_band=None, Dmin_bin=2.0, SNR=[], redc_chi2_limit=4.0, del_r=2.0, name_out_fits=None):
+def pixel_binning_images(images, var_images, ref_band=None, Dmin_bin=2.0, SNR=[], redc_chi2_limit=4.0, del_r=2.0, name_out_fits=None):
 	"""Function for performing pixel binning to multiband images.  
 
 	:param images:

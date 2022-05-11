@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Spatial Matching imaging+IFS data &mdash; piXedfit 1.0 documentation</title>
+  <title>Spatial and Spectral Matching of imaging+IFS data &mdash; piXedfit 1.0 documentation</title>
   
 
   
@@ -90,7 +90,7 @@
 <li class="toctree-l1"><a class="reference internal" href="list_kernels_psf.html">Convolution kernels and PSFs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="ingredients_model.html">SED modeling</a></li>
 <li class="toctree-l1"><a class="reference internal" href="image_pros.html">Image processing</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Spatial Matching imaging+IFS data</a><ul>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Spatial and Spectral Matching of imaging+IFS data</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#spatial-matching">Spatial matching</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#spectral-matching">Spectral matching</a></li>
 </ul>
@@ -166,7 +166,7 @@
     
       <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
         
-      <li>Spatial Matching imaging+IFS data</li>
+      <li>Spatial and Spectral Matching of imaging+IFS data</li>
     
     
       <li class="wy-breadcrumbs-aside">
@@ -185,8 +185,8 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <div class="section" id="spatial-matching-imaging-ifs-data">
-<h1>Spatial Matching imaging+IFS data<a class="headerlink" href="#spatial-matching-imaging-ifs-data" title="Permalink to this headline">¶</a></h1>
+  <div class="section" id="spatial-and-spectral-matching-of-imaging-ifs-data">
+<h1>Spatial and Spectral Matching of imaging+IFS data<a class="headerlink" href="#spatial-and-spectral-matching-of-imaging-ifs-data" title="Permalink to this headline">¶</a></h1>
 <p>(This page is still under constraction!)</p>
 <div class="section" id="spatial-matching">
 <h2>Spatial matching<a class="headerlink" href="#spatial-matching" title="Permalink to this headline">¶</a></h2>
@@ -208,10 +208,12 @@
 <blockquote>
 <div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">piXedfit.piXedfit_spectrophotometric</span> <span class="kn">import</span> <span class="n">match_imgifs_spectral</span>
 
+<span class="c1"># spectrophotometric data cube produced in the previous step</span>
 <span class="n">specphoto_file</span> <span class="o">=</span> <span class="s2">&quot;specphoto_fluxmap_ngc309.fits&quot;</span>
-<span class="n">name_out_fits</span> <span class="o">=</span> <span class="s2">&quot;corr_</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">specphoto_file</span>
+<span class="n">name_out_fits</span> <span class="o">=</span> <span class="s2">&quot;corr_</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">specphoto_file</span>              <span class="c1"># name of output file</span>
 
-<span class="n">match_imgifs_spectral</span><span class="p">(</span><span class="n">specphoto_file</span><span class="p">,</span> <span class="n">spec_sigma</span><span class="o">=</span><span class="mf">2.6</span><span class="p">,</span> <span class="n">nproc</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span>
+<span class="n">spec_sigma</span> <span class="o">=</span> <span class="mf">2.6</span>                                        <span class="c1"># spectral resolution of CALIFA data</span>
+<span class="n">match_imgifs_spectral</span><span class="p">(</span><span class="n">specphoto_file</span><span class="p">,</span> <span class="n">spec_sigma</span><span class="o">=</span><span class="n">spec_sigma</span><span class="p">,</span> <span class="n">nproc</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span>
                         <span class="n">name_out_fits</span><span class="o">=</span><span class="n">name_out_fits</span><span class="p">)</span>
 </pre></div>
 </div>

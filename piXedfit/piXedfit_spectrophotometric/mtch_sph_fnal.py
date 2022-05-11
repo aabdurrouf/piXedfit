@@ -114,7 +114,8 @@ rows, cols = np.where(spec_gal_region==1)
 npixs = len(rows)
 
 # data of pre-calculated model rest-frame spectra
-f = h5py.File(dir_mod+"spec_dpl_c20_nduste_nagn_rdcd.hdf5", 'r')
+#f = h5py.File(dir_mod+"spec_dpl_c20_nduste_nagn_rdcd.hdf5", 'r')
+f = h5py.File(dir_mod+"spec_dpl_c20_nduste_nagn_50k.hdf5", 'r')
 # number of model SEDs
 nmodels = int(f['mod'].attrs['nmodels']/size)*size
 
@@ -187,7 +188,7 @@ for pp in range(0,npixs):
 		sys.stdout.write('rank %d: pixel %d of %d -> model %d of %d (%d%%)' % (rank,(pp+1),npixs,count,len(recvbuf_idx),
 																					count*100/len(recvbuf_idx)))
 		sys.stdout.flush()
-	sys.stdout.write('\n')
+	#sys.stdout.write('\n')
 
 	mod_chi2 = np.zeros(numDataPerRank*size)
 	mod_id = np.zeros(numDataPerRank*size)
