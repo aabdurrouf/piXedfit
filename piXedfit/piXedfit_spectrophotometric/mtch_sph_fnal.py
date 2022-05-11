@@ -1,9 +1,11 @@
 import numpy as np
 import sys, os
 import fsps
+import h5py
 from operator import itemgetter
 from mpi4py import MPI
 from astropy.io import fits
+from astropy.cosmology import *
 
 global PIXEDFIT_HOME
 PIXEDFIT_HOME = os.environ['PIXEDFIT_HOME']
@@ -12,7 +14,8 @@ sys.path.insert(0, PIXEDFIT_HOME)
 from piXedfit.utils.posteriors import model_leastnorm
 from piXedfit.piXedfit_model import get_no_nebem_wave_fit
 from piXedfit.piXedfit_spectrophotometric import spec_smoothing, match_spectra_poly_legendre_fit
-from piXedfit.utils.filtering import interp_filters_curves, filtering_interp_filters 
+from piXedfit.utils.filtering import interp_filters_curves, filtering_interp_filters
+from piXedfit.utils.redshifting import cosmo_redshifting 
 
 """
 USAGE: mpirun -np [nproc] python ./match_specphoto.py (1)configuration file
@@ -99,12 +102,12 @@ elif cosmo=='Planck15' or cosmo==5:
 DL_Gpc = DL_Gpc0.value/1.0e+3 
 
 # transpose (band,y,x) => (y,x,band)
-photo_flux_trans = np.transpose(photo_flux, axes=(1,2,0))*unit
-photo_flux_err_trans = np.transpose(photo_flux_err, axes=(1,2,0))*unit
+photo_flux_trans = np.transpose(photo_flux, axes=(1,2,0))
+photo_flux_err_trans = np.transpose(photo_flux_err, axes=(1,2,0))
 
 # transpose (wave,y,x) => (y,x,wave)
-spec_flux_trans = np.transpose(spec_flux, axes=(1,2,0))*unit 
-spec_flux_err_trans = np.transpose(spec_flux_err, axes=(1,2,0))*unit 
+spec_flux_trans = np.transpose(spec_flux, axes=(1,2,0))
+spec_flux_err_trans = np.transpose(spec_flux_err, axes=(1,2,0)) 
 
 # select pixels
 rows, cols = np.where(spec_gal_region==1)
@@ -115,18 +118,23 @@ f = h5py.File(dir_mod+"spec_dpl_c20_nduste_nagn_rdcd.hdf5", 'r')
 # number of model SEDs
 nmodels = int(f['mod'].attrs['nmodels']/size)*size
 
-# arrays for outputs
-rescaled_spec_flux = np.zeros((dim_y,dim_x,nwaves))
-rescaled_spec_flux_err = np.zeros((dim_y,dim_x,nwaves))
-
 # cut model spectrum to match range given by the IFS spectra
 rest_wave = f['mod/spec/wave'][:]
 redsh_wave = (1.0+gal_z)*rest_wave
-idx_mod_wave = np.where((redsh_wave>min_spec_wave-50) & (redsh_wave<max_spec_wave+50))
+idx_mod_wave = np.where((redsh_wave>min_spec_wave-10) & (redsh_wave<max_spec_wave+10))
+
+sp = fsps.StellarPopulation(zcontinuous=1, imf_type=1)
 
 # get wavelength free of emission lines
 del_wave_nebem = float(config_data['del_wave_nebem'])
 spec_wave_clean,wave_mask = get_no_nebem_wave_fit(sp,gal_z,spec_wave,del_wave_nebem)
+
+# arrays for outputs
+rescaled_spec_flux = np.zeros((dim_y,dim_x,nwaves))
+rescaled_spec_flux_err = np.zeros((dim_y,dim_x,nwaves))
+
+# allocate memory for correction factor
+map_spec_corr_factor = np.zeros((dim_y,dim_x,nwaves))
 
 # allocate memory for output best-fit model spectra
 map_bfit_mod_spec_wave = spec_wave_clean
@@ -176,7 +184,7 @@ for pp in range(0,npixs):
 		count = count + 1
 
 		sys.stdout.write('\r')
-		sys.stdout.write('rank: %d  Calculation process: %d from %d  --->  %d%%' % (rank,count,len(recvbuf_idx),
+		sys.stdout.write('rank %d: pixel %d of %d -> model %d of %d (%d%%)' % (rank,(pp+1),npixs,count,len(recvbuf_idx),
 																					count*100/len(recvbuf_idx)))
 		sys.stdout.flush()
 	sys.stdout.write('\n')
@@ -203,7 +211,7 @@ for pp in range(0,npixs):
 
 		# cut model spectrum to match range given by the IFS spectra
 		bfit_spec_wave = bfit_spec_wave[idx_mod_wave[0]]
-		bfit_spec_flux = bfit_spec_flux[idx_mod_wave[0]]
+		bfit_spec_flux = bfit_spec_flux[idx_mod_wave[0]]*mod_norm[int(mod_id[idx0])]
 
 		# smoothing model spectrum to meet resolution of IFS
 		conv_bfit_spec_wave,conv_bfit_spec_flux = spec_smoothing(bfit_spec_wave,bfit_spec_flux,spec_sigma)
@@ -221,12 +229,15 @@ for pp in range(0,npixs):
 		# get output best-fit model
 		map_bfit_mod_spec_flux[rows[pp]][cols[pp]] = ref_spec_flux_clean
 
+		# get correction factor
+		map_spec_corr_factor[rows[pp]][cols[pp]] = factor
 
 if rank == 0:
 	# transpose (y,x,wave) => (wave,y,x) and re-normalize 
-	map_rescaled_spec_flux = np.transpose(rescaled_spec_flux, axes=(2,0,1))/unit
-	map_rescaled_spec_flux_err = np.transpose(rescaled_spec_flux_err, axes=(2,0,1))/unit
-	map_bfit_mod_spec_flux_trans = np.transpose(map_bfit_mod_spec_flux, axes=(2,0,1))/unit
+	map_rescaled_spec_flux = np.transpose(rescaled_spec_flux, axes=(2,0,1))
+	map_rescaled_spec_flux_err = np.transpose(rescaled_spec_flux_err, axes=(2,0,1))
+	map_bfit_mod_spec_flux_trans = np.transpose(map_bfit_mod_spec_flux, axes=(2,0,1))
+	map_spec_corr_factor_trans = np.transpose(map_spec_corr_factor, axes=(2,0,1))
 
 
 	# Store into FITS file 
@@ -240,6 +251,7 @@ if rank == 0:
 	hdul.append(fits.ImageHDU(spec_gal_region, name='spec_region'))
 	hdul.append(fits.ImageHDU(map_bfit_mod_spec_wave, name='mod_wave'))
 	hdul.append(fits.ImageHDU(map_bfit_mod_spec_flux_trans, name='mod_flux'))
+	hdul.append(fits.ImageHDU(map_spec_corr_factor_trans, name='corr_factor'))
 	# write to fits file
 	hdul.writeto(name_out_fits, overwrite=True)
 

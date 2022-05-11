@@ -1,5 +1,6 @@
 import numpy as np 
 import sys, os
+import random
 from astropy.io import fits
 from astropy.wcs import WCS 
 from astropy.convolution import convolve_fft, Gaussian1DKernel
@@ -497,10 +498,10 @@ def specphoto_mangagalexsdss2masswise(photo_fluxmap, manga_file, spec_smoothing=
 	return name_out_fits
 
 
-def match_imgifs_spatial(photo_fluxmap,ifs_data,ifs_source='manga',spec_smoothing=False,kernel_sigma=3.5,name_out_fits=None):
+def match_imgifs_spatial(photo_fluxmap,ifs_data,ifs_survey='manga',spec_smoothing=False,kernel_sigma=3.5,name_out_fits=None):
 	
 	"""Function for matching (spatially, pixel-by-pixel) between an IFS data cube and a post-processed multiwavelength imaging 
-	data that is produced using the piXedfit_image module.  
+	data.  
 
 	:param photo_fluxmap:
 		Input 3D data cube of photometry. This should have the same format as the output of :func:`piXedfit.piXedfit_images.images_processing.flux_map`.
@@ -508,7 +509,7 @@ def match_imgifs_spatial(photo_fluxmap,ifs_data,ifs_source='manga',spec_smoothin
 	:param ifs_data:
 		Integral Field Spectroscopy (IFS) data cube.
 
-	:param ifs_source: (default: 'manga')
+	:param ifs_survey: (default: 'manga')
 		The survey from which the IFS data is taken. Options are: 'manga' and 'califa'. 
 
 	:param spec_smoothing: (default: False)
@@ -521,10 +522,10 @@ def match_imgifs_spatial(photo_fluxmap,ifs_data,ifs_source='manga',spec_smoothin
 		Name of output FITS file.
 	"""
 
-	if ifs_source=='manga':
+	if ifs_survey=='manga':
 		specphoto_mangagalexsdss2masswise(photo_fluxmap,ifs_data,spec_smoothing=spec_smoothing,
 										kernel_sigma=kernel_sigma,name_out_fits=name_out_fits)
-	elif ifs_source=='califa':
+	elif ifs_survey=='califa':
 		specphoto_califagalexsdss2masswise(photo_fluxmap,ifs_data,spec_smoothing=spec_smoothing,
 										kernel_sigma=kernel_sigma,name_out_fits=name_out_fits)
 	else:

@@ -185,15 +185,15 @@
 <span id="pixedfit-spectrophotometric"></span><h1>piXedfit_spectrophotometric<a class="headerlink" href="#module-piXedfit.piXedfit_spectrophotometric" title="Permalink to this headline">¶</a></h1>
 <dl class="py function">
 <dt id="piXedfit.piXedfit_spectrophotometric.match_imgifs_spatial">
-<code class="sig-prename descclassname">piXedfit.piXedfit_spectrophotometric.</code><code class="sig-name descname">match_imgifs_spatial</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">photo_fluxmap</span></em>, <em class="sig-param"><span class="n">ifs_data</span></em>, <em class="sig-param"><span class="n">ifs_source</span><span class="o">=</span><span class="default_value">'manga'</span></em>, <em class="sig-param"><span class="n">spec_smoothing</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">kernel_sigma</span><span class="o">=</span><span class="default_value">3.5</span></em>, <em class="sig-param"><span class="n">name_out_fits</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#piXedfit.piXedfit_spectrophotometric.match_imgifs_spatial" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">piXedfit.piXedfit_spectrophotometric.</code><code class="sig-name descname">match_imgifs_spatial</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">photo_fluxmap</span></em>, <em class="sig-param"><span class="n">ifs_data</span></em>, <em class="sig-param"><span class="n">ifs_survey</span><span class="o">=</span><span class="default_value">'manga'</span></em>, <em class="sig-param"><span class="n">spec_smoothing</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">kernel_sigma</span><span class="o">=</span><span class="default_value">3.5</span></em>, <em class="sig-param"><span class="n">name_out_fits</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#piXedfit.piXedfit_spectrophotometric.match_imgifs_spatial" title="Permalink to this definition">¶</a></dt>
 <dd><p>Function for matching (spatially, pixel-by-pixel) between an IFS data cube and a post-processed multiwavelength imaging
-data that is produced using the piXedfit_image module.</p>
+data.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>photo_fluxmap</strong> – Input 3D data cube of photometry. This should have the same format as the output of <a class="reference internal" href="piXedfit_images.html#piXedfit.piXedfit_images.images_processing.flux_map" title="piXedfit.piXedfit_images.images_processing.flux_map"><code class="xref py py-func docutils literal notranslate"><span class="pre">piXedfit.piXedfit_images.images_processing.flux_map()</span></code></a>.</p></li>
 <li><p><strong>ifs_data</strong> – Integral Field Spectroscopy (IFS) data cube.</p></li>
-<li><p><strong>ifs_source</strong> – (default: ‘manga’)
+<li><p><strong>ifs_survey</strong> – (default: ‘manga’)
 The survey from which the IFS data is taken. Options are: ‘manga’ and ‘califa’.</p></li>
 <li><p><strong>spec_smoothing</strong> – (default: False)
 If True, spectrum of each pixel will be smoothed by convolving it with a Gaussian kernel with a standard deviation given by the input kernel_sigma.</p></li>
