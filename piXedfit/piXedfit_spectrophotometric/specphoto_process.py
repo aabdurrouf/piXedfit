@@ -248,6 +248,7 @@ def specphoto_califagalexsdss2masswise(photo_fluxmap, califa_file, spec_smoothin
 	hdr['fpsfmtch'] = header_photo_fluxmap['fpsfmtch']
 	hdr['psffwhm'] = header_photo_fluxmap['psffwhm']
 	hdr['specphot'] = 1
+	hdr['ifssurve'] = 'califa'
 
 	for bb in range(0,nbands):
 		str_temp = 'fil%d' % int(bb)
@@ -477,6 +478,7 @@ def specphoto_mangagalexsdss2masswise(photo_fluxmap, manga_file, spec_smoothing=
 	hdr['fpsfmtch'] = header_photo_fluxmap['fpsfmtch']
 	hdr['psffwhm'] = header_photo_fluxmap['psffwhm']
 	hdr['specphot'] = 1
+	hdr['ifssurve'] = 'manga'
 	
 	for bb in range(0,nbands):
 		str_temp = 'fil%d' % int(bb)
@@ -533,27 +535,34 @@ def match_imgifs_spatial(photo_fluxmap,ifs_data,ifs_survey='manga',spec_smoothin
 		sys.exit()
 
 
-def match_imgifs_spectral(specphoto_file, spec_sigma=3.5, nproc=10, del_wave_nebem=10.0, cosmo=0, 
+def match_imgifs_spectral(specphoto_file, models_spec=None, nproc=10, del_wave_nebem=10.0, cosmo=0, 
 					H0=70.0, Om0=0.3, name_out_fits=None):
 
-	"""Function for correcting wavelength-dependent mismatch between IFS data and the multiwavelength photometric data. 
+	"""Function for correcting wavelength-dependent mismatch between the IFS spectra and the photometric SEDs (on pixel level) 
+	in the spectrophotometric data cube (produced with the function :func:`piXedfit.piXedfit_spectrophotometric.match_imgifs_spatial`). 
 	
 	:param specphoto_file:
-		Input spec+photo FITS file, which is an output from previous step: specphoto_califagalexsdss2masswise or specphoto_mangagalexsdss2masswise.
+		Input spectrophotometric data cube.
 
-	:param spec_sigma: (default: 3.5).
-		Spectral resolution of the IFS data in Angstrom.
+	:param models_spec:
+		Set of model spectra at rest-frame produced using :func:`piXedfit.piXedfit_model.save_models_rest_spec`. The file is in a HDF5 format. 
+		For more information on how to produce this set of models, please see the description :ref:`here <gen_models_seds>`.
+		This set of models only need to be produced once and then it can be used for all galaxies in a sample. 
+		If models_spec is set as None, a default file is then called from piXedfit/data/mod. 
+		However, this file is not available in that directory at first piXedfit is installed, but user need to download it 
+		from this `link <https://drive.google.com/drive/folders/1YjZGg97dPT8S95NJmO5tiFH9jWhbxuVy?usp=sharing>`_ and put it on that 
+		directory in the local machine.   
 
 	:param nproc:
-		Number of cores for calculation.
+		Number of cores to be used for calculation.
 
-	:param del_wave_nebem: (default: 15.0 Angstrom).
-		The range (+/-) around emission lines in the model spectra that will be removed in producing continuum-only spectrum. 
-		This will be used as reference in correcting the wavelength-dependent mismatch between the IFS spectra and photometric SEDs.    
+	:param del_wave_nebem: (default: 10.0 Angstrom).
+		The range (+/-) around all emission lines in the model spectra that will be removed in producing spectral continuum, 
+		which will be used as reference for correcting the wavelength-dependent mismatch between the IFS spectra and photometric SEDs.    
 
 	:param cosmo: (default: 0)
-		Choices for the cosmology. Options are: (1)'flat_LCDM' or 0, (2)'WMAP5' or 1, (3)'WMAP7' or 2, (4)'WMAP9' or 3, (5)'Planck13' or 4, (6)'Planck15' or 5.
-		These options are similar to the choices available in the `Astropy Cosmology <https://docs.astropy.org/en/stable/cosmology/#built-in-cosmologies>`_ package.
+		Choices for the cosmology. Options are: (a)'flat_LCDM' or 0, (b)'WMAP5' or 1, (c)'WMAP7' or 2, (d)'WMAP9' or 3, (e)'Planck13' or 4, (f)'Planck15' or 5.
+		These options are the same to that available in the `Astropy Cosmology <https://docs.astropy.org/en/stable/cosmology/#built-in-cosmologies>`_ package.
 
 	:param H0: (default: 70.0)
 		The Hubble constant at z=0. Only relevant when cosmo='flat_LCDM' is chosen.
@@ -561,8 +570,8 @@ def match_imgifs_spectral(specphoto_file, spec_sigma=3.5, nproc=10, del_wave_neb
 	:param Om0: (default: 0.3)
 		The Omega matter at z=0.0. Only relevant when cosmo='flat_LCDM' is chosen.
 
-	:param name_out_fits: (optional).
-		Desired name for the output FITS file.
+	:param name_out_fits:
+		Desired name for the output FITS file. If None, a generic name will be produced.
 
 	"""
 
@@ -573,7 +582,9 @@ def match_imgifs_spectral(specphoto_file, spec_sigma=3.5, nproc=10, del_wave_neb
 	name_config = "config_file%d.dat" % (random.randint(0,10000))
 	file_out = open(name_config,"w")
 	file_out.write("specphoto_file %s\n" % specphoto_file)
-	file_out.write("spec_sigma %lf\n" % spec_sigma)
+	if models_spec == None:
+		models_spec = 'none'
+	file_out.write("models_spec %s\n" % models_spec)
 	file_out.write("del_wave_nebem %lf\n" % del_wave_nebem)
 
 	# cosmology

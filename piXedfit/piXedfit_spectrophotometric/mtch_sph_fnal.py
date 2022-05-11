@@ -56,7 +56,10 @@ min_spec_wave = min(spec_wave)
 max_spec_wave = max(spec_wave)
 
 # spectral resolution
-spec_sigma = float(config_data['spec_sigma'])
+if header['ifssurve'] == 'manga':
+	spec_sigma = 3.5
+elif header['ifssurve'] == 'califa':
+	spec_wave = 2.6
 
 # output name
 name_out_fits = config_data['name_out_fits']
@@ -114,8 +117,12 @@ rows, cols = np.where(spec_gal_region==1)
 npixs = len(rows)
 
 # data of pre-calculated model rest-frame spectra
-#f = h5py.File(dir_mod+"spec_dpl_c20_nduste_nagn_rdcd.hdf5", 'r')
-f = h5py.File(dir_mod+"spec_dpl_c20_nduste_nagn_50k.hdf5", 'r')
+if config_data['models_spec']=='none':
+	models_spec = dir_mod+"spec_dpl_c20_nduste_nagn_50k.hdf5"
+else:
+	models_spec = config_data['models_spec']
+
+f = h5py.File(models_spec, 'r')
 # number of model SEDs
 nmodels = int(f['mod'].attrs['nmodels']/size)*size
 
