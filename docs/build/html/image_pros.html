@@ -198,6 +198,7 @@ This module is a python scripting module that combines various useful functions 
 <blockquote>
 <div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
 <span class="kn">from</span> <span class="nn">astropy.io</span> <span class="kn">import</span> <span class="n">fits</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="kn">as</span> <span class="nn">plt</span>
 
 <span class="c1"># open FITS file</span>
 <span class="n">hdu</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="s2">&quot;aJ_asky_001022s0620186.fits&quot;</span><span class="p">)</span>
@@ -356,8 +357,7 @@ This function produces background image, RMS image, and background-subtracted sc
 <span class="n">nbands</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">filters</span><span class="p">)</span>
 <span class="k">for</span> <span class="n">bb</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">nbands</span><span class="p">):</span>
     <span class="n">f1</span> <span class="o">=</span> <span class="n">fig1</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="n">bb</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">tick_params</span><span class="p">(</span><span class="n">left</span> <span class="o">=</span> <span class="bp">False</span><span class="p">,</span> <span class="n">right</span> <span class="o">=</span> <span class="bp">False</span> <span class="p">,</span> <span class="n">labelleft</span> <span class="o">=</span> <span class="bp">False</span> <span class="p">,</span>
-                    <span class="n">labelbottom</span> <span class="o">=</span> <span class="bp">False</span><span class="p">,</span> <span class="n">bottom</span> <span class="o">=</span> <span class="bp">False</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">tick_params</span><span class="p">(</span><span class="n">left</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span><span class="n">right</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span><span class="n">labelleft</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span><span class="n">labelbottom</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span><span class="n">bottom</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
     <span class="n">str_temp</span> <span class="o">=</span> <span class="s2">&quot;name_img_</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">filters</span><span class="p">[</span><span class="n">bb</span><span class="p">]</span>
     <span class="n">hdu</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">output_stamps</span><span class="p">[</span><span class="n">str_temp</span><span class="p">])</span>
     <span class="n">plt</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">hdu</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">),</span> <span class="n">origin</span><span class="o">=</span><span class="s1">&#39;lower&#39;</span><span class="p">)</span>
@@ -403,14 +403,115 @@ This function produces background image, RMS image, and background-subtracted sc
 </div>
 </div></blockquote>
 <img alt="_images/img_proc_7.png" src="_images/img_proc_7.png" />
-<p>Next, we are ready to calculate fluxes (i.e., convert from the pixel values) of individual pixels within the galaxy’s region of interest. This is can be done using the <code class="xref py py-func docutils literal notranslate"><span class="pre">flux_map()</span></code> method.</p>
+<p>We are now ready to calculate fluxes (i.e., convert from the pixel values) and flux uncertainties of individual pixels within the galaxy’s region of interest. This is can be done using the <code class="xref py py-func docutils literal notranslate"><span class="pre">flux_map()</span></code> method.</p>
 <blockquote>
-<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">name_out_fits</span> <span class="o">=</span> <span class="s2">&quot;fluxmap_ngc309.fits&quot;</span>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">Gal_EBV</span> <span class="o">=</span> <span class="mf">0.034</span>         <span class="c1"># level of attenuation by the foreground Galactic dust</span>
+<span class="n">name_out_fits</span> <span class="o">=</span> <span class="s2">&quot;fluxmap_ngc309.fits&quot;</span>   <span class="c1"># name for the output FITS file</span>
 <span class="n">flux_maps</span> <span class="o">=</span> <span class="n">img_process</span><span class="o">.</span><span class="n">flux_map</span><span class="p">(</span><span class="n">output_stamps</span><span class="p">,</span> <span class="n">gal_region</span><span class="p">,</span> <span class="n">Gal_EBV</span><span class="o">=</span><span class="n">Gal_EBV</span><span class="p">,</span>
-                 <span class="n">name_out_fits</span><span class="o">=</span><span class="n">name_out_fits</span><span class="p">)</span>
+                                                                <span class="n">name_out_fits</span><span class="o">=</span><span class="n">name_out_fits</span><span class="p">)</span>
 </pre></div>
 </div>
 </div></blockquote>
+<p><code class="docutils literal notranslate"><span class="pre">Gal_EBV</span></code> is the E(B-V) dust attenuation level due to the foreground Galactic dust. Given the coordinate of the galaxy, this information can be obtained from e.g., <a class="reference external" href="https://ned.ipac.caltech.edu/forms/calculator.html">NED website</a>. This web application provides attenuation (<span class="math notranslate nohighlight">\(A_{\lambda}\)</span>) at 5 SDSS bands, which then can be converted into single E(B-V) value using <code class="xref py py-func docutils literal notranslate"><span class="pre">piXedfit.piXedfit_images.EBV_foreground_dust()</span></code> function.</p>
+<p>The above process will produce a photometric data cube <code class="docutils literal notranslate"><span class="pre">fluxmap_ngc309.fits</span></code>.</p>
+<p>We can check the data cube by plotting maps of the multiband fluxes and the SED on individual pixels. Let’s first open the FITS file and extract the information.</p>
+<blockquote>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># open the FITS file</span>
+<span class="n">hdu</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="s2">&quot;fluxmap_ngc309.fits&quot;</span><span class="p">)</span>
+<span class="n">header</span> <span class="o">=</span> <span class="n">hdu</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">header</span>
+
+<span class="c1"># get unit of flux</span>
+<span class="n">unit</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;unit&#39;</span><span class="p">])</span>            <span class="c1"># in erg/s/cm2/A</span>
+
+<span class="c1"># get galaxy&#39;s region</span>
+<span class="n">gal_region</span> <span class="o">=</span> <span class="n">hdu</span><span class="p">[</span><span class="s1">&#39;GALAXY_REGION&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">data</span>
+<span class="c1"># get maps of fluxes</span>
+<span class="n">flux_map</span> <span class="o">=</span> <span class="n">hdu</span><span class="p">[</span><span class="s1">&#39;FLUX&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="o">*</span><span class="n">unit</span>
+<span class="c1"># get maps of flux uncertainties</span>
+<span class="n">flux_err_map</span> <span class="o">=</span> <span class="n">hdu</span><span class="p">[</span><span class="s1">&#39;FLUX_ERR&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="o">*</span><span class="n">unit</span>
+<span class="n">hdu</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</pre></div>
+</div>
+</div></blockquote>
+<p>We can then plot maps of the multiband fluxes and flux uncertainties.</p>
+<blockquote>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">fig1</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span><span class="mi">7</span><span class="p">))</span>
+<span class="k">for</span> <span class="n">bb</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">nbands</span><span class="p">):</span>
+        <span class="n">f1</span> <span class="o">=</span> <span class="n">fig1</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="n">bb</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">tick_params</span><span class="p">(</span><span class="n">left</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span><span class="n">right</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span><span class="n">labelleft</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span><span class="n">labelbottom</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span><span class="n">bottom</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">flux_map</span><span class="p">[</span><span class="n">bb</span><span class="p">]),</span> <span class="n">origin</span><span class="o">=</span><span class="s1">&#39;lower&#39;</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;nipy_spectral&#39;</span><span class="p">)</span>
+        <span class="n">f1</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.93</span><span class="p">,</span> <span class="n">filters</span><span class="p">[</span><span class="n">bb</span><span class="p">],</span> <span class="n">horizontalalignment</span><span class="o">=</span><span class="s1">&#39;center&#39;</span><span class="p">,</span>
+                        <span class="n">verticalalignment</span><span class="o">=</span><span class="s1">&#39;center&#39;</span><span class="p">,</span><span class="n">transform</span> <span class="o">=</span> <span class="n">f1</span><span class="o">.</span><span class="n">transAxes</span><span class="p">,</span>
+                        <span class="n">fontsize</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;black&#39;</span><span class="p">)</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">subplots_adjust</span><span class="p">(</span><span class="n">left</span><span class="o">=</span><span class="mf">0.05</span><span class="p">,</span> <span class="n">right</span><span class="o">=</span><span class="mf">0.95</span><span class="p">,</span> <span class="n">bottom</span><span class="o">=</span><span class="mf">0.05</span><span class="p">,</span> <span class="n">top</span><span class="o">=</span><span class="mf">0.95</span><span class="p">,</span> <span class="n">hspace</span><span class="o">=</span><span class="mf">0.05</span><span class="p">,</span> <span class="n">wspace</span><span class="o">=</span><span class="mf">0.05</span><span class="p">)</span>
+</pre></div>
+</div>
+</div></blockquote>
+<img alt="_images/img_proc_8.png" src="_images/img_proc_8.png" />
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">fig1</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span><span class="mi">7</span><span class="p">))</span>
+<span class="k">for</span> <span class="n">bb</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">nbands</span><span class="p">):</span>
+        <span class="n">f1</span> <span class="o">=</span> <span class="n">fig1</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="n">bb</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">tick_params</span><span class="p">(</span><span class="n">left</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span><span class="n">right</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span><span class="n">labelleft</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span><span class="n">labelbottom</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span><span class="n">bottom</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">flux_err_map</span><span class="p">[</span><span class="n">bb</span><span class="p">]),</span> <span class="n">origin</span><span class="o">=</span><span class="s1">&#39;lower&#39;</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;nipy_spectral&#39;</span><span class="p">)</span>
+        <span class="n">f1</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.93</span><span class="p">,</span> <span class="n">filters</span><span class="p">[</span><span class="n">bb</span><span class="p">],</span> <span class="n">horizontalalignment</span><span class="o">=</span><span class="s1">&#39;center&#39;</span><span class="p">,</span>
+                        <span class="n">verticalalignment</span><span class="o">=</span><span class="s1">&#39;center&#39;</span><span class="p">,</span><span class="n">transform</span> <span class="o">=</span> <span class="n">f1</span><span class="o">.</span><span class="n">transAxes</span><span class="p">,</span>
+                        <span class="n">fontsize</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;black&#39;</span><span class="p">)</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">subplots_adjust</span><span class="p">(</span><span class="n">left</span><span class="o">=</span><span class="mf">0.05</span><span class="p">,</span> <span class="n">right</span><span class="o">=</span><span class="mf">0.95</span><span class="p">,</span> <span class="n">bottom</span><span class="o">=</span><span class="mf">0.05</span><span class="p">,</span> <span class="n">top</span><span class="o">=</span><span class="mf">0.95</span><span class="p">,</span> <span class="n">hspace</span><span class="o">=</span><span class="mf">0.05</span><span class="p">,</span> <span class="n">wspace</span><span class="o">=</span><span class="mf">0.05</span><span class="p">)</span>
+</pre></div>
+</div>
+<img alt="_images/img_proc_9.png" src="_images/img_proc_9.png" />
+<p>Next, we will plot SED of some pixels. First, we will transpose the arrays to make it easy for extracting SED of individual pixels given their coordinates.</p>
+<blockquote>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># transpose from (band,y,x) to (y,x,band):</span>
+<span class="n">pix_SED_flux</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">flux_map</span><span class="p">,</span> <span class="n">axes</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">0</span><span class="p">))</span>
+<span class="n">pix_SED_flux_err</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">flux_err_map</span><span class="p">,</span> <span class="n">axes</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">0</span><span class="p">))</span>
+</pre></div>
+</div>
+</div></blockquote>
+<p>The script below will plot SED of the central pixel.</p>
+<blockquote>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">fig1</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span><span class="mi">5</span><span class="p">))</span>
+<span class="n">f1</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">()</span>
+<span class="n">f1</span><span class="o">.</span><span class="n">set_yscale</span><span class="p">(</span><span class="s1">&#39;log&#39;</span><span class="p">)</span>
+<span class="n">f1</span><span class="o">.</span><span class="n">set_xscale</span><span class="p">(</span><span class="s1">&#39;log&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;Wavelength [$\AA$]&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">18</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;Flux [erg $s^{-1}cm^{-2}\AA^{-1}$]&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">18</span><span class="p">)</span>
+
+<span class="c1"># coordinate</span>
+<span class="n">pos_y</span> <span class="o">=</span> <span class="mi">65</span>
+<span class="n">pos_x</span> <span class="o">=</span> <span class="mi">65</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">errorbar</span><span class="p">(</span><span class="n">photo_wave</span><span class="p">,</span> <span class="n">pix_SED_flux</span><span class="p">[</span><span class="n">pos_y</span><span class="p">][</span><span class="n">pos_x</span><span class="p">],</span> <span class="n">yerr</span><span class="o">=</span><span class="n">pix_SED_flux_err</span><span class="p">[</span><span class="n">pos_y</span><span class="p">][</span><span class="n">pos_x</span><span class="p">]</span><span class="o">*</span><span class="mf">1e-17</span><span class="p">,</span>
+                 <span class="n">fmt</span><span class="o">=</span><span class="s1">&#39;-o&#39;</span><span class="p">,</span> <span class="n">markersize</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;black&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div></blockquote>
+<img alt="_images/img_proc_10.png" src="_images/img_proc_10.png" />
+<p>We will now plot SEDs of pixels within the central 10 x 10.</p>
+<blockquote>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">fig1</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span><span class="mi">5</span><span class="p">))</span>
+<span class="n">f1</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">()</span>
+
+<span class="n">f1</span><span class="o">.</span><span class="n">set_yscale</span><span class="p">(</span><span class="s1">&#39;log&#39;</span><span class="p">)</span>
+<span class="n">f1</span><span class="o">.</span><span class="n">set_xscale</span><span class="p">(</span><span class="s1">&#39;log&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;Wavelength [$\AA$]&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">18</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;Flux [erg $s^{-1}cm^{-2}\AA^{-1}$]&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">18</span><span class="p">)</span>
+
+<span class="k">for</span> <span class="n">yy</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">60</span><span class="p">,</span><span class="mi">70</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">xx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">60</span><span class="p">,</span><span class="mi">70</span><span class="p">):</span>
+        <span class="n">pos_y</span> <span class="o">=</span> <span class="n">yy</span>
+        <span class="n">pos_x</span> <span class="o">=</span> <span class="n">xx</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">errorbar</span><span class="p">(</span><span class="n">photo_wave</span><span class="p">,</span> <span class="n">pix_SED_flux</span><span class="p">[</span><span class="n">pos_y</span><span class="p">][</span><span class="n">pos_x</span><span class="p">],</span> <span class="n">yerr</span><span class="o">=</span><span class="n">pix_SED_flux_err</span><span class="p">[</span><span class="n">pos_y</span><span class="p">][</span><span class="n">pos_x</span><span class="p">]</span><span class="o">*</span><span class="mf">1e-17</span><span class="p">,</span>
+                         <span class="n">fmt</span><span class="o">=</span><span class="s1">&#39;-o&#39;</span><span class="p">,</span> <span class="n">markersize</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div></blockquote>
+<img alt="_images/img_proc_11.png" src="_images/img_proc_11.png" />
 </div>
 </div>
 

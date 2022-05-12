@@ -276,12 +276,13 @@ Desired name for the output FITS file. If None, a generic name will be used.</p>
 
 <dl class="py method">
 <dt id="piXedfit.piXedfit_images.images_processing.galaxy_region">
-<code class="sig-name descname">galaxy_region</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">segm_maps</span></em>, <em class="sig-param"><span class="n">use_ellipse</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">x_cent</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">y_cent</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">ell</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">pa</span><span class="o">=</span><span class="default_value">45.0</span></em>, <em class="sig-param"><span class="n">radius_sma</span><span class="o">=</span><span class="default_value">30.0</span></em><span class="sig-paren">)</span><a class="headerlink" href="#piXedfit.piXedfit_images.images_processing.galaxy_region" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">galaxy_region</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">segm_maps</span><span class="o">=</span><span class="default_value">[]</span></em>, <em class="sig-param"><span class="n">use_ellipse</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">x_cent</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">y_cent</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">ell</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">pa</span><span class="o">=</span><span class="default_value">45.0</span></em>, <em class="sig-param"><span class="n">radius_sma</span><span class="o">=</span><span class="default_value">30.0</span></em><span class="sig-paren">)</span><a class="headerlink" href="#piXedfit.piXedfit_images.images_processing.galaxy_region" title="Permalink to this definition">¶</a></dt>
 <dd><p>Define galaxy’s region of interest for further analysis.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>segm_maps</strong> – Input segmentation maps in a list format. If the galaxy’s region is to be defined based
+<li><p><strong>segm_maps</strong> – (list of string, optional, default: [])
+Input segmentation maps in a list format. If the galaxy’s region is to be defined based
 on segmentation maps obtained with SEP, this input argument is required.</p></li>
 <li><p><strong>use_ellipse</strong> – (boolean, optional, default: False)
 Alternative of defining galaxy’s region using elliptical aperture centered at the target galaxy.

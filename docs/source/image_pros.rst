@@ -17,6 +17,7 @@ Suppose we have a 2MASS/J image as shown below (downloaded from `2MASS website <
 
 		import numpy as np
 		from astropy.io import fits
+		import matplotlib.pyplot as plt
 
 		# open FITS file
 		hdu = fits.open("aJ_asky_001022s0620186.fits")
@@ -185,8 +186,7 @@ Let's check the stamp images produced from the image processing by plotting them
 		nbands = len(filters)
 		for bb in range(0,nbands):
 		    f1 = fig1.add_subplot(2, 6, bb+1)
-		    plt.tick_params(left = False, right = False , labelleft = False ,
-		                    labelbottom = False, bottom = False)
+		    plt.tick_params(left=False,right=False,labelleft=False,labelbottom=False,bottom=False)
 		    str_temp = "name_img_%s" % filters[bb]
 		    hdu = fits.open(output_stamps[str_temp])
 		    plt.imshow(np.log10(hdu[0].data), origin='lower')
@@ -233,36 +233,122 @@ Let's plot the defined region on top of the SDSS/g image.
 .. image:: img_proc_7.png
 
 
-Next, we are ready to calculate fluxes (i.e., convert from the pixel values) of individual pixels within the galaxy's region of interest. This is can be done using the :func:`flux_map` method. 
+We are now ready to calculate fluxes (i.e., convert from the pixel values) and flux uncertainties of individual pixels within the galaxy's region of interest. This is can be done using the :func:`flux_map` method. 
 
 	.. code-block:: python
 
-		Gal_EBV = 0.034 						# level of attenuation by the foreground Galactic dust
+		Gal_EBV = 0.034 	# level of attenuation by the foreground Galactic dust
 		name_out_fits = "fluxmap_ngc309.fits"	# name for the output FITS file
 		flux_maps = img_process.flux_map(output_stamps, gal_region, Gal_EBV=Gal_EBV, 
 										name_out_fits=name_out_fits)
 
+``Gal_EBV`` is the E(B-V) dust attenuation level due to the foreground Galactic dust. Given the coordinate of the galaxy, this information can be obtained from e.g., `NED website <https://ned.ipac.caltech.edu/forms/calculator.html>`_. This web application provides attenuation (:math:`A_{\lambda}`) at 5 SDSS bands, which then can be converted into single E(B-V) value using :func:`piXedfit.piXedfit_images.EBV_foreground_dust` function.  
 
-``Gal_EBV`` is the E(B-V) dust attenuation level due to the foreground Galactic dust. Given the coordinate of the galaxy, this information can be obtained from e.g., `NED website <https://ned.ipac.caltech.edu/forms/calculator.html>`_.
-
-
-
+The above process will produce a photometric data cube ``fluxmap_ngc309.fits``.
 
 
+We can check the data cube by plotting maps of the multiband fluxes and the SED on individual pixels. Let's first open the FITS file and extract the information.
 
+	.. code-block:: python
 
+		# open the FITS file
+		hdu = fits.open("fluxmap_ngc309.fits")
+		header = hdu[0].header
 
+		# get unit of flux
+		unit = float(header['unit'])		# in erg/s/cm2/A
 
+		# get galaxy's region
+		gal_region = hdu['GALAXY_REGION'].data
+		# get maps of fluxes
+		flux_map = hdu['FLUX'].data*unit
+		# get maps of flux uncertainties
+		flux_err_map = hdu['FLUX_ERR'].data*unit
+		hdu.close()
 
+We can then plot maps of the multiband fluxes and flux uncertainties.
 
+	.. code-block:: python
 
+		fig1 = plt.figure(figsize=(20,7))
+		for bb in range(0,nbands):
+			f1 = fig1.add_subplot(2, 6, bb+1)
+			plt.tick_params(left=False,right=False,labelleft=False,labelbottom=False,bottom=False)
+			plt.imshow(np.log10(flux_map[bb]), origin='lower', cmap='nipy_spectral')
+			f1.text(0.5, 0.93, filters[bb], horizontalalignment='center', 
+					verticalalignment='center',transform = f1.transAxes, 
+					fontsize=20, color='black')
 
+		plt.subplots_adjust(left=0.05, right=0.95, bottom=0.05, top=0.95, hspace=0.05, wspace=0.05)
 
+.. image:: img_proc_8.png
 
+.. code-block:: python
 
+		fig1 = plt.figure(figsize=(20,7))
+		for bb in range(0,nbands):
+			f1 = fig1.add_subplot(2, 6, bb+1)
+			plt.tick_params(left=False,right=False,labelleft=False,labelbottom=False,bottom=False)
+			plt.imshow(np.log10(flux_err_map[bb]), origin='lower', cmap='nipy_spectral')
+			f1.text(0.5, 0.93, filters[bb], horizontalalignment='center', 
+					verticalalignment='center',transform = f1.transAxes, 
+					fontsize=20, color='black')
 
+		plt.subplots_adjust(left=0.05, right=0.95, bottom=0.05, top=0.95, hspace=0.05, wspace=0.05)
 
+.. image:: img_proc_9.png
 
+Next, we will plot SED of some pixels. First, we will transpose the arrays to make it easy for extracting SED of individual pixels given their coordinates.
+
+	.. code-block:: python
+
+		# transpose from (band,y,x) to (y,x,band):
+		pix_SED_flux = np.transpose(flux_map, axes=(1,2,0))
+		pix_SED_flux_err = np.transpose(flux_err_map, axes=(1,2,0))
+
+The script below will plot SED of the central pixel.
+	
+	.. code-block:: python
+
+		fig1 = plt.figure(figsize=(10,5))
+		f1 = plt.subplot()
+		f1.set_yscale('log')
+		f1.set_xscale('log')
+		plt.xlabel(r"Wavelength [$\AA$]", fontsize=18)
+		plt.ylabel(r"Flux [erg $s^{-1}cm^{-2}\AA^{-1}$]", fontsize=18)
+
+		# coordinate
+		pos_y = 65
+		pos_x = 65
+
+		plt.errorbar(photo_wave, pix_SED_flux[pos_y][pos_x], yerr=pix_SED_flux_err[pos_y][pos_x]*1e-17, 
+		                 fmt='-o', markersize=10, lw=3, color='black')
+		plt.show()
+
+.. image:: img_proc_10.png
+
+We will now plot SEDs of pixels within the central 10 x 10.
+
+	.. code-block:: python
+
+		fig1 = plt.figure(figsize=(10,5))
+		f1 = plt.subplot()
+
+		f1.set_yscale('log')
+		f1.set_xscale('log')
+		plt.xlabel(r"Wavelength [$\AA$]", fontsize=18)
+		plt.ylabel(r"Flux [erg $s^{-1}cm^{-2}\AA^{-1}$]", fontsize=18)
+
+		for yy in range(60,70):
+		    for xx in range(60,70):
+		        pos_y = yy
+		        pos_x = xx
+		        plt.errorbar(photo_wave, pix_SED_flux[pos_y][pos_x], yerr=pix_SED_flux_err[pos_y][pos_x]*1e-17, 
+		                         fmt='-o', markersize=5, lw=1)
+
+		plt.show()
+
+.. image:: img_proc_11.png
 
 
 
