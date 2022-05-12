@@ -90,19 +90,22 @@
 <li class="toctree-l1"><a class="reference internal" href="list_kernels_psf.html">Convolution kernels and PSFs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="ingredients_model.html">SED modeling</a></li>
 <li class="toctree-l1"><a class="reference internal" href="image_pros.html">Image processing</a></li>
-<li class="toctree-l1"><a class="reference internal" href="image_ifs_match.html">Spatial Matching imaging+IFS data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="image_ifs_match.html">Spatial and Spectral Matching of imaging+IFS data</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pixel_binning.html">Pixel binning</a></li>
 <li class="toctree-l1"><a class="reference internal" href="gen_model_SEDs.html">Generating model SEDs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="fit_res_SEDs.html">Fitting spatially resolved SED</a></li>
 <li class="toctree-l1"><a class="reference internal" href="fit_ing_SEDs.html">Fitting integrated SED</a></li>
 <li class="toctree-l1"><a class="reference internal" href="plot_fitres.html">Analyze fitting results</a></li>
-<li class="toctree-l1"><a class="reference internal" href="get_maps_prop.html">Obtain maps of spatially resolved properties</a></li>
+<li class="toctree-l1"><a class="reference internal" href="get_maps_prop.html">Get maps of spatially resolved properties</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Tutorials</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="tutorials.html">Tutorials</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Demonstrations</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="demos_pixel_binning.html">Pixel binning</a></li>
 <li class="toctree-l1"><a class="reference internal" href="demos_sed_fitting.html">SED fitting</a></li>
-<li class="toctree-l1"><a class="reference internal" href="tutorials.html">Tutorials</a></li>
 </ul>
 <p class="caption"><span class="caption-text">API reference</span></p>
 <ul class="current">
@@ -179,7 +182,7 @@
            <div itemprop="articleBody">
             
   <div class="section" id="module-piXedfit.piXedfit_model">
-<span id="pixedfit-model"></span><h1>piXedfit_model<a class="headerlink" href="#module-piXedfit.piXedfit_model" title="Permalink to this headline">¶</a></h1>
+<span id="pixedfit-model"></span><span id="api-model"></span><h1>piXedfit_model<a class="headerlink" href="#module-piXedfit.piXedfit_model" title="Permalink to this headline">¶</a></h1>
 <dl class="py function">
 <dt id="piXedfit.piXedfit_model.generate_modelSED_photo">
 <code class="sig-prename descclassname">piXedfit.piXedfit_model.</code><code class="sig-name descname">generate_modelSED_photo</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">sp</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">imf_type</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">duste_switch</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">add_neb_emission</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">dust_ext_law</span><span class="o">=</span><span class="default_value">'Cal2000'</span></em>, <em class="sig-param"><span class="n">sfh_form</span><span class="o">=</span><span class="default_value">'delayed_tau_sfh'</span></em>, <em class="sig-param"><span class="n">add_agn</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">filters</span><span class="o">=</span><span class="default_value">[]</span></em>, <em class="sig-param"><span class="n">add_igm_absorption</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">igm_type</span><span class="o">=</span><span class="default_value">'madau1995'</span></em>, <em class="sig-param"><span class="n">cosmo</span><span class="o">=</span><span class="default_value">'flat_LCDM'</span></em>, <em class="sig-param"><span class="n">H0</span><span class="o">=</span><span class="default_value">70.0</span></em>, <em class="sig-param"><span class="n">Om0</span><span class="o">=</span><span class="default_value">0.3</span></em>, <em class="sig-param"><span class="n">gas_logu</span><span class="o">=</span><span class="default_value">- 2.0</span></em>, <em class="sig-param"><span class="n">params_val</span><span class="o">=</span><span class="default_value">{'dust1': 0.5, 'dust2': 0.5, 'dust_index': - 0.7, 'log_age': 1.0, 'log_alpha': 0.1, 'log_beta': 0.1, 'log_fagn': - 3.0, 'log_gamma': - 2.0, 'log_mass': 0.0, 'log_qpah': 0.54, 'log_t0': 0.4, 'log_tau': 0.4, 'log_tauagn': 1.0, 'log_umin': 0.0, 'logzsol': 0.0, 'z': 0.001}</span></em><span class="sig-paren">)</span><a class="headerlink" href="#piXedfit.piXedfit_model.generate_modelSED_photo" title="Permalink to this definition">¶</a></dt>

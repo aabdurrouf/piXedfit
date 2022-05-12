@@ -85,15 +85,16 @@
               <p class="caption"><span class="caption-text">User guide</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="manage_filters.html">Managing filters</a></li>
 <li class="toctree-l1"><a class="reference internal" href="list_imaging_data.html">List of imaging data</a></li>
 <li class="toctree-l1"><a class="reference internal" href="list_kernels_psf.html">Convolution kernels and PSFs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="ingredients_model.html">SED modeling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="gen_model_SEDs.html">Generating model SEDs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="image_pros.html">Image processing</a></li>
 <li class="toctree-l1"><a class="reference internal" href="image_ifs_match.html">Spatial and Spectral Matching of imaging+IFS data</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pixel_binning.html">Pixel binning</a></li>
-<li class="toctree-l1"><a class="reference internal" href="gen_model_SEDs.html">Generating model SEDs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="fit_res_SEDs.html">Fitting spatially resolved SED</a></li>
-<li class="toctree-l1"><a class="reference internal" href="fit_ing_SEDs.html">Fitting integrated SED</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fit_ing_SEDs.html">SED fitting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fit_res_SEDs.html">Fitting spatially resolved SEDs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="plot_fitres.html">Analyze fitting results</a></li>
 <li class="toctree-l1"><a class="reference internal" href="get_maps_prop.html">Get maps of spatially resolved properties</a></li>
 </ul>
@@ -232,6 +233,7 @@ in the form of photometric SED or spetrophotometric SED (i.e., combination of ph
 <li class="toctree-l2"><a class="reference internal" href="install.html#how-to-use-the-current-version-of-pixedfit">How to use the current version of piXedfit</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="manage_filters.html">Managing filters</a></li>
 <li class="toctree-l1"><a class="reference internal" href="list_imaging_data.html">List of imaging data</a></li>
 <li class="toctree-l1"><a class="reference internal" href="list_kernels_psf.html">Convolution kernels and PSFs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="ingredients_model.html">SED modeling</a><ul>
@@ -241,20 +243,25 @@ in the form of photometric SED or spetrophotometric SED (i.e., combination of ph
 <li class="toctree-l2"><a class="reference internal" href="ingredients_model.html#igm-absoption-redshifting-and-convolving-with-filters">IGM absoption, redshifting, and convolving with filters</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="image_pros.html">Image processing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="gen_model_SEDs.html">Generating model SEDs</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="gen_model_SEDs.html#generate-random-model-spectra-at-a-rest-frame">Generate random model spectra at a rest-frame</a></li>
+<li class="toctree-l2"><a class="reference internal" href="gen_model_SEDs.html#generate-random-model-photometric-seds-at-an-observer-frame">Generate random model photometric SEDs at an observer-frame</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="image_pros.html">Image processing</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="image_pros.html#background-subtraction">Background subtraction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="image_pros.html#constructing-variance-images">Constructing variance images</a></li>
+<li class="toctree-l2"><a class="reference internal" href="image_pros.html#performing-image-processing">Performing image processing</a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="image_ifs_match.html">Spatial and Spectral Matching of imaging+IFS data</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="image_ifs_match.html#spatial-matching">Spatial matching</a></li>
 <li class="toctree-l2"><a class="reference internal" href="image_ifs_match.html#spectral-matching">Spectral matching</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="pixel_binning.html">Pixel binning</a></li>
-<li class="toctree-l1"><a class="reference internal" href="gen_model_SEDs.html">Generating model SEDs</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="gen_model_SEDs.html#generate-random-model-spectra-at-a-rest-frame">Generate random model spectra at a rest-frame</a></li>
-<li class="toctree-l2"><a class="reference internal" href="gen_model_SEDs.html#generate-random-model-photometric-seds-at-an-observer-frame">Generate random model photometric SEDs at an observer-frame</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="fit_res_SEDs.html">Fitting spatially resolved SED</a></li>
-<li class="toctree-l1"><a class="reference internal" href="fit_ing_SEDs.html">Fitting integrated SED</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fit_ing_SEDs.html">SED fitting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fit_res_SEDs.html">Fitting spatially resolved SEDs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="plot_fitres.html">Analyze fitting results</a></li>
 <li class="toctree-l1"><a class="reference internal" href="get_maps_prop.html">Get maps of spatially resolved properties</a></li>
 </ul>

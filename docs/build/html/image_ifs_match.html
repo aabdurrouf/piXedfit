@@ -205,16 +205,14 @@
 </div>
 <div class="section" id="spectral-matching">
 <h2>Spectral matching<a class="headerlink" href="#spectral-matching" title="Permalink to this headline">¶</a></h2>
-<blockquote>
+<blockquote id="id1">
 <div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">piXedfit.piXedfit_spectrophotometric</span> <span class="kn">import</span> <span class="n">match_imgifs_spectral</span>
 
 <span class="c1"># spectrophotometric data cube produced in the previous step</span>
 <span class="n">specphoto_file</span> <span class="o">=</span> <span class="s2">&quot;specphoto_fluxmap_ngc309.fits&quot;</span>
 <span class="n">name_out_fits</span> <span class="o">=</span> <span class="s2">&quot;corr_</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">specphoto_file</span>              <span class="c1"># name of output file</span>
 
-<span class="n">spec_sigma</span> <span class="o">=</span> <span class="mf">2.6</span>                                        <span class="c1"># spectral resolution of CALIFA data</span>
-<span class="n">match_imgifs_spectral</span><span class="p">(</span><span class="n">specphoto_file</span><span class="p">,</span> <span class="n">spec_sigma</span><span class="o">=</span><span class="n">spec_sigma</span><span class="p">,</span> <span class="n">nproc</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span>
-                        <span class="n">name_out_fits</span><span class="o">=</span><span class="n">name_out_fits</span><span class="p">)</span>
+<span class="n">match_imgifs_spectral</span><span class="p">(</span><span class="n">specphoto_file</span><span class="p">,</span> <span class="n">nproc</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">name_out_fits</span><span class="o">=</span><span class="n">name_out_fits</span><span class="p">)</span>
 </pre></div>
 </div>
 </div></blockquote>

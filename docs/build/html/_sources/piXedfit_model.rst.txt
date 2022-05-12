@@ -1,3 +1,5 @@
+.. _api_model:
+
 piXedfit_model
 ==============
 

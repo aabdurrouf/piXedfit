@@ -90,7 +90,7 @@
 <li class="toctree-l1"><a class="reference internal" href="list_kernels_psf.html">Convolution kernels and PSFs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="ingredients_model.html">SED modeling</a></li>
 <li class="toctree-l1"><a class="reference internal" href="image_pros.html">Image processing</a></li>
-<li class="toctree-l1"><a class="reference internal" href="image_ifs_match.html">Spatial Matching imaging+IFS data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="image_ifs_match.html">Spatial and Spectral Matching of imaging+IFS data</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pixel_binning.html">Pixel binning</a></li>
 <li class="toctree-l1"><a class="reference internal" href="gen_model_SEDs.html">Generating model SEDs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="fit_res_SEDs.html">Fitting spatially resolved SED</a></li>
@@ -207,27 +207,32 @@ Standard deviation of the kernel to be convolved with the spectrum of each pixel
 
 <dl class="py function">
 <dt id="piXedfit.piXedfit_spectrophotometric.match_imgifs_spectral">
-<code class="sig-prename descclassname">piXedfit.piXedfit_spectrophotometric.</code><code class="sig-name descname">match_imgifs_spectral</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">specphoto_file</span></em>, <em class="sig-param"><span class="n">spec_sigma</span><span class="o">=</span><span class="default_value">3.5</span></em>, <em class="sig-param"><span class="n">nproc</span><span class="o">=</span><span class="default_value">10</span></em>, <em class="sig-param"><span class="n">del_wave_nebem</span><span class="o">=</span><span class="default_value">10.0</span></em>, <em class="sig-param"><span class="n">cosmo</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">H0</span><span class="o">=</span><span class="default_value">70.0</span></em>, <em class="sig-param"><span class="n">Om0</span><span class="o">=</span><span class="default_value">0.3</span></em>, <em class="sig-param"><span class="n">name_out_fits</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#piXedfit.piXedfit_spectrophotometric.match_imgifs_spectral" title="Permalink to this definition">¶</a></dt>
-<dd><p>Function for correcting wavelength-dependent mismatch between IFS data and the multiwavelength photometric data.</p>
+<code class="sig-prename descclassname">piXedfit.piXedfit_spectrophotometric.</code><code class="sig-name descname">match_imgifs_spectral</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">specphoto_file</span></em>, <em class="sig-param"><span class="n">models_spec</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">nproc</span><span class="o">=</span><span class="default_value">10</span></em>, <em class="sig-param"><span class="n">del_wave_nebem</span><span class="o">=</span><span class="default_value">10.0</span></em>, <em class="sig-param"><span class="n">cosmo</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">H0</span><span class="o">=</span><span class="default_value">70.0</span></em>, <em class="sig-param"><span class="n">Om0</span><span class="o">=</span><span class="default_value">0.3</span></em>, <em class="sig-param"><span class="n">name_out_fits</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#piXedfit.piXedfit_spectrophotometric.match_imgifs_spectral" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function for correcting wavelength-dependent mismatch between the IFS spectra and the photometric SEDs (on pixel level)
+in the spectrophotometric data cube (produced with the function <a class="reference internal" href="#piXedfit.piXedfit_spectrophotometric.match_imgifs_spatial" title="piXedfit.piXedfit_spectrophotometric.match_imgifs_spatial"><code class="xref py py-func docutils literal notranslate"><span class="pre">piXedfit.piXedfit_spectrophotometric.match_imgifs_spatial()</span></code></a>).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>specphoto_file</strong> – Input spec+photo FITS file, which is an output from previous step: specphoto_califagalexsdss2masswise or specphoto_mangagalexsdss2masswise.</p></li>
-<li><p><strong>spec_sigma</strong> – (default: 3.5).
-Spectral resolution of the IFS data in Angstrom.</p></li>
-<li><p><strong>nproc</strong> – Number of cores for calculation.</p></li>
-<li><p><strong>del_wave_nebem</strong> – (default: 15.0 Angstrom).
-The range (+/-) around emission lines in the model spectra that will be removed in producing continuum-only spectrum.
-This will be used as reference in correcting the wavelength-dependent mismatch between the IFS spectra and photometric SEDs.</p></li>
+<li><p><strong>specphoto_file</strong> – Input spectrophotometric data cube.</p></li>
+<li><p><strong>models_spec</strong> – Set of model spectra at rest-frame produced using <a class="reference internal" href="piXedfit_model.html#piXedfit.piXedfit_model.save_models_rest_spec" title="piXedfit.piXedfit_model.save_models_rest_spec"><code class="xref py py-func docutils literal notranslate"><span class="pre">piXedfit.piXedfit_model.save_models_rest_spec()</span></code></a>. The file is in a HDF5 format.
+For more information on how to produce this set of models, please see the description <a class="reference internal" href="gen_model_SEDs.html#gen-models-seds"><span class="std std-ref">here</span></a>.
+This set of models only need to be produced once and then it can be used for all galaxies in a sample.
+If models_spec is set as None, a default file is then called from piXedfit/data/mod.
+However, this file is not available in that directory at first piXedfit is installed, but user need to download it
+from this <a class="reference external" href="https://drive.google.com/drive/folders/1YjZGg97dPT8S95NJmO5tiFH9jWhbxuVy?usp=sharing">link</a> and put it on that
+directory in the local machine.</p></li>
+<li><p><strong>nproc</strong> – Number of cores to be used for calculation.</p></li>
+<li><p><strong>del_wave_nebem</strong> – (default: 10.0 Angstrom).
+The range (+/-) around all emission lines in the model spectra that will be removed in producing spectral continuum,
+which will be used as reference for correcting the wavelength-dependent mismatch between the IFS spectra and photometric SEDs.</p></li>
 <li><p><strong>cosmo</strong> – (default: 0)
-Choices for the cosmology. Options are: (1)’flat_LCDM’ or 0, (2)’WMAP5’ or 1, (3)’WMAP7’ or 2, (4)’WMAP9’ or 3, (5)’Planck13’ or 4, (6)’Planck15’ or 5.
-These options are similar to the choices available in the <a class="reference external" href="https://docs.astropy.org/en/stable/cosmology/#built-in-cosmologies">Astropy Cosmology</a> package.</p></li>
+Choices for the cosmology. Options are: (a)’flat_LCDM’ or 0, (b)’WMAP5’ or 1, (c)’WMAP7’ or 2, (d)’WMAP9’ or 3, (e)’Planck13’ or 4, (f)’Planck15’ or 5.
+These options are the same to that available in the <a class="reference external" href="https://docs.astropy.org/en/stable/cosmology/#built-in-cosmologies">Astropy Cosmology</a> package.</p></li>
 <li><p><strong>H0</strong> – (default: 70.0)
 The Hubble constant at z=0. Only relevant when cosmo=’flat_LCDM’ is chosen.</p></li>
 <li><p><strong>Om0</strong> – (default: 0.3)
 The Omega matter at z=0.0. Only relevant when cosmo=’flat_LCDM’ is chosen.</p></li>
-<li><p><strong>name_out_fits</strong> – (optional).
-Desired name for the output FITS file.</p></li>
+<li><p><strong>name_out_fits</strong> – Desired name for the output FITS file. If None, a generic name will be produced.</p></li>
 </ul>
 </dd>
 </dl>

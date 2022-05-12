@@ -1,12 +1,17 @@
+.. _gen_models_seds:
+
 Generating model SEDs
 =====================
 
-(This page is still under construction!)
+**piXedfit** uses `FSPS <https://github.com/cconroy20/fsps>`_ for modeling SED of galaxy. With the Python bindings `Python-FSPS <https://dfm.io/python-fsps/current/>`_, generating model SED can be done on the fly for any task. However, some tasks require a generation of model spectra in a fast pace that is diffcult to achieve using the python package. These tasks include generation of model SEDs for reference in the spectral matching between the Imaging and IFS data (see :ref:`this page <spectral_matching>`), SED fitting with the random dense sampling of parameter space (RDSPS), and initial fitting (i.e., burning up) before running MCMC for fitting SED (note that the MCMC fitting always use on-the-fly generation of model SEDs).  
+
+For the above reason, **piXedfit** provides an option of generating a set of model spectra (in a rest-frame) prior to the analyses. The models are stored in the HDF5 format. The model spectra can be generated using function :func:`piXedfit.piXedfit_model.save_models_rest_spec`. Please see the API reference for more detailed information about this function. In practice, user only need to generate this set of models once, then these models can be used for various further analyses on all galaxies. 
+
 
 Generate random model spectra at a rest-frame
 ---------------------------------------------
 
-To generate random model spectra at a rest-frame, you can make a script like the following. You can adjust the modeling parameters depending on the kind of models you need in your analysis. 
+To generate random model spectra at a rest-frame, you can make a script like the following. You can adjust the modeling parameters depending on the kind of models you need in your analysis. The ranges of parameters can also be adjusted. Please see the API reference of this function :ref:`here <api_model>`.
 
 	.. code-block:: python
 
@@ -27,9 +32,13 @@ To generate random model spectra at a rest-frame, you can make a script like the
 					duste_switch=duste_switch, add_neb_emission=add_neb_emission, 
 					add_agn=add_agn,nmodels=nmodels,nproc=nproc, name_out=name_out) 
 
+The produced models will be used as input in various tasks, including spectral matching of imaging+IFS data (see :func:`piXedfit.piXedfit_spectrophotometric.match_imgifs_spectral`), SED fitting with RDSPS method, and initial fitting for the MCMC method (see API reference of the :ref:`piXedfit_fitting <api_fitting>` module).
+
 
 Generate random model photometric SEDs at an observer-frame
 ------------------------------------------------------------
+
+**piXedfit** also provide a functionality of producing a set of model photometric SEDs (calculated at a desired redshift) for a randomly drawn parameters (but uniformly distribution within desired ranges). The models are stored in a FITS file format. This kind of data is not requested as input in most of subsequent analyses. Therefore, this functionality is only a complement to other features provided by **piXedfit**.
 
 To generate random model photometric SEDs at an observer-frame, you can make a script as shown in the following example. 
 

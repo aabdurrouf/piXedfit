@@ -459,24 +459,24 @@ class images_processing:
 		return output_stamps
 
 
-	def segmentation_sep(self, output_stamps=None, thresh=1.5, minarea=30, deblend_nthresh=32, deblend_cont=0.005):
+	def segmentation_sep(self, output_stamps, thresh=1.5, minarea=30, deblend_nthresh=32, deblend_cont=0.005):
 		"""Get segmentation maps of a galaxy in multiple bands using the SEP (a Python version of the SExtractor). 
 
 		:param output_stamps:
-			output_stamps output from the :func:`reduced_stamps`.
+			output_stamps output from the :func:`reduced_stamps` method.
 
-		:param thresh: (default: 1.5)
+		:param thresh: (float, optional, default: 1.5)
 			Detection threshold for the sources detection. If variance image is supplied, the threshold value for a given pixel is 
 			interpreted as a multiplicative factor of the uncertainty (i.e. square root of the variance) on that pixel. 
 			If var=None, the threshold is taken to be 2.5 percentile of the pixel values in the image.
 
-		:param minarea: (default: 5)
+		:param minarea: (float, optional, default: 5)
 			Minimum number of pixels (above threshold) required for a detected object. 
 
-		:param deblend_nthresh: (default: 32)
+		:param deblend_nthresh: (optional, default: 32)
 			The same as deblend_nthresh parameter in the SEP.
 
-		:param deblend_cont: (default: 0.005)
+		:param deblend_cont: (float, optional, default: 0.005)
 			The same as deblend_cont parameter in the SEP.
 
 		:returns segm_maps:
@@ -541,35 +541,35 @@ class images_processing:
 
 
 	def galaxy_region(self, segm_maps=[], use_ellipse=False, x_cent=None,
-	 					y_cent=None, ell=0, pa=45, radius_sma=30.0):
+	 					y_cent=None, ell=0, pa=45.0, radius_sma=30.0):
 		"""Define galaxy's region of interest for further analysis.
 
-		:param segm_maps: 
+		:param segm_maps: (list of string, optional, default: [])
 			Input segmentation maps in a list format. If the galaxy's region is to be defined based 
 			on segmentation maps obtained with SEP, this input argument is required.
 
-		:param use_ellipse: (optional, default: False)
+		:param use_ellipse: (boolean, optional, default: False)
 			Alternative of defining galaxy's region using elliptical aperture centered at the target galaxy.
 			Set use_ellipse=True if you want to use this option.
 
-		:param x_cent: (optional, default: None)
+		:param x_cent: (float, optional, default: None)
 			x coordinate of the ellipse center. If x_cent=None, the ellipse center is assumed 
 			to be the same as the image center. 
 
-		:param y_cent: (optional, default: None)
+		:param y_cent: (float, optional, default: None)
 			y coordinate of the ellipse center. If y_cent=None, the ellipse center is assumed 
 			to be the same as the image center.
 
-		:param ell:
+		:param ell: (float, optional, default: 0.0)
 			Ellipticity of the elliptical aperture.
 
-		:param pa:
+		:param pa: (float, optional, default: 45.0)
 			Position angle of the elliptical aperture.
 
-		:param radius_sma:
-			Radal distance along the semi-major axis of the elliptical aperture. 
+		:param radius_sma: (float, optional, default: 30.0)
+			Radal distance along the semi-major axis of the elliptical aperture. This radius is in pixel unit.
 
-		:returns gal_region:
+		:returns gal_region: (2D array)
 			Output galaxy's region of interest.
 		"""
 		stamp_size = self.stamp_size
@@ -615,7 +615,7 @@ class images_processing:
 		return gal_region
 
 
-	def flux_map(self, output_stamps=None, gal_region=None, Gal_EBV=0, scale_unit=1.0e-17, 
+	def flux_map(self, output_stamps, gal_region, Gal_EBV=0, scale_unit=1.0e-17, 
 		mag_zp_2mass=[], unit_spire='Jy_per_beam', name_out_fits=None):
 		"""Function for calculating maps of multiband fluxes
 
@@ -626,21 +626,21 @@ class images_processing:
 			2D array containing the galaxy's region of interest. The vlues should be 0 for masked region and 1 for the galaxy's region of interest.
 			It can be taken from the output of the :func:`galaxy_region` function. But, user can also defined its own.
 
-		:param Gal_EBV: (optional, default: 0)
+		:param Gal_EBV: (float, optional, default: 0)
 			The E(B-V) dust attenuation due to the foreground Galactic dust. This is optional parameter.
 
-		:param scale_unit: (defult: 1.0e-17)
+		:param scale_unit: (float, optional, defult: 1.0e-17)
 			Normalized unit for the fluxes in the output fits file. The unit is flux density in erg/s/cm^2/Ang.
 
-		:param mag_zp_2mass: (optional, default: [])
+		:param mag_zp_2mass: (float array_like, optional, default: [])
 			Magnitude zero-points of 2MASS images. Sshoud be in 1D array with three elements: [magzp-j,magzp-h,magzp-k]. This is optional parameter.
 			If not given (i.e. [] or empty), the values will be taken from the FITS header information.
 
-		:param unit_spire: (default: 'Jy_per_beam')
+		:param unit_spire: (string, optional, default: 'Jy_per_beam')
 			Unit of SPIRE images, in case Herschel/SPIRE image is included in the analysis. Options are: ['Jy_per_beam', 'MJy_per_sr', 'Jy_per_pixel']  
 
-		:param name_out_fits:
-			Desired name for the output FITS file.
+		:param name_out_fits: (string, optional, default: None)
+			Desired name for the output FITS file. If None, a generic name will be used.
 		"""
 
 		from operator import itemgetter

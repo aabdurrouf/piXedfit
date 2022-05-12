@@ -37,8 +37,8 @@
     
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Fitting spatially resolved SED" href="fit_res_SEDs.html" />
-    <link rel="prev" title="Pixel binning" href="pixel_binning.html" /> 
+    <link rel="next" title="Image processing" href="image_pros.html" />
+    <link rel="prev" title="SED modeling" href="ingredients_model.html" /> 
 </head>
 
 <body class="wy-body-for-nav">
@@ -89,24 +89,27 @@
 <li class="toctree-l1"><a class="reference internal" href="list_imaging_data.html">List of imaging data</a></li>
 <li class="toctree-l1"><a class="reference internal" href="list_kernels_psf.html">Convolution kernels and PSFs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="ingredients_model.html">SED modeling</a></li>
-<li class="toctree-l1"><a class="reference internal" href="image_pros.html">Image processing</a></li>
-<li class="toctree-l1"><a class="reference internal" href="image_ifs_match.html">Spatial Matching imaging+IFS data</a></li>
-<li class="toctree-l1"><a class="reference internal" href="pixel_binning.html">Pixel binning</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Generating model SEDs</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#generate-random-model-spectra-at-a-rest-frame">Generate random model spectra at a rest-frame</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#generate-random-model-photometric-seds-at-an-observer-frame">Generate random model photometric SEDs at an observer-frame</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="image_pros.html">Image processing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="image_ifs_match.html">Spatial and Spectral Matching of imaging+IFS data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pixel_binning.html">Pixel binning</a></li>
 <li class="toctree-l1"><a class="reference internal" href="fit_res_SEDs.html">Fitting spatially resolved SED</a></li>
 <li class="toctree-l1"><a class="reference internal" href="fit_ing_SEDs.html">Fitting integrated SED</a></li>
 <li class="toctree-l1"><a class="reference internal" href="plot_fitres.html">Analyze fitting results</a></li>
 <li class="toctree-l1"><a class="reference internal" href="get_maps_prop.html">Get maps of spatially resolved properties</a></li>
 </ul>
+<p class="caption"><span class="caption-text">Tutorials</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="tutorials.html">Tutorials</a></li>
+</ul>
 <p class="caption"><span class="caption-text">Demonstrations</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="demos_pixel_binning.html">Pixel binning</a></li>
 <li class="toctree-l1"><a class="reference internal" href="demos_sed_fitting.html">SED fitting</a></li>
-<li class="toctree-l1"><a class="reference internal" href="tutorials.html">Tutorials</a></li>
 </ul>
 <p class="caption"><span class="caption-text">API reference</span></p>
 <ul>
@@ -183,11 +186,12 @@
            <div itemprop="articleBody">
             
   <div class="section" id="generating-model-seds">
-<h1>Generating model SEDs<a class="headerlink" href="#generating-model-seds" title="Permalink to this headline">¶</a></h1>
-<p>(This page is still under construction!)</p>
+<span id="gen-models-seds"></span><h1>Generating model SEDs<a class="headerlink" href="#generating-model-seds" title="Permalink to this headline">¶</a></h1>
+<p><strong>piXedfit</strong> uses <a class="reference external" href="https://github.com/cconroy20/fsps">FSPS</a> for modeling SED of galaxy. With the Python bindings <a class="reference external" href="https://dfm.io/python-fsps/current/">Python-FSPS</a>, generating model SED can be done on the fly for any task. However, some tasks require a generation of model spectra in a fast pace that is diffcult to achieve using the python package. These tasks include generation of model SEDs for reference in the spectral matching between the Imaging and IFS data (see <a class="reference internal" href="image_ifs_match.html#id1"><span class="std std-ref">this page</span></a>), SED fitting with the random dense sampling of parameter space (RDSPS), and initial fitting (i.e., burning up) before running MCMC for fitting SED (note that the MCMC fitting always use on-the-fly generation of model SEDs).</p>
+<p>For the above reason, <strong>piXedfit</strong> provides an option of generating a set of model spectra (in a rest-frame) prior to the analyses. The models are stored in the HDF5 format. The model spectra can be generated using function <a class="reference internal" href="piXedfit_model.html#piXedfit.piXedfit_model.save_models_rest_spec" title="piXedfit.piXedfit_model.save_models_rest_spec"><code class="xref py py-func docutils literal notranslate"><span class="pre">piXedfit.piXedfit_model.save_models_rest_spec()</span></code></a>. Please see the API reference for more detailed information about this function. In practice, user only need to generate this set of models once, then these models can be used for various further analyses on all galaxies.</p>
 <div class="section" id="generate-random-model-spectra-at-a-rest-frame">
 <h2>Generate random model spectra at a rest-frame<a class="headerlink" href="#generate-random-model-spectra-at-a-rest-frame" title="Permalink to this headline">¶</a></h2>
-<p>To generate random model spectra at a rest-frame, you can make a script like the following. You can adjust the modeling parameters depending on the kind of models you need in your analysis.</p>
+<p>To generate random model spectra at a rest-frame, you can make a script like the following. You can adjust the modeling parameters depending on the kind of models you need in your analysis. The ranges of parameters can also be adjusted. Please see the API reference of this function <a class="reference internal" href="piXedfit_model.html#api-model"><span class="std std-ref">here</span></a>.</p>
 <blockquote>
 <div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">piXedfit.piXedfit_model</span> <span class="kn">import</span> <span class="n">save_models_rest_spec</span>
 
@@ -208,9 +212,11 @@
 </pre></div>
 </div>
 </div></blockquote>
+<p>The produced models will be used as input in various tasks, including spectral matching of imaging+IFS data (see <a class="reference internal" href="piXedfit_spectrophotometric.html#piXedfit.piXedfit_spectrophotometric.match_imgifs_spectral" title="piXedfit.piXedfit_spectrophotometric.match_imgifs_spectral"><code class="xref py py-func docutils literal notranslate"><span class="pre">piXedfit.piXedfit_spectrophotometric.match_imgifs_spectral()</span></code></a>), SED fitting with RDSPS method, and initial fitting for the MCMC method (see API reference of the <a class="reference internal" href="piXedfit_fitting.html#api-fitting"><span class="std std-ref">piXedfit_fitting</span></a> module).</p>
 </div>
 <div class="section" id="generate-random-model-photometric-seds-at-an-observer-frame">
 <h2>Generate random model photometric SEDs at an observer-frame<a class="headerlink" href="#generate-random-model-photometric-seds-at-an-observer-frame" title="Permalink to this headline">¶</a></h2>
+<p><strong>piXedfit</strong> also provide a functionality of producing a set of model photometric SEDs (calculated at a desired redshift) for a randomly drawn parameters (but uniformly distribution within desired ranges). The models are stored in a FITS file format. This kind of data is not requested as input in most of subsequent analyses. Therefore, this functionality is only a complement to other features provided by <strong>piXedfit</strong>.</p>
 <p>To generate random model photometric SEDs at an observer-frame, you can make a script as shown in the following example.</p>
 <blockquote>
 <div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">piXedfit.piXedfit_model</span> <span class="kn">import</span> <span class="n">save_models_photo</span>
@@ -260,10 +266,10 @@
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="fit_res_SEDs.html" class="btn btn-neutral float-right" title="Fitting spatially resolved SED" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="image_pros.html" class="btn btn-neutral float-right" title="Image processing" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="pixel_binning.html" class="btn btn-neutral float-left" title="Pixel binning" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="ingredients_model.html" class="btn btn-neutral float-left" title="SED modeling" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   

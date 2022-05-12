@@ -141,16 +141,15 @@ def EBV_foreground_dust(Alambda_SDSS):
 
 def skybg_sdss(fits_image):
 	"""A function for reconstructing background image of an SDSS image.
-	The sample background image is stored in HDU2 of an SDSS image.
-	As output, a fits file containing a background image is produced 
+	A low resolution of background image is stored in HDU2 of an SDSS image.
+	This function perform a bilinear interpolation to this sample background image. 
 
 	:param fits_image:
-		An SDSS image in fits file
+		Input SDSS image. This image should be the corrected frame type provided in the SDSS website. 
 
 	:returns output:
-		A dictionary format that contains background image and the name 
+		A dictionary that contains background image and its name 
 	"""
-	#print ("[Construct sky-background of an SDSS image: %s]" % fits_image)
 
 	from scipy import interpolate
 
@@ -338,17 +337,17 @@ def get_gain_dark_variance(band,run,camcol):
     return gain, dark_variance
 
 
-def var_img_sdss(fits_image,filter_name=None,name_out_fits=None):
-	"""A function for calculating variance image of an SDSS image
+def var_img_sdss(fits_image,filter_name,name_out_fits=None):
+	"""A function for constructing a variance image of SDSS image
 
 	:param fits_image:
-		fits file containing an SDSS image.
+		Input SDSS image (corrected frame type).
 
-	:param band_char:
-		A filter name in string.
+	:param filter_name:
+		A string of filter name. Options are: 'sdss_u', 'sdss_g', 'sdss_r', 'sdss_i', and 'sdss_z'.
 
-	:returns name_out_fits:
-		Name of output FITS file.
+	:returns name_out_fits: (optional, default: None)
+		Name of output FITS file. If None, a generic name will be used.
 	"""
 
 	#print ("[Construct variance/sigma-square image of an SDSS image: %s]" % fits_image)
@@ -403,23 +402,21 @@ def var_img_sdss(fits_image,filter_name=None,name_out_fits=None):
 	return name_out_fits
 
 
-def var_img_GALEX(sci_img=None,skybg_img=None,filter_name='galex_fuv',name_out_fits=None):
-	"""Function for calculating and producing a variance image of an GALEX image
+def var_img_GALEX(sci_img,skybg_img,filter_name,name_out_fits=None):
+	"""Function for calculating variance image from an input GALEX image
 
-	:param sci_img: (default: None)
-		FITS file containing the science image.
+	:param sci_img:
+		Input GALEX science image (i.e., background subtracted). 
+		This type of image is provided in the GALEX website as indicated with "-intbgsub" (i.e., background subtracted intensity map). 
 
-	:param skybg_img: (default: None)
-		FITS file of the background image.
+	:param skybg_img:
+		Input sky background image .
 
-	:param filter_name: (default: 'galex_fuv')
-		Filter name in string. Allowed options are: 'galex_fuv' and 'galex_nuv'.
+	:param filter_name:
+		A string of filter name. Options are: 'galex_fuv' and 'galex_nuv'.
 
-	:param name_out: (default: None)
-		Desired name for the output variance image.
-
-	:returns name_out_fits:
-		Name of output FITS file.
+	:param name_out_fits: (optional, default: None)
+		Desired name for the output variance image. If None, a generic name will be used.
 	"""
 
 	# get science image:
@@ -450,29 +447,27 @@ def var_img_GALEX(sci_img=None,skybg_img=None,filter_name='galex_fuv',name_out_f
 	return name_out_fits
 
 
-def var_img_2MASS(sci_img=None,skyrms_img=None,skyrms_img_data=[],skyrms_value=None,name_out_fits=None):
-	"""Function for deriving a variance image of 2MASS image. The estimation of uncertainty is based on information from
-	http://wise2.ipac.caltech.edu/staff/jarrett/2mass/3chan/noise/#coadd
+def var_img_2MASS(sci_img,skyrms_img=[],skyrms_img_data=[],skyrms_value=None,name_out_fits=None):
+	"""Function for deriving a variance image from a 2MASS image. 
+	The estimation of uncertainty is based on information from the `2MASS website <http://wise2.ipac.caltech.edu/staff/jarrett/2mass/3chan/noise/#coadd>`_.
 
-	:param sci_img: (default: None)
-		FITS file containing the science image.
+	:param sci_img:
+		Input science image (i.e., background subtracted). 
 
-	:param skyrms_img: (default: None)
-		FITS file containing the RMS background image. If skyrms_img_data==[] or skyrms_value==None, 
-		this parameter should be provided.
+	:param skyrms_img:
+		FITS file of the RMS background image. If skyrms_img_data==[] or skyrms_value==None, 
+		this parameter should be provided. The background subtraction and calculation of RMS image can be done using 
+		the :func:`subtract_background` function.
 
-	:param skyrms_img_data: (default: [] or empty)
-		2D array containing the RMS background image, such as that output by subtract_background (the output['skybgrms']).
+	:param skyrms_img_data:
+		2D array of the RMS background image.
 
-	:param skyrms_value: (default: None)
-		Scalar value of median/mean of the RMS background image, in case 2D data is not available or 
-		only median/mean value over the whole field is sufficient.
+	:param skyrms_value:
+		Scalar value of median or mean of the RMS background image. 
+		If the 2D data of RMS is not provided, this value will be used.
 
-	:param name_out: (default: None)
-		Desired name for the output FITS file. It is not mandatory parameter.
-
-	:returns name_out_fits:
-		Name of output FITS file. 
+	:param name_out_fits: (optional, default: None)
+		Desired name for the output FITS file.
 	"""
 
 	# get science image:
@@ -509,27 +504,25 @@ def var_img_2MASS(sci_img=None,skyrms_img=None,skyrms_img_data=[],skyrms_value=N
 	return name_out_fits
 
 
-def var_img_WISE(sci_img=None,unc_img=None,filter_name='wise_w1',skyrms_img=None,name_out_fits=None):
-	"""Function for deriving variance image of an WISE image. The uncertainty estimation is based on information from
-	http://wise2.ipac.caltech.edu/docs/release/allsky/expsup/sec2_3f.html
+def var_img_WISE(sci_img,unc_img,filter_name,skyrms_img,name_out_fits=None):
+	"""Function for constructing variance image from an input WISE image. 
+	The uncertainty estimation is based on information from the `WISE website <http://wise2.ipac.caltech.edu/docs/release/allsky/expsup/sec2_3f.html>`_
 
 	:param sci_img:
-		FITS file containing the science image.
+		Input science image (i.e., background subtracted).
 
 	:param unc_img:
-		FITS file containing the uncertainty image.
+		Input uncertainty image. This type of image is provided in the 
+		`IRSA website <https://irsa.ipac.caltech.edu/applications/wise/>`_ and indicated with '-unc-' keyword.
 
-	:param filter_name: (default: 'wise_w1')
-		Filter name. Options are: 'wise_w1', 'wise_w2', 'wise_w3', and 'wise_w4'
+	:param filter_name: 		
+		A string of filter name. Options are: 'wise_w1', 'wise_w2', 'wise_w3', and 'wise_w4'
 
 	:param skyrms_img:
-		FITS file containing the RMS background image.
+		Input RMS background image. This image is produced in the background subtraction with the :func:`subtract_background` function. 
 
-	:param name_out:
-		Desired name for the output FITS file.
-	
-	:returns name_out_fits:
-		Name of output FITS file. 
+	:param name_out_fits: (optional, default: None)
+		Desired name for the output FITS file. If None, a generic name will be made.
 	"""
 
 	# get science image:
@@ -580,24 +573,23 @@ def var_img_WISE(sci_img=None,unc_img=None,filter_name='wise_w1',skyrms_img=None
 	return name_out_fits
 
 
-def var_img_from_unc_img(unc_image, header=None, name_out_fits=None):
-	"""Function for creating variance image from an input of uncertainty image.
+def var_img_from_unc_img(unc_image, name_out_fits=None):
+	"""Function for constructing a variance image from an input of uncertainty image.
+	This function simply takes square of the uncertainty image and store it into a FITS file while retaining the 
+	header information.
 
 	:param unc_img:
-		Input FITS file containing the uncertainty image.
+		Input uncertainty image.
 
-	:param header: (optional, default: None)
-		Input FITS file header. This is optional parameter.
-
-	:returns name_out_fits:
-		Name of output FITS file.
+	:param name_out_fits: (optional, default: None)
+		Name of output FITS file. If None, a generic name will be generated.
 	"""
 
 	hdu = fits.open(unc_image)
-	if header == None:
-		header = hdu[0].header
+	header = hdu[0].header
 	data_unc_image = hdu[0].data
 	hdu.close()
+
 	var_image = np.square(data_unc_image)
 
 	# store to fits file:
@@ -608,23 +600,21 @@ def var_img_from_unc_img(unc_image, header=None, name_out_fits=None):
 	return name_out_fits
 
 
-def var_img_from_weight_img(wht_image, header=None, name_out_fits=None):
-	"""Function for creating variance image from an input of weight image, which is defined as inverse variance.
+def var_img_from_weight_img(wht_image, name_out_fits=None):
+	"""Function for constructing a variance image from an input weight (i.e., inverse variance) image.
+	This funciton will simply take inverse of the weight image and store it into a new FITS file while 
+	retaining the header information.
 
 	:param wht_image:
-		Input FITS file containing weight image (i.e., inverse variance).
+		Input of weight image (i.e., inverse variance).
 
-	:param header: (optional, default: None)
-		Input FITS file header. This is optional parameter. This is optional parameter. 
-
-	:returns name_out_fits:
-		Name of output FITS file.
+	:returns name_out_fits: (optional, default: None)
+		Name of output FITS file. If None, a generic name will be used.
 	"""
 	hdu = fits.open(wht_image)
-	if header == None:
-		header = hdu[0].header
 	data_image = hdu[0].data
 	hdu.close()
+
 	var_image = 1.0/data_image
 	# store into fits file:
 	if name_out_fits == None:
@@ -684,43 +674,44 @@ def subtract_background(fits_image, hdu_idx=0, sigma=3.0, box_size=None, mask_re
 	"""Function for estimating 2D background and subtracting it from the input image. This function also produce RMS image. 
 	This function adopts the Background2D function from the photutils package. To estimate 2D background, 
 	the input image is gridded and sigma clipping is done to each bin/grid. Then 2D interpolation is performed to
-	construct 2D background image. This task is done  
+	construct 2D background image. A calculation in this function is based on the `Background2D <https://photutils.readthedocs.io/en/stable/api/photutils.background.Background2D.html#photutils.background.Background2D>`_ 
+	of the photutils.  
 
 	:param fits_image:
 		Input image.
 
-	:param hdu_idx: (default: 0)
+	:param hdu_idx: (int, optional, default: 0)
 		The FITS file extension where the image is stored. Default is 0 (HDU0).
 
-	:param sigma: (default: 3.0)
+	:param sigma: (float, optional, default: 3.0)
 		Sigma clipping threshold value.
 
-	:param box_size: (default: None)
-		Gridding size. 
+	:param box_size: (int or array_like, optional, default: None)
+		The box size along each axis in the image gridding. The format is: [ny, nx]. If None, both axes will be divided into 10 grids. 
 
-	:param mask_region: (optional, default: [])
+	:param mask_region: (array_like, optional, default: [])
 		Region within the image that are going to be excluded. 
 		mask_region should be 2D array with the same size as the input image.
 
-	:param mask_sources: (default: True)
+	:param mask_sources: (array_like, default: True)
 		If True, source detection and segmentation will be performed with SEP (Pyhton version of SExtractor) 
 		and the regions associated with the detected sources will be excluded. This help reducing contamination by astronomical sources.
 
-	:param var: (optional, default: None)
-		Variance image to be used in the sources detection process. This input argument is only relevant if mask_sources=True.
+	:param var: (optional, optional, default: None)
+		Variance image (in FITS file format) to be used in the sources detection process. This input argument is only relevant if mask_sources=True.
 
-	:param thresh: (default: 1.5)
+	:param thresh: (float, optional, default: 1.5)
 		Detection threshold for the sources detection. If variance image is supplied, the threshold value for a given pixel is 
 		interpreted as a multiplicative factor of the uncertainty (i.e. square root of the variance) on that pixel. 
 		If var=None, the threshold is taken to be 2.5 percentile of the pixel values in the image. 
 
-	:param minarea: (default: 5)
+	:param minarea: (int, optional, default: 5)
 		Minimum number of pixels above threshold triggering detection. 
 
-	:param deblend_nthresh: (default: 32)
+	:param deblend_nthresh: (float, optional, default: 32)
 		The same as deblend_nthresh parameter in the SEP.
 
-	:param deblend_cont: (default: 0.005)
+	:param deblend_cont: (float, optional, default: 0.005)
 		The same as deblend_cont parameter in the SEP.
 
 	"""
@@ -1386,21 +1377,21 @@ def crop_stars(gal_region=[],x_cent=[],y_cent=[],radius=[]):
 	return gal_region
 
 
-def crop_stars_galregion_fits(input_fits,output_fits=None,x_cent=[],y_cent=[],radius=[]):
+def crop_stars_galregion_fits(input_fits,x_cent=[],y_cent=[],radius=[],name_out_fits=None):
 	"""A function for cropping foreground stars within a galaxy's region of interst.
 	The input is a FITS file of reduced multiband fluxes maps output of flux_map() function
 
 	:param input_fits:
 		The input FITS file.
 
-	:param output_fits:
-		Desired name for the output FITS file.
-
 	:param x_cent and y_cent:
 		Arrays containing cenral coordinates of the stars.
 
 	:param radius:
-		Arrays containing the estimated radii of the stars.   
+		Arrays containing the estimated radii of the stars. 
+
+	:param name_out_fits:
+		Desired name for the output FITS file. If None, a generic name will be used.  
 	"""
 
 	# get the initial galaxy's region:
@@ -1452,9 +1443,9 @@ def crop_stars_galregion_fits(input_fits,output_fits=None,x_cent=[],y_cent=[],ra
 	hdul.append(fits.ImageHDU(data=stamp_img, header=stamp_hdr, name='stamp_image'))
 	
 	# write to fits file:
-	if output_fits == None:
-		output_fits = 'crop_%s' % input_fits
-	hdul.writeto(output_fits, overwrite=True)
+	if name_out_fits == None:
+		name_out_fits = 'crop_%s' % input_fits
+	hdul.writeto(name_out_fits, overwrite=True)
 
 	return output_fits
 

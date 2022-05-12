@@ -1,3 +1,5 @@
+.. _api_fitting:
+
 piXedfit_fitting
 ================
 

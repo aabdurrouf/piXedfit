@@ -58,15 +58,16 @@ of spaially resolved SED) without the need of using the images processing and pi
    :caption: User guide
 
    install
+   manage_filters
    list_imaging_data
    list_kernels_psf
    ingredients_model
+   gen_model_SEDs
    image_pros
    image_ifs_match
    pixel_binning
-   gen_model_SEDs
-   fit_res_SEDs
    fit_ing_SEDs
+   fit_res_SEDs
    plot_fitres
    get_maps_prop
 

@@ -23,6 +23,7 @@ Spatial matching
 
 Spectral matching
 -----------------
+.. _spectral_matching:
 
 	.. code-block:: python
 
@@ -32,6 +33,4 @@ Spectral matching
 		specphoto_file = "specphoto_fluxmap_ngc309.fits"		 
 		name_out_fits = "corr_%s" % specphoto_file 		# name of output file
 
-		spec_sigma = 2.6 					# spectral resolution of CALIFA data
-		match_imgifs_spectral(specphoto_file, spec_sigma=spec_sigma, nproc=20, 
-					name_out_fits=name_out_fits)
+		match_imgifs_spectral(specphoto_file, nproc=20, name_out_fits=name_out_fits)

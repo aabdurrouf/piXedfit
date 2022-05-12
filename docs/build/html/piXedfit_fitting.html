@@ -87,23 +87,25 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="list_imaging_data.html">List of imaging data</a></li>
-<li class="toctree-l1"><a class="reference internal" href="list_kernels_psf.html">Available convolution kernels and PSFs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="list_kernels_psf.html">Convolution kernels and PSFs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ingredients_model.html">SED modeling</a></li>
 <li class="toctree-l1"><a class="reference internal" href="image_pros.html">Image processing</a></li>
-<li class="toctree-l1"><a class="reference internal" href="image_ifs_match.html">Matching imaging data with IFS data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="image_ifs_match.html">Spatial and Spectral Matching of imaging+IFS data</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pixel_binning.html">Pixel binning</a></li>
-<li class="toctree-l1"><a class="reference internal" href="ingredients_model.html">Ingredients in SED modeling</a></li>
 <li class="toctree-l1"><a class="reference internal" href="gen_model_SEDs.html">Generating model SEDs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="fit_res_SEDs.html">Fitting spatially resolved SEDs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="fit_ing_SEDs.html">Fitting integrated SEDs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="plot_fitres.html">Plotting fitting results</a></li>
-<li class="toctree-l1"><a class="reference internal" href="get_maps_prop.html">Obtaining spatially resolved maps of properties</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fit_res_SEDs.html">Fitting spatially resolved SED</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fit_ing_SEDs.html">Fitting integrated SED</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_fitres.html">Analyze fitting results</a></li>
+<li class="toctree-l1"><a class="reference internal" href="get_maps_prop.html">Get maps of spatially resolved properties</a></li>
 </ul>
-<p class="caption"><span class="caption-text">Demonstrations and tutorials</span></p>
+<p class="caption"><span class="caption-text">Tutorials</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="demos_img_pros.html">Demonstration of image processing</a></li>
-<li class="toctree-l1"><a class="reference internal" href="demos_pixel_binning.html">Demonstration of the pixel binning process</a></li>
-<li class="toctree-l1"><a class="reference internal" href="demos_sed_fitting.html">Demonstration of SED fitting</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tutorials.html">Tutorials</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Demonstrations</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="demos_pixel_binning.html">Pixel binning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demos_sed_fitting.html">SED fitting</a></li>
 </ul>
 <p class="caption"><span class="caption-text">API reference</span></p>
 <ul class="current">
@@ -180,7 +182,7 @@
            <div itemprop="articleBody">
             
   <div class="section" id="module-piXedfit.piXedfit_fitting">
-<span id="pixedfit-fitting"></span><h1>piXedfit_fitting<a class="headerlink" href="#module-piXedfit.piXedfit_fitting" title="Permalink to this headline">¶</a></h1>
+<span id="pixedfit-fitting"></span><span id="api-fitting"></span><h1>piXedfit_fitting<a class="headerlink" href="#module-piXedfit.piXedfit_fitting" title="Permalink to this headline">¶</a></h1>
 <dl class="py function">
 <dt id="piXedfit.piXedfit_fitting.SEDfit_from_binmap">
 <code class="sig-prename descclassname">piXedfit.piXedfit_fitting.</code><code class="sig-name descname">SEDfit_from_binmap</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">fits_binmap</span></em>, <em class="sig-param"><span class="n">binid_range</span><span class="o">=</span><span class="default_value">[]</span></em>, <em class="sig-param"><span class="n">bin_ids</span><span class="o">=</span><span class="default_value">[]</span></em>, <em class="sig-param"><span class="n">models_spec</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">fit_method</span><span class="o">=</span><span class="default_value">'mcmc'</span></em>, <em class="sig-param"><span class="n">gal_z</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">z_range</span><span class="o">=</span><span class="default_value">[0.0, 1.0]</span></em>, <em class="sig-param"><span class="n">nrands_z</span><span class="o">=</span><span class="default_value">10</span></em>, <em class="sig-param"><span class="n">add_igm_absorption</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">igm_type</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">likelihood</span><span class="o">=</span><span class="default_value">'gauss'</span></em>, <em class="sig-param"><span class="n">dof</span><span class="o">=</span><span class="default_value">3.0</span></em>, <em class="sig-param"><span class="n">gauss_likelihood_form</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">nwalkers</span><span class="o">=</span><span class="default_value">100</span></em>, <em class="sig-param"><span class="n">nsteps</span><span class="o">=</span><span class="default_value">600</span></em>, <em class="sig-param"><span class="n">nsteps_cut</span><span class="o">=</span><span class="default_value">50</span></em>, <em class="sig-param"><span class="n">nproc</span><span class="o">=</span><span class="default_value">10</span></em>, <em class="sig-param"><span class="n">perc_chi2</span><span class="o">=</span><span class="default_value">90.0</span></em>, <em class="sig-param"><span class="n">cosmo</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">H0</span><span class="o">=</span><span class="default_value">70.0</span></em>, <em class="sig-param"><span class="n">Om0</span><span class="o">=</span><span class="default_value">0.3</span></em>, <em class="sig-param"><span class="n">store_full_samplers</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">name_out_fits</span><span class="o">=</span><span class="default_value">[]</span></em><span class="sig-paren">)</span><a class="headerlink" href="#piXedfit.piXedfit_fitting.SEDfit_from_binmap" title="Permalink to this definition">¶</a></dt>

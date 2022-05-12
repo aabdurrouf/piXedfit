@@ -37,8 +37,8 @@
     
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Spatial Matching imaging+IFS data" href="image_ifs_match.html" />
-    <link rel="prev" title="SED modeling" href="ingredients_model.html" /> 
+    <link rel="next" title="Spatial and Spectral Matching of imaging+IFS data" href="image_ifs_match.html" />
+    <link rel="prev" title="Generating model SEDs" href="gen_model_SEDs.html" /> 
 </head>
 
 <body class="wy-body-for-nav">
@@ -86,23 +86,32 @@
               <p class="caption"><span class="caption-text">User guide</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="manage_filters.html">Managing filters</a></li>
 <li class="toctree-l1"><a class="reference internal" href="list_imaging_data.html">List of imaging data</a></li>
 <li class="toctree-l1"><a class="reference internal" href="list_kernels_psf.html">Convolution kernels and PSFs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="ingredients_model.html">SED modeling</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Image processing</a></li>
-<li class="toctree-l1"><a class="reference internal" href="image_ifs_match.html">Spatial Matching imaging+IFS data</a></li>
-<li class="toctree-l1"><a class="reference internal" href="pixel_binning.html">Pixel binning</a></li>
 <li class="toctree-l1"><a class="reference internal" href="gen_model_SEDs.html">Generating model SEDs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="fit_res_SEDs.html">Fitting spatially resolved SED</a></li>
-<li class="toctree-l1"><a class="reference internal" href="fit_ing_SEDs.html">Fitting integrated SED</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Image processing</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#background-subtraction">Background subtraction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#constructing-variance-images">Constructing variance images</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#performing-image-processing">Performing image processing</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="image_ifs_match.html">Spatial and Spectral Matching of imaging+IFS data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pixel_binning.html">Pixel binning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fit_ing_SEDs.html">SED fitting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fit_res_SEDs.html">Fitting spatially resolved SEDs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="plot_fitres.html">Analyze fitting results</a></li>
 <li class="toctree-l1"><a class="reference internal" href="get_maps_prop.html">Get maps of spatially resolved properties</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Tutorials</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="tutorials.html">Tutorials</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Demonstrations</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="demos_pixel_binning.html">Pixel binning</a></li>
 <li class="toctree-l1"><a class="reference internal" href="demos_sed_fitting.html">SED fitting</a></li>
-<li class="toctree-l1"><a class="reference internal" href="tutorials.html">Tutorials</a></li>
 </ul>
 <p class="caption"><span class="caption-text">API reference</span></p>
 <ul>
@@ -179,8 +188,230 @@
            <div itemprop="articleBody">
             
   <div class="section" id="image-processing">
-<h1>Image processing<a class="headerlink" href="#image-processing" title="Permalink to this headline">¶</a></h1>
-<p>(This page is still under constraction!)</p>
+<span id="img-processing"></span><h1>Image processing<a class="headerlink" href="#image-processing" title="Permalink to this headline">¶</a></h1>
+<p>In the analysis of spatially resolved SED of galaxy, it is important to make sure that the multiwavelength images that are used are all matched to the same spatial resolution (i.e., PSF size) and sampling (i.e., pixel size), so that a given pixel represents the same region on the sky. Such an image processing can be performed using the <a class="reference internal" href="piXedfit_images.html#api-images"><span class="std std-ref">piXedfit_images</span></a> module.
+This module is a python scripting module that combines various useful functions in <a class="reference external" href="https://www.astropy.org/">Astropy</a>, <a class="reference external" href="https://photutils.readthedocs.io/en/stable/">photutils</a>, and <a class="reference external" href="https://reproject.readthedocs.io/en/stable/">reproject</a> such that an image processing task for a combination of imaging data can be done automatically.</p>
+<p>Before image processing, one need to make sure that the images are all background-free (i.e., background have been subtracted from the images), which are then called as science images. If this is not the case, background subtraction can be performed using <a class="reference internal" href="piXedfit_images.html#piXedfit.piXedfit_images.subtract_background" title="piXedfit.piXedfit_images.subtract_background"><code class="xref py py-func docutils literal notranslate"><span class="pre">piXedfit.piXedfit_images.subtract_background()</span></code></a> funciton, which will be described further below. After that, one need to construct variance images, which are the square of uncertainty images. For <a class="reference internal" href="list_imaging_data.html#list-imagingdata"><span class="std std-ref">known images</span></a>, this task can be done using various functions in the <a class="reference internal" href="piXedfit_images.html#api-images"><span class="std std-ref">piXedfit_images</span></a> module. Once science and variance images have been constructed, image processing can be performed using the <a class="reference internal" href="piXedfit_images.html#piXedfit.piXedfit_images.images_processing" title="piXedfit.piXedfit_images.images_processing"><code class="xref py py-class docutils literal notranslate"><span class="pre">piXedfit.piXedfit_images.images_processing</span></code></a> class. The process basically performs PSF matching and spatial resampling and reprojection to the multiwavelength images.</p>
+<div class="section" id="background-subtraction">
+<h2>Background subtraction<a class="headerlink" href="#background-subtraction" title="Permalink to this headline">¶</a></h2>
+<p>Suppose we have a 2MASS/J image as shown below (downloaded from <a class="reference external" href="https://irsa.ipac.caltech.edu/applications/2MASS/IM/interactive.html">2MASS website</a>), which is not background-free.</p>
+<blockquote>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">astropy.io</span> <span class="kn">import</span> <span class="n">fits</span>
+
+<span class="c1"># open FITS file</span>
+<span class="n">hdu</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="s2">&quot;aJ_asky_001022s0620186.fits&quot;</span><span class="p">)</span>
+
+<span class="c1"># plot the image</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span><span class="mi">10</span><span class="p">))</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">hdu</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">),</span> <span class="n">origin</span><span class="o">=</span><span class="s1">&#39;lower&#39;</span><span class="p">)</span>
+<span class="n">hdu</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</pre></div>
+</div>
+</div></blockquote>
+<img alt="_images/img_proc_1.png" src="_images/img_proc_1.png" />
+<p>Background subtraction on this image can be performed using <a class="reference internal" href="piXedfit_images.html#piXedfit.piXedfit_images.subtract_background" title="piXedfit.piXedfit_images.subtract_background"><code class="xref py py-func docutils literal notranslate"><span class="pre">piXedfit.piXedfit_images.subtract_background()</span></code></a> funciton.
+This function produces background image, RMS image, and background-subtracted science image.</p>
+<blockquote>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">piXedfit.piXedfit_images</span> <span class="kn">import</span> <span class="n">subtract_background</span>
+
+<span class="n">fits_image</span> <span class="o">=</span> <span class="s2">&quot;aJ_asky_001022s0620186.fits&quot;</span>
+<span class="n">subtract_background</span><span class="p">(</span><span class="n">fits_image</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="mf">3.0</span><span class="p">,</span> <span class="n">box_size</span><span class="o">=</span><span class="p">[</span><span class="mi">100</span><span class="p">,</span><span class="mi">100</span><span class="p">],</span> <span class="n">mask_sources</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+</pre></div>
+</div>
+</div></blockquote>
+<p><code class="docutils literal notranslate"><span class="pre">sigma</span></code> is the threshold value for the sigma clipping, <code class="docutils literal notranslate"><span class="pre">box_size</span></code> is box size in image gridding, <code class="docutils literal notranslate"><span class="pre">mask_sources</span></code> is a flag stating whether to mask the astroomical sources (i.e., objects) within the image. If set as <code class="docutils literal notranslate"><span class="pre">True</span></code>, source detection and segmentation will be performed using <a class="reference external" href="https://sep.readthedocs.io/en/v1.0.x/index.html">SEP</a>. Please see the API reference for more detail information about this function.</p>
+<p>The outputs are: <code class="docutils literal notranslate"><span class="pre">skybg_aJ_asky_001022s0620186.fits</span></code>, <code class="docutils literal notranslate"><span class="pre">skybgrms_aJ_asky_001022s0620186.fits</span></code>, and <code class="docutils literal notranslate"><span class="pre">skybgsub_aJ_asky_001022s0620186.fits</span></code>. Let’s plot the background and science images.</p>
+<blockquote>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># background image</span>
+<span class="n">hdu</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="s2">&quot;skybg_aJ_asky_001022s0620186.fits&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span><span class="mi">8</span><span class="p">))</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">hdu</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">),</span> <span class="n">origin</span><span class="o">=</span><span class="s1">&#39;lower&#39;</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;gray&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">colorbar</span><span class="p">()</span>
+<span class="n">hdu</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+<span class="c1"># background-subtracted image</span>
+<span class="n">hdu</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="s2">&quot;skybgsub_aJ_asky_001022s0620186.fits&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span><span class="mi">8</span><span class="p">))</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">hdu</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">),</span> <span class="n">origin</span><span class="o">=</span><span class="s1">&#39;lower&#39;</span><span class="p">)</span>
+<span class="n">hdu</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</pre></div>
+</div>
+</div></blockquote>
+<img alt="_images/img_proc_2.png" src="_images/img_proc_2.png" />
+<img alt="_images/img_proc_3.png" src="_images/img_proc_3.png" />
+</div>
+<div class="section" id="constructing-variance-images">
+<h2>Constructing variance images<a class="headerlink" href="#constructing-variance-images" title="Permalink to this headline">¶</a></h2>
+<p>For constructing variance (i.e., square of the uncertainty) images, there are various functions provided in <strong>piXedfit</strong>. Depending on the imaging data, one can choose the appropriate function. Available functions are: <code class="xref py py-func docutils literal notranslate"><span class="pre">var_img_2MASS()</span></code>, <code class="xref py py-func docutils literal notranslate"><span class="pre">var_img_GALEX()</span></code>, <code class="xref py py-func docutils literal notranslate"><span class="pre">var_img_WISE()</span></code>, and <code class="xref py py-func docutils literal notranslate"><span class="pre">var_img_sdss()</span></code> for 2MASS, GALEX, WISE, and SDSS imaging data. These functions calculate variance of the pixel values following prescriptions provided in the relevant information or literature associated with the surveys. For other imaging data, one need to construct uncertainty image or weight (i.e., inverse variance) image and then use <code class="xref py py-func docutils literal notranslate"><span class="pre">var_img_from_unc_img()</span></code> or <code class="xref py py-func docutils literal notranslate"><span class="pre">var_img_from_weight_img()</span></code> functions, which are also provided in the <a class="reference internal" href="piXedfit_images.html#api-images"><span class="std std-ref">piXedfit_images</span></a> module.</p>
+<p>In the following, we will demonstrate how to construct variance image from 2MASS and SDSS images. First, we will construct variance image of the 2MASS/J image that we have substracted the background in the previous step.</p>
+<blockquote>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">piXedfit.piXedfit_images</span> <span class="kn">import</span> <span class="n">var_img_2MASS</span>
+
+<span class="n">sci_img</span> <span class="o">=</span> <span class="s2">&quot;skybgsub_aJ_asky_001022s0620186.fits&quot;</span>
+<span class="n">skyrms_img</span> <span class="o">=</span> <span class="s2">&quot;skybgrms_aJ_asky_001022s0620186.fits&quot;</span>
+<span class="n">var_img_2MASS</span><span class="p">(</span><span class="n">sci_img</span><span class="o">=</span><span class="n">sci_img</span><span class="p">,</span> <span class="n">skyrms_img</span><span class="o">=</span><span class="n">skyrms_img</span><span class="p">)</span>
+</pre></div>
+</div>
+</div></blockquote>
+<p>This process will produce <code class="docutils literal notranslate"><span class="pre">var_skybgsub_aJ_asky_001022s0620186.fits</span></code>. Let’s plot variance image.</p>
+<blockquote>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">hdu</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="s2">&quot;var_skybgsub_aJ_asky_001022s0620186.fits&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span><span class="mi">8</span><span class="p">))</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">hdu</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">),</span> <span class="n">origin</span><span class="o">=</span><span class="s1">&#39;lower&#39;</span><span class="p">)</span>
+<span class="n">hdu</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</pre></div>
+</div>
+</div></blockquote>
+<img alt="_images/img_proc_4.png" src="_images/img_proc_4.png" />
+<p>Now, let’s try constructing variance image from SDSS image <code class="docutils literal notranslate"><span class="pre">frame-u-001740-3-0115.fits</span></code> (downloaded from the SDSS website).</p>
+<blockquote>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">piXedfit.piXedfit_images</span> <span class="kn">import</span> <span class="n">var_img_sdss</span>
+
+<span class="n">fits_image</span> <span class="o">=</span> <span class="s2">&quot;frame-u-001740-3-0115.fits&quot;</span>
+<span class="n">var_img_sdss</span><span class="p">(</span><span class="n">fits_image</span><span class="p">,</span> <span class="n">filter_name</span><span class="o">=</span><span class="s1">&#39;sdss_u&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div></blockquote>
+<p>This will produce <code class="docutils literal notranslate"><span class="pre">var_frame-u-001740-3-0115.fits</span></code>.</p>
+<blockquote>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">hdu</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="s2">&quot;var_frame-u-001740-3-0115.fits&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span><span class="mi">4</span><span class="p">))</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">hdu</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">),</span> <span class="n">origin</span><span class="o">=</span><span class="s1">&#39;lower&#39;</span><span class="p">)</span>
+<span class="n">hdu</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</pre></div>
+</div>
+</div></blockquote>
+<img alt="_images/img_proc_5.png" src="_images/img_proc_5.png" />
+</div>
+<div class="section" id="performing-image-processing">
+<h2>Performing image processing<a class="headerlink" href="#performing-image-processing" title="Permalink to this headline">¶</a></h2>
+<p>Next, we will perform image processing. In this example, we will analyze NGC 309 galaxy using 12-band imaging data from GALEX, SDSS, 2MASS, and WISE (W1 and W2). This task can be done using the <a class="reference internal" href="piXedfit_images.html#piXedfit.piXedfit_images.images_processing" title="piXedfit.piXedfit_images.images_processing"><code class="xref py py-class docutils literal notranslate"><span class="pre">piXedfit.piXedfit_images.images_processing</span></code></a> class. In the following, only brief overview of the steps are described. A more complete tutorials can be seen in <a class="reference external" href="https://github.com/aabdurrouf/piXedfit/tree/main/examples/FUVtoNIR_CALIFA">FUV to NIR images processing</a> or <a class="reference external" href="https://github.com/aabdurrouf/piXedfit/tree/main/examples/FUVtoNIR_MaNGA">here</a>. The <code class="xref py py-class docutils literal notranslate"><span class="pre">images_processing</span></code> class can also be used for analysis of FUV–FIR data as demonstrated in another tutorial: <a class="reference external" href="https://github.com/aabdurrouf/piXedfit/tree/main/examples/FUVtoFIR">FUV to FIR images processing</a>.</p>
+<p>First, we have to set up the input.</p>
+<blockquote>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># call images_processing</span>
+<span class="kn">from</span> <span class="nn">piXedfit.piXedfit_images</span> <span class="kn">import</span> <span class="n">images_processing</span>
+
+<span class="c1"># list the filters</span>
+<span class="n">filters</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;galex_fuv&#39;</span><span class="p">,</span> <span class="s1">&#39;galex_nuv&#39;</span><span class="p">,</span> <span class="s1">&#39;sdss_u&#39;</span><span class="p">,</span> <span class="s1">&#39;sdss_g&#39;</span><span class="p">,</span> <span class="s1">&#39;sdss_r&#39;</span><span class="p">,</span> <span class="s1">&#39;sdss_i&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;sdss_z&#39;</span><span class="p">,</span> <span class="s1">&#39;2mass_j&#39;</span><span class="p">,</span> <span class="s1">&#39;2mass_h&#39;</span><span class="p">,</span> <span class="s1">&#39;2mass_k&#39;</span><span class="p">,</span> <span class="s1">&#39;wise_w1&#39;</span><span class="p">,</span> <span class="s1">&#39;wise_w2&#39;</span><span class="p">]</span>
+
+<span class="c1"># input science images</span>
+<span class="n">sci_img</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="n">sci_img</span><span class="p">[</span><span class="s1">&#39;galex_fuv&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;GI1_009100_NGC0309-fd-intbgsub.fits&#39;</span>
+<span class="n">sci_img</span><span class="p">[</span><span class="s1">&#39;galex_nuv&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;GI1_009100_NGC0309-nd-intbgsub.fits&#39;</span>
+<span class="n">sci_img</span><span class="p">[</span><span class="s1">&#39;sdss_u&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;frame-u-001740-3-0115.fits&#39;</span>
+<span class="n">sci_img</span><span class="p">[</span><span class="s1">&#39;sdss_g&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;frame-g-001740-3-0115.fits&#39;</span>
+<span class="n">sci_img</span><span class="p">[</span><span class="s1">&#39;sdss_r&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;frame-r-001740-3-0115.fits&#39;</span>
+<span class="n">sci_img</span><span class="p">[</span><span class="s1">&#39;sdss_i&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;frame-i-001740-3-0115.fits&#39;</span>
+<span class="n">sci_img</span><span class="p">[</span><span class="s1">&#39;sdss_z&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;frame-z-001740-3-0115.fits&#39;</span>
+<span class="n">sci_img</span><span class="p">[</span><span class="s1">&#39;2mass_j&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;skybgsub_aJ_asky_001022s0620186.fits&#39;</span>
+<span class="n">sci_img</span><span class="p">[</span><span class="s1">&#39;2mass_h&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;skybgsub_aH_asky_001022s0620186.fits&#39;</span>
+<span class="n">sci_img</span><span class="p">[</span><span class="s1">&#39;2mass_k&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;skybgsub_aK_asky_001022s0620186.fits&#39;</span>
+<span class="n">sci_img</span><span class="p">[</span><span class="s1">&#39;wise_w1&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;skybgsub_0138m107_ac51-w1-int-3_ra14.177751925_dec-9.913864294_asec1000.000.fits&#39;</span>
+<span class="n">sci_img</span><span class="p">[</span><span class="s1">&#39;wise_w2&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;skybgsub_0138m107_ac51-w2-int-3_ra14.177751925_dec-9.913864294_asec1000.000.fits&#39;</span>
+
+<span class="c1"># input Variance images</span>
+<span class="n">var_img</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="n">var_img</span><span class="p">[</span><span class="s1">&#39;galex_fuv&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;var_GI1_009100_NGC0309-fd-intbgsub.fits&#39;</span>
+<span class="n">var_img</span><span class="p">[</span><span class="s1">&#39;galex_nuv&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;var_GI1_009100_NGC0309-nd-intbgsub.fits&#39;</span>
+<span class="n">var_img</span><span class="p">[</span><span class="s1">&#39;sdss_u&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;var_frame-u-001740-3-0115.fits&#39;</span>
+<span class="n">var_img</span><span class="p">[</span><span class="s1">&#39;sdss_g&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;var_frame-g-001740-3-0115.fits&#39;</span>
+<span class="n">var_img</span><span class="p">[</span><span class="s1">&#39;sdss_r&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;var_frame-r-001740-3-0115.fits&#39;</span>
+<span class="n">var_img</span><span class="p">[</span><span class="s1">&#39;sdss_i&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;var_frame-i-001740-3-0115.fits&#39;</span>
+<span class="n">var_img</span><span class="p">[</span><span class="s1">&#39;sdss_z&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;var_frame-z-001740-3-0115.fits&#39;</span>
+<span class="n">var_img</span><span class="p">[</span><span class="s1">&#39;2mass_j&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;var_skybgsub_aJ_asky_001022s0620186.fits&#39;</span>
+<span class="n">var_img</span><span class="p">[</span><span class="s1">&#39;2mass_h&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;var_skybgsub_aH_asky_001022s0620186.fits&#39;</span>
+<span class="n">var_img</span><span class="p">[</span><span class="s1">&#39;2mass_k&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;var_skybgsub_aK_asky_001022s0620186.fits&#39;</span>
+<span class="n">var_img</span><span class="p">[</span><span class="s1">&#39;wise_w1&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;var_0138m107_ac51-w1-unc-3_ra14.177751925_dec-9.913864294_asec1000.000.fits&#39;</span>
+<span class="n">var_img</span><span class="p">[</span><span class="s1">&#39;wise_w2&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;var_0138m107_ac51-w2-unc-3_ra14.177751925_dec-9.913864294_asec1000.000.fits&#39;</span>
+
+<span class="c1"># NGC 309 galaxy coordinate</span>
+<span class="n">gal_ra</span> <span class="o">=</span> <span class="mf">14.177751925</span>                   <span class="c1"># RA</span>
+<span class="n">gal_dec</span> <span class="o">=</span> <span class="o">-</span><span class="mf">9.913864294</span>                  <span class="c1"># DEC</span>
+
+<span class="c1"># redshift of the galaxy</span>
+<span class="n">gal_z</span> <span class="o">=</span> <span class="mf">0.0188977</span>
+
+<span class="c1"># size of the final stamps will be produced</span>
+<span class="n">stamp_size</span> <span class="o">=</span> <span class="p">[</span><span class="mi">131</span><span class="p">,</span><span class="mi">131</span><span class="p">]</span>
+
+<span class="c1"># initiate the process</span>
+<span class="n">img_process</span> <span class="o">=</span> <span class="n">images_processing</span><span class="p">(</span><span class="n">filters</span><span class="o">=</span><span class="n">filters</span><span class="p">,</span><span class="n">sci_img</span><span class="o">=</span><span class="n">sci_img</span><span class="p">,</span><span class="n">var_img</span><span class="o">=</span><span class="n">var_img</span><span class="p">,</span><span class="n">gal_ra</span><span class="o">=</span><span class="n">gal_ra</span><span class="p">,</span>
+                                        <span class="n">gal_dec</span><span class="o">=</span><span class="n">gal_dec</span><span class="p">,</span> <span class="n">gal_z</span><span class="o">=</span><span class="n">gal_z</span><span class="p">,</span><span class="n">stamp_size</span><span class="o">=</span><span class="n">stamp_size</span><span class="p">)</span>
+</pre></div>
+</div>
+</div></blockquote>
+<p>In the script above, we suply list of filters (see <a class="reference internal" href="manage_filters.html#manage-filters"><span class="std std-ref">managing filters</span></a>), science images, variance images, the coordinate of the target galaxy, the galaxy’s redshift, and the desired size for the final stamp images. One should make sure that the target galaxy is present in the input images, though it is not necessary to trim the input images and make the galaxy to be placed at the center of each image. After the spatial matching, <strong>piXedfit</strong> would automatically locate the galaxy (based on the input coordinate) and crop the region around it when producing the final stamp images.</p>
+<p>Image processing is run using the following command.</p>
+<blockquote>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">output_stamps</span> <span class="o">=</span> <span class="n">img_process</span><span class="o">.</span><span class="n">reduced_stamps</span><span class="p">()</span>
+</pre></div>
+</div>
+</div></blockquote>
+<p>Let’s check the stamp images produced from the image processing by plotting them.</p>
+<blockquote>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">fig1</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span><span class="mi">7</span><span class="p">))</span>
+
+<span class="n">nbands</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">filters</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">bb</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">nbands</span><span class="p">):</span>
+    <span class="n">f1</span> <span class="o">=</span> <span class="n">fig1</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="n">bb</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">tick_params</span><span class="p">(</span><span class="n">left</span> <span class="o">=</span> <span class="bp">False</span><span class="p">,</span> <span class="n">right</span> <span class="o">=</span> <span class="bp">False</span> <span class="p">,</span> <span class="n">labelleft</span> <span class="o">=</span> <span class="bp">False</span> <span class="p">,</span>
+                    <span class="n">labelbottom</span> <span class="o">=</span> <span class="bp">False</span><span class="p">,</span> <span class="n">bottom</span> <span class="o">=</span> <span class="bp">False</span><span class="p">)</span>
+    <span class="n">str_temp</span> <span class="o">=</span> <span class="s2">&quot;name_img_</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">filters</span><span class="p">[</span><span class="n">bb</span><span class="p">]</span>
+    <span class="n">hdu</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">output_stamps</span><span class="p">[</span><span class="n">str_temp</span><span class="p">])</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">hdu</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">),</span> <span class="n">origin</span><span class="o">=</span><span class="s1">&#39;lower&#39;</span><span class="p">)</span>
+    <span class="n">f1</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.93</span><span class="p">,</span> <span class="n">filters</span><span class="p">[</span><span class="n">bb</span><span class="p">],</span> <span class="n">horizontalalignment</span><span class="o">=</span><span class="s1">&#39;center&#39;</span><span class="p">,</span>
+            <span class="n">verticalalignment</span><span class="o">=</span><span class="s1">&#39;center&#39;</span><span class="p">,</span><span class="n">transform</span> <span class="o">=</span> <span class="n">f1</span><span class="o">.</span><span class="n">transAxes</span><span class="p">,</span>
+            <span class="n">fontsize</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;black&#39;</span><span class="p">)</span>
+    <span class="n">hdu</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">subplots_adjust</span><span class="p">(</span><span class="n">left</span><span class="o">=</span><span class="mf">0.05</span><span class="p">,</span> <span class="n">right</span><span class="o">=</span><span class="mf">0.95</span><span class="p">,</span> <span class="n">bottom</span><span class="o">=</span><span class="mf">0.05</span><span class="p">,</span> <span class="n">top</span><span class="o">=</span><span class="mf">0.95</span><span class="p">,</span> <span class="n">hspace</span><span class="o">=</span><span class="mf">0.05</span><span class="p">,</span> <span class="n">wspace</span><span class="o">=</span><span class="mf">0.05</span><span class="p">)</span>
+</pre></div>
+</div>
+</div></blockquote>
+<img alt="_images/img_proc_6.png" src="_images/img_proc_6.png" />
+<p>Next, we will define galaxy’s region of interest. There are various ways to do this, including the usage of elliptical or circular aperture centered at the galaxy, and more sophesticated way using segmentation maps produced using <a class="reference external" href="https://sep.readthedocs.io/en/v1.0.x/index.html">SEP</a>. In this demo, we will define the galaxy’s region through the segmentation process.</p>
+<blockquote>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">segm_maps</span> <span class="o">=</span> <span class="n">img_process</span><span class="o">.</span><span class="n">segmentation_sep</span><span class="p">(</span><span class="n">output_stamps</span><span class="p">,</span> <span class="n">thresh</span><span class="o">=</span><span class="mf">2.8</span><span class="p">,</span> <span class="n">minarea</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
+                        <span class="n">deblend_nthresh</span><span class="o">=</span><span class="mi">40</span><span class="p">,</span> <span class="n">deblend_cont</span><span class="o">=</span><span class="mf">0.005</span><span class="p">)</span>
+</pre></div>
+</div>
+</div></blockquote>
+<p>This function produces segmentation map on each band, so we get 12 maps. Then, user has a flexibility to choose whether to use single map or merge mutiple maps together for defining the galaxy’s region of interest. All this option is possible with the <code class="xref py py-func docutils literal notranslate"><span class="pre">galaxy_region()</span></code> method. Suppose we choose segmentation maps from SDSS i and z bands to be merged, as shown in the following.</p>
+<blockquote>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># select segmentation maps</span>
+<span class="n">select_ids</span> <span class="o">=</span> <span class="p">[</span><span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">]</span>
+<span class="n">select_segm_maps</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">for</span> <span class="n">ii</span> <span class="ow">in</span> <span class="n">select_ids</span><span class="p">:</span>
+        <span class="n">select_segm_maps</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">segm_maps</span><span class="p">[</span><span class="n">ii</span><span class="p">])</span>
+
+<span class="n">gal_region</span> <span class="o">=</span> <span class="n">img_process</span><span class="o">.</span><span class="n">galaxy_region</span><span class="p">(</span><span class="n">select_segm_maps</span><span class="p">)</span>
+</pre></div>
+</div>
+</div></blockquote>
+<p>Let’s plot the defined region on top of the SDSS/g image.</p>
+<blockquote>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">fig1</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span><span class="mi">5</span><span class="p">))</span>
+<span class="n">f1</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">()</span>
+<span class="n">str_temp</span> <span class="o">=</span> <span class="s2">&quot;name_img_</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">filters</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span>
+<span class="n">hdu</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">output_stamps</span><span class="p">[</span><span class="n">str_temp</span><span class="p">])</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">hdu</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">),</span> <span class="n">origin</span><span class="o">=</span><span class="s1">&#39;lower&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">gal_region</span><span class="p">,</span> <span class="n">origin</span><span class="o">=</span><span class="s1">&#39;lower&#39;</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;Greys&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.2</span><span class="p">)</span>
+<span class="n">hdu</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</pre></div>
+</div>
+</div></blockquote>
+<img alt="_images/img_proc_7.png" src="_images/img_proc_7.png" />
+<p>Next, we are ready to calculate fluxes (i.e., convert from the pixel values) of individual pixels within the galaxy’s region of interest. This is can be done using the <code class="xref py py-func docutils literal notranslate"><span class="pre">flux_map()</span></code> method.</p>
+<blockquote>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">name_out_fits</span> <span class="o">=</span> <span class="s2">&quot;fluxmap_ngc309.fits&quot;</span>
+<span class="n">flux_maps</span> <span class="o">=</span> <span class="n">img_process</span><span class="o">.</span><span class="n">flux_map</span><span class="p">(</span><span class="n">output_stamps</span><span class="p">,</span> <span class="n">gal_region</span><span class="p">,</span> <span class="n">Gal_EBV</span><span class="o">=</span><span class="n">Gal_EBV</span><span class="p">,</span>
+                 <span class="n">name_out_fits</span><span class="o">=</span><span class="n">name_out_fits</span><span class="p">)</span>
+</pre></div>
+</div>
+</div></blockquote>
+</div>
 </div>
 
 
@@ -191,10 +422,10 @@
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="image_ifs_match.html" class="btn btn-neutral float-right" title="Spatial Matching imaging+IFS data" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="image_ifs_match.html" class="btn btn-neutral float-right" title="Spatial and Spectral Matching of imaging+IFS data" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="ingredients_model.html" class="btn btn-neutral float-left" title="SED modeling" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="gen_model_SEDs.html" class="btn btn-neutral float-left" title="Generating model SEDs" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   
