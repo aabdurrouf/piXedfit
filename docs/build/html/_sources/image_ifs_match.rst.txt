@@ -1,3 +1,5 @@
+.. _match_img_ifs:
+
 Spatial and Spectral Matching of imaging and IFS data
 =====================================================
 

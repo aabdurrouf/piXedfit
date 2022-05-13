@@ -171,13 +171,13 @@ First, we have to set up the input.
 
 In the script above, we suply list of filters (see :ref:`managing filters <manage_filters>`), science images, variance images, the coordinate of the target galaxy, the galaxy's redshift, and the desired size for the final stamp images. One should make sure that the target galaxy is present in the input images, though it is not necessary to trim the input images and make the galaxy to be placed at the center of each image. After the spatial matching, **piXedfit** would automatically locate the galaxy (based on the input coordinate) and crop the region around it when producing the final stamp images. 
 
-Image processing is run using the following command.
+Image processing can be run using the following command.
 
 	.. code-block:: python
 
 		output_stamps = img_process.reduced_stamps()
 
-Let's check the stamp images produced from the image processing by plotting them.
+This process produces stamp images that all have the same PSF size and the spatial sampling, in case of our data sets, a PSF FWHM of 6.37'' (WISE/W2) and pixel size of 1.5'' (GALEX). Now, let's check the stamp images.
 
 	.. code-block:: python
 

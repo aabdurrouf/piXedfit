@@ -1,3 +1,5 @@
+.. _module_bin:
+
 piXedfit_bin
 ============
 

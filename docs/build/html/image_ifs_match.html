@@ -100,7 +100,7 @@
 <li class="toctree-l1"><a class="reference internal" href="pixel_binning.html">Pixel binning</a></li>
 <li class="toctree-l1"><a class="reference internal" href="fit_ing_SEDs.html">SED fitting</a></li>
 <li class="toctree-l1"><a class="reference internal" href="fit_res_SEDs.html">Fitting spatially resolved SEDs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="plot_fitres.html">Analyze fitting results</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_fitres.html">Analyzing fitting results</a></li>
 <li class="toctree-l1"><a class="reference internal" href="get_maps_prop.html">Get maps of spatially resolved properties</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Tutorials</span></p>
@@ -187,7 +187,7 @@
            <div itemprop="articleBody">
             
   <div class="section" id="spatial-and-spectral-matching-of-imaging-and-ifs-data">
-<h1>Spatial and Spectral Matching of imaging and IFS data<a class="headerlink" href="#spatial-and-spectral-matching-of-imaging-and-ifs-data" title="Permalink to this headline">¶</a></h1>
+<span id="match-img-ifs"></span><h1>Spatial and Spectral Matching of imaging and IFS data<a class="headerlink" href="#spatial-and-spectral-matching-of-imaging-and-ifs-data" title="Permalink to this headline">¶</a></h1>
 <p>In the analysis of global (i.e., integrated) SED of galaxies, there have been several attemps at combining spectra (at rest-frame optical) and broadband photometry (over a wider wavelength range) into a so-called spectrophotometric SED. One of the great advantages from this combination is the enhancement of the constraining power in the SED fitting given by the high spectral sampling of the optical spectra and the wider wavelength coverage (e.g., FUV to NIR) of the photometric SED. This could help in breaking the existing degeneracies among parameters (especially among age, metallicity, and dust attenuation) in the SED fitting process.</p>
 <p>The current abundance of the imaging and IFS (integral field spectroscopy) data (especially for local galaxies) open up new avenues for the analysis of the spatially resolved spectrophotometric SED of galaxies. In this light, <strong>piXedfit</strong> provides a <strong>new feature</strong> of matching (in both spatially and spectrally) between imaging and IFS data on pixel level. This kind of data would be very useful for various analyses. One of the power of this data, besides enhancing the constraining power as mentioned above, is the wider spatial coverage of the imaging compared to the IFS observation. The imaging observaitons, especially those that are deep and have high spatial resolution, could cover the extended region of galaxies with a sufficient S/N ratio, thus covering most of the optical region of the galaxies. A module in <strong>piXedfit</strong> featuring this task is <a class="reference internal" href="piXedfit_spectrophotometric.html#mod-specphoto"><span class="std std-ref">piXedfit_spectrophotometric</span></a>.</p>
 <p>In this brief tutorial, we will combine 12-band imaging data (covering FUV to NIR) and IFS data from the <a class="reference external" href="https://califa.caha.es/">CALIFA</a> survey. The imaging data are the same as we have analyzed in <a class="reference internal" href="image_pros.html#img-processing"><span class="std std-ref">image processing</span></a>, which are consists of imaging data from the GALEX, SDSS, 2MASS, and WISE. A more detailed tutorial can be seen at

@@ -93,10 +93,14 @@
 <li class="toctree-l1"><a class="reference internal" href="gen_model_SEDs.html">Generating model SEDs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="image_pros.html">Image processing</a></li>
 <li class="toctree-l1"><a class="reference internal" href="image_ifs_match.html">Spatial and Spectral Matching of imaging and IFS data</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Pixel binning</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Pixel binning</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#pixel-binning-on-3d-data-cube">Pixel binning on 3D data cube</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#pixel-binning-on-images">Pixel binning on images</a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="fit_ing_SEDs.html">SED fitting</a></li>
 <li class="toctree-l1"><a class="reference internal" href="fit_res_SEDs.html">Fitting spatially resolved SEDs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="plot_fitres.html">Analyze fitting results</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_fitres.html">Analyzing fitting results</a></li>
 <li class="toctree-l1"><a class="reference internal" href="get_maps_prop.html">Get maps of spatially resolved properties</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Tutorials</span></p>
@@ -184,6 +188,181 @@
             
   <div class="section" id="pixel-binning">
 <span id="id1"></span><h1>Pixel binning<a class="headerlink" href="#pixel-binning" title="Permalink to this headline">¶</a></h1>
+<p>In most cases, fluxes measured in individual pixels have a low S/N ratio. It is also common to find pixels with missing or negative fluxes. In order to gain an accurate inference of the parameters in the SED fitting, one typically needs and observed SED with sufficient S/N. For this reason, we bin SEDs of pixels before conducting further analysis, such as SED fitting. Previous studies have developed pixel binning schemes to deal with the low S/N on spatially resolved scales. However, the previous binning scheme mainly consider two factors only, which are proximity of pixels and a target S/N on a particular band that is goind to be achieved by binning the pixels.</p>
+<p><strong>piXedfit</strong> introduces a new pixel binning scheme that incorporates a new important constraint, namely the similarity in the SED shape among pixels. This new criterion is important, especially for the spatially resolved SED fitting analyses, because it is expected to preserve any important information in the SED at the pixel level. While pixel binning is done to achieve a certain S/N threshold, at the cost of degrading the spatial resolution, we can still preserve important information in the SED at the pixel level with this binning scheme. In the previous pixel binning schemes that do not consider the similarity of the SED shape, it is possible that neighboring pixels that have different SED shapes (likely having different properties) are binned together. This could smooth out the spatial variation of the stellar population properties.</p>
+<p>In practice, the SED shape similarity among pixels is evaluated using the chi-square statistics. User can set a maximum value of chi-square (or a reduced chi-square, <code class="docutils literal notranslate"><span class="pre">redc_chi2_limit</span></code>) below which a pair of SEDs are considered to be similar in shape. Besides the similarity in SED shape, the binning scheme in <strong>piXedfit</strong> also considers: (a) proximity (i.e., only neighboring pixels are binned together), (b) minimum diameter of a bin (<code class="docutils literal notranslate"><span class="pre">Dmin_bin</span></code>), which can be thought of as the FWHM of the PSF (although the user is free to define the diameter), and (c) S/N threshold in each band (<code class="docutils literal notranslate"><span class="pre">SNR</span></code>). The last criterion is also a new feature which allow user to get sufficient S/N across the filters, not limited to a particular filter only.</p>
+<p>The pixel binning task in <strong>piXedfit</strong> is done by <a class="reference internal" href="piXedfit_bin.html#module-bin"><span class="std std-ref">piXedfit_bin</span></a> module. This module provides functions for performing pixel binning on a 3D data cube (either photometric or spectrophotometric data cube) and imaging data (in single band or multiband). Below, we will demonstrate how to use these functions.</p>
+<div class="section" id="pixel-binning-on-3d-data-cube">
+<h2>Pixel binning on 3D data cube<a class="headerlink" href="#pixel-binning-on-3d-data-cube" title="Permalink to this headline">¶</a></h2>
+<p>In this example, we will perform pixel binning to the spectrophotometric data cube (<code class="docutils literal notranslate"><span class="pre">corr_specphoto_fluxmap_ngc309.fits</span></code>) that we have produced in the previous step (i.e., <a class="reference internal" href="image_ifs_match.html#match-img-ifs"><span class="std std-ref">spatial and spectral matching of imaging and IFS data</span></a>). This task can be done using <a class="reference internal" href="piXedfit_bin.html#piXedfit.piXedfit_bin.pixel_binning" title="piXedfit.piXedfit_bin.pixel_binning"><code class="xref py py-func docutils literal notranslate"><span class="pre">piXedfit.piXedfit_bin.pixel_binning()</span></code></a> function. This function can handle both the photometric and spectrophotometric data cubes. When the input is spectrophotometric data cube, this function will perform pixel binning to the photometric data first and then spectra of pixels are binned following the resulted binning map, so only spatial bins that fall within the IFU region will have both the photometric and spectroscopic SEDs.</p>
+<p>Below is an example of the lines of code for running a pixel binning. Here we want to achieve minimum S/N of 10 in 7 filters of GALEX and SDSS bands, while minimum S/N=0 for the other 5 bands. For evaluating the SED shape similarity, here we assume a maximum reduced chi-square of 4. We also set a minimum diameter of 4 pixels for the spatial bin, considering the pixel size of the data cube of 1.5’’ and the PSF FWHM size of 6.37’’ (~4 pixels).</p>
+<blockquote>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">astropy.io</span> <span class="kn">import</span> <span class="n">fits</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="kn">as</span> <span class="nn">plt</span>
+
+<span class="c1"># call pixel binning function</span>
+<span class="kn">from</span> <span class="nn">piXedfit.piXedfit_bin</span> <span class="kn">import</span> <span class="n">pixel_binning</span>
+
+<span class="n">fits_fluxmap</span> <span class="o">=</span> <span class="s2">&quot;corr_specphoto_fluxmap_ngc309.fits&quot;</span>
+<span class="n">ref_band</span> <span class="o">=</span> <span class="mi">4</span>                    <span class="c1"># SDSS/r as the ref. band in brightness comparison among pixels</span>
+<span class="n">Dmin_bin</span> <span class="o">=</span> <span class="mi">4</span>                    <span class="c1"># in pixel</span>
+<span class="n">redc_chi2_limit</span> <span class="o">=</span> <span class="mf">4.0</span>
+
+<span class="c1"># Set S/N thresholds.</span>
+<span class="n">nbands</span> <span class="o">=</span> <span class="mi">12</span>             <span class="c1"># number of filters in our data</span>
+<span class="n">SNR</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">nbands</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">ii</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">7</span><span class="p">):</span>
+        <span class="n">SNR</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span> <span class="o">=</span> <span class="mf">10.0</span>
+
+<span class="n">name_out_fits</span> <span class="o">=</span> <span class="s2">&quot;pixbin_</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">fits_fluxmap</span>
+<span class="n">pixel_binning</span><span class="p">(</span><span class="n">fits_fluxmap</span><span class="p">,</span> <span class="n">ref_band</span><span class="o">=</span><span class="n">ref_band</span><span class="p">,</span> <span class="n">Dmin_bin</span><span class="o">=</span><span class="n">Dmin_bin</span><span class="p">,</span> <span class="n">SNR</span><span class="o">=</span><span class="n">SNR</span><span class="p">,</span>
+                <span class="n">redc_chi2_limit</span><span class="o">=</span><span class="n">redc_chi2_limit</span><span class="p">,</span> <span class="n">name_out_fits</span><span class="o">=</span><span class="n">name_out_fits</span><span class="p">)</span>
+</pre></div>
+</div>
+</div></blockquote>
+<p>The output of this process is <code class="docutils literal notranslate"><span class="pre">pixbin_corr_specphoto_fluxmap_ngc309.fits</span></code>. Now, we will extract information from the FITS file and see the map of spatial bins and the SEDs of individual bins.</p>
+<blockquote>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">hdu</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="s2">&quot;pixbin_corr_specphoto_fluxmap_ngc309.fits&quot;</span><span class="p">)</span>
+<span class="n">header</span> <span class="o">=</span> <span class="n">hdu</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">header</span>
+
+<span class="c1"># get number bins that have photometric and spectrophotometric data</span>
+<span class="n">nbins_photo</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;nbinsph&#39;</span><span class="p">])</span>
+<span class="n">nbins_spec</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;nbinssp&#39;</span><span class="p">])</span>
+
+<span class="c1"># get set of filters</span>
+<span class="n">nbands</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;nfilters&#39;</span><span class="p">])</span>
+<span class="n">filters</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">for</span> <span class="n">bb</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">nbands</span><span class="p">):</span>
+        <span class="n">str_temp</span> <span class="o">=</span> <span class="s1">&#39;fil</span><span class="si">%d</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">bb</span>
+        <span class="n">filters</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">header</span><span class="p">[</span><span class="n">str_temp</span><span class="p">])</span>
+
+<span class="c1"># get central wavelength of filters</span>
+<span class="kn">from</span> <span class="nn">piXedfit.utils.filtering</span> <span class="kn">import</span> <span class="n">cwave_filters</span>
+<span class="n">photo_wave</span> <span class="o">=</span> <span class="n">cwave_filters</span><span class="p">(</span><span class="n">filters</span><span class="p">)</span>
+
+<span class="c1"># spatial bin maps</span>
+<span class="n">binmap_photo</span> <span class="o">=</span> <span class="n">hdu</span><span class="p">[</span><span class="s1">&#39;photo_bin_map&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">data</span>
+<span class="n">binmap_spec</span> <span class="o">=</span> <span class="n">hdu</span><span class="p">[</span><span class="s1">&#39;spec_bin_map&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">data</span>
+
+<span class="c1"># unit of flux</span>
+<span class="n">unit</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;unit&#39;</span><span class="p">])</span>                    <span class="c1"># in erg/s/cm2/A</span>
+
+<span class="c1"># wavelength of the spectra</span>
+<span class="n">spec_wave</span> <span class="o">=</span> <span class="n">hdu</span><span class="p">[</span><span class="s1">&#39;spec_wave&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">data</span>
+<span class="n">nwaves</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">spec_wave</span><span class="p">)</span>
+
+<span class="c1"># allocate arrays for photometric and spectrophotometric SEDs of spatial bins</span>
+<span class="n">bin_photo_flux</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">nbins_photo</span><span class="p">,</span><span class="n">nbands</span><span class="p">))</span>
+<span class="n">bin_photo_flux_err</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">nbins_photo</span><span class="p">,</span><span class="n">nbands</span><span class="p">))</span>
+
+<span class="n">bin_spec_flux</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">nbins_photo</span><span class="p">,</span><span class="n">nwaves</span><span class="p">))</span>
+<span class="n">bin_spec_flux_err</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">nbins_photo</span><span class="p">,</span><span class="n">nwaves</span><span class="p">))</span>
+
+<span class="k">for</span> <span class="n">bb</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">nbins_photo</span><span class="p">):</span>
+        <span class="n">bin_id</span> <span class="o">=</span> <span class="n">bb</span> <span class="o">+</span> <span class="mi">1</span>
+
+        <span class="n">rows</span><span class="p">,</span> <span class="n">cols</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">binmap_photo</span><span class="o">==</span><span class="n">bin_id</span><span class="p">)</span>
+        <span class="n">bin_photo_flux</span><span class="p">[</span><span class="n">bb</span><span class="p">]</span> <span class="o">=</span> <span class="n">hdu</span><span class="p">[</span><span class="s1">&#39;bin_photo_flux&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[:,</span><span class="n">rows</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">cols</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span>
+        <span class="n">bin_photo_flux_err</span><span class="p">[</span><span class="n">bb</span><span class="p">]</span> <span class="o">=</span> <span class="n">hdu</span><span class="p">[</span><span class="s1">&#39;bin_photo_fluxerr&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[:,</span><span class="n">rows</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">cols</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span>
+
+        <span class="n">rows</span><span class="p">,</span> <span class="n">cols</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">binmap_spec</span><span class="o">==</span><span class="n">bin_id</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">rows</span><span class="p">)</span><span class="o">&gt;</span><span class="mi">0</span><span class="p">:</span>
+                <span class="n">bin_spec_flux</span><span class="p">[</span><span class="n">bb</span><span class="p">]</span> <span class="o">=</span> <span class="n">hdu</span><span class="p">[</span><span class="s1">&#39;bin_spec_flux&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[:,</span><span class="n">rows</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">cols</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span>
+                <span class="n">bin_spec_flux_err</span><span class="p">[</span><span class="n">bb</span><span class="p">]</span> <span class="o">=</span> <span class="n">hdu</span><span class="p">[</span><span class="s1">&#39;bin_spec_fluxerr&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[:,</span><span class="n">rows</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">cols</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span>
+
+<span class="n">hdu</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</pre></div>
+</div>
+</div></blockquote>
+<p>Then we can plot the map of spatial bins in the following way. First, let’s plot the map of bins that have photometric data only.</p>
+<blockquote>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">mpl_toolkits.axes_grid1</span> <span class="kn">import</span> <span class="n">make_axes_locatable</span>
+
+<span class="n">fig1</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">7</span><span class="p">,</span><span class="mi">7</span><span class="p">))</span>
+<span class="n">f1</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;[pixel]&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">18</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;[pixel]&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">18</span><span class="p">)</span>
+
+<span class="n">im</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">binmap_photo</span><span class="p">,</span> <span class="n">origin</span><span class="o">=</span><span class="s1">&#39;lower&#39;</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;nipy_spectral_r&#39;</span><span class="p">,</span> <span class="n">vmin</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">vmax</span><span class="o">=</span><span class="n">nbins_photo</span><span class="p">)</span>
+
+<span class="n">divider</span> <span class="o">=</span> <span class="n">make_axes_locatable</span><span class="p">(</span><span class="n">f1</span><span class="p">)</span>
+<span class="n">cax2</span> <span class="o">=</span> <span class="n">divider</span><span class="o">.</span><span class="n">append_axes</span><span class="p">(</span><span class="s2">&quot;top&quot;</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="s2">&quot;7%&quot;</span><span class="p">,</span> <span class="n">pad</span><span class="o">=</span><span class="s2">&quot;2%&quot;</span><span class="p">)</span>
+<span class="n">cb</span> <span class="o">=</span> <span class="n">fig1</span><span class="o">.</span><span class="n">colorbar</span><span class="p">(</span><span class="n">im</span><span class="p">,</span> <span class="n">cax</span><span class="o">=</span><span class="n">cax2</span><span class="p">,</span> <span class="n">orientation</span><span class="o">=</span><span class="s2">&quot;horizontal&quot;</span><span class="p">)</span>
+<span class="n">cax2</span><span class="o">.</span><span class="n">xaxis</span><span class="o">.</span><span class="n">set_ticks_position</span><span class="p">(</span><span class="s2">&quot;top&quot;</span><span class="p">)</span>
+<span class="n">cax2</span><span class="o">.</span><span class="n">xaxis</span><span class="o">.</span><span class="n">set_label_position</span><span class="p">(</span><span class="s2">&quot;top&quot;</span><span class="p">)</span>
+<span class="n">cb</span><span class="o">.</span><span class="n">ax</span><span class="o">.</span><span class="n">tick_params</span><span class="p">(</span><span class="n">labelsize</span><span class="o">=</span><span class="mi">13</span><span class="p">)</span>
+<span class="n">cb</span><span class="o">.</span><span class="n">set_label</span><span class="p">(</span><span class="s1">&#39;Bin Index&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">17</span><span class="p">)</span>
+</pre></div>
+</div>
+</div></blockquote>
+<img alt="_images/pixbin_1.png" src="_images/pixbin_1.png" />
+<p>Then the map of spatial bins that have spectrophotometric data can be plot in the following way.</p>
+<blockquote>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># get spec region</span>
+<span class="n">hdu</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="s2">&quot;corr_specphoto_fluxmap_ngc309.fits&quot;</span><span class="p">)</span>
+<span class="n">spec_region</span> <span class="o">=</span> <span class="n">hdu</span><span class="p">[</span><span class="s1">&#39;spec_region&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">data</span>
+<span class="n">hdu</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+<span class="c1"># plot spatial bin map</span>
+<span class="n">fig1</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">7</span><span class="p">,</span><span class="mi">7</span><span class="p">))</span>
+<span class="n">f1</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;[pixel]&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">18</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;[pixel]&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">18</span><span class="p">)</span>
+
+<span class="n">im</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">binmap_spec</span><span class="p">,</span> <span class="n">origin</span><span class="o">=</span><span class="s1">&#39;lower&#39;</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;nipy_spectral_r&#39;</span><span class="p">,</span> <span class="n">vmin</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">vmax</span><span class="o">=</span><span class="n">nbins_photo</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">spec_region</span><span class="p">,</span> <span class="n">origin</span><span class="o">=</span><span class="s1">&#39;lower&#39;</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;Greys&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.2</span><span class="p">)</span>
+
+<span class="n">divider</span> <span class="o">=</span> <span class="n">make_axes_locatable</span><span class="p">(</span><span class="n">f1</span><span class="p">)</span>
+<span class="n">cax2</span> <span class="o">=</span> <span class="n">divider</span><span class="o">.</span><span class="n">append_axes</span><span class="p">(</span><span class="s2">&quot;top&quot;</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="s2">&quot;7%&quot;</span><span class="p">,</span> <span class="n">pad</span><span class="o">=</span><span class="s2">&quot;2%&quot;</span><span class="p">)</span>
+<span class="n">cb</span> <span class="o">=</span> <span class="n">fig1</span><span class="o">.</span><span class="n">colorbar</span><span class="p">(</span><span class="n">im</span><span class="p">,</span> <span class="n">cax</span><span class="o">=</span><span class="n">cax2</span><span class="p">,</span> <span class="n">orientation</span><span class="o">=</span><span class="s2">&quot;horizontal&quot;</span><span class="p">)</span>
+<span class="n">cax2</span><span class="o">.</span><span class="n">xaxis</span><span class="o">.</span><span class="n">set_ticks_position</span><span class="p">(</span><span class="s2">&quot;top&quot;</span><span class="p">)</span>
+<span class="n">cax2</span><span class="o">.</span><span class="n">xaxis</span><span class="o">.</span><span class="n">set_label_position</span><span class="p">(</span><span class="s2">&quot;top&quot;</span><span class="p">)</span>
+<span class="n">cb</span><span class="o">.</span><span class="n">ax</span><span class="o">.</span><span class="n">tick_params</span><span class="p">(</span><span class="n">labelsize</span><span class="o">=</span><span class="mi">13</span><span class="p">)</span>
+<span class="n">cb</span><span class="o">.</span><span class="n">set_label</span><span class="p">(</span><span class="s1">&#39;Bin Index&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">17</span><span class="p">)</span>
+</pre></div>
+</div>
+</div></blockquote>
+<img alt="_images/pixbin_2.png" src="_images/pixbin_2.png" />
+<p>Now, let’s plot SEDs of four examples of spatial bins, three with spectrophotometric data and one with photometric only data.</p>
+<blockquote>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">matplotlib.ticker</span> <span class="kn">import</span> <span class="n">ScalarFormatter</span>
+
+<span class="n">bin_ids</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">30</span><span class="p">]</span>
+<span class="k">for</span> <span class="n">ii</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="n">bin_ids</span><span class="p">)):</span>
+
+        <span class="n">fig1</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">14</span><span class="p">,</span><span class="mi">7</span><span class="p">))</span>
+        <span class="n">f1</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">()</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;Bin index: </span><span class="si">%d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">bin_ids</span><span class="p">[</span><span class="n">ii</span><span class="p">],</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
+        <span class="n">f1</span><span class="o">.</span><span class="n">set_yscale</span><span class="p">(</span><span class="s1">&#39;log&#39;</span><span class="p">)</span>
+        <span class="n">f1</span><span class="o">.</span><span class="n">set_xscale</span><span class="p">(</span><span class="s1">&#39;log&#39;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">setp</span><span class="p">(</span><span class="n">f1</span><span class="o">.</span><span class="n">get_yticklabels</span><span class="p">(),</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">14</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">setp</span><span class="p">(</span><span class="n">f1</span><span class="o">.</span><span class="n">get_xticklabels</span><span class="p">(),</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">14</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;Wavelength $[\AA]$&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">21</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;$F_{\lambda}$ [erg $s^{-1}cm^{-2}\AA^{-1}$]&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">21</span><span class="p">)</span>
+        <span class="n">xticks</span> <span class="o">=</span> <span class="p">[</span><span class="mi">2000</span><span class="p">,</span><span class="mi">3000</span><span class="p">,</span><span class="mi">4000</span><span class="p">,</span><span class="mi">6000</span><span class="p">,</span><span class="mi">10000</span><span class="p">,</span><span class="mi">20000</span><span class="p">,</span><span class="mi">30000</span><span class="p">,</span><span class="mi">50000</span><span class="p">]</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">xticks</span><span class="p">(</span><span class="n">xticks</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">axis</span> <span class="ow">in</span> <span class="p">[</span><span class="n">f1</span><span class="o">.</span><span class="n">xaxis</span><span class="p">]:</span>
+                <span class="n">axis</span><span class="o">.</span><span class="n">set_major_formatter</span><span class="p">(</span><span class="n">ScalarFormatter</span><span class="p">())</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">bin_spec_flux</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">bin_ids</span><span class="p">[</span><span class="n">ii</span><span class="p">])</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span><span class="o">&gt;</span><span class="mi">0</span><span class="p">:</span>
+                <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">spec_wave</span><span class="p">[</span><span class="mi">20</span><span class="p">:</span><span class="n">nwaves</span><span class="o">-</span><span class="mi">20</span><span class="p">],</span> <span class="n">bin_spec_flux</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">bin_ids</span><span class="p">[</span><span class="n">ii</span><span class="p">])</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="mi">20</span><span class="p">:</span><span class="n">nwaves</span><span class="o">-</span><span class="mi">20</span><span class="p">],</span>
+                                <span class="n">lw</span><span class="o">=</span><span class="mf">2.5</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;red&#39;</span><span class="p">)</span>
+
+        <span class="n">plt</span><span class="o">.</span><span class="n">errorbar</span><span class="p">(</span><span class="n">photo_wave</span><span class="p">,</span> <span class="n">bin_photo_flux</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">bin_ids</span><span class="p">[</span><span class="n">ii</span><span class="p">])</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span>
+                        <span class="n">yerr</span><span class="o">=</span><span class="n">bin_photo_flux_err</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">bin_ids</span><span class="p">[</span><span class="n">ii</span><span class="p">])</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">markersize</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+                        <span class="n">color</span><span class="o">=</span><span class="s1">&#39;blue&#39;</span><span class="p">,</span> <span class="n">fmt</span><span class="o">=</span><span class="s1">&#39;o&#39;</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+</pre></div>
+</div>
+</div></blockquote>
+<img alt="_images/pixbin_3.png" src="_images/pixbin_3.png" />
+<img alt="_images/pixbin_4.png" src="_images/pixbin_4.png" />
+<img alt="_images/pixbin_5.png" src="_images/pixbin_5.png" />
+<img alt="_images/pixbin_6.png" src="_images/pixbin_6.png" />
+</div>
+<div class="section" id="pixel-binning-on-images">
+<h2>Pixel binning on images<a class="headerlink" href="#pixel-binning-on-images" title="Permalink to this headline">¶</a></h2>
+<p>(This section is still under construction…)</p>
+</div>
 </div>
 
 
