@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Spatial and Spectral Matching of imaging+IFS data &mdash; piXedfit 1.0 documentation</title>
+  <title>Spatial and Spectral Matching of imaging and IFS data &mdash; piXedfit 1.0 documentation</title>
   
 
   
@@ -86,19 +86,20 @@
               <p class="caption"><span class="caption-text">User guide</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="manage_filters.html">Managing filters</a></li>
 <li class="toctree-l1"><a class="reference internal" href="list_imaging_data.html">List of imaging data</a></li>
 <li class="toctree-l1"><a class="reference internal" href="list_kernels_psf.html">Convolution kernels and PSFs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="ingredients_model.html">SED modeling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="gen_model_SEDs.html">Generating model SEDs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="image_pros.html">Image processing</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Spatial and Spectral Matching of imaging+IFS data</a><ul>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Spatial and Spectral Matching of imaging and IFS data</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#spatial-matching">Spatial matching</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#spectral-matching">Spectral matching</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="pixel_binning.html">Pixel binning</a></li>
-<li class="toctree-l1"><a class="reference internal" href="gen_model_SEDs.html">Generating model SEDs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="fit_res_SEDs.html">Fitting spatially resolved SED</a></li>
-<li class="toctree-l1"><a class="reference internal" href="fit_ing_SEDs.html">Fitting integrated SED</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fit_ing_SEDs.html">SED fitting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fit_res_SEDs.html">Fitting spatially resolved SEDs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="plot_fitres.html">Analyze fitting results</a></li>
 <li class="toctree-l1"><a class="reference internal" href="get_maps_prop.html">Get maps of spatially resolved properties</a></li>
 </ul>
@@ -166,7 +167,7 @@
     
       <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
         
-      <li>Spatial and Spectral Matching of imaging+IFS data</li>
+      <li>Spatial and Spectral Matching of imaging and IFS data</li>
     
     
       <li class="wy-breadcrumbs-aside">
@@ -185,37 +186,249 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <div class="section" id="spatial-and-spectral-matching-of-imaging-ifs-data">
-<h1>Spatial and Spectral Matching of imaging+IFS data<a class="headerlink" href="#spatial-and-spectral-matching-of-imaging-ifs-data" title="Permalink to this headline">¶</a></h1>
-<p>(This page is still under constraction!)</p>
+  <div class="section" id="spatial-and-spectral-matching-of-imaging-and-ifs-data">
+<h1>Spatial and Spectral Matching of imaging and IFS data<a class="headerlink" href="#spatial-and-spectral-matching-of-imaging-and-ifs-data" title="Permalink to this headline">¶</a></h1>
+<p>In the analysis of global (i.e., integrated) SED of galaxies, there have been several attemps at combining spectra (at rest-frame optical) and broadband photometry (over a wider wavelength range) into a so-called spectrophotometric SED. One of the great advantages from this combination is the enhancement of the constraining power in the SED fitting given by the high spectral sampling of the optical spectra and the wider wavelength coverage (e.g., FUV to NIR) of the photometric SED. This could help in breaking the existing degeneracies among parameters (especially among age, metallicity, and dust attenuation) in the SED fitting process.</p>
+<p>The current abundance of the imaging and IFS (integral field spectroscopy) data (especially for local galaxies) open up new avenues for the analysis of the spatially resolved spectrophotometric SED of galaxies. In this light, <strong>piXedfit</strong> provides a <strong>new feature</strong> of matching (in both spatially and spectrally) between imaging and IFS data on pixel level. This kind of data would be very useful for various analyses. One of the power of this data, besides enhancing the constraining power as mentioned above, is the wider spatial coverage of the imaging compared to the IFS observation. The imaging observaitons, especially those that are deep and have high spatial resolution, could cover the extended region of galaxies with a sufficient S/N ratio, thus covering most of the optical region of the galaxies. A module in <strong>piXedfit</strong> featuring this task is <a class="reference internal" href="piXedfit_spectrophotometric.html#mod-specphoto"><span class="std std-ref">piXedfit_spectrophotometric</span></a>.</p>
+<p>In this brief tutorial, we will combine 12-band imaging data (covering FUV to NIR) and IFS data from the <a class="reference external" href="https://califa.caha.es/">CALIFA</a> survey. The imaging data are the same as we have analyzed in <a class="reference internal" href="image_pros.html#img-processing"><span class="std std-ref">image processing</span></a>, which are consists of imaging data from the GALEX, SDSS, 2MASS, and WISE. A more detailed tutorial can be seen at
+<a class="reference external" href="https://github.com/aabdurrouf/piXedfit/tree/main/examples/FUVtoNIR_CALIFA">FUVtoNIR_CALIFA</a>. This feature is also applicable for IFS data from <a class="reference external" href="https://www.sdss.org/surveys/manga/">MaNGA</a> survey. A similar tutorial that uses this IFS data is given at <a class="reference external" href="https://github.com/aabdurrouf/piXedfit/tree/main/examples/FUVtoNIR_MaNGA">FUVtoNIR_MaNGA</a>.</p>
 <div class="section" id="spatial-matching">
 <h2>Spatial matching<a class="headerlink" href="#spatial-matching" title="Permalink to this headline">¶</a></h2>
+<p>Overall, there are two steps for combining imaging and IFS data on pixel level. First, spatial matching, which is a matching on the spatial resolution (i.e., PSF size) and sampling (i.e., pixel size). We will do this task here. Second is a matching spectrally, in which we correct for the mismatch between the spectra and photometry along the spectral axis (i.e., wavelength or the 3rd axis). We will perform this task in the next step.</p>
+<p>Here we use photometric data cube (<code class="docutils literal notranslate"><span class="pre">fluxmap_ngc309.fits</span></code>) produced in the <a class="reference internal" href="image_pros.html#img-processing"><span class="std std-ref">image processing</span></a> and IFS data from CALIFA (<code class="docutils literal notranslate"><span class="pre">NGC0309.COMB.rscube.fits.gz</span></code>), which is downloaded from
+the <a class="reference external" href="https://califa.caha.es/?q=content/califa-3rd-data-release">CALIFA website</a>. The spatial matching can be performed using <a class="reference internal" href="piXedfit_spectrophotometric.html#piXedfit.piXedfit_spectrophotometric.match_imgifs_spatial" title="piXedfit.piXedfit_spectrophotometric.match_imgifs_spatial"><code class="xref py py-func docutils literal notranslate"><span class="pre">piXedfit.piXedfit_spectrophotometric.match_imgifs_spatial()</span></code></a>. This process will produce spectrophotometric data cube <code class="docutils literal notranslate"><span class="pre">specphoto_fluxmap_ngc309.fits</span></code>.</p>
 <blockquote>
-<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">piXedfit.piXedfit_spectrophotometric</span> <span class="kn">import</span> <span class="n">match_imgifs_spatial</span>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">astropy.io</span> <span class="kn">import</span> <span class="n">fits</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="kn">as</span> <span class="nn">plt</span>
+
+<span class="c1"># call the function</span>
+<span class="kn">from</span> <span class="nn">piXedfit.piXedfit_spectrophotometric</span> <span class="kn">import</span> <span class="n">match_imgifs_spatial</span>
 
 <span class="n">photo_fluxmap</span> <span class="o">=</span> <span class="s2">&quot;fluxmap_ngc309.fits&quot;</span>                   <span class="c1"># photometric data cube</span>
 <span class="n">ifs_data</span> <span class="o">=</span> <span class="s2">&quot;NGC0309.COMB.rscube.fits.gz&quot;</span>                <span class="c1"># IFS data cube</span>
 <span class="n">ifs_survey</span> <span class="o">=</span> <span class="s2">&quot;califa&quot;</span>                                   <span class="c1"># IFS data source</span>
-<span class="n">name_out_fits</span> <span class="o">=</span> <span class="s2">&quot;specphoto_fluxmap_ngc309.fits&quot;</span>         <span class="c1"># name of output file</span>
+<span class="n">name_out_fits</span> <span class="o">=</span> <span class="s2">&quot;specphoto_fluxmap_ngc309.fits&quot;</span>         <span class="c1"># name for the output file</span>
 <span class="n">match_imgifs_spatial</span><span class="p">(</span><span class="n">photo_fluxmap</span><span class="p">,</span> <span class="n">ifs_data</span><span class="p">,</span> <span class="n">ifs_survey</span><span class="o">=</span><span class="n">ifs_survey</span><span class="p">,</span>
                         <span class="n">name_out_fits</span><span class="o">=</span><span class="n">name_out_fits</span><span class="p">)</span>
 </pre></div>
 </div>
 </div></blockquote>
+<p>Let’s check the result. First, let’s extract the information from the FITS file.</p>
+<blockquote>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># open the FITS file</span>
+<span class="n">cube</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="s2">&quot;specphoto_fluxmap_ngc309.fits&quot;</span><span class="p">)</span>
+
+<span class="c1"># get header</span>
+<span class="n">header</span> <span class="o">=</span> <span class="n">cube</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">header</span>
+
+<span class="c1"># get photometry and IFS regions</span>
+<span class="n">photo_region</span> <span class="o">=</span> <span class="n">cube</span><span class="p">[</span><span class="s1">&#39;photo_region&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">data</span>
+<span class="n">spec_region</span> <span class="o">=</span> <span class="n">cube</span><span class="p">[</span><span class="s1">&#39;spec_region&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">data</span>
+
+<span class="c1"># get unit of flux</span>
+<span class="n">unit</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;unit&#39;</span><span class="p">])</span>    <span class="c1"># in erg/s/cm2/A</span>
+
+<span class="c1"># get maps of photometric fluxes</span>
+<span class="n">map_fluxes</span> <span class="o">=</span> <span class="n">cube</span><span class="p">[</span><span class="s1">&#39;photo_flux&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">data</span>
+
+<span class="c1"># get photometric SEDs of individual pixels</span>
+<span class="c1"># transpose from (band,y,x) to (y,x,band)</span>
+<span class="n">pix_photo_flux</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">cube</span><span class="p">[</span><span class="s1">&#39;photo_flux&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">axes</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">0</span><span class="p">))</span><span class="o">*</span><span class="n">unit</span>
+<span class="n">pix_photo_flux_err</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">cube</span><span class="p">[</span><span class="s1">&#39;photo_fluxerr&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">axes</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">0</span><span class="p">))</span><span class="o">*</span><span class="n">unit</span>
+
+<span class="c1"># get spectra of individual pixels</span>
+<span class="c1"># transpose from (wave,y,x) to (y,x,wave)</span>
+<span class="n">pix_spec_flux</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">cube</span><span class="p">[</span><span class="s1">&#39;spec_flux&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">axes</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">0</span><span class="p">))</span><span class="o">*</span><span class="n">unit</span>
+<span class="n">pix_spec_flux_err</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">cube</span><span class="p">[</span><span class="s1">&#39;spec_fluxerr&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">axes</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">0</span><span class="p">))</span><span class="o">*</span><span class="n">unit</span>
+
+<span class="c1"># get wavelength of the spectra</span>
+<span class="n">spec_wave</span> <span class="o">=</span> <span class="n">cube</span><span class="p">[</span><span class="s1">&#39;wave&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">data</span>
+
+<span class="n">cube</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</pre></div>
+</div>
+</div></blockquote>
+<p>First, we will plot the coverages of the imaging and IFS data after the matching.</p>
+<blockquote>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">astropy.visualization</span> <span class="kn">import</span> <span class="n">make_lupton_rgb</span>
+
+<span class="n">g</span> <span class="o">=</span> <span class="n">map_fluxes</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span><span class="o">*</span><span class="mi">10</span>            <span class="c1"># SDSS/g</span>
+<span class="n">r</span> <span class="o">=</span> <span class="n">map_fluxes</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span><span class="o">*</span><span class="mi">10</span>            <span class="c1"># SDSS/r</span>
+<span class="n">i</span> <span class="o">=</span> <span class="n">map_fluxes</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span><span class="o">*</span><span class="mi">10</span>            <span class="c1"># SDSS/i</span>
+
+<span class="n">rgb_default</span> <span class="o">=</span> <span class="n">make_lupton_rgb</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">g</span><span class="p">)</span>
+
+<span class="n">fig1</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span><span class="mi">5</span><span class="p">))</span>
+<span class="n">f1</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;[pixel]&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;[pixel]&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">rgb_default</span><span class="p">,</span> <span class="n">origin</span><span class="o">=</span><span class="s1">&#39;lower&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">spec_region</span><span class="p">,</span> <span class="n">origin</span><span class="o">=</span><span class="s1">&#39;lower&#39;</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;Greys&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.2</span><span class="p">)</span>
+</pre></div>
+</div>
+</div></blockquote>
+<img alt="_images/img_ifs_1.png" src="_images/img_ifs_1.png" />
+<p>Now, we will check SED of some pixels. Before we can plot the SEDs, we need to get the list of filters and their central wavelength.</p>
+<blockquote>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># get filters from the header</span>
+<span class="n">nbands</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;nfilters&#39;</span><span class="p">])</span>
+<span class="n">filters</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">for</span> <span class="n">bb</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">nbands</span><span class="p">):</span>
+        <span class="n">str_temp</span> <span class="o">=</span> <span class="s1">&#39;fil</span><span class="si">%d</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">bb</span>
+        <span class="n">filters</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">header</span><span class="p">[</span><span class="n">str_temp</span><span class="p">])</span>
+
+<span class="c1"># get central wavelength of filters</span>
+<span class="kn">from</span> <span class="nn">piXedfit.utils.filtering</span> <span class="kn">import</span> <span class="n">cwave_filters</span>
+<span class="n">photo_wave</span> <span class="o">=</span> <span class="n">cwave_filters</span><span class="p">(</span><span class="n">filters</span><span class="p">)</span>
+</pre></div>
+</div>
+</div></blockquote>
+<p>Below we plot SEDs of three example pixels.</p>
+<blockquote>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">matplotlib.ticker</span> <span class="kn">import</span> <span class="n">ScalarFormatter</span>
+
+<span class="n">pix_x</span> <span class="o">=</span> <span class="p">[</span><span class="mi">65</span><span class="p">,</span> <span class="mi">60</span><span class="p">,</span> <span class="mi">60</span><span class="p">]</span>
+<span class="n">pix_y</span> <span class="o">=</span> <span class="p">[</span><span class="mi">65</span><span class="p">,</span> <span class="mi">60</span><span class="p">,</span> <span class="mi">66</span><span class="p">]</span>
+
+<span class="n">nwaves</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">spec_wave</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">ii</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">3</span><span class="p">):</span>
+        <span class="n">xx</span><span class="p">,</span> <span class="n">yy</span> <span class="o">=</span> <span class="n">pix_x</span><span class="p">[</span><span class="n">ii</span><span class="p">],</span> <span class="n">pix_y</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span>
+
+        <span class="n">photo_SED</span> <span class="o">=</span> <span class="n">pix_photo_flux</span><span class="p">[</span><span class="n">yy</span><span class="p">][</span><span class="n">xx</span><span class="p">]</span>
+        <span class="n">photo_SED_err</span> <span class="o">=</span> <span class="n">pix_photo_flux_err</span><span class="p">[</span><span class="n">yy</span><span class="p">][</span><span class="n">xx</span><span class="p">]</span>
+        <span class="n">spec_SED</span> <span class="o">=</span> <span class="n">pix_spec_flux</span><span class="p">[</span><span class="n">yy</span><span class="p">][</span><span class="n">xx</span><span class="p">]</span>
+
+        <span class="n">fig1</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">14</span><span class="p">,</span><span class="mi">7</span><span class="p">))</span>
+        <span class="n">f1</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">()</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;pixel: (x=</span><span class="si">%d</span><span class="s2">, y=</span><span class="si">%d</span><span class="s2">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">xx</span><span class="p">,</span><span class="n">yy</span><span class="p">),</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
+        <span class="n">f1</span><span class="o">.</span><span class="n">set_yscale</span><span class="p">(</span><span class="s1">&#39;log&#39;</span><span class="p">)</span>
+        <span class="n">f1</span><span class="o">.</span><span class="n">set_xscale</span><span class="p">(</span><span class="s1">&#39;log&#39;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">setp</span><span class="p">(</span><span class="n">f1</span><span class="o">.</span><span class="n">get_yticklabels</span><span class="p">(),</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">14</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">setp</span><span class="p">(</span><span class="n">f1</span><span class="o">.</span><span class="n">get_xticklabels</span><span class="p">(),</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">14</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;Wavelength $[\AA]$&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">21</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;$F_{\lambda}$ [$10^{-17}$erg $s^{-1}cm^{-2}\AA^{-1}$]&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">21</span><span class="p">)</span>
+        <span class="n">xticks</span> <span class="o">=</span> <span class="p">[</span><span class="mi">2000</span><span class="p">,</span><span class="mi">4000</span><span class="p">,</span><span class="mi">6000</span><span class="p">,</span><span class="mi">10000</span><span class="p">,</span><span class="mi">20000</span><span class="p">,</span><span class="mi">30000</span><span class="p">,</span><span class="mi">50000</span><span class="p">]</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">xticks</span><span class="p">(</span><span class="n">xticks</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">ylim</span><span class="p">(</span><span class="mf">1.0e-19</span><span class="p">,</span><span class="mf">8e-16</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">axis</span> <span class="ow">in</span> <span class="p">[</span><span class="n">f1</span><span class="o">.</span><span class="n">xaxis</span><span class="p">]:</span>
+                <span class="n">axis</span><span class="o">.</span><span class="n">set_major_formatter</span><span class="p">(</span><span class="n">ScalarFormatter</span><span class="p">())</span>
+
+        <span class="c1"># Optional: cut the spectra around the edge to exclude those commonly uncertain fluxes</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">spec_wave</span><span class="p">[</span><span class="mi">20</span><span class="p">:</span><span class="n">nwaves</span><span class="o">-</span><span class="mi">20</span><span class="p">],</span> <span class="n">spec_SED</span><span class="p">[</span><span class="mi">20</span><span class="p">:</span><span class="n">nwaves</span><span class="o">-</span><span class="mi">20</span><span class="p">],</span> <span class="n">lw</span><span class="o">=</span><span class="mf">2.0</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;red&#39;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">errorbar</span><span class="p">(</span><span class="n">photo_wave</span><span class="p">,</span> <span class="n">photo_SED</span><span class="p">,</span> <span class="n">yerr</span><span class="o">=</span><span class="n">photo_SED_err</span><span class="p">,</span> <span class="n">markersize</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+                                        <span class="n">color</span><span class="o">=</span><span class="s1">&#39;blue&#39;</span><span class="p">,</span> <span class="n">fmt</span><span class="o">=</span><span class="s1">&#39;s&#39;</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+</pre></div>
+</div>
+</div></blockquote>
+<img alt="_images/img_ifs_2.png" src="_images/img_ifs_2.png" />
+<img alt="_images/img_ifs_3.png" src="_images/img_ifs_3.png" />
+<img alt="_images/img_ifs_4.png" src="_images/img_ifs_4.png" />
 </div>
 <div class="section" id="spectral-matching">
 <h2>Spectral matching<a class="headerlink" href="#spectral-matching" title="Permalink to this headline">¶</a></h2>
-<blockquote id="id1">
+<p id="id1">As we see in the figures above, there is a missmatch between the spectra and the photometric SEDs. This discrepancy seems to be complex as it shows variations from galaxy to galaxy and the wavelength-variations nature of the discrepancy. Next, we will correct this discrepancy using <a class="reference internal" href="piXedfit_spectrophotometric.html#piXedfit.piXedfit_spectrophotometric.match_imgifs_spectral" title="piXedfit.piXedfit_spectrophotometric.match_imgifs_spectral"><code class="xref py py-func docutils literal notranslate"><span class="pre">piXedfit.piXedfit_spectrophotometric.match_imgifs_spectral()</span></code></a> function. Basically, this function will perform simple SED fitting to the photometric SED of individual pixels to find a best-fit model spectrum for each pixel. A wavelength-dependent ratio (between the best-fit model spectrum and the IFS spectrum) is then fit with a third-order Legendre polynomial function to get smooth correction factor, which is then applied to correct the IFS spectra.</p>
+<p>This calculation is rather heavy and time-consuming, depending on the number of pixels (that have spec+photo SEDs) and the number of cores that are used (nproc) in the calculation. It’s recommended to run this calculation separately (from this jupyter notebook) on a multicores computer (or cluster). The computational time can be shorten by inncreasing the number of cores.</p>
+<blockquote>
 <div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">piXedfit.piXedfit_spectrophotometric</span> <span class="kn">import</span> <span class="n">match_imgifs_spectral</span>
 
 <span class="c1"># spectrophotometric data cube produced in the previous step</span>
 <span class="n">specphoto_file</span> <span class="o">=</span> <span class="s2">&quot;specphoto_fluxmap_ngc309.fits&quot;</span>
+<span class="n">nproc</span> <span class="o">=</span> <span class="mi">20</span>                                      <span class="c1"># number of cores to be used for calculation</span>
 <span class="n">name_out_fits</span> <span class="o">=</span> <span class="s2">&quot;corr_</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">specphoto_file</span>              <span class="c1"># name of output file</span>
 
-<span class="n">match_imgifs_spectral</span><span class="p">(</span><span class="n">specphoto_file</span><span class="p">,</span> <span class="n">nproc</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">name_out_fits</span><span class="o">=</span><span class="n">name_out_fits</span><span class="p">)</span>
+<span class="n">match_imgifs_spectral</span><span class="p">(</span><span class="n">specphoto_file</span><span class="p">,</span> <span class="n">nproc</span><span class="o">=</span><span class="n">nproc</span><span class="p">,</span> <span class="n">name_out_fits</span><span class="o">=</span><span class="n">name_out_fits</span><span class="p">)</span>
 </pre></div>
 </div>
 </div></blockquote>
+<p>This process will produce spectrophotometric data cube <code class="docutils literal notranslate"><span class="pre">corr_specphoto_fluxmap_ngc309.fits</span></code>. In the following, we will check this data cube. First, we open the FITS file and extract the data.</p>
+<blockquote>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># open the FITS file</span>
+<span class="n">cube</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="s2">&quot;corr_specphoto_fluxmap_ngc309.fits&quot;</span><span class="p">)</span>
+
+<span class="n">header</span> <span class="o">=</span> <span class="n">cube</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">header</span>
+<span class="n">wave</span> <span class="o">=</span> <span class="n">cube</span><span class="p">[</span><span class="s1">&#39;wave&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">data</span>
+<span class="n">photo_flux</span> <span class="o">=</span> <span class="n">cube</span><span class="p">[</span><span class="s1">&#39;PHOTO_FLUX&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">data</span>
+<span class="n">photo_flux_err</span> <span class="o">=</span> <span class="n">cube</span><span class="p">[</span><span class="s1">&#39;PHOTO_FLUXERR&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">data</span>
+<span class="n">spec_flux</span> <span class="o">=</span> <span class="n">cube</span><span class="p">[</span><span class="s1">&#39;SPEC_FLUX&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">data</span>
+<span class="n">spec_flux_err</span> <span class="o">=</span> <span class="n">cube</span><span class="p">[</span><span class="s1">&#39;SPEC_FLUXERR&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">data</span>
+<span class="c1"># correction factors</span>
+<span class="n">corr_factor</span> <span class="o">=</span> <span class="n">cube</span><span class="p">[</span><span class="s1">&#39;corr_factor&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">data</span>
+
+<span class="c1"># unit of flux</span>
+<span class="n">unit</span> <span class="o">=</span> <span class="n">header</span><span class="p">[</span><span class="s1">&#39;unit&#39;</span><span class="p">]</span>   <span class="c1"># in erg/s/cm2/A</span>
+<span class="n">cube</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</pre></div>
+</div>
+</div></blockquote>
+<p>Get SEDs of individual pixels.</p>
+<blockquote>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># get photometric SEDs of pixels:</span>
+<span class="c1">#transpose (band,y,x) =&gt; (y,x,band):</span>
+<span class="n">pix_photo_SED</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">photo_flux</span><span class="p">,</span> <span class="n">axes</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span><span class="o">*</span><span class="n">unit</span>
+<span class="n">pix_photo_SED_err</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">photo_flux_err</span><span class="p">,</span> <span class="n">axes</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span><span class="o">*</span><span class="n">unit</span>
+
+<span class="c1"># get spectra:</span>
+<span class="c1">#transpose (wavelength,y,x) =&gt; (y,x,wavelength):</span>
+<span class="n">pix_spec_SED</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">spec_flux</span><span class="p">,</span> <span class="n">axes</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span><span class="o">*</span><span class="n">unit</span>
+<span class="n">pix_spec_SED_err</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">spec_flux_err</span><span class="p">,</span> <span class="n">axes</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span><span class="o">*</span><span class="n">unit</span>
+
+<span class="n">pix_corr_factor</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">corr_factor</span><span class="p">,</span> <span class="n">axes</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+</pre></div>
+</div>
+</div></blockquote>
+<p>Make plot of the SEDs of the same three pixels that we have shown before, but now after correction has been applied.</p>
+<blockquote>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">nwaves</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">wave</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">ii</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">3</span><span class="p">):</span>
+        <span class="n">xx</span><span class="p">,</span> <span class="n">yy</span> <span class="o">=</span> <span class="n">pix_x</span><span class="p">[</span><span class="n">ii</span><span class="p">],</span> <span class="n">pix_y</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span>
+
+        <span class="n">fig1</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">14</span><span class="p">,</span><span class="mi">7</span><span class="p">))</span>
+        <span class="n">f1</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">()</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;pixel: (x=</span><span class="si">%d</span><span class="s2">, y=</span><span class="si">%d</span><span class="s2">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">xx</span><span class="p">,</span><span class="n">yy</span><span class="p">),</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
+        <span class="n">f1</span><span class="o">.</span><span class="n">set_yscale</span><span class="p">(</span><span class="s1">&#39;log&#39;</span><span class="p">)</span>
+        <span class="n">f1</span><span class="o">.</span><span class="n">set_xscale</span><span class="p">(</span><span class="s1">&#39;log&#39;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">setp</span><span class="p">(</span><span class="n">f1</span><span class="o">.</span><span class="n">get_yticklabels</span><span class="p">(),</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">14</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">setp</span><span class="p">(</span><span class="n">f1</span><span class="o">.</span><span class="n">get_xticklabels</span><span class="p">(),</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">14</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;Wavelength $[\AA]$&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">21</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;$F_{\lambda}$ [$10^{-17}$erg $s^{-1}cm^{-2}\AA^{-1}$]&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">21</span><span class="p">)</span>
+        <span class="n">xticks</span> <span class="o">=</span> <span class="p">[</span><span class="mi">2000</span><span class="p">,</span><span class="mi">4000</span><span class="p">,</span><span class="mi">6000</span><span class="p">,</span><span class="mi">10000</span><span class="p">,</span><span class="mi">20000</span><span class="p">,</span><span class="mi">30000</span><span class="p">,</span><span class="mi">50000</span><span class="p">]</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">xticks</span><span class="p">(</span><span class="n">xticks</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">ylim</span><span class="p">(</span><span class="mf">1.0e-19</span><span class="p">,</span><span class="mf">8e-16</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">axis</span> <span class="ow">in</span> <span class="p">[</span><span class="n">f1</span><span class="o">.</span><span class="n">xaxis</span><span class="p">]:</span>
+                <span class="n">axis</span><span class="o">.</span><span class="n">set_major_formatter</span><span class="p">(</span><span class="n">ScalarFormatter</span><span class="p">())</span>
+
+        <span class="c1"># Optional: cut the spectra around the edge to exclude those commonly uncertain fluxes</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">wave</span><span class="p">[</span><span class="mi">20</span><span class="p">:</span><span class="n">nwaves</span><span class="o">-</span><span class="mi">20</span><span class="p">],</span> <span class="n">pix_spec_SED</span><span class="p">[</span><span class="n">yy</span><span class="p">][</span><span class="n">xx</span><span class="p">][</span><span class="mi">20</span><span class="p">:</span><span class="n">nwaves</span><span class="o">-</span><span class="mi">20</span><span class="p">],</span> <span class="n">lw</span><span class="o">=</span><span class="mf">2.0</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;red&#39;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">errorbar</span><span class="p">(</span><span class="n">photo_wave</span><span class="p">,</span> <span class="n">pix_photo_SED</span><span class="p">[</span><span class="n">yy</span><span class="p">][</span><span class="n">xx</span><span class="p">],</span> <span class="n">yerr</span><span class="o">=</span><span class="n">pix_photo_SED_err</span><span class="p">[</span><span class="n">yy</span><span class="p">][</span><span class="n">xx</span><span class="p">],</span> <span class="n">markersize</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+                                        <span class="n">color</span><span class="o">=</span><span class="s1">&#39;blue&#39;</span><span class="p">,</span> <span class="n">fmt</span><span class="o">=</span><span class="s1">&#39;s&#39;</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+</pre></div>
+</div>
+</div></blockquote>
+<img alt="_images/img_ifs_5.png" src="_images/img_ifs_5.png" />
+<img alt="_images/img_ifs_6.png" src="_images/img_ifs_6.png" />
+<img alt="_images/img_ifs_7.png" src="_images/img_ifs_7.png" />
+<p>We can see the correction factors that have been applied to the spectra with the following script.</p>
+<blockquote>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">ii</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">3</span><span class="p">):</span>
+<span class="n">xx</span><span class="p">,</span> <span class="n">yy</span> <span class="o">=</span> <span class="n">pix_x</span><span class="p">[</span><span class="n">ii</span><span class="p">],</span> <span class="n">pix_y</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span>
+
+<span class="n">fig1</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">14</span><span class="p">,</span><span class="mi">7</span><span class="p">))</span>
+<span class="n">f1</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;pixel: (x=</span><span class="si">%d</span><span class="s2">, y=</span><span class="si">%d</span><span class="s2">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">xx</span><span class="p">,</span><span class="n">yy</span><span class="p">),</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">setp</span><span class="p">(</span><span class="n">f1</span><span class="o">.</span><span class="n">get_yticklabels</span><span class="p">(),</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">14</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">setp</span><span class="p">(</span><span class="n">f1</span><span class="o">.</span><span class="n">get_xticklabels</span><span class="p">(),</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">14</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;Wavelength $[\AA]$&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">21</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;Correction factor&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">21</span><span class="p">)</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">wave</span><span class="p">,</span> <span class="n">pix_corr_factor</span><span class="p">[</span><span class="n">yy</span><span class="p">][</span><span class="n">xx</span><span class="p">],</span> <span class="n">lw</span><span class="o">=</span><span class="mf">3.0</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;black&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div></blockquote>
+<img alt="_images/img_ifs_8.png" src="_images/img_ifs_8.png" />
+<img alt="_images/img_ifs_9.png" src="_images/img_ifs_9.png" />
+<img alt="_images/img_ifs_10.png" src="_images/img_ifs_10.png" />
 </div>
 </div>
 

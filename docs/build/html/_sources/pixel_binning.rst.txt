@@ -1,4 +1,5 @@
+.. _pixel_binning:
+
 Pixel binning
 =============
 
-(This page is still under construction!)

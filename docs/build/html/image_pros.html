@@ -37,7 +37,7 @@
     
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Spatial and Spectral Matching of imaging+IFS data" href="image_ifs_match.html" />
+    <link rel="next" title="Spatial and Spectral Matching of imaging and IFS data" href="image_ifs_match.html" />
     <link rel="prev" title="Generating model SEDs" href="gen_model_SEDs.html" /> 
 </head>
 
@@ -97,7 +97,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#performing-image-processing">Performing image processing</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="image_ifs_match.html">Spatial and Spectral Matching of imaging+IFS data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="image_ifs_match.html">Spatial and Spectral Matching of imaging and IFS data</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pixel_binning.html">Pixel binning</a></li>
 <li class="toctree-l1"><a class="reference internal" href="fit_ing_SEDs.html">SED fitting</a></li>
 <li class="toctree-l1"><a class="reference internal" href="fit_res_SEDs.html">Fitting spatially resolved SEDs</a></li>
@@ -189,7 +189,7 @@
             
   <div class="section" id="image-processing">
 <span id="img-processing"></span><h1>Image processing<a class="headerlink" href="#image-processing" title="Permalink to this headline">¶</a></h1>
-<p>In the analysis of spatially resolved SED of galaxy, it is important to make sure that the multiwavelength images that are used are all matched to the same spatial resolution (i.e., PSF size) and sampling (i.e., pixel size), so that a given pixel represents the same region on the sky. Such an image processing can be performed using the <a class="reference internal" href="piXedfit_images.html#api-images"><span class="std std-ref">piXedfit_images</span></a> module.
+<p>In the analysis of spatially resolved SED of galaxy, it is important to make sure that the multiwavelength images used are all matched to the same spatial resolution (i.e., PSF size) and sampling (i.e., pixel size), so that a given pixel represents the same region on the sky. Such an image processing can be performed using the <a class="reference internal" href="piXedfit_images.html#api-images"><span class="std std-ref">piXedfit_images</span></a> module.
 This module is a python scripting module that combines various useful functions in <a class="reference external" href="https://www.astropy.org/">Astropy</a>, <a class="reference external" href="https://photutils.readthedocs.io/en/stable/">photutils</a>, and <a class="reference external" href="https://reproject.readthedocs.io/en/stable/">reproject</a> such that an image processing task for a combination of imaging data can be done automatically.</p>
 <p>Before image processing, one need to make sure that the images are all background-free (i.e., background have been subtracted from the images), which are then called as science images. If this is not the case, background subtraction can be performed using <a class="reference internal" href="piXedfit_images.html#piXedfit.piXedfit_images.subtract_background" title="piXedfit.piXedfit_images.subtract_background"><code class="xref py py-func docutils literal notranslate"><span class="pre">piXedfit.piXedfit_images.subtract_background()</span></code></a> funciton, which will be described further below. After that, one need to construct variance images, which are the square of uncertainty images. For <a class="reference internal" href="list_imaging_data.html#list-imagingdata"><span class="std std-ref">known images</span></a>, this task can be done using various functions in the <a class="reference internal" href="piXedfit_images.html#api-images"><span class="std std-ref">piXedfit_images</span></a> module. Once science and variance images have been constructed, image processing can be performed using the <a class="reference internal" href="piXedfit_images.html#piXedfit.piXedfit_images.images_processing" title="piXedfit.piXedfit_images.images_processing"><code class="xref py py-class docutils literal notranslate"><span class="pre">piXedfit.piXedfit_images.images_processing</span></code></a> class. The process basically performs PSF matching and spatial resampling and reprojection to the multiwavelength images.</p>
 <div class="section" id="background-subtraction">
@@ -470,7 +470,15 @@ This function produces background image, RMS image, and background-subtracted sc
 </pre></div>
 </div>
 </div></blockquote>
-<p>The script below will plot SED of the central pixel.</p>
+<p>Before we can plot SED, we need to get central wavelength of the filters. This can be obtained using <a class="reference internal" href="utils.html#piXedfit.utils.filtering.cwave_filters" title="piXedfit.utils.filtering.cwave_filters"><code class="xref py py-func docutils literal notranslate"><span class="pre">piXedfit.utils.filtering.cwave_filters()</span></code></a> function.</p>
+<blockquote>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">piXedfit.utils.filtering</span> <span class="kn">import</span> <span class="n">cwave_filters</span>
+
+<span class="n">photo_wave</span> <span class="o">=</span> <span class="n">cwave_filters</span><span class="p">(</span><span class="n">filters</span><span class="p">)</span>
+</pre></div>
+</div>
+</div></blockquote>
+<p>Now we will plot some SEDs. The script below will plot SED of the central pixel.</p>
 <blockquote>
 <div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">fig1</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span><span class="mi">5</span><span class="p">))</span>
 <span class="n">f1</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">()</span>
@@ -523,7 +531,7 @@ This function produces background image, RMS image, and background-subtracted sc
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="image_ifs_match.html" class="btn btn-neutral float-right" title="Spatial and Spectral Matching of imaging+IFS data" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="image_ifs_match.html" class="btn btn-neutral float-right" title="Spatial and Spectral Matching of imaging and IFS data" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
         <a href="gen_model_SEDs.html" class="btn btn-neutral float-left" title="Generating model SEDs" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>

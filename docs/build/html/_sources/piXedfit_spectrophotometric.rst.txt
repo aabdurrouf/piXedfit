@@ -1,3 +1,5 @@
+.. _mod_specphoto:
+
 piXedfit_spectrophotometric
 ===========================
 

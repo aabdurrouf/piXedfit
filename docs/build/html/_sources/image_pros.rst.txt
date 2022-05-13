@@ -3,7 +3,7 @@
 Image processing
 ================
 
-In the analysis of spatially resolved SED of galaxy, it is important to make sure that the multiwavelength images that are used are all matched to the same spatial resolution (i.e., PSF size) and sampling (i.e., pixel size), so that a given pixel represents the same region on the sky. Such an image processing can be performed using the :ref:`piXedfit_images <api_images>` module. 
+In the analysis of spatially resolved SED of galaxy, it is important to make sure that the multiwavelength images used are all matched to the same spatial resolution (i.e., PSF size) and sampling (i.e., pixel size), so that a given pixel represents the same region on the sky. Such an image processing can be performed using the :ref:`piXedfit_images <api_images>` module. 
 This module is a python scripting module that combines various useful functions in `Astropy <https://www.astropy.org/>`_, `photutils <https://photutils.readthedocs.io/en/stable/>`_, and `reproject <https://reproject.readthedocs.io/en/stable/>`_ such that an image processing task for a combination of imaging data can be done automatically. 
 
 Before image processing, one need to make sure that the images are all background-free (i.e., background have been subtracted from the images), which are then called as science images. If this is not the case, background subtraction can be performed using :func:`piXedfit.piXedfit_images.subtract_background` funciton, which will be described further below. After that, one need to construct variance images, which are the square of uncertainty images. For :ref:`known images <list-imagingdata>`, this task can be done using various functions in the :ref:`piXedfit_images <api_images>` module. Once science and variance images have been constructed, image processing can be performed using the :class:`piXedfit.piXedfit_images.images_processing` class. The process basically performs PSF matching and spatial resampling and reprojection to the multiwavelength images.    
@@ -306,7 +306,16 @@ Next, we will plot SED of some pixels. First, we will transpose the arrays to ma
 		pix_SED_flux = np.transpose(flux_map, axes=(1,2,0))
 		pix_SED_flux_err = np.transpose(flux_err_map, axes=(1,2,0))
 
-The script below will plot SED of the central pixel.
+Before we can plot SED, we need to get central wavelength of the filters. This can be obtained using :func:`piXedfit.utils.filtering.cwave_filters` function.
+
+	.. code-block:: python
+
+		from piXedfit.utils.filtering import cwave_filters
+
+		photo_wave = cwave_filters(filters) 
+
+
+Now we will plot some SEDs. The script below will plot SED of the central pixel.
 	
 	.. code-block:: python
 
@@ -349,8 +358,6 @@ We will now plot SEDs of pixels within the central 10 x 10.
 		plt.show()
 
 .. image:: img_proc_11.png
-
-
 
 
 
