@@ -80,7 +80,7 @@ def initfit(gal_z,DL_Gpc,zz,nrands_z):
 		sys.stdout.write('\r')
 		sys.stdout.write('rank %d --> progress: z %d of %d (%d%%) and model %d of %d (%d%%)' % (rank,zz+1,nrands_z,(zz+1)*100/nrands_z,count,numDataPerRank,count*100/numDataPerRank))
 		sys.stdout.flush()
-	sys.stdout.write('\n')
+	#sys.stdout.write('\n')
 
 	mod_params = np.zeros((nparams,nmodels))
 	mod_fluxes = np.zeros((nbands,nmodels))

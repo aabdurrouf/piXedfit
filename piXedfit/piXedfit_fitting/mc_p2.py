@@ -157,7 +157,7 @@ def calc_sampler_mwage(nsamples=0,sampler_pop_mass=[],sampler_tau=[],sampler_t0=
 		sys.stdout.write('\r')
 		sys.stdout.write('rank: %d  Calculation process: %d from %d  --->  %d%%' % (rank,count,numDataPerRank,count*100/numDataPerRank))
 		sys.stdout.flush()
-	sys.stdout.write('\n')
+	#sys.stdout.write('\n')
 
 	sampler_mw_age = np.zeros(numDataPerRank*size)
 	comm.Gather(sampler_mw_age0, sampler_mw_age, root=0)
@@ -194,7 +194,7 @@ def calc_sampler_dustmass_fagnbol_mainSFH(nsamples=0,sampler_params=None):
 		sys.stdout.write('\r')
 		sys.stdout.write('rank: %d  Calculation process: %d from %d  --->  %d%%' % (rank,count,numDataPerRank,count*100/numDataPerRank))
 		sys.stdout.flush()
-	sys.stdout.write('\n')
+	#sys.stdout.write('\n')
 
 	sampler_logdustmass = np.zeros(numDataPerRank*size)
 	sampler_log_fagn_bol = np.zeros(numDataPerRank*size)
@@ -233,7 +233,7 @@ def calc_sampler_dustmass_mainSFH(nsamples=0,sampler_params=None):
 		sys.stdout.write('\r')
 		sys.stdout.write('rank: %d  Calculation process: %d from %d  --->  %d%%' % (rank,count,numDataPerRank,count*100/numDataPerRank))
 		sys.stdout.flush()
-	sys.stdout.write('\n')
+	#sys.stdout.write('\n')
 
 	sampler_logdustmass = np.zeros(numDataPerRank*size)
 
@@ -266,7 +266,7 @@ def calc_sampler_dustmass_othSFH(nsamples=0,sampler_params=None):
 		sys.stdout.write('\r')
 		sys.stdout.write('rank: %d  Calculation process: %d from %d  --->  %d%%' % (rank,count,numDataPerRank,count*100/numDataPerRank))
 		sys.stdout.flush()
-	sys.stdout.write('\n')
+	#sys.stdout.write('\n')
 
 	sampler_logdustmass = np.zeros(numDataPerRank*size)
 
@@ -304,7 +304,7 @@ def calc_sampler_SFR_dustmass_fagnbol_othSFH(nsamples=0,sampler_params=None):
 		sys.stdout.write('\r')
 		sys.stdout.write('rank: %d  Calculation process: %d from %d  --->  %d%%' % (rank,count,numDataPerRank,count*100/numDataPerRank))
 		sys.stdout.flush()
-	sys.stdout.write('\n')
+	#sys.stdout.write('\n')
 
 	sampler_log_sfr = np.zeros(numDataPerRank*size)
 	sampler_logdustmass = np.zeros(numDataPerRank*size)
@@ -348,7 +348,7 @@ def calc_sampler_SFR_dustmass_othSFH(nsamples=0,sampler_params=None):
 		sys.stdout.write('\r')
 		sys.stdout.write('rank: %d  Calculation process: %d from %d  --->  %d%%' % (rank,count,numDataPerRank,count*100/numDataPerRank))
 		sys.stdout.flush()
-	sys.stdout.write('\n')
+	#sys.stdout.write('\n')
 
 	sampler_log_sfr = np.zeros(numDataPerRank*size)
 	sampler_logdustmass = np.zeros(numDataPerRank*size)
@@ -394,7 +394,7 @@ def calc_sampler_SFR_othSFH(nsamples=0,sampler_params=None):
 		sys.stdout.write('\r')
 		sys.stdout.write('rank: %d  Calculation process: %d from %d  --->  %d%%' % (rank,count,numDataPerRank,count*100/numDataPerRank))
 		sys.stdout.flush()
-	sys.stdout.write('\n')
+	#sys.stdout.write('\n')
 
 	sampler_log_sfr = np.zeros(numDataPerRank*size)
 
@@ -696,4 +696,7 @@ fits_name_out = str(sys.argv[4])
 store_to_fits(nsamples=nsamples,sampler_params=sampler_params,sampler_log_sfr=sampler_log_sfr,
 					sampler_log_mw_age=sampler_log_mw_age,sampler_logdustmass=sampler_logdustmass,
 					sampler_log_fagn_bol=sampler_log_fagn_bol,fits_name_out=fits_name_out)
+
+if rank==0:
+	sys.stdout.write('\n')
 

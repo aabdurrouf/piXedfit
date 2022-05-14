@@ -86,17 +86,25 @@
               <p class="caption"><span class="caption-text">User guide</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Managing filters</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Managing filters</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#see-available-filters">See available filters</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#add-filter">Add filter</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#remove-filter">Remove filter</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#change-filter-name">Change filter name</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#get-filter-transmission">Get filter transmission</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#get-central-wavelength-of-filters">Get central wavelength of filters</a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="list_imaging_data.html">List of imaging data</a></li>
 <li class="toctree-l1"><a class="reference internal" href="list_kernels_psf.html">Convolution kernels and PSFs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="ingredients_model.html">SED modeling</a></li>
 <li class="toctree-l1"><a class="reference internal" href="gen_model_SEDs.html">Generating model SEDs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="image_pros.html">Image processing</a></li>
-<li class="toctree-l1"><a class="reference internal" href="image_ifs_match.html">Spatial and Spectral Matching of imaging+IFS data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="image_ifs_match.html">Spatial and Spectral Matching of imaging and IFS data</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pixel_binning.html">Pixel binning</a></li>
-<li class="toctree-l1"><a class="reference internal" href="fit_ing_SEDs.html">SED fitting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fit_ing_SEDs.html">Fitting individual SED</a></li>
 <li class="toctree-l1"><a class="reference internal" href="fit_res_SEDs.html">Fitting spatially resolved SEDs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="plot_fitres.html">Analyze fitting results</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_fitres.html">Analyzing fitting results</a></li>
 <li class="toctree-l1"><a class="reference internal" href="get_maps_prop.html">Get maps of spatially resolved properties</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Tutorials</span></p>
@@ -184,6 +192,91 @@
             
   <div class="section" id="managing-filters">
 <span id="manage-filters"></span><h1>Managing filters<a class="headerlink" href="#managing-filters" title="Permalink to this headline">¶</a></h1>
+<p>Before proceeding any analysis with <strong>piXedfit</strong>, we should make sure that our photometric filters (i.e., the transmission functions) are recognized by <strong>piXedfit</strong>. For this, <strong>piXedfit</strong> provides various functions that can be used by user for managing the library of filters within the <strong>piXedfit</strong> system. Below, we will demonstrate how to do it.</p>
+<div class="section" id="see-available-filters">
+<h2>See available filters<a class="headerlink" href="#see-available-filters" title="Permalink to this headline">¶</a></h2>
+<p>To see a list of filters that are already available in <strong>piXedfit</strong>, we can use the following function.</p>
+<blockquote>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">piXedfit.utils.filtering</span> <span class="kn">import</span> <span class="n">list_filters</span>
+
+<span class="n">filters</span> <span class="o">=</span> <span class="n">list_filters</span><span class="p">()</span>
+</pre></div>
+</div>
+</div></blockquote>
+</div>
+<div class="section" id="add-filter">
+<h2>Add filter<a class="headerlink" href="#add-filter" title="Permalink to this headline">¶</a></h2>
+<p>We can also add a new filter transmission function using the following script.</p>
+<blockquote>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">piXedfit.utils.filtering</span> <span class="kn">import</span> <span class="n">add_filter</span>
+
+<span class="n">filter_name</span> <span class="o">=</span> <span class="s1">&#39;name_of_filter&#39;</span>
+<span class="n">filter_wave</span> <span class="o">=</span> <span class="n">fil_w</span>                     <span class="c1"># wavelength grid in the transmission function</span>
+<span class="n">filter_transmission</span> <span class="o">=</span> <span class="n">fil_t</span>             <span class="c1"># transmission function</span>
+<span class="n">filter_cwave</span> <span class="o">=</span> <span class="n">c_wave</span>                   <span class="c1"># central wavelength of the filter</span>
+<span class="n">add_filter</span><span class="p">(</span><span class="n">filter_name</span><span class="p">,</span> <span class="n">filter_wave</span><span class="p">,</span> <span class="n">filter_transmission</span><span class="p">,</span> <span class="n">filter_cwave</span><span class="p">)</span>
+</pre></div>
+</div>
+</div></blockquote>
+</div>
+<div class="section" id="remove-filter">
+<h2>Remove filter<a class="headerlink" href="#remove-filter" title="Permalink to this headline">¶</a></h2>
+<p>To remove a filter from the list of available filters, we can use the following function.</p>
+<blockquote>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">piXedfit.utils.filtering</span> <span class="kn">import</span> <span class="n">remove_filter</span>
+
+<span class="n">remove_filter</span><span class="p">(</span><span class="n">filter_name</span><span class="p">)</span>
+</pre></div>
+</div>
+</div></blockquote>
+</div>
+<div class="section" id="change-filter-name">
+<h2>Change filter name<a class="headerlink" href="#change-filter-name" title="Permalink to this headline">¶</a></h2>
+<p>One can change name of a filter in the list via</p>
+<blockquote>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">piXedfit.utils.filtering</span> <span class="kn">import</span> <span class="n">change_filter_name</span>
+
+<span class="n">change_filter_name</span><span class="p">(</span><span class="n">old_filter_name</span><span class="p">,</span> <span class="n">new_filter_name</span><span class="p">)</span>
+</pre></div>
+</div>
+</div></blockquote>
+</div>
+<div class="section" id="get-filter-transmission">
+<h2>Get filter transmission<a class="headerlink" href="#get-filter-transmission" title="Permalink to this headline">¶</a></h2>
+<p>It is also possible to get the transmission function of a filter. Below shows an example of script to get and plot the transmision functions of SDSS filters.</p>
+<blockquote>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">piXedfit.utils.filtering</span> <span class="kn">import</span> <span class="n">get_filter_curve</span>
+
+<span class="n">filters</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;sdss_u&#39;</span><span class="p">,</span> <span class="s1">&#39;sdss_g&#39;</span><span class="p">,</span> <span class="s1">&#39;sdss_r&#39;</span><span class="p">,</span> <span class="s1">&#39;sdss_i&#39;</span><span class="p">,</span> <span class="s1">&#39;sdss_z&#39;</span><span class="p">]</span>
+
+<span class="n">fig1</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span><span class="mi">4</span><span class="p">))</span>
+<span class="n">f1</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;Wavelength [$\AA$]&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;Transmission&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span>
+
+<span class="k">for</span> <span class="n">bb</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="n">filters</span><span class="p">)):</span>
+    <span class="n">fil_w</span><span class="p">,</span> <span class="n">fil_t</span> <span class="o">=</span> <span class="n">get_filter_curve</span><span class="p">(</span><span class="n">filters</span><span class="p">[</span><span class="n">bb</span><span class="p">])</span>
+
+    <span class="n">f1</span><span class="o">.</span><span class="n">fill_between</span><span class="p">(</span><span class="n">fil_w</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">fil_t</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">filters</span><span class="p">[</span><span class="n">bb</span><span class="p">])</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">ncol</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">12</span><span class="p">)</span>
+</pre></div>
+</div>
+</div></blockquote>
+<img alt="_images/filter_1.png" src="_images/filter_1.png" />
+</div>
+<div class="section" id="get-central-wavelength-of-filters">
+<h2>Get central wavelength of filters<a class="headerlink" href="#get-central-wavelength-of-filters" title="Permalink to this headline">¶</a></h2>
+<p>One can also get information on the central wavelength of a filter using the following command.</p>
+<blockquote>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">piXedfit.utils.filtering</span> <span class="kn">import</span> <span class="n">cwave_filters</span>
+
+<span class="n">photo_wave</span> <span class="o">=</span> <span class="n">cwave_filters</span><span class="p">(</span><span class="n">filters</span><span class="p">)</span>
+</pre></div>
+</div>
+</div></blockquote>
+<p><code class="docutils literal notranslate"><span class="pre">filters</span></code> is a list of filter names (in string format).</p>
+</div>
 </div>
 
 
