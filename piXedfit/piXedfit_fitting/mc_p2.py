@@ -155,7 +155,7 @@ def calc_sampler_mwage(nsamples=0,sampler_pop_mass=[],sampler_tau=[],sampler_t0=
 
 		count = count + 1
 		sys.stdout.write('\r')
-		sys.stdout.write('rank: %d  Calculation process: %d from %d  --->  %d%%' % (rank,count,len(recvbuf_idx),count*100/len(recvbuf_idx)))
+		sys.stdout.write('rank: %d  Calculation process: %d from %d  --->  %d%%' % (rank,count,numDataPerRank,count*100/numDataPerRank))
 		sys.stdout.flush()
 	sys.stdout.write('\n')
 
@@ -192,7 +192,7 @@ def calc_sampler_dustmass_fagnbol_mainSFH(nsamples=0,sampler_params=None):
 
 		count = count + 1
 		sys.stdout.write('\r')
-		sys.stdout.write('rank: %d  Calculation process: %d from %d  --->  %d%%' % (rank,count,len(recvbuf_idx),count*100/len(recvbuf_idx)))
+		sys.stdout.write('rank: %d  Calculation process: %d from %d  --->  %d%%' % (rank,count,numDataPerRank,count*100/numDataPerRank))
 		sys.stdout.flush()
 	sys.stdout.write('\n')
 
@@ -231,7 +231,7 @@ def calc_sampler_dustmass_mainSFH(nsamples=0,sampler_params=None):
 
 		count = count + 1
 		sys.stdout.write('\r')
-		sys.stdout.write('rank: %d  Calculation process: %d from %d  --->  %d%%' % (rank,count,len(recvbuf_idx),count*100/len(recvbuf_idx)))
+		sys.stdout.write('rank: %d  Calculation process: %d from %d  --->  %d%%' % (rank,count,numDataPerRank,count*100/numDataPerRank))
 		sys.stdout.flush()
 	sys.stdout.write('\n')
 
@@ -264,7 +264,7 @@ def calc_sampler_dustmass_othSFH(nsamples=0,sampler_params=None):
 
 		count = count + 1
 		sys.stdout.write('\r')
-		sys.stdout.write('rank: %d  Calculation process: %d from %d  --->  %d%%' % (rank,count,len(recvbuf_idx),count*100/len(recvbuf_idx)))
+		sys.stdout.write('rank: %d  Calculation process: %d from %d  --->  %d%%' % (rank,count,numDataPerRank,count*100/numDataPerRank))
 		sys.stdout.flush()
 	sys.stdout.write('\n')
 
@@ -302,7 +302,7 @@ def calc_sampler_SFR_dustmass_fagnbol_othSFH(nsamples=0,sampler_params=None):
 
 		count = count + 1
 		sys.stdout.write('\r')
-		sys.stdout.write('rank: %d  Calculation process: %d from %d  --->  %d%%' % (rank,count,len(recvbuf_idx),count*100/len(recvbuf_idx)))
+		sys.stdout.write('rank: %d  Calculation process: %d from %d  --->  %d%%' % (rank,count,numDataPerRank,count*100/numDataPerRank))
 		sys.stdout.flush()
 	sys.stdout.write('\n')
 
@@ -346,7 +346,7 @@ def calc_sampler_SFR_dustmass_othSFH(nsamples=0,sampler_params=None):
 
 		count = count + 1
 		sys.stdout.write('\r')
-		sys.stdout.write('rank: %d  Calculation process: %d from %d  --->  %d%%' % (rank,count,len(recvbuf_idx),count*100/len(recvbuf_idx)))
+		sys.stdout.write('rank: %d  Calculation process: %d from %d  --->  %d%%' % (rank,count,numDataPerRank,count*100/numDataPerRank))
 		sys.stdout.flush()
 	sys.stdout.write('\n')
 
@@ -392,7 +392,7 @@ def calc_sampler_SFR_othSFH(nsamples=0,sampler_params=None):
 
 		count = count + 1
 		sys.stdout.write('\r')
-		sys.stdout.write('rank: %d  Calculation process: %d from %d  --->  %d%%' % (rank,count,len(recvbuf_idx),count*100/len(recvbuf_idx)))
+		sys.stdout.write('rank: %d  Calculation process: %d from %d  --->  %d%%' % (rank,count,numDataPerRank,count*100/numDataPerRank))
 		sys.stdout.flush()
 	sys.stdout.write('\n')
 

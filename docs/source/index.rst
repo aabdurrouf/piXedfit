@@ -106,10 +106,8 @@ Reference
 
 A list of a few projects **piXedfit** is benefited from:
 
-*  `FSPS <https://github.com/cconroy20/fsps>`_ and `Python-FSPS <http://dfm.io/python-fsps/current/>`_ stellar population synthesis model
-*  `emcee <https://emcee.readthedocs.io/en/stable/>`_ package for the Markov Chain Monte Carlo (MCMC) Ensemble sampler
 *  `Astropy <https://www.astropy.org/>`_
 *  `Photutils <https://photutils.readthedocs.io/en/stable/>`_
 *  `Aniano et al. (2011) <https://ui.adsabs.harvard.edu/abs/2011PASP..123.1218A/abstract>`_ who provides convolution `kernels <https://www.astro.princeton.edu/~ganiano/Kernels.html>`_ for the PSF matching
-*  `SExtractor <https://www.astromatic.net/software/sextractor>`_ (`Bertin & Arnouts 1996 <https://ui.adsabs.harvard.edu/abs/1996A%26AS..117..393B/abstract>`_)
-*  Abdurro'uf & Akiyama (`2017 <https://ui.adsabs.harvard.edu/abs/2017MNRAS.469.2806A/abstract>`_, `2018 <https://ui.adsabs.harvard.edu/abs/2018MNRAS.479.5083A/abstract>`_)
+*  `FSPS <https://github.com/cconroy20/fsps>`_ and `Python-FSPS <http://dfm.io/python-fsps/current/>`_ stellar population synthesis model
+*  `emcee <https://emcee.readthedocs.io/en/stable/>`_ package for the Markov Chain Monte Carlo (MCMC) Ensemble sampler

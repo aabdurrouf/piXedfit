@@ -1,14 +1,59 @@
 import numpy as np 
-import math
+import h5py
 import os, sys
 from astropy.io import fits
-
 
 global PIXEDFIT_HOME
 PIXEDFIT_HOME = os.environ['PIXEDFIT_HOME']
 
-__all__ = ["list_filters", "add_filter", "remove_filter", "change_filter_name", "get_filter_curve", "cwave_filters", "filtering", 
-			"match_filters_array", "filtering_match_filters_array", "interp_filters_curves", "filtering_interp_filters"]
+__all__ = ["list_filters", "add_filter", "remove_filter", "change_filter_name", "get_filter_curve", 
+			"cwave_filters", "filtering", "interp_filters_curves", "filtering_interp_filters"]
+
+dir_file = PIXEDFIT_HOME+'/data/filters/'
+
+def convert_fits_to_hdf5():
+	# open file
+	hdu = fits.open(dir_file+"filters.fits")
+	header = hdu[0].header
+	
+	# get filters and their central wavelength
+	nbands = int(header['nfilters'])
+	fil_cwave = np.zeros(nbands)
+	filters = []
+	for bb in range(0,nbands):
+		str_temp = 'fil%d' % (bb+1)
+		filters0 = header[str_temp]
+		filters.append(filters0)
+		str_temp = 'cw_%s' % filters0
+		fil_cwave[bb] = float(header[str_temp])
+
+	# get transmission curves
+	f_wave = {}
+	f_trans = {}
+	for bb in range(0,nbands):
+		data = hdu[filters[bb]].data
+		f_wave[filters[bb]] = data['wave']
+		f_trans[filters[bb]] = data['trans'] 
+
+	# store to HDF5 file
+	with h5py.File('filters_w.hdf5', 'w') as f:
+		for bb in range(0,nbands):
+			dset = f.create_dataset(filters[bb], data=np.array(f_wave[filters[bb]]), compression="gzip")
+			str_temp = 'cw_%s' % filters[bb]
+			dset.attrs[str_temp] = fil_cwave[bb]
+
+	with h5py.File('filters_t.hdf5', 'w') as f:
+		for bb in range(0,nbands):
+			dset = f.create_dataset(filters[bb], data=np.array(f_trans[filters[bb]]), compression="gzip")
+
+	hdu.close()
+
+	os.system('mv filters_w.hdf5 filters_t.hdf5 %s' % dir_file)
+
+
+def get_all(name):
+    filters.append(name)
+    print(name)
 
 def list_filters():
 	"""A function for listing the available filters transmission functions in piXedfit
@@ -16,16 +61,30 @@ def list_filters():
 	:returns filters:
 		List of filters curves available
 	"""
-	dir_file = PIXEDFIT_HOME+'/data/filters/'
-	hdu = fits.open(dir_file+'filters.fits')
-	nfilters = int(hdu[0].header['nfilters'])
+	global filters 
 	filters = []
-	for ii in range(0,nfilters):
-		str_temp = 'fil%d' % (ii+1)
-		filters.append(hdu[0].header[str_temp])
-	hdu.close()
+	with h5py.File(dir_file+'filters_w.hdf5', 'r') as f:
+		f.visit(get_all)
 
 	return filters
+
+
+def get_all_noprint(name):
+    filters.append(name)
+
+def list_filters_noprint():
+	"""A function for listing the available filters transmission functions in piXedfit
+
+	:returns filters:
+		List of filters curves available
+	"""
+	global filters 
+	filters = []
+	with h5py.File(dir_file+'filters_w.hdf5', 'r') as f:
+		f.visit(get_all_noprint)
+
+	return filters
+
 
 def add_filter(filter_name,filter_wave,filter_transmission,filter_cwave):
 	"""A function for adding a new filter transmission function into piXedfit
@@ -40,76 +99,17 @@ def add_filter(filter_name,filter_wave,filter_transmission,filter_cwave):
 		The central wavelength or effective wavelength of the filter
 	"""
 
-	# get the old filters.fits
-	dir_file = PIXEDFIT_HOME+'/data/filters/'
-	old_filters = fits.open(dir_file+'filters.fits')
-	old_header = old_filters[0].header
-	# number of filters curves:
-	old_nfilters = int(old_header['nfilters'])
-	# get the filters:
-	old_fil_wave = []
-	old_fil_trans = []
-	old_fil_name = []
-	old_fil_cwave = np.zeros(old_nfilters)
-	for bb in range(0,old_nfilters):
-		old_fil_wave.append([])
-		old_fil_trans.append([])
+	f = h5py.File(dir_file+'filters_w.hdf5', 'a')
+	dset = f.create_dataset(filter_name, data=np.array(filter_wave), compression="gzip")
+	str_temp = 'cw_%s' % filter_name
+	dset.attrs[str_temp] = filter_cwave
+	f.close()
 
-		# get name of the filter:
-		str_temp = 'fil%d' % (bb+1)
-		fil_name = old_header[str_temp]
-		old_fil_name.append(fil_name)
-		# get central wave of the filter:
-		str_temp = 'cw_%s' % fil_name
-		old_fil_cwave[bb] = float(old_header[str_temp])
-		# get the transmission curve:
-		data = old_filters[fil_name].data
-		old_fil_wave[bb] = data['wave']
-		old_fil_trans[bb] = data['trans']
+	f = h5py.File(dir_file+'filters_t.hdf5', 'a')
+	f.create_dataset(filter_name, data=np.array(filter_transmission), compression="gzip")
+	f.close()
 
-	old_filters.close()
-
-	# make new fits file:
-	hdr = fits.Header()
-	hdr['nfilters'] = old_nfilters + 1
-	# add the old filters
-	for bb in range(0,old_nfilters):
-		temp_str = 'fil%d' % (bb+1)
-		hdr[temp_str] = old_fil_name[bb]
-		temp_str = 'cw_%s' % old_fil_name[bb]
-		hdr[temp_str] = old_fil_cwave[bb]
-	# add the new filter:
-	temp_str = 'fil%d' % (old_nfilters + 1)
-	hdr[temp_str] = filter_name
-	temp_str = 'cw_%s' % filter_name
-	hdr[temp_str] = filter_cwave
-
-	# add to the first HDU:
-	primary_hdu = fits.PrimaryHDU(header=hdr)
-	hdul = fits.HDUList([primary_hdu])
-
-	# make one HDU for one filter:
-	for bb in range(0,old_nfilters):
-		col1_array = np.array(old_fil_wave[int(bb)])    
-		col1 = fits.Column(name='wave', format='D', array=col1_array) 
-		col2_array = np.array(old_fil_trans[int(bb)])     
-		col2 = fits.Column(name='trans', format='D', array=col2_array) 
-		cols = fits.ColDefs([col1, col2])
-		hdu = fits.BinTableHDU.from_columns(cols, name=old_fil_name[bb])
-		hdul.append(hdu)
-	# add the new filter:
-	col1_array = np.array(filter_wave)    
-	col1 = fits.Column(name='wave', format='D', array=col1_array) 
-	col2_array = np.array(filter_transmission)     
-	col2 = fits.Column(name='trans', format='D', array=col2_array) 
-	cols = fits.ColDefs([col1, col2])
-	hdu = fits.BinTableHDU.from_columns(cols, name=filter_name)
-	hdul.append(hdu)
-
-	# write to fits file:
-	hdul.writeto('filters.fits', overwrite=True)
-	# move it to the original directory:
-	os.system('mv filters.fits %s' % dir_file)
+	os.system('mv filters_w.hdf5 filters_t.hdf5 %s' % dir_file)
 
 
 def remove_filter(filter_name):
@@ -119,66 +119,41 @@ def remove_filter(filter_name):
 		The filter name.
 	"""
 
-	# get the old filters.fits
-	dir_file = PIXEDFIT_HOME+'/data/filters/'
-	old_filters = fits.open(dir_file+'filters.fits')
-	old_header = old_filters[0].header
-	# number of filters curves:
-	old_nfilters = int(old_header['nfilters'])
-	# get the filters:
-	old_fil_wave = []
-	old_fil_trans = []
-	old_fil_name = []
-	old_fil_cwave = np.zeros(old_nfilters)
-	for bb in range(0,old_nfilters):
-		old_fil_wave.append([])
-		old_fil_trans.append([])
+	# get list of filters
+	filters = list_filters_noprint()
+	nbands = len(filters)
 
-		# get name of the filter:
-		str_temp = 'fil%d' % (bb+1)
-		fil_name = old_header[str_temp]
-		old_fil_name.append(fil_name)
-		# get central wave of the filter:
-		str_temp = 'cw_%s' % fil_name
-		old_fil_cwave[bb] = float(old_header[str_temp])
-		# get the transmission curve:
-		data = old_filters[fil_name].data
-		old_fil_wave[bb] = data['wave']
-		old_fil_trans[bb] = data['trans']
+	# get the filters data: wave
+	f_wave = {}
+	fil_cwave = np.zeros(nbands)
+	f = h5py.File(dir_file+'filters_w.hdf5', 'r')
+	for bb in range(0,nbands):
+		f_wave[filters[bb]] = f[filters[bb]][:]
+		str_temp = 'cw_%s' % filters[bb]
+		fil_cwave[bb] = f[filters[bb]].attrs[str_temp]
+	f.close()
 
-	old_filters.close()
+	# get the filters data: transmission
+	f_trans = {}
+	f = h5py.File(dir_file+'filters_t.hdf5', 'r')
+	for bb in range(0,nbands):
+		f_trans[filters[bb]] = f[filters[bb]][:]
+	f.close()
 
-	# make new fits file:
-	hdr = fits.Header()
-	hdr['nfilters'] = old_nfilters - 1
-	# list the old filters and delete the selected one
-	cc = 0
-	for bb in range(0,old_nfilters):
-		if old_fil_name[bb] != filter_name:
-			temp_str = 'fil%d' % (cc+1)
-			hdr[temp_str] = old_fil_name[bb]
-			temp_str = 'cw_%s' % old_fil_name[bb]
-			hdr[temp_str] = old_fil_cwave[bb]
-			cc = cc + 1
-	# add to the first HDU:
-	primary_hdu = fits.PrimaryHDU(header=hdr)
-	hdul = fits.HDUList([primary_hdu])
+	# make new files
+	with h5py.File('filters_w.hdf5', 'w') as f:
+		for bb in range(0,nbands):
+			if filters[bb] != filter_name:
+				dset = f.create_dataset(filters[bb], data=np.array(f_wave[filters[bb]]), compression="gzip")
+				str_temp = 'cw_%s' % filters[bb]
+				dset.attrs[str_temp] = fil_cwave[bb]
 
-	# make one HDU for one filter:
-	for bb in range(0,old_nfilters):
-		if old_fil_name[bb] != filter_name:
-			col1_array = np.array(old_fil_wave[bb])    
-			col1 = fits.Column(name='wave', format='D', array=col1_array) 
-			col2_array = np.array(old_fil_trans[bb])     
-			col2 = fits.Column(name='trans', format='D', array=col2_array) 
-			cols = fits.ColDefs([col1, col2])
-			hdu = fits.BinTableHDU.from_columns(cols, name=old_fil_name[bb])
-			hdul.append(hdu)
+	with h5py.File('filters_t.hdf5', 'w') as f:
+		for bb in range(0,nbands):
+			if filters[bb] != filter_name:
+				dset = f.create_dataset(filters[bb], data=np.array(f_trans[filters[bb]]), compression="gzip")
 
-	# write to fits file:
-	hdul.writeto('filters.fits', overwrite=True)
-	# move it to the original directory:
-	os.system('mv filters.fits %s' % dir_file)
+	os.system('mv filters_w.hdf5 filters_t.hdf5 %s' % dir_file)
 
 
 def change_filter_name(old_filter_name, new_filter_name):
@@ -191,76 +166,47 @@ def change_filter_name(old_filter_name, new_filter_name):
 		New filter name.
 	"""
 
-	# get the old filters.fits
-	dir_file = PIXEDFIT_HOME+'/data/filters/'
-	old_filters = fits.open(dir_file+'filters.fits')
-	old_header = old_filters[0].header
-	# number of filters curves:
-	old_nfilters = int(old_header['nfilters'])
-	# get the filters:
-	old_fil_wave = []
-	old_fil_trans = []
-	old_fil_name = []
-	old_fil_cwave = np.zeros(old_nfilters)
-	for bb in range(0,old_nfilters):
-		old_fil_wave.append([])
-		old_fil_trans.append([])
-		# get name of the filter:
-		str_temp = 'fil%d' % (bb+1)
-		fil_name = old_header[str_temp]
-		old_fil_name.append(fil_name)
-		# get central wave of the filter:
-		str_temp = 'cw_%s' % fil_name
-		old_fil_cwave[bb] = float(old_header[str_temp])
-		# get the transmission curve:
-		data = old_filters[fil_name].data
-		old_fil_wave[bb] = data['wave']
-		old_fil_trans[bb] = data['trans']
-	old_filters.close()
+	# get list of filters
+	filters = list_filters_noprint()
+	nbands = len(filters)
 
-	# make new FITS file
-	hdr = fits.Header()
-	# make header
-	hdr['nfilters'] = old_nfilters
-	for bb in range(0,old_nfilters):
-		if old_fil_name[bb] == old_filter_name:
-			temp_str = 'fil%d' % (bb+1)
-			hdr[temp_str] = new_filter_name
-			temp_str = 'cw_%s' % new_filter_name
-			hdr[temp_str] = old_fil_cwave[bb]
-		else:
-			temp_str = 'fil%d' % (bb+1)
-			hdr[temp_str] = old_fil_name[bb]
-			temp_str = 'cw_%s' % old_fil_name[bb]
-			hdr[temp_str] = old_fil_cwave[bb]
-	# add to the first HDU:
-	primary_hdu = fits.PrimaryHDU(header=hdr)
-	hdul = fits.HDUList([primary_hdu])
+	# get the filters data: wave
+	f_wave = {}
+	fil_cwave = np.zeros(nbands)
+	f = h5py.File(dir_file+'filters_w.hdf5', 'r')
+	for bb in range(0,nbands):
+		f_wave[filters[bb]] = f[filters[bb]][:]
+		str_temp = 'cw_%s' % filters[bb]
+		fil_cwave[bb] = f[filters[bb]].attrs[str_temp]
+	f.close()
 
-	# make one HDU for one filter:
-	for bb in range(0,old_nfilters):
-		if old_fil_name[bb] == old_filter_name:
-			col1_array = np.array(old_fil_wave[bb])    
-			col1 = fits.Column(name='wave', format='D', array=col1_array) 
-			col2_array = np.array(old_fil_trans[bb])     
-			col2 = fits.Column(name='trans', format='D', array=col2_array) 
-			cols = fits.ColDefs([col1, col2])
-			hdu = fits.BinTableHDU.from_columns(cols, name=new_filter_name)
-			hdul.append(hdu)
-		else:
-			col1_array = np.array(old_fil_wave[bb])    
-			col1 = fits.Column(name='wave', format='D', array=col1_array) 
-			col2_array = np.array(old_fil_trans[bb])     
-			col2 = fits.Column(name='trans', format='D', array=col2_array) 
-			cols = fits.ColDefs([col1, col2])
-			hdu = fits.BinTableHDU.from_columns(cols, name=old_fil_name[bb])
-			hdul.append(hdu)
+	# get the filters data: transmission
+	f_trans = {}
+	f = h5py.File(dir_file+'filters_t.hdf5', 'r')
+	for bb in range(0,nbands):
+		f_trans[filters[bb]] = f[filters[bb]][:]
+	f.close()
 
-	# write to fits file:
-	hdul.writeto('filters.fits', overwrite=True)
-	# move it to the original directory:
-	os.system('mv filters.fits %s' % dir_file)
+	# make new files
+	with h5py.File('filters_w.hdf5', 'w') as f:
+		for bb in range(0,nbands):
+			if filters[bb] == old_filter_name:
+				dset = f.create_dataset(new_filter_name, data=np.array(f_wave[filters[bb]]), compression="gzip")
+				str_temp = 'cw_%s' % new_filter_name
+				dset.attrs[str_temp] = fil_cwave[bb]
+			else:
+				dset = f.create_dataset(filters[bb], data=np.array(f_wave[filters[bb]]), compression="gzip")
+				str_temp = 'cw_%s' % filters[bb]
+				dset.attrs[str_temp] = fil_cwave[bb]
 
+	with h5py.File('filters_t.hdf5', 'w') as f:
+		for bb in range(0,nbands):
+			if filters[bb] == old_filter_name:
+				dset = f.create_dataset(new_filter_name, data=np.array(f_trans[filters[bb]]), compression="gzip")
+			else:
+				dset = f.create_dataset(filters[bb], data=np.array(f_trans[filters[bb]]), compression="gzip")
+
+	os.system('mv filters_w.hdf5 filters_t.hdf5 %s' % dir_file)
 
 
 def get_filter_curve(filter_name):
@@ -275,12 +221,16 @@ def get_filter_curve(filter_name):
 	:returns trans:
 		Array of transmission values 
 	"""
-	dir_file = PIXEDFIT_HOME+'/data/filters/'
-	hdu = fits.open(dir_file+'filters.fits')
-	wave = hdu[filter_name].data['wave']
-	trans = hdu[filter_name].data['trans']
 
-	return wave, trans 
+	f = h5py.File(dir_file+'filters_w.hdf5', 'r')
+	wave = f[filter_name][:]
+	f.close()
+
+	f = h5py.File(dir_file+'filters_t.hdf5', 'r')
+	trans = f[filter_name][:]
+	f.close()
+
+	return wave, trans
 
 
 def cwave_filters(filters):
@@ -292,15 +242,14 @@ def cwave_filters(filters):
 	:returns cwaves:
 		A list of central wavelengths of the filters
 	"""
-	nfilters = len(filters)
-	dir_file = PIXEDFIT_HOME+'/data/filters/'
-	hdu = fits.open(dir_file+'filters.fits')
-	header = hdu[0].header
-	hdu.close()
-	cwaves = np.zeros(nfilters)
-	for ii in range(0,nfilters):
-		str_temp = 'cw_%s' % filters[int(ii)]
-		cwaves[int(ii)] = float(header[str_temp])
+
+	f = h5py.File(dir_file+'filters_w.hdf5', 'r')
+	nbands = len(filters)
+	cwaves = np.zeros(nbands)
+	for bb in range(0,nbands):
+		str_temp = 'cw_%s' % filters[bb]
+		cwaves[bb] = f[filters[bb]].attrs[str_temp]
+	f.close()
 
 	return cwaves
 
@@ -320,20 +269,22 @@ def filtering(wave,spec,filters):
 	:returns fluxes:
 		Array of photometric fluxes
 	"""
-	nbands = len(filters)
-	dir_file = PIXEDFIT_HOME+'/data/filters/'
-	hdu = fits.open(dir_file+'filters.fits')
 
+	w = h5py.File(dir_file+'filters_w.hdf5', 'r')
+	t = h5py.File(dir_file+'filters_t.hdf5', 'r')
+
+	nbands = len(filters)
 	fluxes = np.zeros(nbands)
 	for bb in range(0,nbands):
-		data = hdu[filters[bb]].data
+		fil_w = w[filters[bb]][:]
+		fil_t = t[filters[bb]][:]
 
-		min_wave = int(min(data['wave']))
-		max_wave = int(max(data['wave']))
+		min_wave = int(min(fil_w))
+		max_wave = int(max(fil_w))
 
 		gwave = np.linspace(min_wave,max_wave,max_wave-min_wave+1)
 
-		fil_trans = np.interp(gwave, data['wave'], data['trans'])
+		fil_trans = np.interp(gwave, fil_w, fil_t)
 		spec_flux = np.interp(gwave, wave, spec)
 
 		tot_u = np.sum(spec_flux*gwave*fil_trans)
@@ -341,32 +292,36 @@ def filtering(wave,spec,filters):
 
 		fluxes[bb] = tot_u/tot_l
 
-	hdu.close()
+	w.close()
+	t.close()
 
 	return fluxes
 
 
 def interp_filters_curves(filters):
-	nbands = len(filters)
 
-	dir_file = PIXEDFIT_HOME+'/data/filters/'
-	hdu = fits.open(dir_file+'filters.fits')
+	w = h5py.File(dir_file+'filters_w.hdf5', 'r')
+	t = h5py.File(dir_file+'filters_t.hdf5', 'r')
+
+	nbands = len(filters)
 
 	interp_filters_waves = []
 	interp_filters_trans = []
 	for bb in range(0,nbands):
-		data = hdu[filters[bb]].data
+		fil_w = w[filters[bb]][:]
+		fil_t = t[filters[bb]][:]
 
-		min_wave = int(min(data['wave']))
-		max_wave = int(max(data['wave']))
+		min_wave = int(min(fil_w))
+		max_wave = int(max(fil_w))
 
 		gwave = np.linspace(min_wave,max_wave,max_wave-min_wave+1)
 		interp_filters_waves.append(gwave)
 
-		fil_trans = np.interp(gwave, data['wave'], data['trans'])
+		fil_trans = np.interp(gwave, fil_w, fil_t)
 		interp_filters_trans.append(fil_trans)
 
-	hdu.close()
+	w.close()
+	t.close()
 
 	return interp_filters_waves,interp_filters_trans
 
@@ -387,59 +342,5 @@ def filtering_interp_filters(wave,spec,interp_filters_waves,interp_filters_trans
 		fluxes[bb] = tot_u/tot_l
 
 	return fluxes
-
-def match_filters_array(sample_spec_wave,filters):
-	"""A function for matching between wavelength in filter transmission curve to the 
-	wavelength in the spectrum, based on the redshift of the spectrum
-	"""
-
-	nbands = len(filters)
-	nwave = len(sample_spec_wave)
-	# get filters
-	dir_file = PIXEDFIT_HOME+'/data/filters/'
-	hdul = fits.open(dir_file+'filters.fits')
-	header = hdul[0].header
-	wave_fltr = []   			### wave_fltr[idx-filter][idx-wave]
-	trans_fltr = []
-	for bb in range(0,nbands):
-		wave_fltr.append([])
-		trans_fltr.append([])
-		data = hdul[filters[bb]].data
-		wave_fltr[bb] = data['wave']
-		trans_fltr[bb] = data['trans']
-
-	trans_fltr_int = np.zeros((nbands,nwave))
-	for bb in range(0,nbands):
-		min_wave = min(wave_fltr[bb])
-		max_wave = max(wave_fltr[bb])
-		wave_spec_temp = []
-		wave_spec_idx = []
-		for ii in range(0,nwave):
-			if min_wave<=sample_spec_wave[ii]<=max_wave:
-				wave_spec_temp.append(sample_spec_wave[ii])
-				wave_spec_idx.append(ii)
-
-		trans_fltr_int_part = np.interp(wave_spec_temp, wave_fltr[bb], trans_fltr[bb]) 
-		# store to the array
-		for ii in range(0,len(wave_spec_idx)):
-			idx = wave_spec_idx[ii]
-			trans_fltr_int[bb][idx] = trans_fltr_int_part[ii]
-	return trans_fltr_int
-
-def filtering_match_filters_array(wave,spec,filters,trans_fltr_int):
-	if np.sum(spec) == 0:
-		nwaves = len(wave)
-		wave = np.linspace(1,nwaves,nwaves)
-		spec = np.zeros(nwaves) + 1.0e-5
-	nfilters = len(filters)
-	fluxes = np.zeros(nfilters)
-	for bb in range(0,nfilters):
-		tot_u = np.sum(spec*wave*trans_fltr_int[bb])
-		tot_l = np.sum(wave*trans_fltr_int[bb])
-		fluxes[bb] = tot_u/tot_l
-	return fluxes
-
-
-
 
 

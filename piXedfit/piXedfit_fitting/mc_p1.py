@@ -21,7 +21,7 @@ from piXedfit.piXedfit_fitting import get_params
 from piXedfit.utils.redshifting import cosmo_redshifting
 
 
-def initfit(gal_z,DL_Gpc):
+def initfit(gal_z,DL_Gpc,zz,nrands_z):
 	f = h5py.File(models_spec, 'r')
 
 	numDataPerRank = int(nmodels/size)
@@ -78,7 +78,7 @@ def initfit(gal_z,DL_Gpc):
 		count = count + 1
 
 		sys.stdout.write('\r')
-		sys.stdout.write('rank: %d  Calculation process: %d from %d  --->  %d%%' % (rank,count,len(recvbuf_idx),count*100/len(recvbuf_idx)))
+		sys.stdout.write('rank %d --> progress: z %d of %d (%d%%) and model %d of %d (%d%%)' % (rank,zz+1,nrands_z,(zz+1)*100/nrands_z,count,numDataPerRank,count*100/numDataPerRank))
 		sys.stdout.flush()
 	sys.stdout.write('\n')
 
@@ -433,7 +433,7 @@ nparams_fsps = len(params_fsps)
 
 # initial fitting
 if free_z == 0:
-	mod_params, mod_chi2 = initfit(gal_z,DL_Gpc)
+	mod_params, mod_chi2 = initfit(gal_z,DL_Gpc,0,1)
 	idx0, min_val = min(enumerate(mod_chi2), key=itemgetter(1))
 	minchi2_params_initfit = mod_params[:,idx0]
 
@@ -447,7 +447,7 @@ elif free_z == 1:
 	mod_chi2_merge = np.zeros(nmodels_merge)
 	for zz in range(0,nrands_z):
 		gal_z = rand_z[zz]
-		mod_params, mod_chi2 = initfit(gal_z,DL_Gpc)
+		mod_params, mod_chi2 = initfit(gal_z,DL_Gpc,zz,nrands_z)
 
 		for pp in range(0,nparams):
 			mod_params_merge[pp,int(zz*nmodels):int((zz+1)*nmodels)] = mod_params[pp]

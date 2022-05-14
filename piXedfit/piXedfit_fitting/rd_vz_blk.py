@@ -17,7 +17,7 @@ from piXedfit.utils.redshifting import cosmo_redshifting
 from piXedfit.utils.igm_absorption import igm_att_madau, igm_att_inoue
 
 
-def bayesian_sedfit_gauss(gal_z):
+def bayesian_sedfit_gauss(gal_z,zz):
 	f = h5py.File(models_spec, 'r')
 
 	numDataPerRank = int(nmodels/size)
@@ -76,9 +76,9 @@ def bayesian_sedfit_gauss(gal_z):
 		count = count + 1
 
 		sys.stdout.write('\r')
-		sys.stdout.write('rank: %d  Calculation process: %d from %d  --->  %d%%' % (rank,count,len(recvbuf_idx),count*100/len(recvbuf_idx)))
+		sys.stdout.write('rank %d --> progress: z %d of %d (%d%%) and model %d of %d (%d%%)' % (rank,zz+1,nrands_z,(zz+1)*100/nrands_z,count,numDataPerRank,count*100/numDataPerRank))
 		sys.stdout.flush()
-	sys.stdout.write('\n')
+	#sys.stdout.write('\n')
 
 	mod_params = np.zeros((nparams,nmodels))
 	mod_chi2 = np.zeros(nmodels)
@@ -102,7 +102,7 @@ def bayesian_sedfit_gauss(gal_z):
 	return mod_params, mod_chi2, mod_prob
 
 
-def bayesian_sedfit_student_t(gal_z):
+def bayesian_sedfit_student_t(gal_z,zz):
 	f = h5py.File(models_spec, 'r')
 
 	numDataPerRank = int(nmodels/size)
@@ -158,9 +158,9 @@ def bayesian_sedfit_student_t(gal_z):
 		count = count + 1
 
 		sys.stdout.write('\r')
-		sys.stdout.write('rank: %d  Calculation process: %d from %d  --->  %d%%' % (rank,count,len(recvbuf_idx),count*100/len(recvbuf_idx)))
+		sys.stdout.write('rank %d --> progress: z %d of %d (%d%%) and model %d of %d (%d%%)' % (rank,zz+1,nrands_z,(zz+1)*100/nrands_z,count,numDataPerRank,count*100/numDataPerRank))
 		sys.stdout.flush()
-	sys.stdout.write('\n')
+	#sys.stdout.write('\n')
 
 	mod_params = np.zeros((nparams,nmodels))
 	mod_chi2 = np.zeros(nmodels)
@@ -394,9 +394,9 @@ for ii in range(0,n_obs_sed):
 		gal_z = rand_z[zz]
 		# running the calculation
 		if likelihood_form == 'gauss':
-			mod_params, mod_chi2, mod_prob = bayesian_sedfit_gauss(gal_z)
+			mod_params, mod_chi2, mod_prob = bayesian_sedfit_gauss(gal_z,zz)
 		elif likelihood_form == 'student_t':
-			mod_params, mod_chi2, mod_prob = bayesian_sedfit_student_t(gal_z)
+			mod_params, mod_chi2, mod_prob = bayesian_sedfit_student_t(gal_z,zz)
 		else:
 			print ("likelihood_form is not recognized!")
 			sys.exit()
@@ -415,6 +415,7 @@ for ii in range(0,n_obs_sed):
 	if rank == 0:
 		fits_name_out = name_out_fits[ii]
 		store_to_fits(sampler_params,mod_chi2_merge,mod_prob_merge,fits_name_out)
+		sys.stdout.write('\n')
 
 
 

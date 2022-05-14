@@ -8,7 +8,7 @@ from astropy.io import fits
 from scipy.interpolate import interp1d
 
 from ..utils.redshifting import cosmo_redshifting
-from ..utils.filtering import filtering, cwave_filters, filtering_match_filters_array, filtering_interp_filters
+from ..utils.filtering import filtering, cwave_filters, filtering_interp_filters
 from ..utils.igm_absorption import igm_att_madau, igm_att_inoue
 from .model_utils import *
 

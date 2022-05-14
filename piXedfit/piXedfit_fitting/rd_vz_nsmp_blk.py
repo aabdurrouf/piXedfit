@@ -12,12 +12,12 @@ PIXEDFIT_HOME = os.environ['PIXEDFIT_HOME']
 sys.path.insert(0, PIXEDFIT_HOME)
 
 from piXedfit.utils.posteriors import model_leastnorm, calc_chi2, gauss_prob, gauss_prob_reduced, student_t_prob
-from piXedfit.utils.filtering import interp_filters_curves, filtering_interp_filters, cwave_filters
+from piXedfit.utils.filtering import interp_filters_curves, filtering_interp_filters, cwave_filters, filtering
 from piXedfit.utils.redshifting import cosmo_redshifting
 from piXedfit.utils.igm_absorption import igm_att_madau, igm_att_inoue
 
 
-def bayesian_sedfit_gauss(gal_z):
+def bayesian_sedfit_gauss(gal_z,zz):
 	f = h5py.File(models_spec, 'r')
 
 	numDataPerRank = int(nmodels/size)
@@ -76,9 +76,9 @@ def bayesian_sedfit_gauss(gal_z):
 		count = count + 1
 
 		sys.stdout.write('\r')
-		sys.stdout.write('rank: %d  Calculation process: %d from %d  --->  %d%%' % (rank,count,len(recvbuf_idx),count*100/len(recvbuf_idx)))
+		sys.stdout.write('rank %d --> progress: z %d of %d (%d%%) and model %d of %d (%d%%)' % (rank,zz+1,nrands_z,(zz+1)*100/nrands_z,count,numDataPerRank,count*100/numDataPerRank))
 		sys.stdout.flush()
-	sys.stdout.write('\n')
+	#sys.stdout.write('\n')
 
 	mod_params = np.zeros((nparams,nmodels))
 	mod_chi2 = np.zeros(nmodels)
@@ -102,7 +102,7 @@ def bayesian_sedfit_gauss(gal_z):
 	return mod_params, mod_chi2, mod_prob
 
 
-def bayesian_sedfit_student_t(gal_z):
+def bayesian_sedfit_student_t(gal_z,zz):
 	f = h5py.File(models_spec, 'r')
 
 	numDataPerRank = int(nmodels/size)
@@ -158,9 +158,9 @@ def bayesian_sedfit_student_t(gal_z):
 		count = count + 1
 
 		sys.stdout.write('\r')
-		sys.stdout.write('rank: %d  Calculation process: %d from %d  --->  %d%%' % (rank,count,len(recvbuf_idx),count*100/len(recvbuf_idx)))
+		sys.stdout.write('rank %d --> progress: z %d of %d (%d%%) and model %d of %d (%d%%)' % (rank,zz+1,nrands_z,(zz+1)*100/nrands_z,count,numDataPerRank,count*100/numDataPerRank))
 		sys.stdout.flush()
-	sys.stdout.write('\n')
+	#sys.stdout.write('\n')
 
 	mod_params = np.zeros((nparams,nmodels))
 	mod_chi2 = np.zeros(nmodels)
@@ -192,10 +192,10 @@ def store_to_fits(sampler_params,mod_chi2,mod_prob,fits_name_out):
 	f = h5py.File(models_spec, 'r')
 	# best-fit SED
 	wave = f['mod/spec/wave'][:]
-	str_temp = 'mod/spec/f%d' % idx
+	str_temp = 'mod/spec/f%d' % (idx % nmodels)   # modulo
 	extnc_spec = f[str_temp][:]
 	# best-fit z:
-	gal_z = sampler_params[params['z']][idx]
+	gal_z = sampler_params['z'][idx]
 	redsh_wave,redsh_spec = cosmo_redshifting(cosmo=cosmo,H0=H0,Om0=Om0,z=gal_z,wave=wave,spec=extnc_spec)
 	if add_igm_absorption == 1:
 		if igm_type == 0 or igm_type == 'madau1995':
@@ -385,6 +385,9 @@ bulk_obs_flux_err = np.sqrt(np.square(bulk_obs_flux_err) + np.square(sys_err_fra
 name_outs = str(sys.argv[4])
 name_out_fits = np.genfromtxt(temp_dir+name_outs, dtype=str)
 
+global perc_chi2
+perc_chi2 = float(config_data['perc_chi2'])
+
 # cosmology
 global cosmo, H0, Om0
 cosmo = int(config_data['cosmo'])
@@ -463,9 +466,9 @@ for ii in range(0,n_obs_sed):
 
 		# running the calculation
 		if likelihood_form == 'gauss':
-			mod_params, mod_chi2, mod_prob = bayesian_sedfit_gauss(gal_z)
+			mod_params, mod_chi2, mod_prob = bayesian_sedfit_gauss(gal_z,zz)
 		elif likelihood_form == 'student_t':
-			mod_params, mod_chi2, mod_prob = bayesian_sedfit_student_t(gal_z)
+			mod_params, mod_chi2, mod_prob = bayesian_sedfit_student_t(gal_z,zz)
 		else:
 			print ("likelihood_form is not recognized!")
 			sys.exit()
@@ -485,6 +488,7 @@ for ii in range(0,n_obs_sed):
 	if rank == 0:
 		fits_name_out = name_out_fits[ii]
 		store_to_fits(sampler_params,mod_chi2_merge,mod_prob_merge,fits_name_out)
+		sys.stdout.write('\n')
 
 
 

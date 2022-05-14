@@ -8,7 +8,7 @@ from astropy.io import fits
 from scipy.interpolate import interp1d
 
 from ..utils.redshifting import cosmo_redshifting
-from ..utils.filtering import filtering, cwave_filters, filtering_match_filters_array
+from ..utils.filtering import filtering, cwave_filters, filtering_interp_filters
 from ..utils.igm_absorption import igm_att_madau, igm_att_inoue
 from .model_utils import *
 
@@ -26,7 +26,7 @@ def generate_modelSED_propspecphoto_fit(sp=None,imf_type=1,sfh_form='delayed_tau
 	'dust_index', 'dust1', 'dust2', 'log_gamma', 'log_umin', 'log_qpah','log_fagn', 'log_tauagn'], params_val={'log_mass':0.0,
 	'z':-99.0,'log_fagn':-99.0,'log_tauagn':-99.0,'log_qpah':-99.0,'log_umin':-99.0,'log_gamma':-99.0,'dust1':-99.0,'dust2':-99.0,
 	'dust_index':-99.0,'log_age':-99.0,'log_alpha':-99.0,'log_beta':-99.0,'log_t0':-99.0,'log_tau':-99.0,'logzsol':-99.0},
-	DL_Gpc=0.0,cosmo='flat_LCDM',H0=70.0,Om0=0.3,free_z=0,trans_fltr_int=None):
+	DL_Gpc=0.0,cosmo='flat_LCDM',H0=70.0,Om0=0.3,interp_filters_waves=[],interp_filters_trans=[]):
 	"""A function to generate model spectrophotometric SED in which outputs are: properties, spectrum, and photometric SED
 
 	:param sp:
@@ -121,10 +121,14 @@ def generate_modelSED_propspecphoto_fit(sp=None,imf_type=1,sfh_form='delayed_tau
 	dust_mass = dust_mass0*norm0
 
 	# filtering:
-	if free_z == 1:
-		photo_SED_flux = filtering(redsh_wave,redsh_spec,filters) ##########
-	elif free_z == 0:
-		photo_SED_flux = filtering_match_filters_array(redsh_wave,redsh_spec,filters,trans_fltr_int)
+	#if free_z == 1:
+	#	photo_SED_flux = filtering(redsh_wave,redsh_spec,filters) ##########
+	#elif free_z == 0:
+	#	photo_SED_flux = filtering_match_filters_array(redsh_wave,redsh_spec,filters,trans_fltr_int)
+
+	# filtering:
+	photo_SED_flux = filtering_interp_filters(redsh_wave,redsh_spec,interp_filters_waves,interp_filters_trans)
+
 	# get central wavelength of all filters:
 	photo_cwave = cwave_filters(filters)
 
@@ -371,7 +375,7 @@ def generate_modelSED_specphoto_fit(sp=None,imf_type=1,sfh_form='delayed_tau_sfh
 	'dust_index', 'dust1', 'dust2', 'log_gamma', 'log_umin', 'log_qpah','log_fagn', 'log_tauagn'], params_val={'log_mass':0.0,
 	'z':-99.0,'log_fagn':-99.0,'log_tauagn':-99.0,'log_qpah':-99.0,'log_umin':-99.0,'log_gamma':-99.0,'dust1':-99.0,'dust2':-99.0,
 	'dust_index':-99.0,'log_age':-99.0,'log_alpha':-99.0,'log_beta':-99.0,'log_t0':-99.0,'log_tau':-99.0,'logzsol':-99.0},
-	DL_Gpc=0.0,cosmo='flat_LCDM',H0=70.0,Om0=0.3,free_z=0,trans_fltr_int=None):
+	DL_Gpc=0.0,cosmo='flat_LCDM',H0=70.0,Om0=0.3,interp_filters_waves=[],interp_filters_trans=[]):
 	"""A function to generate model spectrophotometric SED
 
 	:param sp:
@@ -466,10 +470,14 @@ def generate_modelSED_specphoto_fit(sp=None,imf_type=1,sfh_form='delayed_tau_sfh
 	dust_mass = dust_mass0*norm0
 
 	# filtering:
-	if free_z == 1:
-		photo_SED_flux = filtering(redsh_wave,redsh_spec,filters) ##########
-	elif free_z == 0:
-		photo_SED_flux = filtering_match_filters_array(redsh_wave,redsh_spec,filters,trans_fltr_int)
+	#if free_z == 1:
+	#	photo_SED_flux = filtering(redsh_wave,redsh_spec,filters) ##########
+	#elif free_z == 0:
+	#	photo_SED_flux = filtering_match_filters_array(redsh_wave,redsh_spec,filters,trans_fltr_int)
+
+	# filtering:
+	photo_SED_flux = filtering_interp_filters(redsh_wave,redsh_spec,interp_filters_waves,interp_filters_trans)
+
 	# get central wavelength of all filters:
 	photo_cwave = cwave_filters(filters)
 
@@ -490,7 +498,7 @@ def generate_modelSED_propspecphoto_nomwage_fit(sp=None,imf_type=1,sfh_form='del
 	'dust_index', 'dust1', 'dust2', 'log_gamma', 'log_umin', 'log_qpah','log_fagn', 'log_tauagn'], params_val={'log_mass':0.0,
 	'z':-99.0,'log_fagn':-99.0,'log_tauagn':-99.0,'log_qpah':-99.0,'log_umin':-99.0,'log_gamma':-99.0,'dust1':-99.0,'dust2':-99.0,
 	'dust_index':-99.0,'log_age':-99.0,'log_alpha':-99.0,'log_beta':-99.0,'log_t0':-99.0,'log_tau':-99.0,'logzsol':-99.0},
-	DL_Gpc=0.0,cosmo='flat_LCDM',H0=70.0,Om0=0.3,free_z=0,trans_fltr_int=None):
+	DL_Gpc=0.0,cosmo='flat_LCDM',H0=70.0,Om0=0.3,interp_filters_waves=[],interp_filters_trans=[]):
 	
 	params_assoc_fsps = {'logzsol':"logzsol", 'log_tau':"tau", 'log_age':"tage", 
 					'dust_index':"dust_index", 'dust1':"dust1", 'dust2':"dust2",
@@ -552,10 +560,14 @@ def generate_modelSED_propspecphoto_nomwage_fit(sp=None,imf_type=1,sfh_form='del
 	dust_mass = dust_mass0*norm0
 
 	# filtering:
-	if free_z == 1:
-		photo_SED_flux = filtering(redsh_wave,redsh_spec,filters)
-	elif free_z == 0:
-		photo_SED_flux = filtering_match_filters_array(redsh_wave,redsh_spec,filters,trans_fltr_int)
+	#if free_z == 1:
+	#	photo_SED_flux = filtering(redsh_wave,redsh_spec,filters)
+	#elif free_z == 0:
+	#	photo_SED_flux = filtering_match_filters_array(redsh_wave,redsh_spec,filters,trans_fltr_int)
+
+	# filtering:
+	photo_SED_flux = filtering_interp_filters(redsh_wave,redsh_spec,interp_filters_waves,interp_filters_trans)
+
 	# get central wavelength of all filters:
 	photo_cwave = cwave_filters(filters)
 
