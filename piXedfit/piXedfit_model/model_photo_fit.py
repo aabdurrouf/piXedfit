@@ -3,7 +3,6 @@ import math
 import sys, os
 import random
 import fsps
-import operator
 from astropy.io import fits
 from scipy.interpolate import interp1d
 
@@ -20,8 +19,8 @@ with np.errstate(divide='ignore'):
 __all__ = ["generate_modelSED_photo_fit", "generate_modelSED_propphoto_nomwage_fit"]
 
 
-def generate_modelSED_photo_fit(sp=None,sfh_form='delayed_tau_sfh',filters=['galex_fuv','galex_nuv','sdss_u',
-	'sdss_g','sdss_r','sdss_i','sdss_z'],add_igm_absorption=0,igm_type=1,params_fsps=['logzsol', 'log_tau', 'log_age', 
+def generate_modelSED_photo_fit(sp=None,sfh_form=4,filters=['galex_fuv','galex_nuv','sdss_u',
+	'sdss_g','sdss_r','sdss_i','sdss_z'],add_igm_absorption=0,igm_type=0,params_fsps=['logzsol', 'log_tau', 'log_age', 
 	'dust_index', 'dust1', 'dust2', 'log_gamma', 'log_umin', 'log_qpah','log_fagn', 'log_tauagn'],DL_Gpc=0.0,cosmo='flat_LCDM',
 	H0=70.0,Om0=0.3,params_val={'log_mass':0.0,'z':0.001,'log_fagn':-3.0,'log_tauagn':1.0,'log_qpah':0.54,'log_umin':0.0,
 	'log_gamma':-2.0,'dust1':0.5,'dust2':0.5,'dust_index':-0.7,'log_age':1.0,'log_alpha':0.1,'log_beta':0.1,'log_t0':0.4,
@@ -31,9 +30,8 @@ def generate_modelSED_photo_fit(sp=None,sfh_form='delayed_tau_sfh',filters=['gal
 	:param sp:
 		Initialization of FSPS, such as sp=fsps.StellarPopulation()
 
-	:param sfh_form:
-		Choice for the parametric SFH model. 
-		Options are: ['tau_sfh', 'delayed_tau_sfh', 'log_normal_sfh', 'gaussian_sfh', 'double_power_sfh']
+	:param sfh_form: (default: 4)
+		Choice for the parametric SFH model. Options are: (a) 0 for exponentially declining or tau model, (b) 1 for delayed tau model, (c) 2 for log normal model, (d) 3 for Gaussian form, (e) 4 for double power-law model.
 
 	:param filters:
 		A list of photometric filters.
@@ -41,8 +39,8 @@ def generate_modelSED_photo_fit(sp=None,sfh_form='delayed_tau_sfh',filters=['gal
 	:param add_igm_absorption:
 		Switch for the IGM absorption.
 
-	:param igm_type:
-		Choice for the IGM absorption model. Options are: [0/'madau1995':Madau(1995); 1/'inoue2014':Inoue+(2014)]
+	:param igm_type: (default: 0)
+		Choice for the IGM absorption model. Options are: (a) 0 for Madau (1995), and (b) 1 for Inoue+(2014).
 
 	:param cosmo (default: 'flat_LCDM'):
 		Choices for the cosmological parameters. The choices are: ['flat_LCDM', 'WMAP5', 
@@ -80,14 +78,14 @@ def generate_modelSED_photo_fit(sp=None,sfh_form='delayed_tau_sfh',filters=['gal
 	sp.params['gas_logz'] = params_val['logzsol']
 
 	# generate the SED:
-	if sfh_form=='tau_sfh' or sfh_form=='delayed_tau_sfh' or sfh_form==0 or sfh_form==1:
+	if sfh_form==0 or sfh_form==1:
 		age = math.pow(10.0,params_val['log_age'])
 		wave, extnc_spec = sp.get_spectrum(peraa=True,tage=age) ## spectrum in L_sun/AA
 		# get model mass:
 		mass = sp.stellar_mass
 		# get dust mass: 
 		dust_mass0 = sp.dust_mass   ## in solar mass/norm
-	elif sfh_form=='log_normal_sfh' or sfh_form=='gaussian_sfh' or sfh_form=='double_power_sfh' or sfh_form==2 or sfh_form==3 or sfh_form==4:
+	elif sfh_form==2 or sfh_form==3 or sfh_form==4:
 		t0 = math.pow(10.0,params_val['log_t0'])
 		tau = math.pow(10.0,params_val['log_tau'])
 		age = math.pow(10.0,params_val['log_age'])
@@ -101,11 +99,11 @@ def generate_modelSED_photo_fit(sp=None,sfh_form='delayed_tau_sfh',filters=['gal
 
 	# IGM absorption:
 	if add_igm_absorption == 1:
-		if igm_type == 0 or igm_type == 'madau1995':
+		if igm_type == 0:
 			trans = igm_att_madau(redsh_wave,params_val['z'])
 			temp = redsh_spec0
 			redsh_spec0 = temp*trans
-		elif igm_type == 1 or igm_type == 'inoue2014':
+		elif igm_type == 1:
 			trans = igm_att_inoue(redsh_wave,params_val['z'])
 			temp = redsh_spec0
 			redsh_spec0 = temp*trans
@@ -121,8 +119,8 @@ def generate_modelSED_photo_fit(sp=None,sfh_form='delayed_tau_sfh',filters=['gal
 	return photo_SED_flux
 
 
-def generate_modelSED_propphoto_nomwage_fit(sp=None,imf_type=1,sfh_form='delayed_tau_sfh',filters=['galex_fuv','galex_nuv','sdss_u',
-	'sdss_g','sdss_r','sdss_i','sdss_z'],add_igm_absorption=0,igm_type=1,params_fsps=['logzsol', 'log_tau', 'log_age', 
+def generate_modelSED_propphoto_nomwage_fit(sp=None,imf_type=1,sfh_form=4,filters=['galex_fuv','galex_nuv','sdss_u',
+	'sdss_g','sdss_r','sdss_i','sdss_z'],add_igm_absorption=0,igm_type=0,params_fsps=['logzsol', 'log_tau', 'log_age', 
 	'dust_index', 'dust1', 'dust2', 'log_gamma', 'log_umin', 'log_qpah','log_fagn', 'log_tauagn'], DL_Gpc=0.0,cosmo='flat_LCDM',
 	H0=70.0,Om0=0.3,params_val={'log_mass':0.0,'z':0.001,'log_fagn':-3.0,'log_tauagn':1.0,
 	'log_qpah':0.54,'log_umin':0.0,'log_gamma':-2.0,'dust1':0.5,'dust2':0.5,'dust_index':-0.7,'log_age':1.0,'log_alpha':0.1,
@@ -154,7 +152,7 @@ def generate_modelSED_propphoto_nomwage_fit(sp=None,imf_type=1,sfh_form='delayed
 	sp.params['imf_type'] = imf_type
 	sp.params['gas_logz'] = params_val['logzsol']
 
-	if sfh_form=='tau_sfh' or sfh_form=='delayed_tau_sfh' or sfh_form==0 or sfh_form==1:
+	if sfh_form==0 or sfh_form==1:
 		wave, extnc_spec = sp.get_spectrum(peraa=True,tage=age) 	# spectrum in L_sun/AA
 		mass = sp.stellar_mass 
 		dust_mass0 = sp.dust_mass   								# in solar mass/norm
@@ -171,7 +169,7 @@ def generate_modelSED_propphoto_nomwage_fit(sp=None,imf_type=1,sfh_form='delayed
 		fagn_bol = (lbol_agn-lbol_noagn)/lbol_agn
 		log_fagn_bol = np.log10(fagn_bol)
 
-	elif sfh_form=='log_normal_sfh' or sfh_form=='gaussian_sfh' or sfh_form=='double_power_sfh' or sfh_form==2 or sfh_form==3 or sfh_form==4:
+	elif sfh_form==2 or sfh_form==3 or sfh_form==4:
 		SFR_fSM,mass,wave,extnc_spec,dust_mass0 = csp_spec_restframe_fit(sp=sp,sfh_form=sfh_form,formed_mass=formed_mass,
 																age=age,tau=tau,t0=t0,alpha=alpha,beta=beta)
 		# total bolometric luminosity including AGN
@@ -193,11 +191,11 @@ def generate_modelSED_propphoto_nomwage_fit(sp=None,imf_type=1,sfh_form='delayed
 
 	# IGM absorption:
 	if add_igm_absorption == 1:
-		if igm_type == 0 or igm_type == 'madau1995':
+		if igm_type == 0:
 			trans = igm_att_madau(redsh_wave,params_val['z'])
 			temp = redsh_spec0
 			redsh_spec0 = temp*trans
-		elif igm_type == 1 or igm_type == 'inoue2014':
+		elif igm_type == 1:
 			trans = igm_att_inoue(redsh_wave,params_val['z'])
 			temp = redsh_spec0
 			redsh_spec0 = temp*trans
@@ -212,9 +210,9 @@ def generate_modelSED_propphoto_nomwage_fit(sp=None,imf_type=1,sfh_form='delayed
 
 	# calculate SFR
 	SFR_exp = 1.0/np.exp(age/tau)
-	if sfh_form=='tau_sfh' or sfh_form==0:
+	if sfh_form==0:
 		SFR_fSM = formed_mass*SFR_exp/tau/(1.0-SFR_exp)/1e+9
-	elif sfh_form=='delayed_tau_sfh' or sfh_form==1:
+	elif sfh_form==1:
 		SFR_fSM = formed_mass*age*SFR_exp/((tau*tau)-((age*tau)+(tau*tau))*SFR_exp)/1e+9
 
 	# outputs

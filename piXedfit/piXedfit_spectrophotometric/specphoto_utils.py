@@ -10,7 +10,7 @@ from astropy.modeling.models import Gaussian2D
 from scipy.interpolate import interp1d, interp2d
 
 from ..piXedfit_images.images_utils import get_largest_FWHM_PSF, k_lmbd_Fitz1986_LMC
-from ..piXedfit_model.model_utils import get_no_nebem_wave, get_no_nebem_wave_fit
+from ..piXedfit_model.model_utils import get_no_nebem_wave_fit
 
 
 __all__ = ["spec_smoothing", "match_spectra_poly_legendre", "match_spectra_poly_legendre_fit"]
@@ -32,21 +32,20 @@ def spec_smoothing(wave,flux,spec_sigma):
 	"""
 	min_wave = int(min(wave))
 	max_wave = int(max(wave))
+
 	wave_lin = np.linspace(min_wave,max_wave,max_wave-min_wave+1)
 	f = interp1d(wave, flux, fill_value="extrapolate")
 	flux_wave_lin = f(wave_lin)
-	flux_wave_lin[0] = flux_wave_lin[1]
-	flux_wave_lin[len(wave_lin)-1] = flux_wave_lin[len(wave_lin)-2]
+	flux_wave_lin[0], flux_wave_lin[len(wave_lin)-1] = flux_wave_lin[1], flux_wave_lin[len(wave_lin)-2]
 
 	spec_kernel = Gaussian1DKernel(stddev=spec_sigma)
-		
+			
 	conv_flux = convolve_fft(flux_wave_lin, spec_kernel)
 
 	# return the spectrum to the original wavelength sampling
 	f = interp1d(wave_lin, conv_flux, fill_value="extrapolate")
 	smoothed_flux = f(wave)
-	smoothed_flux[0] = smoothed_flux[1]
-	smoothed_flux[len(wave)-1] = smoothed_flux[len(wave)-2]
+	smoothed_flux[0], smoothed_flux[len(wave)-1] = smoothed_flux[1], smoothed_flux[len(wave)-2]
 
 	return wave, smoothed_flux
 
@@ -62,7 +61,7 @@ def match_spectra_poly_legendre(in_spec_wave=[],in_spec_flux=[],ref_spec_wave=[]
 
 	if len(wave_clean)==0:
 		# get wavelength grids (in the final wave sampling) that are free from emission lines:
-		wave_clean,wave_mask = get_no_nebem_wave(z,final_wave,del_wave_nebem)
+		wave_clean,wave_mask = get_no_nebem_wave_fit(z,final_wave,del_wave_nebem)
 
 	# get flux ratio of continuum between the two spectra in the final wave sampling:
 	f = interp1d(in_spec_wave,in_spec_flux)
@@ -89,15 +88,15 @@ def match_spectra_poly_legendre(in_spec_wave=[],in_spec_flux=[],ref_spec_wave=[]
 	return final_wave, final_flux, ratio_spec_wave, ratio_spec_flux, factor
 
 
-def match_spectra_poly_legendre_fit(sp=None,in_spec_wave=[],in_spec_flux=[],ref_spec_wave=[],ref_spec_flux=[],
-	wave_clean=[],z=0.001,del_wave_nebem=10.0,order=3):
+def match_spectra_poly_legendre_fit(in_spec_wave,in_spec_flux,ref_spec_wave,ref_spec_flux,
+	wave_clean,z,del_wave_nebem,order):
 	""" Function for matching normalization og two spectra by multiplying one spectra with a smooth factor, 
 	which is derived from polynomial interpolation to the continuum flux ratio as a function of wavelength
 	"""
 
 	if len(wave_clean)==0:
 		# get wavelength grids (in the final wave sampling) that are free from emission lines:
-		wave_clean,wave_mask = get_no_nebem_wave_fit(sp,z,final_wave,del_wave_nebem)
+		wave_clean,wave_mask = get_no_nebem_wave_fit(z,final_wave,del_wave_nebem)
 
 	# get flux ratio of continuum between the two spectra in the final wave sampling:
 	f = interp1d(in_spec_wave,in_spec_flux)

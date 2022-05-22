@@ -615,7 +615,7 @@ class images_processing:
 		return gal_region
 
 
-	def flux_map(self, output_stamps, gal_region, Gal_EBV=0, scale_unit=1.0e-17, 
+	def flux_map(self, output_stamps, gal_region, Gal_EBV=None, scale_unit=1.0e-17, 
 		mag_zp_2mass=[], unit_spire='Jy_per_beam', name_out_fits=None):
 		"""Function for calculating maps of multiband fluxes
 
@@ -626,7 +626,7 @@ class images_processing:
 			2D array containing the galaxy's region of interest. The vlues should be 0 for masked region and 1 for the galaxy's region of interest.
 			It can be taken from the output of the :func:`galaxy_region` function. But, user can also defined its own.
 
-		:param Gal_EBV: (float, optional, default: 0)
+		:param Gal_EBV: (float, optional, default:None)
 			The E(B-V) dust attenuation due to the foreground Galactic dust. This is optional parameter.
 
 		:param scale_unit: (float, optional, defult: 1.0e-17)
@@ -657,8 +657,6 @@ class images_processing:
 
 		flag_psfmatch = self.flag_psfmatch
 		flag_reproject = self.flag_reproject
-
-
 
 		img_unit = self.img_unit
 		img_scale = self.img_scale		
@@ -691,12 +689,12 @@ class images_processing:
 			eff_wave[filters[bb]] = photo_wave[bb]
 
 		# calculate Alambda for Galactic dust extinction correction
+		if Gal_EBV == None:
+			Gal_EBV = EBV_foreground_dust(gal_ra, gal_dec)
+
 		Alambda = {}
 		for bb in range(0,nbands):
-			if Gal_EBV == 0:
-				Alambda[filters[bb]] = 0.0
-			else:
-				Alambda[filters[bb]] = k_lmbd_Fitz1986_LMC(eff_wave[filters[bb]])*Gal_EBV
+			Alambda[filters[bb]] = k_lmbd_Fitz1986_LMC(eff_wave[filters[bb]])*Gal_EBV
 
 		# get index of filter that has image with largest pixel scale:
 		fil_pixsizes = np.zeros(nbands)
@@ -704,7 +702,6 @@ class images_processing:
 			fil_pixsizes[bb] = img_pixsizes[filters[bb]]
 		idfil_align, max_val = max(enumerate(fil_pixsizes), key=itemgetter(1))
 		###================ End of (1) get basic information ===============####
-
 
 		###================ (2) Calculation of flux map ===============####
 		# allocate memory

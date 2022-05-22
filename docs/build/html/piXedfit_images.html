@@ -185,6 +185,23 @@
   <div class="section" id="module-piXedfit.piXedfit_images">
 <span id="pixedfit-images"></span><span id="api-images"></span><h1>piXedfit_images<a class="headerlink" href="#module-piXedfit.piXedfit_images" title="Permalink to this headline">¶</a></h1>
 <dl class="py function">
+<dt id="piXedfit.piXedfit_images.EBV_foreground_dust">
+<code class="sig-prename descclassname">piXedfit.piXedfit_images.</code><code class="sig-name descname">EBV_foreground_dust</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">ra</span></em>, <em class="sig-param"><span class="n">dec</span></em><span class="sig-paren">)</span><a class="headerlink" href="#piXedfit.piXedfit_images.EBV_foreground_dust" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function for estimating E(B-V) associated with the foreground Galactic dust attenuation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ra</strong> – Right ascension in degree.</p></li>
+<li><p><strong>dec</strong> – Declination in degree.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns ebv</dt>
+<dd class="field-even"><p>E(B-V) associated with the foreground Galactic dust.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
 <dt id="piXedfit.piXedfit_images.crop_stars_galregion_fits">
 <code class="sig-prename descclassname">piXedfit.piXedfit_images.</code><code class="sig-name descname">crop_stars_galregion_fits</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">input_fits</span></em>, <em class="sig-param"><span class="n">x_cent</span><span class="o">=</span><span class="default_value">[]</span></em>, <em class="sig-param"><span class="n">y_cent</span><span class="o">=</span><span class="default_value">[]</span></em>, <em class="sig-param"><span class="n">radius</span><span class="o">=</span><span class="default_value">[]</span></em>, <em class="sig-param"><span class="n">name_out_fits</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#piXedfit.piXedfit_images.crop_stars_galregion_fits" title="Permalink to this definition">¶</a></dt>
 <dd><p>A function for cropping foreground stars within a galaxy’s region of interst.
@@ -250,7 +267,7 @@ If False, those files will not be removed.</p></li>
 </dl>
 <dl class="py method">
 <dt id="piXedfit.piXedfit_images.images_processing.flux_map">
-<code class="sig-name descname">flux_map</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">output_stamps</span></em>, <em class="sig-param"><span class="n">gal_region</span></em>, <em class="sig-param"><span class="n">Gal_EBV</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">scale_unit</span><span class="o">=</span><span class="default_value">1e-17</span></em>, <em class="sig-param"><span class="n">mag_zp_2mass</span><span class="o">=</span><span class="default_value">[]</span></em>, <em class="sig-param"><span class="n">unit_spire</span><span class="o">=</span><span class="default_value">'Jy_per_beam'</span></em>, <em class="sig-param"><span class="n">name_out_fits</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#piXedfit.piXedfit_images.images_processing.flux_map" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">flux_map</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">output_stamps</span></em>, <em class="sig-param"><span class="n">gal_region</span></em>, <em class="sig-param"><span class="n">Gal_EBV</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">scale_unit</span><span class="o">=</span><span class="default_value">1e-17</span></em>, <em class="sig-param"><span class="n">mag_zp_2mass</span><span class="o">=</span><span class="default_value">[]</span></em>, <em class="sig-param"><span class="n">unit_spire</span><span class="o">=</span><span class="default_value">'Jy_per_beam'</span></em>, <em class="sig-param"><span class="n">name_out_fits</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#piXedfit.piXedfit_images.images_processing.flux_map" title="Permalink to this definition">¶</a></dt>
 <dd><p>Function for calculating maps of multiband fluxes</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -258,7 +275,7 @@ If False, those files will not be removed.</p></li>
 <li><p><strong>output_stamps</strong> – Dictionary containing reduced multiband images produced by the <a class="reference internal" href="#piXedfit.piXedfit_images.images_processing.reduced_stamps" title="piXedfit.piXedfit_images.images_processing.reduced_stamps"><code class="xref py py-func docutils literal notranslate"><span class="pre">reduced_stamps()</span></code></a> function.</p></li>
 <li><p><strong>gal_region</strong> – 2D array containing the galaxy’s region of interest. The vlues should be 0 for masked region and 1 for the galaxy’s region of interest.
 It can be taken from the output of the <a class="reference internal" href="#piXedfit.piXedfit_images.images_processing.galaxy_region" title="piXedfit.piXedfit_images.images_processing.galaxy_region"><code class="xref py py-func docutils literal notranslate"><span class="pre">galaxy_region()</span></code></a> function. But, user can also defined its own.</p></li>
-<li><p><strong>Gal_EBV</strong> – (float, optional, default: 0)
+<li><p><strong>Gal_EBV</strong> – (float, optional, default:None)
 The E(B-V) dust attenuation due to the foreground Galactic dust. This is optional parameter.</p></li>
 <li><p><strong>scale_unit</strong> – (float, optional, defult: 1.0e-17)
 Normalized unit for the fluxes in the output fits file. The unit is flux density in erg/s/cm^2/Ang.</p></li>

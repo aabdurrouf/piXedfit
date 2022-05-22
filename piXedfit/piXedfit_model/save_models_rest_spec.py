@@ -11,7 +11,6 @@ global PIXEDFIT_HOME
 PIXEDFIT_HOME = os.environ['PIXEDFIT_HOME']
 sys.path.insert(0, PIXEDFIT_HOME)
 
-from piXedfit.utils.filtering import match_filters_array
 from piXedfit.piXedfit_model import generate_modelSED_spec_fit, generate_modelSED_propphoto_nomwage_fit, calc_mw_age, generate_modelSED_spec_restframe_props 
 from piXedfit.piXedfit_fitting import get_params
 
@@ -42,33 +41,18 @@ gas_logu = float(config_data['gas_logu'])
 
 # SFH form
 global sfh_form
-if int(config_data['sfh_form']) == 0:
-	sfh_form = 'tau_sfh'
-elif int(config_data['sfh_form']) == 1:
-	sfh_form = 'delayed_tau_sfh'
-elif int(config_data['sfh_form']) == 2:
-	sfh_form = 'log_normal_sfh'
-elif int(config_data['sfh_form']) == 3:
-	sfh_form = 'gaussian_sfh'
-elif int(config_data['sfh_form']) == 4:
-	sfh_form = 'double_power_sfh'
+sfh_form = int(config_data['sfh_form'])
 
 global imf
 imf = int(config_data['imf_type'])
 
 # dust emission
 global duste_switch
-if int(config_data['duste_switch']) == 0:
-	duste_switch = 'noduste'
-elif int(config_data['duste_switch']) == 1:
-	duste_switch = 'duste'
+duste_switch = int(config_data['duste_switch'])
 
 # dust extinction law
 global dust_ext_law
-if int(config_data['dust_ext_law']) == 0:
-	dust_ext_law = 'CF2000'
-elif int(config_data['dust_ext_law']) == 1:
-	dust_ext_law = 'Cal2000'
+dust_ext_law = int(config_data['dust_ext_law'])
 
 # whether dust_index is set fix or not
 global fix_dust_index, fix_dust_index_val
@@ -117,9 +101,9 @@ status_log = {'logzsol':0, 'log_tau':1, 'log_age':1, 'dust_index':0, 'dust1':0, 
 # call FSPS:
 global sp 
 sp = fsps.StellarPopulation(zcontinuous=1, imf_type=imf)
-if duste_switch == 'duste':
+if duste_switch==1:
 	sp.params["add_dust_emission"] = True
-elif duste_switch == 'noduste':
+elif duste_switch==0:
 	sp.params["add_dust_emission"] = False
 if add_neb_emission == 1:
 	sp.params["add_neb_emission"] = True
@@ -131,32 +115,32 @@ if add_agn == 0:
 elif add_agn == 1:
 	sp.params["fagn"] = 1
 
-if sfh_form=='tau_sfh' or sfh_form=='delayed_tau_sfh':
-	if sfh_form == 'tau_sfh':
+if sfh_form==0 or sfh_form==1:
+	if sfh_form == 0:
 		sp.params["sfh"] = 1
-	elif sfh_form == 'delayed_tau_sfh':
+	elif sfh_form == 1:
 		sp.params["sfh"] = 4
 	sp.params["const"] = 0
 	sp.params["sf_start"] = 0
 	sp.params["sf_trunc"] = 0
 	sp.params["fburst"] = 0
 	sp.params["tburst"] = 30.0
-	if dust_ext_law == 'CF2000' :
+	if dust_ext_law == 0:
 		sp.params["dust_type"] = 0  
 		sp.params["dust_tesc"] = 7.0
 		dust1_index = -1.0
 		sp.params["dust1_index"] = dust1_index
-	elif dust_ext_law == 'Cal2000':
+	elif dust_ext_law == 1:
 		sp.params["dust_type"] = 2  
 		sp.params["dust1"] = 0
-elif sfh_form=='log_normal_sfh' or sfh_form=='gaussian_sfh' or sfh_form=='double_power_sfh':
+elif sfh_form==2 or sfh_form==3 or sfh_form==4:
 	sp.params["sfh"] = 3
-	if dust_ext_law == 'CF2000' : 
+	if dust_ext_law == 0: 
 		sp.params["dust_type"] = 0  
 		sp.params["dust_tesc"] = 7.0
 		dust1_index = -1.0
 		sp.params["dust1_index"] = dust1_index
-	elif dust_ext_law == 'Cal2000':
+	elif dust_ext_law == 1:
 		sp.params["dust_type"] = 2  
 		sp.params["dust1"] = 0
 
@@ -207,7 +191,7 @@ mod_params_temp = np.zeros((nparams,numDataPerRank))
 mod_log_mass_temp = np.zeros(numDataPerRank)
 mod_log_sfr_temp = np.zeros(numDataPerRank)
 mod_log_mw_age_temp = np.zeros(numDataPerRank)
-if duste_switch == 'duste':
+if duste_switch==1:
 	mod_log_dustmass_temp = np.zeros(numDataPerRank)
 if add_agn == 1:
 	mod_log_fagn_bol_temp = np.zeros(numDataPerRank)
@@ -231,7 +215,7 @@ for ii in recvbuf_idx:
 	mod_log_sfr_temp[int(count)] = log10(SFR_fSM)
 	mod_log_mw_age_temp[int(count)] = np.log10(mw_age)
 
-	if duste_switch == 'duste':
+	if duste_switch==1:
 		mod_log_dustmass_temp[int(count)] = log10(dust_mass)  
 
 	if add_agn == 1:
@@ -251,7 +235,7 @@ sys.stdout.write('\n')
 mod_log_mass = np.zeros(nmodels)
 mod_log_sfr = np.zeros(nmodels)
 mod_log_mw_age = np.zeros(nmodels)
-if duste_switch == 'duste':
+if duste_switch==1:
 	mod_log_dustmass = np.zeros(nmodels)
 if add_agn == 1:
 	mod_log_fagn_bol = np.zeros(nmodels)
@@ -262,7 +246,7 @@ mod_fluxes = np.zeros((nwaves,nmodels))
 comm.Gather(mod_log_mass_temp, mod_log_mass, root=0)
 comm.Gather(mod_log_sfr_temp, mod_log_sfr, root=0)
 comm.Gather(mod_log_mw_age_temp, mod_log_mw_age, root=0)
-if duste_switch == 'duste':
+if duste_switch==1:
 	comm.Gather(mod_log_dustmass_temp, mod_log_dustmass, root=0)
 if add_agn == 1:
 	comm.Gather(mod_log_fagn_bol_temp, mod_log_fagn_bol, root=0)
@@ -290,7 +274,7 @@ if rank == 0:
 		m.attrs['gas_logu'] = gas_logu
 		m.attrs['add_agn'] = add_agn
 		m.attrs['funit'] = 'L_sun/A'
-		if duste_switch=='duste' or duste_switch==1:
+		if duste_switch==1:
 			if fix_dust_index == 1:
 				m.attrs['dust_index'] = fix_dust_index_val
 		m.attrs['nmodels'] = nmodels
@@ -311,7 +295,7 @@ if rank == 0:
 		str_temp = 'par%d' % (nparams+add_par)
 		m.attrs[str_temp] = 'log_mw_age'
 
-		if duste_switch == 'duste':
+		if duste_switch==1:
 			add_par = add_par + 1
 			str_temp = 'par%d' % (nparams+add_par)
 			m.attrs[str_temp] = 'log_dustmass'
@@ -321,7 +305,7 @@ if rank == 0:
 			str_temp = 'par%d' % (nparams+add_par)
 			m.attrs[str_temp] = 'log_fagn_bol'
 
-		m.attrs['nparams_all'] = int(nparams+add_par)
+		m.attrs['nparams_all'] = int(nparams+add_par+1)
 
 		for pp in range(0,nparams):
 			str_temp = 'pr_%s_min' % params[pp]
@@ -338,7 +322,7 @@ if rank == 0:
 		p.create_dataset('log_sfr', data=np.array(mod_log_sfr), compression="gzip")
 		p.create_dataset('log_mw_age', data=np.array(mod_log_mw_age), compression="gzip")
 
-		if duste_switch == 'duste':
+		if duste_switch==1:
 			p.create_dataset('log_dustmass', data=np.array(mod_log_dustmass), compression="gzip")
 
 		if add_agn == 1:

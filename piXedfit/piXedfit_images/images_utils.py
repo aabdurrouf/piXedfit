@@ -122,10 +122,32 @@ def k_lmbd_Fitz1986_LMC(wavelength_Ang):
 	return k
 
 
-def EBV_foreground_dust(Alambda_SDSS):
-	"""A function for estimating E(B-V) of the foreground Galactic dust attenuation
-	given A_lambda in 5 SDSS bands. Assuming Fitzpatrick et al. 1986
+def EBV_foreground_dust(ra, dec):
+	"""Function for estimating E(B-V) associated with the foreground Galactic dust attenuation.
+
+	:param ra:
+		Right ascension in degree.
+
+	:param dec:
+		Declination in degree.
+
+	:returns ebv:
+		E(B-V) associated with the foreground Galactic dust.
 	"""
+
+	from astroquery.irsa_dust import IrsaDust
+	import astropy.coordinates as coord
+	import astropy.units as u
+
+	coo = coord.SkyCoord(ra=ra*u.deg, dec=dec*u.deg)
+	table = IrsaDust.get_extinction_table(coo)
+
+	Alambda_SDSS = np.zeros(5)
+	Alambda_SDSS[0] = np.array(table['A_SandF'][table['Filter_name']=='SDSS u'])[0]
+	Alambda_SDSS[1] = np.array(table['A_SandF'][table['Filter_name']=='SDSS g'])[0]
+	Alambda_SDSS[2] = np.array(table['A_SandF'][table['Filter_name']=='SDSS r'])[0]
+	Alambda_SDSS[3] = np.array(table['A_SandF'][table['Filter_name']=='SDSS i'])[0]
+	Alambda_SDSS[4] = np.array(table['A_SandF'][table['Filter_name']=='SDSS z'])[0]
 
 	# central wavelengths of the SDSS 5 bands: 
 	filters = ['sdss_u', 'sdss_g', 'sdss_r', 'sdss_i', 'sdss_z']
@@ -133,10 +155,8 @@ def EBV_foreground_dust(Alambda_SDSS):
 
 	# calculate average E(B-V):
 	ebv_SDSS = Alambda_SDSS/k_lmbd_Fitz1986_LMC(wave_SDSS)
-
-	ave_ebv = np.mean(ebv_SDSS)
-
-	return ave_ebv
+	ebv = np.mean(ebv_SDSS)
+	return ebv
 
 
 def skybg_sdss(fits_image):
@@ -434,10 +454,14 @@ def var_img_GALEX(sci_img,skybg_img,filter_name,name_out_fits=None):
 	exp_time = float(sci_img_header['EXPTIME'])
 
 	val0 = sci_img_data + skybg_img_data
+
+	rows, cols = np.where(val0==0.0)
+	val0[rows,cols] = skybg_img_data[rows,cols]
+
 	if filter_name == 'galex_fuv':
-		sigma_sq_img_data = ((val0*exp_time) + np.square(0.050*val0*exp_time))/exp_time/exp_time
+		sigma_sq_img_data = (np.absolute(val0*exp_time) + np.square(0.050*val0*exp_time))/exp_time/exp_time
 	elif filter_name == 'galex_nuv':
-		sigma_sq_img_data = ((val0*exp_time) + np.square(0.027*val0*exp_time))/exp_time/exp_time
+		sigma_sq_img_data = (np.absolute(val0*exp_time) + np.square(0.027*val0*exp_time))/exp_time/exp_time
 								
 	if name_out_fits == None:
 		name_out_fits = 'var_%s' % sci_img

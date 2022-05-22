@@ -20,6 +20,9 @@ from piXedfit.utils.igm_absorption import igm_att_madau, igm_att_inoue
 def bayesian_sedfit_gauss():
 	f = h5py.File(models_spec, 'r')
 
+	# get spectral wavelength
+	wave = f['mod/spec/wave'][:]
+
 	numDataPerRank = int(nmodels/size)
 	idx_mpi = np.linspace(0,nmodels-1,nmodels)
 	recvbuf_idx = np.empty(numDataPerRank, dtype='d')
@@ -33,21 +36,19 @@ def bayesian_sedfit_gauss():
 
 	count = 0
 	for ii in recvbuf_idx:
-		# get the spectra
-		wave = f['mod/spec/wave'][:]
+		# get spectral fluxes
 		str_temp = 'mod/spec/f%d' % int(ii)
 		extnc_spec = f[str_temp][:]
 
 		# redshifting
-		redsh_wave,redsh_spec = cosmo_redshifting(DL_Gpc=DL_Gpc,cosmo=cosmo,H0=H0,Om0=Om0,
-													z=gal_z,wave=wave,spec=extnc_spec)
+		redsh_wave,redsh_spec = cosmo_redshifting(DL_Gpc=DL_Gpc,cosmo=cosmo,H0=H0,Om0=Om0,z=gal_z,wave=wave,spec=extnc_spec)
 
 		# IGM absorption:
 		if add_igm_absorption == 1:
-			if igm_type == 0 or igm_type == 'madau1995':
+			if igm_type == 0:
 				trans = igm_att_madau(redsh_wave,gal_z)
 				redsh_spec = redsh_spec*trans
-			elif igm_type == 1 or igm_type == 'inoue2014':
+			elif igm_type == 1:
 				trans = igm_att_inoue(redsh_wave,gal_z)
 				redsh_spec = redsh_spec*trans
 
@@ -193,6 +194,9 @@ def bayesian_sedfit_gauss():
 def bayesian_sedfit_student_t():
 	f = h5py.File(models_spec, 'r')
 
+	# get spectral wavelength
+	wave = f['mod/spec/wave'][:]
+
 	numDataPerRank = int(nmodels/size)
 	idx_mpi = np.linspace(0,nmodels-1,nmodels)
 	recvbuf_idx = np.empty(numDataPerRank, dtype='d')
@@ -206,21 +210,19 @@ def bayesian_sedfit_student_t():
 
 	count = 0
 	for ii in recvbuf_idx:
-		# get the spectra
-		wave = f['mod/spec/wave'][:]
+		# get spectral fluxes
 		str_temp = 'mod/spec/f%d' % int(ii)
 		extnc_spec = f[str_temp][:]
 
 		# redshifting
-		redsh_wave,redsh_spec = cosmo_redshifting(DL_Gpc=DL_Gpc,cosmo=cosmo,H0=H0,Om0=Om0,
-													z=gal_z,wave=wave,spec=extnc_spec)
+		redsh_wave,redsh_spec = cosmo_redshifting(DL_Gpc=DL_Gpc,cosmo=cosmo,H0=H0,Om0=Om0,z=gal_z,wave=wave,spec=extnc_spec)
 
 		# IGM absorption:
 		if add_igm_absorption == 1:
-			if igm_type == 0 or igm_type == 'madau1995':
+			if igm_type == 0:
 				trans = igm_att_madau(redsh_wave,gal_z)
 				redsh_spec = redsh_spec*trans
-			elif igm_type == 1 or igm_type == 'inoue2014':
+			elif igm_type == 1:
 				trans = igm_att_inoue(redsh_wave,gal_z)
 				redsh_spec = redsh_spec*trans
 
@@ -367,7 +369,7 @@ def store_to_fits(sampler_params,mod_chi2,mod_prob,fits_name_out):
 	hdr['dust_ext_law'] = dust_ext_law
 	hdr['nfilters'] = nbands
 	hdr['duste_stat'] = duste_switch
-	if duste_switch=='duste' or duste_switch==1:
+	if duste_switch==1:
 		if fix_dust_index == 1:
 			hdr['dust_index'] = fix_dust_index_val
 	hdr['add_neb_emission'] = add_neb_emission
@@ -545,7 +547,7 @@ duste_switch = f['mod'].attrs['duste_switch']
 add_neb_emission = f['mod'].attrs['add_neb_emission']
 add_agn = f['mod'].attrs['add_agn']
 gas_logu = f['mod'].attrs['gas_logu']
-if duste_switch=='duste' or duste_switch==1:
+if duste_switch==1:
 	if 'dust_index' in params:
 		fix_dust_index = 0 
 	else:

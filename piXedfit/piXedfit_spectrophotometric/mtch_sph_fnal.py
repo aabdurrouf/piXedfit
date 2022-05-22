@@ -1,6 +1,5 @@
 import numpy as np
 import sys, os
-import fsps
 import h5py
 from operator import itemgetter
 from mpi4py import MPI
@@ -131,11 +130,9 @@ rest_wave = f['mod/spec/wave'][:]
 redsh_wave = (1.0+gal_z)*rest_wave
 idx_mod_wave = np.where((redsh_wave>min_spec_wave-10) & (redsh_wave<max_spec_wave+10))
 
-sp = fsps.StellarPopulation(zcontinuous=1, imf_type=1)
-
 # get wavelength free of emission lines
 del_wave_nebem = float(config_data['del_wave_nebem'])
-spec_wave_clean,wave_mask = get_no_nebem_wave_fit(sp,gal_z,spec_wave,del_wave_nebem)
+spec_wave_clean,wave_mask = get_no_nebem_wave_fit(gal_z,spec_wave,del_wave_nebem)
 
 # arrays for outputs
 rescaled_spec_flux = np.zeros((dim_y,dim_x,nwaves))
@@ -147,6 +144,9 @@ map_spec_corr_factor = np.zeros((dim_y,dim_x,nwaves))
 # allocate memory for output best-fit model spectra
 map_bfit_mod_spec_wave = spec_wave_clean
 map_bfit_mod_spec_flux = np.zeros((dim_y,dim_x,len(spec_wave_clean)))
+
+# polynomial order
+poly_order = 3.0
 
 for pp in range(0,npixs):
 	# obs SED
@@ -226,9 +226,9 @@ for pp in range(0,npixs):
 
 		# match scaling/normalization of IFS spectra to the best-fit model spectrum
 		in_spec_flux = spec_flux_trans[rows[pp]][cols[pp]]
-		final_wave,final_flux,factor,ref_spec_flux_clean = match_spectra_poly_legendre_fit(sp=sp,in_spec_wave=spec_wave,in_spec_flux=in_spec_flux,
-																		ref_spec_wave=conv_bfit_spec_wave,ref_spec_flux=conv_bfit_spec_flux,
-																		wave_clean=spec_wave_clean,z=gal_z,del_wave_nebem=del_wave_nebem,order=3)
+		final_wave,final_flux,factor,ref_spec_flux_clean = match_spectra_poly_legendre_fit(spec_wave,in_spec_flux,
+																		conv_bfit_spec_wave,conv_bfit_spec_flux,
+																		spec_wave_clean,gal_z,del_wave_nebem,poly_order)
 
 		# get output re-scaled spectrum
 		rescaled_spec_flux[rows[pp]][cols[pp]] = final_flux

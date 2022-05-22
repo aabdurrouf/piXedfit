@@ -9,7 +9,8 @@ import matplotlib.cm as cm
 import matplotlib.patches as patches
 import matplotlib.transforms as transforms
 
-__all__ = ["gauss_prob", "gauss_ln_prob", "student_t_prob", "model_leastnorm",  "calc_chi2", "calc_modprob_leastnorm_gauss_reduced", 
+__all__ = ["gauss_prob", "ln_gauss_prob", "student_t_prob", "ln_student_t_prob", "model_leastnorm",  
+			"gauss_prob_reduced", "ln_gauss_prob_reduced", "calc_chi2", "calc_modprob_leastnorm_gauss_reduced", 
 			"calc_modprob_leastnorm_gauss", "plot_triangle_posteriors"]
 
 
@@ -19,75 +20,51 @@ def prod(iterable):
 
 	return reduce(mul, iterable, 1)
 
-def gauss_prob(obs_fluxes,obs_flux_err,mod_fluxes):
-	d = np.asarray(obs_fluxes)
-	derr = np.asarray(obs_flux_err)
-	m = np.asarray(mod_fluxes)
-	data = np.exp(-0.5*(d-m)*(d-m)/derr/derr)/derr/sqrt(2.0*pi)
-	return prod(data)
-
-def old_gauss_prob(obs_fluxes,obs_flux_err,mod_fluxes):
-	d = np.asarray(obs_fluxes)
-	derr = np.asarray(obs_flux_err)
-	m = np.asarray(mod_fluxes)
-
-	idx_excld = np.where((np.isnan(d)==True) | (np.isinf(d)==True) | (np.isnan(derr)==True) | (np.isinf(derr)==True))
-	d = np.delete(d, idx_excld[0])
-	derr = np.delete(derr, idx_excld[0])
-	m = np.delete(m, idx_excld[0])
-
-	data = np.exp(-0.5*(d-m)*(d-m)/derr/derr)/derr/sqrt(2.0*pi)
-	return prod(data)
-
 def gauss_prob_reduced(obs_fluxes,obs_flux_err,mod_fluxes):
 	d = np.asarray(obs_fluxes)
 	derr = np.asarray(obs_flux_err)
 	m = np.asarray(mod_fluxes)
 
-	chi2 = np.sum((m-d)*(m-d)/derr/derr)
+	chi2 = np.sum(np.square((m-d)/derr))
 	prob = np.exp(-0.5*chi2)
 
 	return prob
 
-def old_gauss_prob_reduced(obs_fluxes,obs_flux_err,mod_fluxes):
+def ln_gauss_prob_reduced(obs_fluxes,obs_flux_err,mod_fluxes):
 	d = np.asarray(obs_fluxes)
 	derr = np.asarray(obs_flux_err)
 	m = np.asarray(mod_fluxes)
 
-	idx_excld = np.where((np.isnan(d)==True) | (np.isinf(d)==True) | (np.isnan(derr)==True) | (np.isinf(derr)==True))
-	d = np.delete(d, idx_excld[0])
-	derr = np.delete(derr, idx_excld[0])
-	m = np.delete(m, idx_excld[0])
-
-	chi2 = np.sum((m-d)*(m-d)/derr/derr)
+	chi2 = np.sum(np.square((m-d)/derr))
 	prob = np.exp(-0.5*chi2)
 
 	return prob
 
-def gauss_ln_prob(obs_fluxes,obs_flux_err,mod_fluxes):
+
+def gauss_prob(obs_fluxes,obs_flux_err,mod_fluxes):
 	d = np.asarray(obs_fluxes)
 	derr = np.asarray(obs_flux_err)
 	m = np.asarray(mod_fluxes)
 
-	data = np.exp(-0.5*(d-m)*(d-m)/derr/derr)/derr/sqrt(2.0*pi)
-	ln_data = np.log(data)
-	ln_prob = np.sum(ln_data)
-	return ln_prob
+	chi2 = np.square((d-m)/derr)
+	data = 1.0/np.exp(chi2/2.0)/derr/sqrt(2.0*pi)
 
-def old_gauss_ln_prob(obs_fluxes,obs_flux_err,mod_fluxes):
+	idx_sel = np.where((np.isnan(data)==False) & (np.isinf(data)==False))
+	data = data[idx_sel[0]]
+	
+	return np.prod(data)
+
+
+def ln_gauss_prob(obs_fluxes,obs_flux_err,mod_fluxes):
 	d = np.asarray(obs_fluxes)
 	derr = np.asarray(obs_flux_err)
 	m = np.asarray(mod_fluxes)
 
-	idx_excld = np.where((np.isnan(d)==True) | (np.isinf(d)==True) | (np.isnan(derr)==True) | (np.isinf(derr)==True))
-	d = np.delete(d, idx_excld[0])
-	derr = np.delete(derr, idx_excld[0])
-	m = np.delete(m, idx_excld[0])
+	chi2 = np.square((d-m)/derr)
+	ln_prob = -0.5*np.sum(np.log(2*pi*derr*derr)) - 0.5*np.sum(chi2)
 
-	data = np.exp(-0.5*(d-m)*(d-m)/derr/derr)/derr/sqrt(2.0*pi)
-	ln_data = np.log(data)
-	ln_prob = np.sum(ln_data)
 	return ln_prob
+
 
 def student_t_prob(dof,t):
 	"""A function for calculating probability/likelihood based on Student's t distribution
@@ -98,13 +75,18 @@ def student_t_prob(dof,t):
 	:param t:
 		Argument in the Student's t function
 	"""
+
 	base = 1.0 + (t*t/dof)
 	power = -0.5*(dof+1.0)
 	data = gamma(0.5*(dof+1.0))*np.power(base,power)/sqrt(dof*pi)/gamma(0.5*dof)
-	
-	return prod(data)
 
-def old_student_t_prob(dof,t):
+	idx_sel = np.where((np.isnan(data)==False) & (np.isinf(data)==False))
+	data = data[idx_sel[0]]
+	
+	return np.prod(data)
+
+
+def ln_student_t_prob(dof,t):
 	"""A function for calculating probability/likelihood based on Student's t distribution
 
 	:param dof:
@@ -113,14 +95,17 @@ def old_student_t_prob(dof,t):
 	:param t:
 		Argument in the Student's t function
 	"""
-	idx_excld = np.where((np.isnan(t)==True) | (np.isinf(t)==True))
-	t = np.delete(t, idx_excld[0])
 
 	base = 1.0 + (t*t/dof)
 	power = -0.5*(dof+1.0)
 	data = gamma(0.5*(dof+1.0))*np.power(base,power)/sqrt(dof*pi)/gamma(0.5*dof)
+
+	idx_sel = np.where((np.isnan(data)==False) & (np.isinf(data)==False))
+	data = data[idx_sel[0]]
 	
-	return prod(data)
+	ln_data = np.log(data)
+	ln_prob = np.sum(ln_data)
+	return ln_prob
 
 
 def model_leastnorm(obs_fluxes,obs_flux_err,mod_fluxes):
@@ -145,33 +130,6 @@ def model_leastnorm(obs_fluxes,obs_flux_err,mod_fluxes):
 	norm = u/l
 	return norm
 
-def old_model_leastnorm(obs_fluxes,obs_flux_err,mod_fluxes):
-	"""A function for calculating model normalization from chi-square minimization
-
-	:param obs_fluxes:
-		Observed multiband photometric fluxes
-
-	:param obs_flux_err:
-		Observed multiband photometric flux uncertainties
-
-	:param mod_fluxes:
-		Model multiband photometric fluxes  
-	"""
-	d = np.asarray(obs_fluxes)
-	derr = np.asarray(obs_flux_err)
-	m = np.asarray(mod_fluxes)
-
-	idx_excld = np.where((np.isnan(d)==True) | (np.isinf(d)==True) | (np.isnan(derr)==True) | (np.isinf(derr)==True))
-	d = np.delete(d, idx_excld[0])
-	derr = np.delete(derr, idx_excld[0])
-	m = np.delete(m, idx_excld[0])
-	
-	u = np.sum(d*m/derr/derr)
-	l = np.sum(m*m/derr/derr) 
-
-	norm0 = u/l
-	return norm0
-
 def calc_chi2(obs_fluxes,obs_flux_err,mod_fluxes):
 	"""A function for calculting chi-square 
 
@@ -187,30 +145,6 @@ def calc_chi2(obs_fluxes,obs_flux_err,mod_fluxes):
 	d = np.asarray(obs_fluxes)
 	derr = np.asarray(obs_flux_err)
 	m = np.asarray(mod_fluxes)
-
-	chi2 = np.sum((m-d)*(m-d)/derr/derr)
-	return chi2
-
-def old_calc_chi2(obs_fluxes,obs_flux_err,mod_fluxes):
-	"""A function for calculting chi-square 
-
-	:param obs_fluxes:
-		Observed multiband photometric fluxes
-
-	:param obs_flux_err:
-		Observed multiband photometric flux uncertainties
-
-	:param mod_fluxes:
-		Model multiband photometric fluxes
-	"""
-	d = np.asarray(obs_fluxes)
-	derr = np.asarray(obs_flux_err)
-	m = np.asarray(mod_fluxes)
-
-	idx_excld = np.where((np.isnan(d)==True) | (np.isinf(d)==True) | (np.isnan(derr)==True) | (np.isinf(derr)==True))
-	d = np.delete(d, idx_excld[0])
-	derr = np.delete(derr, idx_excld[0])
-	m = np.delete(m, idx_excld[0])
 
 	chi2 = np.sum((m-d)*(m-d)/derr/derr)
 	return chi2
@@ -253,26 +187,6 @@ def calc_modchi2_leastnorm(obs_fluxes,obs_flux_err,mod_fluxes):
 	return chi2
 
 
-### define function to calculate model chi-square:
-def old_calc_modchi2_leastnorm(obs_fluxes,obs_flux_err,mod_fluxes):
-	"""A function for calculating model chi-square, and normalization. 
-	"""
-	d = np.asarray(obs_fluxes)
-	derr = np.asarray(obs_flux_err)
-	m = np.asarray(mod_fluxes)
-
-	idx_excld = np.where((np.isnan(d)==True) | (np.isinf(d)==True) | (np.isnan(derr)==True) | (np.isinf(derr)==True))
-	d = np.delete(d, idx_excld[0])
-	derr = np.delete(derr, idx_excld[0])
-	m = np.delete(m, idx_excld[0])
-
-	norm0 = model_leastnorm(d,derr,m)
-	mod = norm0*m
-	chi2 = np.sum((mod - d)*(mod - d)/derr/derr)
-
-	return chi2
-
-
 def calc_modprob_leastnorm_gauss(obs_fluxes,obs_flux_err,mod_fluxes):
 	"""A function for calculating model probability, chi-square, and normalization. 
 	To be used in the initial fitting in MCMC fitting.
@@ -282,7 +196,7 @@ def calc_modprob_leastnorm_gauss(obs_fluxes,obs_flux_err,mod_fluxes):
 	mod = norm0*mod_fluxes
 	chi2 = np.sum((mod - obs_fluxes)*(mod - obs_fluxes)/obs_flux_err/obs_flux_err)
 	data = np.exp(-0.5*(obs_fluxes-mod)*(obs_fluxes-mod)/obs_flux_err/obs_flux_err)/obs_flux_err/sqrt(2.0*pi)
-	prob0 = prod(data)
+	prob0 = np.prod(data)
 	return prob0,chi2,norm0
 
 

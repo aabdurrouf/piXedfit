@@ -37,7 +37,7 @@
     
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="List of imaging data" href="list_imaging_data.html" />
+    <link rel="next" title="Managing filters" href="manage_filters.html" />
     <link rel="prev" title="piXedfit" href="index.html" /> 
 </head>
 
@@ -90,23 +90,27 @@
 <li class="toctree-l2"><a class="reference internal" href="#how-to-use-the-current-version-of-pixedfit">How to use the current version of piXedfit</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="manage_filters.html">Managing filters</a></li>
 <li class="toctree-l1"><a class="reference internal" href="list_imaging_data.html">List of imaging data</a></li>
 <li class="toctree-l1"><a class="reference internal" href="list_kernels_psf.html">Convolution kernels and PSFs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="ingredients_model.html">SED modeling</a></li>
-<li class="toctree-l1"><a class="reference internal" href="image_pros.html">Image processing</a></li>
-<li class="toctree-l1"><a class="reference internal" href="image_ifs_match.html">Spatial Matching imaging+IFS data</a></li>
-<li class="toctree-l1"><a class="reference internal" href="pixel_binning.html">Pixel binning</a></li>
 <li class="toctree-l1"><a class="reference internal" href="gen_model_SEDs.html">Generating model SEDs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="fit_res_SEDs.html">Fitting spatially resolved SED</a></li>
-<li class="toctree-l1"><a class="reference internal" href="fit_ing_SEDs.html">Fitting integrated SED</a></li>
-<li class="toctree-l1"><a class="reference internal" href="plot_fitres.html">Analyze fitting results</a></li>
+<li class="toctree-l1"><a class="reference internal" href="image_pros.html">Image processing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="image_ifs_match.html">Spatial and Spectral Matching of imaging and IFS data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pixel_binning.html">Pixel binning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fit_ing_SEDs.html">Fitting individual SED</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fit_res_SEDs.html">Fitting spatially resolved SEDs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_fitres.html">Analyzing fitting results</a></li>
 <li class="toctree-l1"><a class="reference internal" href="get_maps_prop.html">Get maps of spatially resolved properties</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Tutorials</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="tutorials.html">Tutorials</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Demonstrations</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="demos_pixel_binning.html">Pixel binning</a></li>
 <li class="toctree-l1"><a class="reference internal" href="demos_sed_fitting.html">SED fitting</a></li>
-<li class="toctree-l1"><a class="reference internal" href="tutorials.html">Tutorials</a></li>
 </ul>
 <p class="caption"><span class="caption-text">API reference</span></p>
 <ul>
@@ -194,6 +198,7 @@
 <li><p><a class="reference external" href="https://photutils.readthedocs.io/en/stable/">photutils</a> and <a class="reference external" href="https://reproject.readthedocs.io/en/stable/">reproject</a> if you want to use <code class="xref py py-mod docutils literal notranslate"><span class="pre">piXedfit_images</span></code> OR <code class="xref py py-mod docutils literal notranslate"><span class="pre">piXedfit_spectrophotometric</span></code> modules for doing images processing OR spatial matching (i.e., combining) between multiband imaging data and integral field spectroscopic (IFS) data</p></li>
 <li><p><a class="reference external" href="https://sep.readthedocs.io/en/v1.0.x/index.html">SEP</a> if you want to use sources extraction and segmentation features of SExtractor for defining galaxy’s region of interest in the image processing.</p></li>
 <li><p><a class="reference external" href="https://emcee.readthedocs.io/en/stable/">emcee</a> and <a class="reference external" href="https://github.com/adrn/schwimmbad">schwimmbad</a> if you want to use MCMC method for SED fitting with the <code class="xref py py-mod docutils literal notranslate"><span class="pre">piXefit_fitting</span></code> module</p></li>
+<li><p><a class="reference external" href="https://astroquery.readthedocs.io/en/latest/">Astroquery</a>.</p></li>
 </ul>
 </div>
 <div class="section" id="how-to-use-the-current-version-of-pixedfit">
@@ -236,7 +241,7 @@
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="list_imaging_data.html" class="btn btn-neutral float-right" title="List of imaging data" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="manage_filters.html" class="btn btn-neutral float-right" title="Managing filters" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
         <a href="index.html" class="btn btn-neutral float-left" title="piXedfit" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>

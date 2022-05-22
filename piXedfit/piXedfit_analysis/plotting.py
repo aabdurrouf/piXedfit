@@ -155,7 +155,7 @@ def plot_SED_rdsps(name_sampler_fits=None, logscale_x=True, logscale_y=True, xra
 	elif add_igm_absorption == 0:
 		igm_type = 0
 
-	if duste_switch == 'duste':
+	if duste_switch==1:
 		if 'dust_index' in header_samplers:
 			def_params_val['dust_index'] = float(header_samplers['dust_index'])
 
@@ -270,7 +270,7 @@ def plot_SED_rdsps(name_sampler_fits=None, logscale_x=True, logscale_y=True, xra
 			plt.plot(spec_SED['wave'],spec_SED['flux_stellar'],lw=lw,color='darkorange',label='stellar emission')
 			if add_neb_emission == 1:
 				plt.plot(spec_SED['wave'],spec_SED['flux_nebe'],lw=lw,color='darkcyan',label='nebular emission')
-			if duste_switch == 1 or duste_switch == 'duste':
+			if duste_switch==1:
 				plt.plot(spec_SED['wave'],spec_SED['flux_duste'],lw=lw,color='darkred',label='dust emission')
 			if add_agn == 1:
 				plt.plot(spec_SED['wave'],spec_SED['flux_agn'],lw=lw,color='darkgreen',label='AGN torus emission')
@@ -286,7 +286,7 @@ def plot_SED_rdsps(name_sampler_fits=None, logscale_x=True, logscale_y=True, xra
 			plt.plot(spec_SED['wave']/1.0e+4,spec_SED['flux_stellar'],lw=lw,color='darkorange',label='stellar emission')
 			if add_neb_emission == 1:
 				plt.plot(spec_SED['wave']/1.0e+4,spec_SED['flux_nebe'],lw=lw,color='darkcyan',label='nebular emission')
-			if duste_switch == 1 or duste_switch == 'duste':
+			if duste_switch==1:
 				plt.plot(spec_SED['wave']/1.0e+4,spec_SED['flux_duste'],lw=lw,color='darkred',label='dust emission')
 			if add_agn == 1:
 				plt.plot(spec_SED['wave']/1.0e+4,spec_SED['flux_agn'],lw=lw,color='darkgreen',label='AGN torus emission')
@@ -462,7 +462,7 @@ def plot_SED_rdsps_with_residual(name_sampler_fits, logscale_x=True, logscale_y=
 	elif add_igm_absorption == 0:
 		igm_type = 0
 
-	if duste_switch == 'duste':
+	if duste_switch==1:
 		if 'dust_index' in header_samplers:
 			def_params_val['dust_index'] = float(header_samplers['dust_index'])
 
@@ -584,7 +584,7 @@ def plot_SED_rdsps_with_residual(name_sampler_fits, logscale_x=True, logscale_y=
 			plt.plot(spec_SED['wave'],spec_SED['flux_stellar'],lw=lw,color='darkorange',label='stellar emission')
 			if add_neb_emission == 1:
 				plt.plot(spec_SED['wave'],spec_SED['flux_nebe'],lw=lw,color='darkcyan',label='nebular emission')
-			if duste_switch == 1 or duste_switch == 'duste':
+			if duste_switch==1:
 				plt.plot(spec_SED['wave'],spec_SED['flux_duste'],lw=lw,color='darkred',label='dust emission')
 			if add_agn == 1:
 				plt.plot(spec_SED['wave'],spec_SED['flux_agn'],lw=lw,color='darkgreen',label='AGN torus emission')
@@ -600,7 +600,7 @@ def plot_SED_rdsps_with_residual(name_sampler_fits, logscale_x=True, logscale_y=
 			plt.plot(spec_SED['wave']/1.0e+4,spec_SED['flux_stellar'],lw=lw,color='darkorange',label='stellar emission')
 			if add_neb_emission == 1:
 				plt.plot(spec_SED['wave']/1.0e+4,spec_SED['flux_nebe'],lw=lw,color='darkcyan',label='nebular emission')
-			if duste_switch == 1 or duste_switch == 'duste':
+			if duste_switch==1:
 				plt.plot(spec_SED['wave']/1.0e+4,spec_SED['flux_duste'],lw=lw,color='darkred',label='dust emission')
 			if add_agn == 1:
 				plt.plot(spec_SED['wave']/1.0e+4,spec_SED['flux_agn'],lw=lw,color='darkgreen',label='AGN torus emission')
@@ -861,7 +861,7 @@ def plot_SED_mcmc(name_sampler_fits, nchains=100, logscale_x=True, logscale_y=Tr
 		gal_z = float(header_samplers['gal_z'])
 		def_params_val['z'] = gal_z
 
-	if duste_switch == 'duste':
+	if duste_switch==1:
 		if 'dust_index' in header_samplers:
 			def_params_val['dust_index'] = float(header_samplers['dust_index'])
 
@@ -915,7 +915,7 @@ def plot_SED_mcmc(name_sampler_fits, nchains=100, logscale_x=True, logscale_y=Tr
 
 		if add_neb_emission == 1:
 			rand_spec_nebe.append(spec_SED['flux_nebe'])
-		if duste_switch == 1 or duste_switch=='duste':
+		if duste_switch==1:
 			rand_spec_duste.append(spec_SED['flux_duste'])
 		if add_agn == 1:
 			rand_spec_agn.append(spec_SED['flux_agn'])
@@ -1009,7 +1009,7 @@ def plot_SED_mcmc(name_sampler_fits, nchains=100, logscale_x=True, logscale_y=Tr
 									facecolor='cyan',alpha=0.25,zorder=8)
 				plt.plot(rand_wave,np.percentile(rand_spec_nebe,50,axis=0),lw=lw,color='darkcyan',zorder=8,label='nebular emission')
 			# dust emission
-			if duste_switch == 1 or duste_switch == 'duste':
+			if duste_switch==1:
 				f1.fill_between(rand_wave,np.percentile(rand_spec_duste,16,axis=0),np.percentile(rand_spec_duste,84,axis=0),facecolor='red',
 									alpha=0.25,zorder=8)
 				plt.plot(rand_wave,np.percentile(rand_spec_duste,50,axis=0),lw=lw,color='darkred',zorder=8,label='dust emission')
@@ -1032,7 +1032,7 @@ def plot_SED_mcmc(name_sampler_fits, nchains=100, logscale_x=True, logscale_y=Tr
 				if add_neb_emission == 1:
 					# nebular emission
 					plt.plot(rand_wave,rand_spec_nebe[ii],lw=0.5,color='cyan',alpha=0.4)
-				if duste_switch == 1 or duste_switch == 'duste':
+				if duste_switch==1:
 					# dust emission
 					plt.plot(rand_wave,rand_spec_duste[ii],lw=0.5,color='red',alpha=0.4)
 				if add_agn == 1:
@@ -1261,7 +1261,7 @@ def plot_SED_mcmc_with_residual(name_sampler_fits, nchains=100, logscale_x=True,
 		gal_z = float(header_samplers['gal_z'])
 		def_params_val['z'] = gal_z
 
-	if duste_switch == 'duste':
+	if duste_switch==1:
 		if 'dust_index' in header_samplers:
 			def_params_val['dust_index'] = float(header_samplers['dust_index'])
 
@@ -1315,7 +1315,7 @@ def plot_SED_mcmc_with_residual(name_sampler_fits, nchains=100, logscale_x=True,
 
 		if add_neb_emission == 1:
 			rand_spec_nebe.append(spec_SED['flux_nebe'])
-		if duste_switch == 1 or duste_switch=='duste':
+		if duste_switch==1:
 			rand_spec_duste.append(spec_SED['flux_duste'])
 		if add_agn == 1:
 			rand_spec_agn.append(spec_SED['flux_agn'])
@@ -1410,7 +1410,7 @@ def plot_SED_mcmc_with_residual(name_sampler_fits, nchains=100, logscale_x=True,
 									facecolor='cyan',alpha=0.25,zorder=8)
 				plt.plot(rand_wave,np.percentile(rand_spec_nebe,50,axis=0),lw=lw,color='darkcyan',zorder=8,label='nebular emission')
 			# dust emission
-			if duste_switch == 1 or duste_switch == 'duste':
+			if duste_switch==1:
 				f1.fill_between(rand_wave,np.percentile(rand_spec_duste,16,axis=0),np.percentile(rand_spec_duste,84,axis=0),facecolor='red',
 									alpha=0.25,zorder=8)
 				plt.plot(rand_wave,np.percentile(rand_spec_duste,50,axis=0),lw=lw,color='darkred',zorder=8,label='dust emission')
@@ -1433,7 +1433,7 @@ def plot_SED_mcmc_with_residual(name_sampler_fits, nchains=100, logscale_x=True,
 				if add_neb_emission == 1:
 					# nebular emission
 					plt.plot(rand_wave,rand_spec_nebe[ii],lw=0.5,color='cyan',alpha=0.4)
-				if duste_switch == 1 or duste_switch == 'duste':
+				if duste_switch==1:
 					# dust emission
 					plt.plot(rand_wave,rand_spec_duste[ii],lw=0.5,color='red',alpha=0.4)
 				if add_agn == 1:
@@ -1778,9 +1778,9 @@ def plot_sfh_mcmc(name_sampler_fits, nchains=200, del_t=0.05, plot_true=0, true_
 		t0 = 0.0
 		alpha = 0.0
 		beta = 0.0
-		if sfh_form=='log_normal_sfh' or sfh_form=='gaussian_sfh':
+		if sfh_form==2 or sfh_form==3:
 			t0 = pow(10.0,data_samplers['log_t0'][idx])
-		if sfh_form=='double_power_sfh':
+		if sfh_form==4:
 			alpha = pow(10.0,data_samplers['log_alpha'][idx])
 			beta = pow(10.0,data_samplers['log_beta'][idx])
 
@@ -1837,9 +1837,9 @@ def plot_sfh_mcmc(name_sampler_fits, nchains=200, del_t=0.05, plot_true=0, true_
 			true_t0 = 0
 			true_alpha = 0
 			true_beta = 0
-			if sfh_form=='log_normal_sfh' or sfh_form=='gaussian_sfh':
+			if sfh_form==2 or sfh_form==3:
 				true_t0 = pow(10.0,true_params['log_t0'])
-			if sfh_form=='double_power_sfh':
+			if sfh_form==4:
 				true_alpha = pow(10.0,true_params['log_alpha'])
 				true_beta = pow(10.0,true_params['log_beta'])
 

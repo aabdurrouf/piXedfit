@@ -37,7 +37,7 @@
     
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="SED fitting" href="fit_ing_SEDs.html" />
+    <link rel="next" title="Fitting individual SED" href="fit_ing_SEDs.html" />
     <link rel="prev" title="Spatial and Spectral Matching of imaging and IFS data" href="image_ifs_match.html" /> 
 </head>
 
@@ -98,7 +98,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#pixel-binning-on-images">Pixel binning on images</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="fit_ing_SEDs.html">SED fitting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fit_ing_SEDs.html">Fitting individual SED</a></li>
 <li class="toctree-l1"><a class="reference internal" href="fit_res_SEDs.html">Fitting spatially resolved SEDs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="plot_fitres.html">Analyzing fitting results</a></li>
 <li class="toctree-l1"><a class="reference internal" href="get_maps_prop.html">Get maps of spatially resolved properties</a></li>
@@ -263,13 +263,13 @@
         <span class="n">bin_id</span> <span class="o">=</span> <span class="n">bb</span> <span class="o">+</span> <span class="mi">1</span>
 
         <span class="n">rows</span><span class="p">,</span> <span class="n">cols</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">binmap_photo</span><span class="o">==</span><span class="n">bin_id</span><span class="p">)</span>
-        <span class="n">bin_photo_flux</span><span class="p">[</span><span class="n">bb</span><span class="p">]</span> <span class="o">=</span> <span class="n">hdu</span><span class="p">[</span><span class="s1">&#39;bin_photo_flux&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[:,</span><span class="n">rows</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">cols</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span>
-        <span class="n">bin_photo_flux_err</span><span class="p">[</span><span class="n">bb</span><span class="p">]</span> <span class="o">=</span> <span class="n">hdu</span><span class="p">[</span><span class="s1">&#39;bin_photo_fluxerr&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[:,</span><span class="n">rows</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">cols</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span>
+        <span class="n">bin_photo_flux</span><span class="p">[</span><span class="n">bb</span><span class="p">]</span> <span class="o">=</span> <span class="n">hdu</span><span class="p">[</span><span class="s1">&#39;bin_photo_flux&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[:,</span><span class="n">rows</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">cols</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span><span class="o">*</span><span class="n">unit</span>
+        <span class="n">bin_photo_flux_err</span><span class="p">[</span><span class="n">bb</span><span class="p">]</span> <span class="o">=</span> <span class="n">hdu</span><span class="p">[</span><span class="s1">&#39;bin_photo_fluxerr&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[:,</span><span class="n">rows</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">cols</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span><span class="o">*</span><span class="n">unit</span>
 
         <span class="n">rows</span><span class="p">,</span> <span class="n">cols</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">binmap_spec</span><span class="o">==</span><span class="n">bin_id</span><span class="p">)</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">rows</span><span class="p">)</span><span class="o">&gt;</span><span class="mi">0</span><span class="p">:</span>
-                <span class="n">bin_spec_flux</span><span class="p">[</span><span class="n">bb</span><span class="p">]</span> <span class="o">=</span> <span class="n">hdu</span><span class="p">[</span><span class="s1">&#39;bin_spec_flux&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[:,</span><span class="n">rows</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">cols</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span>
-                <span class="n">bin_spec_flux_err</span><span class="p">[</span><span class="n">bb</span><span class="p">]</span> <span class="o">=</span> <span class="n">hdu</span><span class="p">[</span><span class="s1">&#39;bin_spec_fluxerr&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[:,</span><span class="n">rows</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">cols</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span>
+                <span class="n">bin_spec_flux</span><span class="p">[</span><span class="n">bb</span><span class="p">]</span> <span class="o">=</span> <span class="n">hdu</span><span class="p">[</span><span class="s1">&#39;bin_spec_flux&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[:,</span><span class="n">rows</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">cols</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span><span class="o">*</span><span class="n">unit</span>
+                <span class="n">bin_spec_flux_err</span><span class="p">[</span><span class="n">bb</span><span class="p">]</span> <span class="o">=</span> <span class="n">hdu</span><span class="p">[</span><span class="s1">&#39;bin_spec_fluxerr&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[:,</span><span class="n">rows</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">cols</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span><span class="o">*</span><span class="n">unit</span>
 
 <span class="n">hdu</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
 </pre></div>
@@ -373,7 +373,7 @@
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="fit_ing_SEDs.html" class="btn btn-neutral float-right" title="SED fitting" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="fit_ing_SEDs.html" class="btn btn-neutral float-right" title="Fitting individual SED" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
         <a href="image_ifs_match.html" class="btn btn-neutral float-left" title="Spatial and Spectral Matching of imaging and IFS data" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>

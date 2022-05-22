@@ -1,6 +1,7 @@
 import numpy as np
 from math import pi, pow, sqrt, cos, sin
 import sys, os
+import h5py
 from random import randint
 from astropy.io import fits
 
@@ -9,9 +10,8 @@ PIXEDFIT_HOME = os.environ['PIXEDFIT_HOME']
 
 os.environ["OMP_NUM_THREADS"] = "1"
 
-__all__ = ["singleSEDfit", "SEDfit_from_binmap", "SEDfit_pixels_from_fluxmap", "inferred_params_mcmc_list", 
-			"inferred_params_rdsps_list","get_inferred_params_mcmc", "get_inferred_params_rdsps", "maps_parameters", 
-			"maps_parameters_fit_pixels", "get_params"]
+__all__ = ["singleSEDfit", "singleSEDfit_specphoto", "SEDfit_from_binmap", "SEDfit_from_binmap_specphoto", "SEDfit_pixels_from_fluxmap", "inferred_params_mcmc_list", 
+			"inferred_params_rdsps_list","get_inferred_params_mcmc", "get_inferred_params_rdsps", "maps_parameters", "maps_parameters_fit_pixels", "get_params"]
 
 
 def nproc_reduced(nproc,nwalkers,nsteps,nsteps_cut):
@@ -24,8 +24,8 @@ def nproc_reduced(nproc,nwalkers,nsteps,nsteps_cut):
 	return nproc_new
 
 
-def singleSEDfit(obs_flux, obs_flux_err, filters, models_spec=None, fit_method='mcmc', gal_z=None, z_range=[0.0,1.0], 
-	nrands_z=10, add_igm_absorption=0, igm_type=1, likelihood='gauss', dof=2.0, gauss_likelihood_form=1, nwalkers=100, 
+def singleSEDfit(obs_flux, obs_flux_err, filters, models_spec, fit_method='mcmc', gal_z=None, z_range=[0.0,1.0], 
+	nrands_z=10, add_igm_absorption=0, igm_type=0, likelihood='gauss', dof=2.0, gauss_likelihood_form=1, nwalkers=100, 
 	nsteps=600, nsteps_cut=50, nproc=10, perc_chi2=90.0, cosmo=0, H0=70.0, Om0=0.3, store_full_samplers=1, name_out_fits=None):
 	"""Function for performing SED fitting to a single photometric SED.
 
@@ -53,8 +53,8 @@ def singleSEDfit(obs_flux, obs_flux_err, filters, models_spec=None, fit_method='
 	:param add_igm_absorption: (default: 0)
 		Switch for the IGM absorption. Options are: (1)0 means turn off, and (2)1 means turn on.
 
-	:param igm_type: (default: 1)
-		Choice for the IGM absorption model. Options are: (1)0 or 'madau1995' for Madau (1995), and (2)1 or 'inoue2014' for Inoue et al. (2014).
+	:param igm_type: (default: 0)
+		Choice for the IGM absorption model. Options are: (a) 0 for Madau (1995), and (b) 1 for Inoue+(2014).
 	
 	:param likelihood: (default: 'gauss')
 		Choice of likelihood function for the RDSPS method. Only relevant if the fit_method='rdsps'. Options are: (1)'gauss', and (2) 'student_t'.
@@ -103,7 +103,6 @@ def singleSEDfit(obs_flux, obs_flux_err, filters, models_spec=None, fit_method='
 
 	CODE_dir = PIXEDFIT_HOME+'/piXedfit/piXedfit_fitting/'
 	temp_dir = PIXEDFIT_HOME+'/data/temp/'
-
 
 	# get number of filters:
 	nbands = len(filters)
@@ -158,9 +157,6 @@ def singleSEDfit(obs_flux, obs_flux_err, filters, models_spec=None, fit_method='
 		file_out.write("likelihood %s\n" % likelihood)
 		file_out.write("dof %lf\n" % dof)
 
-	if models_spec == None:
-		print ("models_spec input is required!")
-		sys.exit()
 	file_out.write("models_spec %s\n" % models_spec)
 
 	file_out.write("gauss_likelihood_form %d\n" % gauss_likelihood_form)
@@ -176,14 +172,7 @@ def singleSEDfit(obs_flux, obs_flux_err, filters, models_spec=None, fit_method='
 	file_out.write("nrands_z %d\n" % nrands_z)
 
 	file_out.write("add_igm_absorption %d\n" % add_igm_absorption)
-	if igm_type=='madau1995' or igm_type==0:
-		igm_type1 = 0
-	elif igm_type=='inoue2014' or igm_type==1:
-		igm_type1 = 1
-	else:
-		print ("igm_type is not recognized!")
-		sys.exit()
-	file_out.write("igm_type %d\n" % igm_type1)
+	file_out.write("igm_type %d\n" % igm_type)
 
 	if fit_method=='rdsps':
 		file_out.write("perc_chi2 %lf\n" % perc_chi2)
@@ -260,9 +249,610 @@ def singleSEDfit(obs_flux, obs_flux_err, filters, models_spec=None, fit_method='
 	return name_out_fits
 
 
+def singleSEDfit_specphoto(obs_flux, obs_flux_err, filters, spec_wave, spec_flux, spec_flux_err, models_spec, fit_method='mcmc', 
+	gal_z=None, spec_sigma=2.6, poly_order=5.0, z_range=[0.0,1.0], nrands_z=10, add_igm_absorption=0, igm_type=0, likelihood='gauss', 
+	dof=2.0, gauss_likelihood_form=1, nwalkers=100, nsteps=600, nsteps_cut=50, nproc=10, perc_chi2=90.0, spec_chi_sigma_clip=3.0, 
+	cosmo=0, H0=70.0, Om0=0.3, del_wave_nebem=10.0, store_full_samplers=1, name_out_fits=None):
+	"""Function for performing SED fitting to a single photometric SED.
+
+	:param obs_flux:
+		1D array containing the multiband fluxes. The number of elements should be the same as that of the input filters.
+
+	:param obs_flux_err:
+		1D array containing the multiband flux errors. The number of elements should be the same as that of the input filters.
+
+	:param filters:
+		List of photometric filters names. The accepted naming for the filters can be seen using :func:`list_filters` function in the :mod:`utils.filtering` module. 
+
+	:param spec_wave:
+	
+	:param spec_flux:
+
+	:param spec_flux_err:
+
+	:param models_spec:
+
+	:param fit_method: (default: 'mcmc')
+		Choice for the fitting method. Options are: (1)'mcmc', and (2)'rdsps'.
+
+	:param gal_z: 
+		Redshift of the galaxy. If gal_z=None, then redshift is set to be a free parameter in the fitting. As for the current version of **piXedfit**, photo-z hasn't been implemented.   
+		
+	:param spec_sigma:
+
+	:param poly_order:
+
+	:param z_range: (default: [0.0,1.0])
+
+	:param nrands_z: (default: 10)
+
+	:param add_igm_absorption: (default: 0)
+		Switch for the IGM absorption. Options are: (1)0 means turn off, and (2)1 means turn on.
+
+	:param igm_type: (default: 0)
+		Choice for the IGM absorption model. Options are: (a) 0 for Madau (1995), and (b) 1 for Inoue+(2014).
+	
+	:param likelihood: (default: 'gauss')
+		Choice of likelihood function for the RDSPS method. Only relevant if the fit_method='rdsps'. Options are: (1)'gauss', and (2) 'student_t'.
+
+	:param dof: (default: 2.0)
+		Degree of freedom (nu) in the Student's likelihood function. Only relevant if the fit_method='rdsps' and likelihood='student_t'.
+
+	:param gauss_likelihood_form: (default: 0)
+		Choice for the Gaussian likelihood function. Options are: (1)0 for full/original form, and (2)1 for reduced/simplified form. 
+		Only relevant for 2 cases: (1) fit_method='rdsps' and likelihood='gauss', and (2) fit_method='mcmc'.
+		gauss_likelihood_form=0 means the Gaussian likelihood function uses the original/full Gaussian function form, whereas gauss_likelihood_form=1 means the likelihood function uses simplified form: P=exp(-0.5*chi^2).
+
+	:param nwalkers: (default: 100)
+		Number of walkers to be set in the MCMC process. This parameter is only applicable if fit_method='mcmc'.
+
+	:param nsteps: (default: 600)
+		Number of steps for each walker in the MCMC process. Only relevant if fit_method='mcmc'.
+
+	:param nsteps_cut: (default: 50)
+		Number of first steps of each walkers that will be cut when constructing the final sampler chains. Only relevant if fit_method='mcmc'.
+
+	:param nproc: (default: 10)
+		Number of processors (cores) to be used in the calculation.
+
+	:param perc_chi2: (default: 90.0)
+		Lowest chi-square Percentage from the full model SEDs that are considered in the calculation of posterior-weighted averaging. 
+		This parameter is only relevant for the RDSPS fitting method and it is not applicable for the MCMC method.
+	
+	:param spec_chi_sigma_clip: (default: 3.0)
+
+	:param cosmo: (default: 0)
+		Choices for the cosmology. Options are: (1)'flat_LCDM' or 0, (2)'WMAP5' or 1, (3)'WMAP7' or 2, (4)'WMAP9' or 3, (5)'Planck13' or 4, (6)'Planck15' or 5.
+		These options are similar to the choices available in the `Astropy Cosmology <https://docs.astropy.org/en/stable/cosmology/#built-in-cosmologies>`_ package.
+
+	:param H0: (default: 70.0)
+		The Hubble constant at z=0. Only relevant when cosmo='flat_LCDM' is chosen.
+
+	:param Om0: (default: 0.3)
+		The Omega matter at z=0.0. Only relevant when cosmo='flat_LCDM' is chosen.
+
+	:param del_wave_nebem:
+
+	:param store_full_samplers: (default: 1 or True)
+		Flag indicating whether full sampler models will be stored into the output FITS file or not. 
+		Options are: (a) 1 or True and (b) 0 or False.
+
+	:param name_out_fits: (optional, default: None)
+		Name of output FITS file. This parameter is optional. 
+	"""
+
+	CODE_dir = PIXEDFIT_HOME+'/piXedfit/piXedfit_fitting/'
+	temp_dir = PIXEDFIT_HOME+'/data/temp/'
+
+	# get number of filters:
+	nbands = len(filters)
+
+	# make text file containing list of filters:
+	name_filters_list = "filters_list%d.dat" % (randint(0,10000))
+	file_out = open(name_filters_list,"w")
+	for bb in range(0,nbands):
+		file_out.write("%s\n" % filters[bb]) 
+	file_out.close()
+	os.system('mv %s %s' % (name_filters_list,temp_dir))
+
+	if fit_method=='mcmc' or fit_method=='MCMC':
+		nproc_new = nproc_reduced(nproc,nwalkers,nsteps,nsteps_cut)
+	elif fit_method=='rdsps' or fit_method=='RDSPS':
+		nproc_new = nproc
+
+	# make configuration file:
+	name_config = "config_file%d.dat" % (randint(0,10000))
+	file_out = open(name_config,"w")
+	file_out.write("nwalkers %d\n" % nwalkers)
+	file_out.write("nsteps %d\n" % nsteps)
+	file_out.write("nsteps_cut %d\n" % nsteps_cut)
+	file_out.write("ori_nproc %d\n" % nproc)
+
+	# cosmology
+	if cosmo=='flat_LCDM' or cosmo==0:
+		cosmo1 = 0
+	elif cosmo=='WMAP5' or cosmo==1:
+		cosmo1 = 1
+	elif cosmo=='WMAP7' or cosmo==2:
+		cosmo1 = 2
+	elif cosmo=='WMAP9' or cosmo==3:
+		cosmo1 = 3
+	elif cosmo=='Planck13' or cosmo==4:
+		cosmo1 = 4
+	elif cosmo=='Planck15' or cosmo==5:
+		cosmo1 = 5
+	#elif cosmo=='Planck18' or cosmo==6:
+	#	cosmo1 = 6
+	else:
+		print ("Input cosmo is not recognized!")
+		sys.exit()
+	file_out.write("cosmo %d\n" % cosmo1)
+	file_out.write("H0 %lf\n" % H0)
+	file_out.write("Om0 %lf\n" % Om0)
+
+	if fit_method=='rdsps' or fit_method=='RDSPS':
+		file_out.write("likelihood %s\n" % likelihood)
+		file_out.write("dof %lf\n" % dof)
+
+	file_out.write("models_spec %s\n" % models_spec)
+
+	file_out.write("gauss_likelihood_form %d\n" % gauss_likelihood_form)
+	# redshift
+	if gal_z==None or gal_z<=0.0:
+		gal_z = -99.0
+		free_z = 1
+	else:
+		free_z = 0
+	file_out.write("gal_z %lf\n" % gal_z)
+	file_out.write("pr_z_min %lf\n" % z_range[0])
+	file_out.write("pr_z_max %lf\n" % z_range[1])
+	file_out.write("nrands_z %d\n" % nrands_z)
+
+	file_out.write("add_igm_absorption %d\n" % add_igm_absorption)
+	file_out.write("igm_type %d\n" % igm_type)
+
+	if fit_method=='rdsps':
+		file_out.write("perc_chi2 %lf\n" % perc_chi2)
+
+	# spectral resolution
+	file_out.write("spec_sigma %lf\n" % spec_sigma)
+
+	# order of the Legendre polynomial
+	file_out.write("poly_order %d\n" % poly_order)
+
+	file_out.write("del_wave_nebem %lf\n" % del_wave_nebem)
+
+	file_out.write("spec_chi_sigma_clip %lf\n" % spec_chi_sigma_clip)
+
+	file_out.close()
+
+	# store configuration file into temp directory:
+	os.system('mv %s %s' % (name_config,temp_dir))
+
+	# input SED in HDF5
+	inputSED_file = "inputSED_file%d.hdf5" % (randint(0,20000))
+	with h5py.File(inputSED_file, 'w') as f:
+		f.create_dataset('obs_flux', data=np.array(obs_flux), compression="gzip")
+		f.create_dataset('obs_flux_err', data=np.array(obs_flux_err), compression="gzip")
+		f.create_dataset('spec_wave', data=np.array(spec_wave), compression="gzip")
+		f.create_dataset('spec_flux', data=np.array(spec_flux), compression="gzip")
+		f.create_dataset('spec_flux_err', data=np.array(spec_flux_err), compression="gzip")
+
+	os.system('mv %s %s' % (inputSED_file,temp_dir))
+
+	# output files name:
+	if name_out_fits == None:
+		random_int = (randint(0,20000))
+		if fit_method=='mcmc' or fit_method=='MCMC':
+			name_out_fits = "mcmc_fit%d.fits" % random_int
+		elif fit_method=='rdsps' or fit_method=='RDSPS':
+			name_out_fits = "rdsps_fit%d.fits" % random_int
+
+	if fit_method=='mcmc' or fit_method=='MCMC':
+		random_int = (randint(0,20000))
+		name_samplers_hdf5 = "samplers_%d.hdf5" % random_int
+
+		os.system("mpirun -n %d python %s./mc_p1_sp.py %s %s %s %s" % (nproc,CODE_dir,name_filters_list,name_config,
+																							inputSED_file,name_samplers_hdf5))
+		os.system('mv %s %s' % (name_samplers_hdf5,temp_dir))
+		
+		if store_full_samplers==1 or store_full_samplers==True:
+			os.system("mpirun -n %d python %s./mc_p2_sp.py %s %s %s %s" % (nproc_new,CODE_dir,name_filters_list,name_config,
+																						name_samplers_hdf5,name_out_fits))
+		elif store_full_samplers==0 or store_full_samplers==False:
+			os.system("mpirun -n %d python %s./mc_nsmp_p2_sp.py %s %s %s %s" % (nproc_new,CODE_dir,name_filters_list,name_config,
+																						name_samplers_hdf5,name_out_fits))
+		else:
+			print ("Input store_full_samplers not recognized!")
+			sys.exit()
+
+	elif fit_method=='rdsps' or fit_method=='RDSPS':
+		if store_full_samplers==1 or store_full_samplers==True:
+			if free_z==0:
+				os.system("mpirun -n %d python %s./rd_fz_sp.py %s %s %s %s" % (nproc_new,CODE_dir,name_filters_list,name_config,inputSED_file,
+																			name_out_fits))
+			elif free_z==1:
+				os.system("mpirun -n %d python %s./rd_vz_sp.py %s %s %s %s" % (nproc_new,CODE_dir,name_filters_list,name_config,inputSED_file,
+																			name_out_fits))
+		elif store_full_samplers==0 or store_full_samplers==False:
+			if free_z==0:
+				os.system("mpirun -n %d python %s./rd_fz_nsmp_sp.py %s %s %s %s" % (nproc_new,CODE_dir,name_filters_list,name_config,inputSED_file,
+																			name_out_fits))
+			elif free_z==1:
+				os.system("mpirun -n %d python %s./rd_vz_nsmp_sp.py %s %s %s %s" % (nproc_new,CODE_dir,name_filters_list,name_config,inputSED_file,
+																			name_out_fits))
+		else:
+			print ("Input store_full_samplers not recognized!")
+			sys.exit()
+
+	else:
+		print ("The input fit_method is not recognized!")
+		sys.exit()
+
+	# free disk space:
+	os.system("rm %s%s" % (temp_dir,name_config))
+	os.system("rm %s%s" % (temp_dir,name_filters_list))
+	os.system("rm %s%s" % (temp_dir,inputSED_file))
+	if fit_method=='mcmc' or fit_method=='MCMC':
+		os.system("rm %s%s" % (temp_dir,name_samplers_hdf5))
+
+	return name_out_fits
+
+
+def SEDfit_from_binmap_specphoto(fits_binmap,binid_range=[],bin_ids=[],models_spec=None,fit_method='mcmc',gal_z=None,
+	spec_sigma=2.6,poly_order=5.0,z_range=[0.0,1.0],nrands_z=10,add_igm_absorption=0,igm_type=0,likelihood='gauss',dof=3.0,
+	gauss_likelihood_form=1,nwalkers=100,nsteps=600,nsteps_cut=50,nproc=10, perc_chi2=90.0, spec_chi_sigma_clip=3.0, 
+	cosmo=0,H0=70.0,Om0=0.3,del_wave_nebem=10.0, store_full_samplers=1,name_out_fits=[]):
+
+	"""A function for performing SED fitting to set of spatially resolved SEDs from the reduced data cube that is produced after the pixel binning. 
+
+	:param fits_binmap:
+		Input FITS file of reduced data cube after pixel binning. This FITS file is the one that is output by :func:`pixel_binning_photo` function in the :mod:`piXedfit_bin` module. 
+		This is a mandatory parameter.
+
+	:param binid_range:
+		Range of bin IDs that are going to be fit. Allowed format is [idmin,idmax]. The id starts from 0. If empty, [], fitting will be done to SEDs of all spatial bins.
+
+	:param bin_ids:
+		Bin ids whose the SEDs are going to be fit. Allowed format is a 1D array. The id starts from 0. Both binid_range and bin_ids can't be empty, []. If both of them are not empty, the bin_ids will be used. 
+
+	:param models_spec: (Mandatory)
+
+	:param fit_method: (default: 'mcmc')
+		Choice for the fitting method. Options are: (1)'mcmc', and (2)'rdsps'.
+
+	:param gal_z:
+		Redshift of the galaxy. If gal_z=None, then redshift is taken from the header of the FITS file. 
+		If gal_z in the FITS file header is negatiive, then redshift is set to be free. 
+
+	:param spec_sigma: (default: 2.6)
+		Spectral resolution.
+
+	:param poly_order: (default: 5.0)
+
+	:param spec_chi_sigma_clip:
+
+	:param z_range: (default: [0.0,1.0])
+
+	:param nrands_z: (default: 10)
+
+	:param add_igm_absorption: (default: 0)
+		Switch for the IGM absorption. Options are: (1)0 means turn off, and (2)1 means turn on.
+
+	:param igm_type: (default: 0)
+		Choice for the IGM absorption model. Options are: (a) 0 for Madau (1995), and (b) 1 for Inoue+(2014).
+	
+	:param likelihood: (default: 'gauss')
+		Choice of likelihood function for the RDSPS method. Only relevant if the fit_method='rdsps'. Options are: (1)'gauss', and (2) 'student_t'.
+
+	:param dof: (default: 2.0)
+		Degree of freedom (nu) in the Student's likelihood function. Only relevant if the fit_method='rdsps' and likelihood='student_t'.
+
+	:param gauss_likelihood_form: (default: 0)
+		Choice for the Gaussian likelihood function. Options are: (1)0 for full/original form, and (2)1 for reduced/simplified form. 
+		Only relevant for 2 cases: (1) fit_method='rdsps' and likelihood='gauss', and (2) fit_method='mcmc'.
+		gauss_likelihood_form=0 means the Gaussian likelihood function uses the original/full Gaussian function form, whereas gauss_likelihood_form=1 means the likelihood function uses simplified form: P=exp(-0.5*chi^2).
+
+	:param nwalkers: (default: 100)
+		Number of walkers to be set in the MCMC process. This parameter is only applicable if fit_method='mcmc'.
+
+	:param nsteps: (default: 600)
+		Number of steps for each walker in the MCMC process. Only relevant if fit_method='mcmc'.
+
+	:param nsteps_cut: (optional, default: 50)
+		Number of first steps of each walkers that will be cut when constructing the final sampler chains. Only relevant if fit_method='mcmc'.
+
+	:param nproc: (default: 10)
+		Number of processors (cores) to be used in the calculation.
+
+	:param perc_chi2: (optional, default: 90.0)
+		Lowest chi-square Percentage from the full model SEDs that are considered in the calculation of posterior-weighted averaging. 
+		This parameter is only relevant for the RDSPS fitting method and it is not applicable for the MCMC method.
+
+	:param cosmo: (default: 0)
+		Choices for the cosmology. Options are: (1)'flat_LCDM' or 0, (2)'WMAP5' or 1, (3)'WMAP7' or 2, (4)'WMAP9' or 3, (5)'Planck13' or 4, (6)'Planck15' or 5.
+		These options are similar to the choices available in the `Astropy Cosmology <https://docs.astropy.org/en/stable/cosmology/#built-in-cosmologies>`_ package.
+
+	:param H0: (default: 70.0)
+		The Hubble constant at z=0. Only relevant when cosmo='flat_LCDM' is chosen.
+
+	:param Om0: (default: 0.3)
+		The Omega matter at z=0.0. Only relevant when cosmo='flat_LCDM' is chosen.
+
+	:param store_full_samplers: (default: 1 or True)
+		Flag indicating whether full sampler models will be stored into the output FITS file or not. 
+		Options are: (a) 1 or True and (b) 0 or False.
+
+	:param name_out_fits: (optional, default: [])
+		Names of output FITS files. This parameter is optional. If not empty, it must be in a list format with number of elements is the same as the number of bins to be fit. 
+		Example: name_out_fits = ['bin1.fits', 'bin2.fits', ..., 'binN.fits'].
+	"""
+
+	CODE_dir = PIXEDFIT_HOME+'/piXedfit/piXedfit_fitting/'
+	temp_dir = PIXEDFIT_HOME+'/data/temp/'
+
+	# open the input FITS file
+	hdu = fits.open(fits_binmap)
+	header = hdu[0].header
+
+	if header['specphot']==0:
+		print ("This function only fits spectrophotometric data cube!")
+		sys.exit()
+
+	# get number bins that have photometric and spectrophotometric data
+	nbins_photo = int(header['nbinsph'])
+	nbins_spec = int(header['nbinssp'])
+
+	# get set of filters
+	nbands = int(header['nfilters'])
+	filters = []
+	for bb in range(0,nbands):
+		str_temp = 'fil%d' % bb
+		filters.append(header[str_temp])
+
+	# spatial bin maps
+	binmap_photo = hdu['photo_bin_map'].data
+	binmap_spec = hdu['spec_bin_map'].data
+
+	# unit of flux
+	unit = float(header['unit'])		# in erg/s/cm2/A
+
+	# wavelength of the spectra
+	spec_wave = hdu['spec_wave'].data
+	nwaves = len(spec_wave)
+
+	# allocate arrays for photometric and spectrophotometric SEDs of spatial bins
+	bin_photo_flux = np.zeros((nbins_photo,nbands))
+	bin_photo_flux_err = np.zeros((nbins_photo,nbands))
+
+	bin_spec_flux = np.zeros((nbins_photo,nwaves))
+	bin_spec_flux_err = np.zeros((nbins_photo,nwaves))
+
+	for bb in range(0,nbins_photo):
+		bin_id = bb + 1
+
+		rows, cols = np.where(binmap_photo==bin_id)
+		bin_photo_flux[bb] = hdu['bin_photo_flux'].data[:,rows[0],cols[0]]*unit
+		bin_photo_flux_err[bb] = hdu['bin_photo_fluxerr'].data[:,rows[0],cols[0]]*unit
+
+		rows, cols = np.where(binmap_spec==bin_id)
+		if len(rows)>0:
+			bin_spec_flux[bb] = hdu['bin_spec_flux'].data[:,rows[0],cols[0]]*unit
+			bin_spec_flux_err[bb] = hdu['bin_spec_fluxerr'].data[:,rows[0],cols[0]]*unit
+
+	hdu.close()
+
+	# make text file containing list of filters:
+	name_filters_list = "filters_list%d.dat" % (randint(0,10000))
+	file_out = open(name_filters_list,"w")
+	for bb in range(0,nbands):
+		file_out.write("%s\n" % filters[bb]) 
+	file_out.close()
+	os.system('mv %s %s' % (name_filters_list,temp_dir))
+
+	if fit_method=='mcmc' or fit_method=='MCMC':
+		nproc_new = nproc_reduced(nproc,nwalkers,nsteps,nsteps_cut)
+	elif fit_method=='rdsps' or fit_method=='RDSPS':
+		nproc_new = nproc
+
+	# make configuration file:
+	name_config = "config_file%d.dat" % (randint(0,10000))
+	file_out = open(name_config,"w")
+	file_out.write("nwalkers %d\n" % nwalkers)
+	file_out.write("nsteps %d\n" % nsteps)
+	file_out.write("nsteps_cut %d\n" % nsteps_cut)
+	file_out.write("ori_nproc %d\n" % nproc)
+
+	# cosmology
+	if cosmo=='flat_LCDM' or cosmo==0:
+		cosmo1 = 0
+	elif cosmo=='WMAP5' or cosmo==1:
+		cosmo1 = 1
+	elif cosmo=='WMAP7' or cosmo==2:
+		cosmo1 = 2
+	elif cosmo=='WMAP9' or cosmo==3:
+		cosmo1 = 3
+	elif cosmo=='Planck13' or cosmo==4:
+		cosmo1 = 4
+	elif cosmo=='Planck15' or cosmo==5:
+		cosmo1 = 5
+	#elif cosmo=='Planck18' or cosmo==6:
+	#	cosmo1 = 6
+	else:
+		print ("Input cosmo is not recognized!")
+		sys.exit()
+	file_out.write("cosmo %d\n" % cosmo1)
+	file_out.write("H0 %lf\n" % H0)
+	file_out.write("Om0 %lf\n" % Om0)
+
+	if fit_method=='rdsps' or fit_method=='RDSPS':
+		file_out.write("likelihood %s\n" % likelihood)
+		file_out.write("dof %lf\n" % dof)
+
+	file_out.write("models_spec %s\n" % models_spec)
+	file_out.write("gauss_likelihood_form %d\n" % gauss_likelihood_form)
+	# redshift
+	if gal_z==None or gal_z<=0.0:
+		gal_z = -99.0
+		free_z = 1
+	else:
+		free_z = 0
+	file_out.write("gal_z %lf\n" % gal_z)
+	file_out.write("pr_z_min %lf\n" % z_range[0])
+	file_out.write("pr_z_max %lf\n" % z_range[1])
+	file_out.write("nrands_z %d\n" % nrands_z)
+	file_out.write("add_igm_absorption %d\n" % add_igm_absorption)
+	file_out.write("igm_type %d\n" % igm_type)
+	if fit_method=='rdsps':
+		file_out.write("perc_chi2 %lf\n" % perc_chi2)
+	file_out.write("spec_sigma %lf\n" % spec_sigma)
+	file_out.write("poly_order %d\n" % poly_order)
+	file_out.write("del_wave_nebem %lf\n" % del_wave_nebem)
+	file_out.write("spec_chi_sigma_clip %lf\n" % spec_chi_sigma_clip)
+	file_out.close()
+	os.system('mv %s %s' % (name_config,temp_dir))
+
+	nbins_calc = 0
+	if len(bin_ids)>0:
+		if len(binid_range) > 0:
+			print ("Both bin_ids and binid_range are not empty, so calculation will be done based on bin_ids.")
+		bin_ids = np.asarray(bin_ids)
+		nbins_calc = len(bin_ids)
+
+	elif len(bin_ids)==0:
+		if len(binid_range) == 0:
+			print ("Both bin_ids and binid_range are empty, so SED fitting will be done to all the bins.")
+			bin_ids = np.arange(nbins_photo)
+		elif len(binid_range) > 0:
+			binid_min = binid_range[0]
+			binid_max = binid_range[1]
+			bin_ids = np.arange(int(binid_min), int(binid_max))
+
+	if 0<len(name_out_fits)<nbins_calc:
+		print ("The number of elements in name_out_fits should be the same as the number of bins to be calculated!")
+		sys.exit()
+
+	count_id = 0
+	for idx_bin in bin_ids:
+
+		# name for output FITS file
+		if len(name_out_fits) == 0:
+			if fit_method=='mcmc' or fit_method=='MCMC':
+				name_out_fits1 = "mcmc_bin%d.fits" % (idx_bin+1)
+			elif fit_method=='rdsps' or fit_method=='RDSPS':
+				name_out_fits1 = "rdsps_bin%d.fits" % (idx_bin+1)
+		else:
+			name_out_fits1 = name_out_fits[int(count_id)]
+
+		# spectrophotometric
+		if np.sum(bin_spec_flux[int(idx_bin)])>0:
+			# input SED in HDF5
+			inputSED_file = "inputSED_file%d.hdf5" % (randint(0,20000))
+			with h5py.File(inputSED_file, 'w') as f:
+				f.create_dataset('obs_flux', data=np.array(bin_photo_flux[int(idx_bin)]), compression="gzip")
+				f.create_dataset('obs_flux_err', data=np.array(bin_photo_flux_err[int(idx_bin)]), compression="gzip")
+				f.create_dataset('spec_wave', data=np.array(spec_wave), compression="gzip")
+				f.create_dataset('spec_flux', data=np.array(bin_spec_flux[int(idx_bin)]), compression="gzip")
+				f.create_dataset('spec_flux_err', data=np.array(bin_spec_flux_err[int(idx_bin)]), compression="gzip")
+			os.system('mv %s %s' % (inputSED_file,temp_dir))
+
+			if fit_method=='mcmc' or fit_method=='MCMC':
+				random_int = (randint(0,20000))
+				name_samplers_hdf5 = "samplers_%d.hdf5" % random_int
+
+				os.system("mpirun -n %d python %s./mc_p1_sp.py %s %s %s %s" % (nproc,CODE_dir,name_filters_list,name_config,inputSED_file,name_samplers_hdf5))
+				os.system('mv %s %s' % (name_samplers_hdf5,temp_dir))
+				
+				if store_full_samplers==1 or store_full_samplers==True:
+					os.system("mpirun -n %d python %s./mc_p2_sp.py %s %s %s %s" % (nproc_new,CODE_dir,name_filters_list,name_config,name_samplers_hdf5,name_out_fits1))
+				elif store_full_samplers==0 or store_full_samplers==False:
+					os.system("mpirun -n %d python %s./mc_nsmp_p2_sp.py %s %s %s %s" % (nproc_new,CODE_dir,name_filters_list,name_config,name_samplers_hdf5,name_out_fits1))
+				else:
+					print ("Input store_full_samplers not recognized!")
+					sys.exit()
+
+			elif fit_method=='rdsps' or fit_method=='RDSPS':
+				if store_full_samplers==1 or store_full_samplers==True:
+					if free_z==0:
+						os.system("mpirun -n %d python %s./rd_fz_sp.py %s %s %s %s" % (nproc_new,CODE_dir,name_filters_list,name_config,inputSED_file,name_out_fits1))
+					elif free_z==1:
+						os.system("mpirun -n %d python %s./rd_vz_sp.py %s %s %s %s" % (nproc_new,CODE_dir,name_filters_list,name_config,inputSED_file,name_out_fits1))
+				elif store_full_samplers==0 or store_full_samplers==False:
+					if free_z==0:
+						os.system("mpirun -n %d python %s./rd_fz_nsmp_sp.py %s %s %s %s" % (nproc_new,CODE_dir,name_filters_list,name_config,inputSED_file,name_out_fits1))
+					elif free_z==1:
+						os.system("mpirun -n %d python %s./rd_vz_nsmp_sp.py %s %s %s %s" % (nproc_new,CODE_dir,name_filters_list,name_config,inputSED_file,name_out_fits1))
+				else:
+					print ("Input store_full_samplers not recognized!")
+					sys.exit()
+			else:
+				print ("The input fit_method is not recognized!")
+				sys.exit()
+
+			# free disk space:
+			os.system("rm %s%s" % (temp_dir,name_config))
+			os.system("rm %s%s" % (temp_dir,name_filters_list))
+			os.system("rm %s%s" % (temp_dir,inputSED_file))
+			if fit_method=='mcmc' or fit_method=='MCMC':
+				os.system("rm %s%s" % (temp_dir,name_samplers_hdf5))
+
+		# photometric SED
+		else:
+			# store input SED into a text file
+			name_SED_txt = "inputSED_file%d.dat" % (randint(0,20000))
+			file_out = open(name_SED_txt,"w")
+			for bb in range(0,nbands):
+				file_out.write("%e  %e\n" % (bin_photo_flux[int(idx_bin)][bb],bin_photo_flux_err[int(idx_bin)][bb]))
+			file_out.close()
+			os.system('mv %s %s' % (name_SED_txt,temp_dir))
+
+			if fit_method=='mcmc' or fit_method=='MCMC':
+				name_samplers_hdf5 = "samplers_%d.hdf5" % (randint(0,20000))
+
+				os.system("mpirun -n %d python %s./mc_p1.py %s %s %s %s" % (nproc,CODE_dir,name_filters_list,name_config,name_SED_txt,name_samplers_hdf5))
+				os.system('mv %s %s' % (name_samplers_hdf5,temp_dir))
+					
+				if store_full_samplers==1 or store_full_samplers==True:
+					os.system("mpirun -n %d python %s./mc_p2.py %s %s %s %s" % (nproc_new,CODE_dir,name_filters_list,name_config,name_samplers_hdf5,name_out_fits1))
+				elif store_full_samplers==0 or store_full_samplers==False:
+					os.system("mpirun -n %d python %s./mc_nsmp_p2.py %s %s %s %s" % (nproc_new,CODE_dir,name_filters_list,name_config,name_samplers_hdf5,name_out_fits1))
+				else:
+					print ("Input store_full_samplers not recognized!")
+					sys.exit()
+
+				count_id = count_id + 1
+
+				os.system("rm %s%s" % (temp_dir,name_SED_txt))
+				os.system("rm %s%s" % (temp_dir,name_samplers_hdf5))
+
+			elif fit_method=='rdsps' or fit_method=='RDSPS':
+
+				if store_full_samplers==1 or store_full_samplers==True:
+					if free_z==0:
+						os.system("mpirun -n %d python %s./rd_fz.py %s %s %s %s" % (nproc_new,CODE_dir,name_filters_list,name_config,name_SED_txt,name_out_fits1))
+					elif free_z==1:
+						os.system("mpirun -n %d python %s./rd_vz.py %s %s %s %s" % (nproc_new,CODE_dir,name_filters_list,name_config,name_SED_txt,name_out_fits1))
+				elif store_full_samplers==0 or store_full_samplers==False:
+					if free_z==0:
+						os.system("mpirun -n %d python %s./rd_fz_nsmp.py %s %s %s %s" % (nproc_new,CODE_dir,name_filters_list,name_config,name_SED_txt,name_out_fits1))
+					elif free_z==1:
+						os.system("mpirun -n %d python %s./rd_vz_nsmp.py %s %s %s %s" % (nproc_new,CODE_dir,name_filters_list,name_config,name_SED_txt,name_out_fits1))
+				else:
+					print ("Input store_full_samplers not recognized!")
+					sys.exit()
+
+				os.system("rm %s%s" % (temp_dir,name_SED_txt))
+
+		count_id = count_id + 1
+
+	# free disk space:
+	os.system("rm %s%s" % (temp_dir,name_filters_list))
+	os.system("rm %s%s" % (temp_dir,name_config))
+
+
 
 def SEDfit_from_binmap(fits_binmap,binid_range=[],bin_ids=[],models_spec=None,fit_method='mcmc',gal_z=None,z_range=[0.0,1.0],nrands_z=10,
-	add_igm_absorption=0,igm_type=1,likelihood='gauss',dof=3.0,gauss_likelihood_form=1,nwalkers=100,nsteps=600,nsteps_cut=50,nproc=10, 
+	add_igm_absorption=0,igm_type=0,likelihood='gauss',dof=3.0,gauss_likelihood_form=1,nwalkers=100,nsteps=600,nsteps_cut=50,nproc=10, 
 	perc_chi2=90.0,cosmo=0,H0=70.0,Om0=0.3,store_full_samplers=1,name_out_fits=[]):
 
 	"""A function for performing SED fitting to set of spatially resolved SEDs from the reduced data cube that is produced after the pixel binning. 
@@ -293,8 +883,8 @@ def SEDfit_from_binmap(fits_binmap,binid_range=[],bin_ids=[],models_spec=None,fi
 	:param add_igm_absorption: (default: 0)
 		Switch for the IGM absorption. Options are: (1)0 means turn off, and (2)1 means turn on.
 
-	:param igm_type: (default: 1)
-		Choice for the IGM absorption model. Options are: (1)0 or 'madau1995' for Madau (1995), and (2)1 or 'inoue2014' for Inoue et al. (2014).
+	:param igm_type: (default: 0)
+		Choice for the IGM absorption model. Options are: (a) 0 for Madau (1995), and (b) 1 for Inoue+(2014).
 	
 	:param likelihood: (default: 'gauss')
 		Choice of likelihood function for the RDSPS method. Only relevant if the fit_method='rdsps'. Options are: (1)'gauss', and (2) 'student_t'.
@@ -432,16 +1022,8 @@ def SEDfit_from_binmap(fits_binmap,binid_range=[],bin_ids=[],models_spec=None,fi
 	file_out.write("pr_z_min %lf\n" % z_range[0])
 	file_out.write("pr_z_max %lf\n" % z_range[1])
 	file_out.write("nrands_z %d\n" % nrands_z)
-
 	file_out.write("add_igm_absorption %d\n" % add_igm_absorption)
-	if igm_type=='madau1995' or igm_type==0:
-		igm_type1 = 0
-	elif igm_type=='inoue2014' or igm_type==1:
-		igm_type1 = 1
-	else:
-		print ("igm_type is not recognized!")
-		sys.exit()
-	file_out.write("igm_type %d\n" % igm_type1)
+	file_out.write("igm_type %d\n" % igm_type)
 
 	if fit_method=='rdsps':
 		file_out.write("perc_chi2 %lf\n" % perc_chi2)
@@ -461,18 +1043,11 @@ def SEDfit_from_binmap(fits_binmap,binid_range=[],bin_ids=[],models_spec=None,fi
 	elif len(bin_ids)==0:
 		if len(binid_range) == 0:
 			print ("Both bin_ids and binid_range are empty, so SED fitting will be done to all the bins.")
-			bin_ids = np.zeros(nbins)
-			for ii in range(0,nbins):
-				bin_ids[ii] = ii
+			bin_ids = np.arange(nbins)
 		elif len(binid_range) > 0:
 			binid_min = binid_range[0]
 			binid_max = binid_range[1]
-			nbins_calc = binid_max - binid_min
-			bin_ids = np.zeros(nbins_calc)
-			count_id = 0
-			for ii in range(binid_min,binid_max):
-				bin_ids[int(count_id)] = ii
-				count_id = count_id + 1
+			bin_ids = np.arange(int(binid_min), int(binid_max))
 
 	if 0<len(name_out_fits)<nbins_calc:
 		print ("The number of elements in name_out_fits should be the same as the number of bins to be calculated!")
@@ -501,16 +1076,13 @@ def SEDfit_from_binmap(fits_binmap,binid_range=[],bin_ids=[],models_spec=None,fi
 			random_int = (randint(0,20000))
 			name_samplers_hdf5 = "samplers_%d.hdf5" % random_int
 
-			os.system("mpirun -n %d python %s./mc_p1.py %s %s %s %s" % (nproc,CODE_dir,name_filters_list,name_config,
-																							name_SED_txt,name_samplers_hdf5))
+			os.system("mpirun -n %d python %s./mc_p1.py %s %s %s %s" % (nproc,CODE_dir,name_filters_list,name_config,name_SED_txt,name_samplers_hdf5))
 			os.system('mv %s %s' % (name_samplers_hdf5,temp_dir))
 			
 			if store_full_samplers==1 or store_full_samplers==True:
-				os.system("mpirun -n %d python %s./mc_p2.py %s %s %s %s" % (nproc_new,CODE_dir,name_filters_list,name_config,
-																							name_samplers_hdf5,name_out_fits))
+				os.system("mpirun -n %d python %s./mc_p2.py %s %s %s %s" % (nproc_new,CODE_dir,name_filters_list,name_config,name_samplers_hdf5,name_out_fits1))
 			elif store_full_samplers==0 or store_full_samplers==False:
-				os.system("mpirun -n %d python %s./mc_nsmp_p2.py %s %s %s %s" % (nproc_new,CODE_dir,name_filters_list,name_config,
-																							name_samplers_hdf5,name_out_fits))
+				os.system("mpirun -n %d python %s./mc_nsmp_p2.py %s %s %s %s" % (nproc_new,CODE_dir,name_filters_list,name_config,name_samplers_hdf5,name_out_fits1))
 			else:
 				print ("Input store_full_samplers not recognized!")
 				sys.exit()
@@ -534,20 +1106,20 @@ def SEDfit_from_binmap(fits_binmap,binid_range=[],bin_ids=[],models_spec=None,fi
 
 			# output files name:
 			if len(name_out_fits) == 0:
-				name_out_fits = "rdsps_bin%d.fits" % (bin_ids[0]+1)
+				name_out_fits1 = "rdsps_bin%d.fits" % (bin_ids[0]+1)
 			else:
-				name_out_fits = name_out_fits[0]
+				name_out_fits1 = name_out_fits[0]
 
 			if store_full_samplers==1 or store_full_samplers==True:
 				if free_z==0:
-					os.system("mpirun -n %d python %s./rd_fz.py %s %s %s %s" % (nproc_new,CODE_dir,name_filters_list,name_config,name_SED_txt,name_out_fits))
+					os.system("mpirun -n %d python %s./rd_fz.py %s %s %s %s" % (nproc_new,CODE_dir,name_filters_list,name_config,name_SED_txt,name_out_fits1))
 				elif free_z==1:
-					os.system("mpirun -n %d python %s./rd_vz.py %s %s %s %s" % (nproc_new,CODE_dir,name_filters_list,name_config,name_SED_txt,name_out_fits))
+					os.system("mpirun -n %d python %s./rd_vz.py %s %s %s %s" % (nproc_new,CODE_dir,name_filters_list,name_config,name_SED_txt,name_out_fits1))
 			elif store_full_samplers==0 or store_full_samplers==False:
 				if free_z==0:
-					os.system("mpirun -n %d python %s./rd_fz_nsmp.py %s %s %s %s" % (nproc_new,CODE_dir,name_filters_list,name_config,name_SED_txt,name_out_fits))
+					os.system("mpirun -n %d python %s./rd_fz_nsmp.py %s %s %s %s" % (nproc_new,CODE_dir,name_filters_list,name_config,name_SED_txt,name_out_fits1))
 				elif free_z==1:
-					os.system("mpirun -n %d python %s./rd_vz_nsmp.py %s %s %s %s" % (nproc_new,CODE_dir,name_filters_list,name_config,name_SED_txt,name_out_fits))
+					os.system("mpirun -n %d python %s./rd_vz_nsmp.py %s %s %s %s" % (nproc_new,CODE_dir,name_filters_list,name_config,name_SED_txt,name_out_fits1))
 			else:
 				print ("Input store_full_samplers not recognized!")
 				sys.exit()
@@ -624,7 +1196,7 @@ def SEDfit_from_binmap(fits_binmap,binid_range=[],bin_ids=[],models_spec=None,fi
 
 
 def SEDfit_pixels_from_fluxmap(fits_fluxmap,x_range=[],y_range=[],models_spec=None,fit_method='mcmc',gal_z=None,z_range=[0.0,1.0],nrands_z=10,
-	add_igm_absorption=0, igm_type=1, likelihood='gauss', dof=3.0, gauss_likelihood_form=1, nwalkers=100, nsteps=600,nsteps_cut=50,nproc=10,
+	add_igm_absorption=0, igm_type=0, likelihood='gauss', dof=3.0, gauss_likelihood_form=1, nwalkers=100, nsteps=600,nsteps_cut=50,nproc=10,
 	cosmo=0,H0=70.0,Om0=0.3,perc_chi2=10.0,store_full_samplers=1):
 
 	"""A function for performing SED fitting on pixel-by-pixel basis. 
@@ -657,8 +1229,8 @@ def SEDfit_pixels_from_fluxmap(fits_fluxmap,x_range=[],y_range=[],models_spec=No
 	:param add_igm_absorption: (default: 0)
 		Switch for the IGM absorption. Options are: (1)0 means turn off, and (2)1 means turn on.
 
-	:param igm_type: (default: 1)
-		Choice for the IGM absorption model. Options are: (1)0 or 'madau1995' for Madau (1995), and (2)1 or 'inoue2014' for Inoue et al. (2014).
+	:param igm_type: (default: 0)
+		Choice for the IGM absorption model. Options are: (a) 0 for Madau (1995), and (b) 1 for Inoue+(2014).
 	
 	:param likelihood: (default: 'gauss')
 		Choice of likelihood function for the RDSPS method. Only relevant if the fit_method='rdsps'. Options are: (1)'gauss', and (2) 'student_t'.
@@ -811,14 +1383,7 @@ def SEDfit_pixels_from_fluxmap(fits_fluxmap,x_range=[],y_range=[],models_spec=No
 	file_out.write("nrands_z %d\n" % nrands_z)
 
 	file_out.write("add_igm_absorption %d\n" % add_igm_absorption)
-	if igm_type=='madau1995' or igm_type==0:
-		igm_type1 = 0
-	elif igm_type=='inoue2014' or igm_type==1:
-		igm_type1 = 1
-	else:
-		print ("igm_type is not recognized!")
-		sys.exit()
-	file_out.write("igm_type %d\n" % igm_type1)
+	file_out.write("igm_type %d\n" % igm_type)
 
 	if fit_method=='rdsps':
 		file_out.write("perc_chi2 %lf\n" % perc_chi2)
@@ -1762,22 +2327,22 @@ def get_params(free_z, sfh_form, duste_switch, dust_ext_law, add_agn, fix_dust_i
 
 	params = ['logzsol', 'log_tau']
 	# SFH
-	if sfh_form == 'log_normal_sfh' or sfh_form == 'gaussian_sfh':
+	if sfh_form==2 or sfh_form==3:
 		params.append('log_t0')
-	elif sfh_form == 'double_power_sfh':
+	elif sfh_form==4:
 		params.append('log_alpha')
 		params.append('log_beta')
 	params.append('log_age')
 
 	# dust attenuation
-	if dust_ext_law == 'CF2000':
+	if dust_ext_law==0:
 		if fix_dust_index == 0:
 			params.append('dust_index')
 		params.append('dust1')
 	params.append('dust2')
 
 	# dust emission
-	if duste_switch == 'duste':
+	if duste_switch==1:
 		params.append('log_gamma')
 		params.append('log_umin')
 		params.append('log_qpah')
@@ -1796,5 +2361,6 @@ def get_params(free_z, sfh_form, duste_switch, dust_ext_law, add_agn, fix_dust_i
 	nparams = len(params)
 
 	return params, nparams
+
 
 

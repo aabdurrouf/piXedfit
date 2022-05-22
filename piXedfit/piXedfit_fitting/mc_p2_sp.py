@@ -3,127 +3,274 @@ import sys, os
 import fsps
 import emcee
 import h5py
-from math import log10
+from math import log10, pow, sqrt 
 from mpi4py import MPI
 from astropy.io import fits
+from scipy.interpolate import interp1d
 
 global PIXEDFIT_HOME
 PIXEDFIT_HOME = os.environ['PIXEDFIT_HOME']
 sys.path.insert(0, PIXEDFIT_HOME)
 
-
 from piXedfit.piXedfit_model import calc_mw_age, get_dust_mass_mainSFH_fit, get_dust_mass_fagnbol_mainSFH_fit, get_dust_mass_othSFH_fit, get_sfr_dust_mass_othSFH_fit, get_sfr_dust_mass_fagnbol_othSFH_fit, construct_SFH
+
+from piXedfit.utils.filtering import interp_filters_curves, filtering_interp_filters 
+from piXedfit.utils.posteriors import model_leastnorm
+from piXedfit.piXedfit_model import get_no_nebem_wave_fit, generate_modelSED_spec_restframe_fit
+from piXedfit.utils.redshifting import cosmo_redshifting
+from piXedfit.utils.igm_absorption import igm_att_madau, igm_att_inoue
+from piXedfit.piXedfit_spectrophotometric import spec_smoothing
+from piXedfit.piXedfit_fitting import get_params
 
 
 # Function to store the sampler chains into output fits file:
 def store_to_fits(nsamples=None,sampler_params=None,sampler_log_sfr=None,sampler_log_mw_age=None,
 	sampler_logdustmass=None,sampler_log_fagn_bol=None,fits_name_out=None): 
-	# sampler_id:
-	sampler_id = np.linspace(1, nsamples, nsamples)
 
-	hdr = fits.Header()
-	hdr['imf'] = imf
-	hdr['nparams'] = nparams
-	hdr['sfh_form'] = sfh_form
-	hdr['dust_ext_law'] = dust_ext_law
-	hdr['nfilters'] = nbands
-	hdr['duste_stat'] = duste_switch
-	hdr['add_neb_emission'] = add_neb_emission
-	if add_neb_emission == 1:
-		hdr['gas_logu'] = gas_logu
-	hdr['add_agn'] = add_agn
-	hdr['add_igm_absorption'] = add_igm_absorption
-	hdr['cosmo'] = cosmo_str
-	hdr['H0'] = H0
-	hdr['Om0'] = Om0
-	if duste_switch==1:
-		if fix_dust_index == 1:
-			hdr['dust_index'] = fix_dust_index_val
+	#==> get median best-fit model spectrophotometric SED
+	nchains = 200
+	nchains = int(nchains/size)*size
+	numDataPerRank = int(nchains/size)
+	idx_mpi = np.linspace(0,nsamples-1,nchains)
+	recvbuf_idx = np.empty(numDataPerRank, dtype='d')
+	
+	comm.Scatter(idx_mpi, recvbuf_idx, root=0)
 
-	if add_igm_absorption == 1:
-		hdr['igm_type'] = igm_type
+	bfit_photo_flux_temp = np.zeros((nbands,numDataPerRank))
+	bfit_spec_flux_temp = np.zeros((nwaves_spec,numDataPerRank))
+	bfit_corr_factor_temp = np.zeros((nwaves_spec,numDataPerRank))
+
+	# turn off nebular emission
+	sp.params["add_neb_emission"] = False
+
+	count = 0
+	for ii in recvbuf_idx:
+		params_val = def_params_val
+		for pp in range(0,nparams):
+			params_val[params[pp]] = sampler_params[params[pp]][int(ii)] 
+
+		# get wavelength free of emission lines
+		spec_wave_clean,waveid_excld = get_no_nebem_wave_fit(params_val['z'],spec_wave,del_wave_nebem)
+		spec_flux_clean = np.delete(spec_flux, waveid_excld)
+		spec_flux_err_clean = np.delete(spec_flux_err, waveid_excld)
+
+		# generate CSP rest-frame spectrum
+		rest_wave, rest_flux = generate_modelSED_spec_restframe_fit(sp=sp,sfh_form=sfh_form,params_fsps=params_fsps,params_val=params_val)
+
+		# redshifting
+		redsh_wave,redsh_spec = cosmo_redshifting(cosmo=cosmo,H0=H0,Om0=Om0,z=params_val['z'],wave=rest_wave,spec=rest_flux)
+
+		# cut model spectrum to match range given by the observed spectrum
+		idx_mod_wave = np.where((redsh_wave>min_spec_wave-30) & (redsh_wave<max_spec_wave+30))
+
+		# IGM absorption:
+		if add_igm_absorption == 1:
+			if igm_type == 0:
+				trans = igm_att_madau(redsh_wave,params_val['z'])
+				redsh_spec = redsh_spec*trans
+			elif igm_type == 1:
+				trans = igm_att_inoue(redsh_wave,params_val['z'])
+				redsh_spec = redsh_spec*trans
+
+		# filtering
+		fluxes = filtering_interp_filters(redsh_wave,redsh_spec,interp_filters_waves,interp_filters_trans)
+		norm = model_leastnorm(obs_fluxes,obs_flux_err,fluxes)
+		norm_fluxes = norm*fluxes
+			
+		# cut and normalize model spectrum
+		# smoothing model spectrum to meet resolution of IFS
+		conv_mod_spec_wave,conv_mod_spec_flux = spec_smoothing(redsh_wave[idx_mod_wave[0]],redsh_spec[idx_mod_wave[0]]*norm,spec_sigma)
+
+		# get model continuum
+		func = interp1d(conv_mod_spec_wave,conv_mod_spec_flux)
+		conv_mod_spec_flux_clean = func(spec_wave_clean)
+
+		# get ratio of the obs and mod continuum
+		spec_flux_ratio = spec_flux_clean/conv_mod_spec_flux_clean
+
+		# fit with legendre polynomial
+		poly_legendre = np.polynomial.legendre.Legendre.fit(spec_wave_clean, spec_flux_ratio, poly_order)
+
+		corr_factor = poly_legendre(spec_wave)
+		bfit_photo_flux_temp[:,int(count)] = norm_fluxes
+		bfit_spec_flux_temp[:,int(count)] = corr_factor*func(spec_wave) 
+		bfit_corr_factor_temp[:,int(count)] = corr_factor
+
+		count = count + 1
+
+	bfit_photo_flux = np.zeros((nbands,nchains))
+	bfit_spec_flux = np.zeros((nwaves_spec,nchains))
+	bfit_corr_factor = np.zeros((nwaves_spec,nchains))
+
 	for bb in range(0,nbands):
-		str_temp = 'fil%d' % bb
-		hdr[str_temp] = filters[bb]
+		comm.Gather(bfit_photo_flux_temp[bb], bfit_photo_flux[bb], root=0)
+	for bb in range(0,nwaves_spec):
+		comm.Gather(bfit_spec_flux_temp[bb], bfit_spec_flux[bb], root=0)
+		comm.Gather(bfit_corr_factor_temp[bb], bfit_corr_factor[bb], root=0)
 
-		str_temp = 'flux%d' % bb
-		if np.isnan(obs_fluxes[bb])==False:
-			hdr[str_temp] = obs_fluxes[bb]
-		elif np.isnan(obs_fluxes[bb])==True:
-			hdr[str_temp] = -99.0
+	if rank == 0:
+		# get percentiles
+		p16_photo_flux = np.percentile(bfit_photo_flux,16,axis=1)
+		p50_photo_flux = np.percentile(bfit_photo_flux,50,axis=1)
+		p84_photo_flux = np.percentile(bfit_photo_flux,84,axis=1)
 
-		str_temp = 'flux_err%d' % bb 
-		if np.isnan(obs_flux_err[bb])==False:
-			hdr[str_temp] = obs_flux_err[bb]
-		elif np.isnan(obs_flux_err[bb])==True:
-			hdr[str_temp] = -99.0
+		p16_spec_flux = np.percentile(bfit_spec_flux,16,axis=1)
+		p50_spec_flux = np.percentile(bfit_spec_flux,50,axis=1)
+		p84_spec_flux = np.percentile(bfit_spec_flux,84,axis=1)
 
-	if free_z == 0:
-		hdr['gal_z'] = gal_z
-		hdr['free_z'] = 0
-	elif free_z == 1:
-		hdr['free_z'] = 1
-	hdr['nrows'] = nsamples
-	# add parameters
-	for pp in range(0,nparams):
-		str_temp = 'param%d' % pp
-		hdr[str_temp] = params[pp]
+		p16_corr_factor = np.percentile(bfit_corr_factor,16,axis=1)
+		p50_corr_factor = np.percentile(bfit_corr_factor,50,axis=1)
+		p84_corr_factor = np.percentile(bfit_corr_factor,84,axis=1)
 
-	col_count = 1
-	str_temp = 'col%d' % col_count
-	hdr[str_temp] = 'id'
-	for pp in range(0,nparams):
-		col_count = col_count + 1
+		# sampler_id:
+		sampler_id = np.linspace(1, nsamples, nsamples)
+
+		# make header
+		hdr = fits.Header()
+		hdr['imf'] = imf
+		hdr['nparams'] = nparams
+		hdr['sfh_form'] = sfh_form
+		hdr['dust_ext_law'] = dust_ext_law
+		hdr['nfilters'] = nbands
+		hdr['duste_stat'] = duste_switch
+		hdr['add_neb_emission'] = add_neb_emission
+		if add_neb_emission == 1:
+			hdr['gas_logu'] = gas_logu
+		hdr['add_agn'] = add_agn
+		hdr['add_igm_absorption'] = add_igm_absorption
+		hdr['cosmo'] = cosmo_str
+		hdr['H0'] = H0
+		hdr['Om0'] = Om0
+		if duste_switch==1:
+			if fix_dust_index == 1:
+				hdr['dust_index'] = fix_dust_index_val
+
+		if add_igm_absorption == 1:
+			hdr['igm_type'] = igm_type
+		for bb in range(0,nbands):
+			str_temp = 'fil%d' % bb
+			hdr[str_temp] = filters[bb]
+
+		if free_z == 0:
+			hdr['gal_z'] = gal_z
+			hdr['free_z'] = 0
+		elif free_z == 1:
+			hdr['free_z'] = 1
+		hdr['nrows'] = nsamples
+		# add parameters
+		for pp in range(0,nparams):
+			str_temp = 'param%d' % pp
+			hdr[str_temp] = params[pp]
+
+		col_count = 1
 		str_temp = 'col%d' % col_count
-		hdr[str_temp] = params[pp]
-	col_count = col_count + 1
-	str_temp = 'col%d' % (col_count)
-	hdr[str_temp] = 'log_sfr'
-	col_count = col_count + 1
-	str_temp = 'col%d' % (col_count)
-	hdr[str_temp] = 'log_mw_age'
-
-	if duste_switch==1:
+		hdr[str_temp] = 'id'
+		for pp in range(0,nparams):
+			col_count = col_count + 1
+			str_temp = 'col%d' % col_count
+			hdr[str_temp] = params[pp]
 		col_count = col_count + 1
 		str_temp = 'col%d' % (col_count)
-		hdr[str_temp] = 'log_dustmass'
-
-	if add_agn==1:
+		hdr[str_temp] = 'log_sfr'
 		col_count = col_count + 1
-		str_temp = 'col%d' % col_count
-		hdr[str_temp] = 'log_fagn_bol'
+		str_temp = 'col%d' % (col_count)
+		hdr[str_temp] = 'log_mw_age'
+		if duste_switch==1:
+			col_count = col_count + 1
+			str_temp = 'col%d' % (col_count)
+			hdr[str_temp] = 'log_dustmass'
+		if add_agn == 1:
+			col_count = col_count + 1
+			str_temp = 'col%d' % col_count
+			hdr[str_temp] = 'log_fagn_bol'
+		hdr['ncols'] = col_count
+		primary_hdu = fits.PrimaryHDU(header=hdr)
 
-	hdr['ncols'] = col_count
-
-	cols0 = []
-	col = fits.Column(name='id', format='K', array=np.array(sampler_id))
-	cols0.append(col)
-
-	for pp in range(0,nparams):
-		col = fits.Column(name=params[pp], format='D', array=np.array(sampler_params[params[pp]]))
+		# make extension for the sampler chains
+		cols0 = []
+		col = fits.Column(name='id', format='K', array=np.array(sampler_id))
 		cols0.append(col)
 
-	col = fits.Column(name='log_sfr', format='D', array=np.array(sampler_log_sfr))
-	cols0.append(col)
+		for pp in range(0,nparams):
+			col = fits.Column(name=params[pp], format='D', array=np.array(sampler_params[params[pp]]))
+			cols0.append(col)
 
-	col = fits.Column(name='log_mw_age', format='D', array=np.array(sampler_log_mw_age))
-	cols0.append(col)
-
-	if duste_switch==1:
-		col = fits.Column(name='log_dustmass', format='D', array=np.array(sampler_logdustmass))
+		col = fits.Column(name='log_sfr', format='D', array=np.array(sampler_log_sfr))
 		cols0.append(col)
 
-	if add_agn == 1:
-		col = fits.Column(name='log_fagn_bol', format='D', array=np.array(sampler_log_fagn_bol))
+		col = fits.Column(name='log_mw_age', format='D', array=np.array(sampler_log_mw_age))
 		cols0.append(col)
 
-	cols = fits.ColDefs(cols0)
-	hdu = fits.BinTableHDU.from_columns(cols)
-	primary_hdu = fits.PrimaryHDU(header=hdr)
+		if duste_switch==1:
+			col = fits.Column(name='log_dustmass', format='D', array=np.array(sampler_logdustmass))
+			cols0.append(col)
 
-	hdul = fits.HDUList([primary_hdu, hdu])
-	#fits_name_out = config_data['name_out_finalfit']
-	hdul.writeto(fits_name_out, overwrite=True)	
+		if add_agn == 1:
+			col = fits.Column(name='log_fagn_bol', format='D', array=np.array(sampler_log_fagn_bol))
+			cols0.append(col)
+
+		cols = fits.ColDefs(cols0)
+		hdu = fits.BinTableHDU.from_columns(cols, name='samplers')
+
+		# make extension for observed photometric SED
+		cols0 = []
+		col = fits.Column(name='flux', format='D', array=np.array(obs_fluxes))
+		cols0.append(col)
+		col = fits.Column(name='flux_err', format='D', array=np.array(obs_flux_err))
+		cols0.append(col)
+		cols = fits.ColDefs(cols0)
+		hdu1 = fits.BinTableHDU.from_columns(cols, name='obs_photo')
+
+		#==> observed spectrum
+		cols0 = []
+		col = fits.Column(name='wave', format='D', array=np.array(spec_wave))
+		cols0.append(col)
+		col = fits.Column(name='flux', format='D', array=np.array(spec_flux))
+		cols0.append(col)
+		col = fits.Column(name='flux_err', format='D', array=np.array(spec_flux_err))
+		cols0.append(col)
+		cols = fits.ColDefs(cols0)
+		hdu2 = fits.BinTableHDU.from_columns(cols, name='obs_spec')
+
+		#==> best-fit spectrum
+		cols0 = []
+		col = fits.Column(name='wave', format='D', array=np.array(spec_wave))
+		cols0.append(col)
+		col = fits.Column(name='p16', format='D', array=np.array(p16_spec_flux))
+		cols0.append(col)
+		col = fits.Column(name='p50', format='D', array=np.array(p50_spec_flux))
+		cols0.append(col)
+		col = fits.Column(name='p84', format='D', array=np.array(p84_spec_flux))
+		cols0.append(col)
+		cols = fits.ColDefs(cols0)
+		hdu3 = fits.BinTableHDU.from_columns(cols, name='bfit_spec')
+
+		#==> best-fit photometric SED
+		cols0 = []
+		col = fits.Column(name='p16', format='D', array=np.array(p16_photo_flux))
+		cols0.append(col)
+		col = fits.Column(name='p50', format='D', array=np.array(p50_photo_flux))
+		cols0.append(col)
+		col = fits.Column(name='p84', format='D', array=np.array(p84_photo_flux))
+		cols0.append(col)
+		cols = fits.ColDefs(cols0)
+		hdu4 = fits.BinTableHDU.from_columns(cols, name='bfit_photo')
+
+		#==> best-fit correction factor
+		cols0 = []
+		col = fits.Column(name='wave', format='D', array=np.array(spec_wave))
+		cols0.append(col)
+		col = fits.Column(name='p16', format='D', array=np.array(p16_corr_factor))
+		cols0.append(col)
+		col = fits.Column(name='p50', format='D', array=np.array(p50_corr_factor))
+		cols0.append(col)
+		col = fits.Column(name='p84', format='D', array=np.array(p84_corr_factor))
+		cols0.append(col)
+		cols = fits.ColDefs(cols0)
+		hdu5 = fits.BinTableHDU.from_columns(cols, name='corr_factor')
+
+		hdul = fits.HDUList([primary_hdu, hdu, hdu1, hdu2, hdu3, hdu4, hdu5])
+		hdul.writeto(fits_name_out, overwrite=True)	
 
 
 def calc_sampler_mwage(nsamples=0,sampler_pop_mass=[],sampler_tau=[],sampler_t0=[],
@@ -417,12 +564,11 @@ def_params = ['logzsol','log_tau','log_t0','log_alpha','log_beta','log_age','dus
 				'log_gamma','log_umin', 'log_qpah', 'z', 'log_fagn','log_tauagn', 'log_mass']
 
 def_params_val = {'log_mass':0.0,'z':0.001,'log_fagn':-3.0,'log_tauagn':1.0,'log_qpah':0.54,'log_umin':0.0,'log_gamma':-2.0,
-				'dust1':0.5,'dust2':0.5,'dust_index':-0.7,'log_age':1.0,'log_alpha':0.1,'log_beta':0.1,'log_t0':0.4,
-				'log_tau':0.4,'logzsol':0.0}
+				'dust1':0.5,'dust2':0.5,'dust_index':-0.7,'log_age':1.0,'log_alpha':0.1,'log_beta':0.1,'log_t0':0.4,'log_tau':0.4,'logzsol':0.0}
 
 global def_params_fsps, params_assoc_fsps, status_log
-def_params_fsps = ['logzsol', 'log_tau', 'log_age', 'dust_index', 'dust1', 'dust2', 'log_gamma', 'log_umin', 
-				'log_qpah','log_fagn', 'log_tauagn']
+def_params_fsps = ['logzsol', 'log_tau', 'log_age', 'dust_index', 'dust1', 'dust2', 'log_gamma', 
+					'log_umin',  'log_qpah','log_fagn', 'log_tauagn']
 params_assoc_fsps = {'logzsol':"logzsol", 'log_tau':"tau", 'log_age':"tage", 
 					'dust_index':"dust_index", 'dust1':"dust1", 'dust2':"dust2",
 					'log_gamma':"duste_gamma", 'log_umin':"duste_umin", 
@@ -458,6 +604,60 @@ elif gal_z>0.0:
 	free_z = 0
 	def_params_val['z'] = gal_z
 
+# open results from mcmc fitting
+name_file = temp_dir+str(sys.argv[3])
+f = h5py.File(name_file, 'r')
+
+# get list of parameters
+global params, nparams
+nparams = int(f['samplers'].attrs['nparams'])
+params = []
+for pp in range(0,nparams):
+	str_temp = 'par%d' % pp 
+	params.append(f['samplers'].attrs[str_temp])
+
+# get observed sed: photometry and spectroscopy
+global obs_fluxes, obs_flux_err, spec_wave, spec_flux, spec_flux_err, nwaves_spec
+obs_fluxes = f['sed/flux'][:]
+obs_flux_err = f['sed/flux_err'][:]
+spec_wave = f['spec/wave'][:]
+spec_flux = f['spec/flux'][:]
+spec_flux_err = f['spec/flux_err'][:]
+nwaves_spec = len(spec_wave)
+
+# get sampler chains
+nsamples = len(f['samplers/logzsol'][:])
+
+sampler_params = {}
+for pp in range(0,nparams):
+	sampler_params[params[pp]] = np.zeros(nsamples)
+
+for pp in range(0,nparams):
+	str_temp = 'samplers/%s' % params[pp]
+	sampler_params[params[pp]] = f[str_temp][:]
+f.close()
+
+# wavelength range of the observed spectrum
+global min_spec_wave, max_spec_wave
+nwaves = len(spec_wave)
+min_spec_wave = min(spec_wave)
+max_spec_wave = max(spec_wave)
+
+# spectral resolution
+global spec_sigma
+spec_sigma = float(config_data['spec_sigma'])
+
+# order of the Legendre polynomial
+global poly_order
+poly_order = int(config_data['poly_order'])
+
+global del_wave_nebem
+del_wave_nebem = float(config_data['del_wave_nebem'])
+
+# clipping for bad spectral points in the chi-square calculation
+global spec_chi_sigma_clip
+spec_chi_sigma_clip = float(config_data['spec_chi_sigma_clip'])
+
 # HDF5 file containing pre-calculated model SEDs for initial fitting
 global models_spec
 models_spec = config_data['models_spec']
@@ -492,12 +692,16 @@ if duste_switch==1:
 		def_params_val['dust_index'] = f['mod'].attrs['dust_index']
 else:
 	fix_dust_index = 1
+
 f.close()
 
 # igm absorption
-global add_igm_absorption,igm_type
+global add_igm_absorption, igm_type
 add_igm_absorption = int(config_data['add_igm_absorption'])
 igm_type = int(config_data['igm_type'])
+
+global interp_filters_waves, interp_filters_trans
+interp_filters_waves,interp_filters_trans = interp_filters_curves(filters)
 
 # number of walkers, steps, and nsteps_cut
 global nwalkers, nsteps, nsteps_cut 
@@ -531,35 +735,6 @@ elif cosmo==5:
 else:
 	print ("The cosmo input is not recognized!")
 	sys.exit()
-
-# open results from mcmc fitting
-name_file = temp_dir+str(sys.argv[3])
-f = h5py.File(name_file, 'r')
-
-# get list of parameters
-global params, nparams
-nparams = int(f['samplers'].attrs['nparams'])
-params = []
-for pp in range(0,nparams):
-	str_temp = 'par%d' % pp 
-	params.append(f['samplers'].attrs[str_temp])
-
-# get observed sed
-global obs_fluxes, obs_flux_err
-obs_fluxes = f['sed/flux'][:]
-obs_flux_err = f['sed/flux_err'][:]
-
-# get sampler chains
-nsamples = len(f['samplers/logzsol'][:])
-
-sampler_params = {}
-for pp in range(0,nparams):
-	sampler_params[params[pp]] = np.zeros(nsamples)
-
-for pp in range(0,nparams):
-	str_temp = 'samplers/%s' % params[pp]
-	sampler_params[params[pp]] = f[str_temp][:]
-f.close()
 
 # call FSPS
 global sp 

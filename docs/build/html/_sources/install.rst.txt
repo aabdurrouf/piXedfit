@@ -12,6 +12,7 @@ Dependencies
 *	`photutils <https://photutils.readthedocs.io/en/stable/>`_ and `reproject <https://reproject.readthedocs.io/en/stable/>`_ if you want to use :mod:`piXedfit_images` OR :mod:`piXedfit_spectrophotometric` modules for doing images processing OR spatial matching (i.e., combining) between multiband imaging data and integral field spectroscopic (IFS) data
 *	`SEP <https://sep.readthedocs.io/en/v1.0.x/index.html>`_ if you want to use sources extraction and segmentation features of SExtractor for defining galaxy's region of interest in the image processing. 
 *	`emcee <https://emcee.readthedocs.io/en/stable/>`_ and `schwimmbad <https://github.com/adrn/schwimmbad>`_ if you want to use MCMC method for SED fitting with the :mod:`piXefit_fitting` module
+*	`Astroquery <https://astroquery.readthedocs.io/en/latest/>`_.
 
 
 How to use the current version of piXedfit

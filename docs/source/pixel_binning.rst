@@ -87,13 +87,13 @@ The output of this process is ``pixbin_corr_specphoto_fluxmap_ngc309.fits``. Now
 			bin_id = bb + 1
 
 			rows, cols = np.where(binmap_photo==bin_id)
-			bin_photo_flux[bb] = hdu['bin_photo_flux'].data[:,rows[0],cols[0]]
-			bin_photo_flux_err[bb] = hdu['bin_photo_fluxerr'].data[:,rows[0],cols[0]]
+			bin_photo_flux[bb] = hdu['bin_photo_flux'].data[:,rows[0],cols[0]]*unit
+			bin_photo_flux_err[bb] = hdu['bin_photo_fluxerr'].data[:,rows[0],cols[0]]*unit
 
 			rows, cols = np.where(binmap_spec==bin_id)
 			if len(rows)>0:
-				bin_spec_flux[bb] = hdu['bin_spec_flux'].data[:,rows[0],cols[0]]
-				bin_spec_flux_err[bb] = hdu['bin_spec_fluxerr'].data[:,rows[0],cols[0]]
+				bin_spec_flux[bb] = hdu['bin_spec_flux'].data[:,rows[0],cols[0]]*unit
+				bin_spec_flux_err[bb] = hdu['bin_spec_fluxerr'].data[:,rows[0],cols[0]]*unit
 
 		hdu.close()
 

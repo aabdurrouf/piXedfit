@@ -24,9 +24,9 @@ __all__ = ["generate_modelSED_propspecphoto", "generate_modelSED_spec", "generat
 			"generate_modelSED_spec_decompose", "generate_modelSED_specphoto_decompose","save_models_photo", "save_models_rest_spec",
 			"add_fagn_bol_samplers"]
 
-def generate_modelSED_propspecphoto(sp=None,imf_type=1,duste_switch=1,add_neb_emission=1,dust_ext_law='Cal2000',
-	sfh_form='delayed_tau_sfh',add_agn=0,filters=['galex_fuv','galex_nuv','sdss_u','sdss_g','sdss_r','sdss_i','sdss_z'],
-	add_igm_absorption=0,igm_type='inoue2014',cosmo='flat_LCDM',H0=70.0,Om0=0.3,gas_logu=-2.0,params_val={'log_mass':0.0,
+def generate_modelSED_propspecphoto(sp=None,imf_type=1,duste_switch=1,add_neb_emission=1,dust_ext_law=1,
+	sfh_form=4,add_agn=0,filters=['galex_fuv','galex_nuv','sdss_u','sdss_g','sdss_r','sdss_i','sdss_z'],
+	add_igm_absorption=0,igm_type=0,cosmo='flat_LCDM',H0=70.0,Om0=0.3,gas_logu=-2.0,params_val={'log_mass':0.0,
 	'z':0.001,'log_fagn':-3.0,'log_tauagn':1.0,'log_qpah':0.54,'log_umin':0.0,'log_gamma':-2.0,'dust1':0.5,'dust2':0.5,
 	'dust_index':-0.7,'log_age':1.0,'log_alpha':0.1,'log_beta':0.1,'log_t0':0.4,'log_tau':0.4,'logzsol':0.0}):
 	"""A function to generate model SED in which the output includes: properties, spectrum, and photometric fluxes
@@ -43,12 +43,11 @@ def generate_modelSED_propspecphoto(sp=None,imf_type=1,duste_switch=1,add_neb_em
 	:param add_neb_emission:
 		Choice for turning on (1) or off (0) the nebular emission modeling
 
-	:param dust_ext_law:
-		Choice of dust attenuation law. Options are: ['CF2000':Charlot&Fall(2000), 'Cal2000':Calzetti+2000]
+	:param dust_ext_law: (default: 1)
+		Choice for the dust attenuation law. Options are: (a) 0 for Charlot & Fall (2000), (b) 1 for Calzetti et al. (2000).
 
-	:param sfh_form:
-		Choice for the parametric SFH model. 
-		Options are: ['tau_sfh', 'delayed_tau_sfh', 'log_normal_sfh', 'gaussian_sfh', 'double_power_sfh', 'arbitrary_sfh']
+	:param sfh_form: (default: 4)
+		Choice for the parametric SFH model. Options are: (a) 0 for exponentially declining or tau model, (b) 1 for delayed tau model, (c) 2 for log normal model, (d) 3 for Gaussian form, (e) 4 for double power-law model.
 
 	:param add_agn:
 		Choice for turning on (1) or off (0) the AGN dusty torus modeling
@@ -59,8 +58,8 @@ def generate_modelSED_propspecphoto(sp=None,imf_type=1,duste_switch=1,add_neb_em
 	:param add_igm_absorption:
 		Switch for the IGM absorption.
 
-	:param igm_type:
-		Choice for the IGM absorption model. Options are: [0/'madau1995':Madau(1995); 1/'inoue2014':Inoue+(2014)]
+	:param igm_type: (default: 0)
+		Choice for the IGM absorption model. Options are: (a) 0 for Madau (1995), and (b) 1 for Inoue+(2014).
 
 	:param cosmo (default: 'flat_LCDM'):
 		Choices for the cosmological parameters. The choices are: ['flat_LCDM', 'WMAP5', 
@@ -95,12 +94,12 @@ def generate_modelSED_propspecphoto(sp=None,imf_type=1,duste_switch=1,add_neb_em
 	sp.params['imf_type'] = imf_type
 
 	# dust emission:
-	if duste_switch == 'duste' or duste_switch == 1:
+	if duste_switch == 1:
 		sp.params["add_dust_emission"] = True
 		sp.params["duste_gamma"] = math.pow(10.0,params_val['log_gamma']) 
 		sp.params["duste_umin"] = math.pow(10.0,params_val['log_umin'])
 		sp.params["duste_qpah"] = math.pow(10.0,params_val['log_qpah'])
-	elif duste_switch == 'noduste' or duste_switch == 0:
+	elif duste_switch == 0:
 		sp.params["add_dust_emission"] = False
 
 	# nebular emission:
@@ -124,10 +123,10 @@ def generate_modelSED_propspecphoto(sp=None,imf_type=1,duste_switch=1,add_neb_em
 
 	# generate the SED:
 	SFR_fSM = -99.0			# for temporary
-	if sfh_form=='tau_sfh' or sfh_form=='delayed_tau_sfh' or sfh_form==0 or sfh_form==1:
-		if sfh_form=='tau_sfh' or sfh_form==0:
+	if sfh_form==0 or sfh_form==1:
+		if sfh_form==0:
 			sp.params["sfh"] = 1
-		elif sfh_form=='delayed_tau_sfh' or sfh_form==1:
+		elif sfh_form==1:
 			sp.params["sfh"] = 4
 		sp.params["const"] = 0
 		sp.params["sf_start"] = 0
@@ -138,7 +137,7 @@ def generate_modelSED_propspecphoto(sp=None,imf_type=1,duste_switch=1,add_neb_em
 		#sp.params["tage"] = age
 
 		# dust atenuation:
-		if dust_ext_law=='CF2000' or dust_ext_law==0:
+		if dust_ext_law==0:
 			sp.params["dust_type"] = 0  
 			sp.params["dust_tesc"] = 7.0
 			sp.params["dust_index"] = params_val['dust_index']
@@ -146,7 +145,7 @@ def generate_modelSED_propspecphoto(sp=None,imf_type=1,duste_switch=1,add_neb_em
 			sp.params["dust1_index"] = dust1_index
 			sp.params["dust1"] = params_val['dust1']
 			sp.params["dust2"] = params_val['dust2']
-		elif dust_ext_law=='Cal2000' or dust_ext_law==1:
+		elif dust_ext_law==1:
 			sp.params["dust_type"] = 2  
 			sp.params["dust1"] = 0
 			sp.params["dust2"] = params_val['dust2']
@@ -174,15 +173,15 @@ def generate_modelSED_propspecphoto(sp=None,imf_type=1,duste_switch=1,add_neb_em
 
 		# calculate SFR:
 		SFR_exp = 1.0/np.exp(age/tau)
-		if sfh_form=='tau_sfh' or sfh_form==0:
+		if sfh_form==0:
 			SFR_fSM = formed_mass*SFR_exp/tau/(1.0-SFR_exp)/1e+9
-		elif sfh_form=='delayed_tau_sfh' or sfh_form==1:
+		elif sfh_form==1:
 			SFR_fSM = formed_mass*age*SFR_exp/((tau*tau)-((age*tau)+(tau*tau))*SFR_exp)/1e+9
 
-	elif sfh_form=='log_normal_sfh' or sfh_form=='gaussian_sfh' or sfh_form=='double_power_sfh' or sfh_form==2 or sfh_form==3 or sfh_form==4:
+	elif sfh_form==2 or sfh_form==3 or sfh_form==4:
 		sp.params["sfh"] = 3
 		# dust atenuation:
-		if dust_ext_law=='CF2000' or dust_ext_law==0:
+		if dust_ext_law==0:
 			sp.params["dust_type"] = 0  
 			sp.params["dust_tesc"] = 7.0
 			sp.params["dust_index"] = params_val['dust_index']
@@ -190,7 +189,7 @@ def generate_modelSED_propspecphoto(sp=None,imf_type=1,duste_switch=1,add_neb_em
 			sp.params["dust1_index"] = dust1_index
 			sp.params["dust1"] = params_val['dust1']
 			sp.params["dust2"] = params_val['dust2']
-		elif dust_ext_law=='Cal2000' or dust_ext_law==1:
+		elif dust_ext_law==1:
 			sp.params["dust_type"] = 2  
 			sp.params["dust1"] = 0
 			sp.params["dust2"] = params_val['dust2']
@@ -219,10 +218,10 @@ def generate_modelSED_propspecphoto(sp=None,imf_type=1,duste_switch=1,add_neb_em
 	# IGM absorption:
 	redsh_spec = redsh_spec0
 	if add_igm_absorption == 1:
-		if igm_type==0 or igm_type=='madau1995':
+		if igm_type==0:
 			trans = igm_att_madau(redsh_wave,params_val['z'])
 			redsh_spec = redsh_spec0*trans
-		elif igm_type==1 or igm_type=='inoue2014':
+		elif igm_type==1:
 			trans = igm_att_inoue(redsh_wave,params_val['z'])
 			redsh_spec = redsh_spec0*trans
 
@@ -257,8 +256,8 @@ def generate_modelSED_propspecphoto(sp=None,imf_type=1,duste_switch=1,add_neb_em
 
 
 
-def generate_modelSED_spec(sp=None,imf_type=1,duste_switch=1,add_neb_emission=1,dust_ext_law='Cal2000',sfh_form='delayed_tau_sfh',
-	add_agn=0,add_igm_absorption=0,igm_type='inoue2014',cosmo='flat_LCDM',H0=70.0,Om0=0.3,gas_logu=-2.0,params_val={'log_mass':0.0,
+def generate_modelSED_spec(sp=None,imf_type=1,duste_switch=1,add_neb_emission=1,dust_ext_law=1,sfh_form=4,
+	add_agn=0,add_igm_absorption=0,igm_type=0,cosmo='flat_LCDM',H0=70.0,Om0=0.3,gas_logu=-2.0,params_val={'log_mass':0.0,
 	'z':0.001,'log_fagn':-3.0,'log_tauagn':1.0,'log_qpah':0.54,'log_umin':0.0,'log_gamma':-2.0,'dust1':0.5,'dust2':0.5,
 	'dust_index':-0.7,'log_age':1.0,'log_alpha':0.1,'log_beta':0.1,'log_t0':0.4,'log_tau':0.4,'logzsol':0.0}):
 
@@ -276,11 +275,11 @@ def generate_modelSED_spec(sp=None,imf_type=1,duste_switch=1,add_neb_emission=1,
 	:param add_neb_emission: (default: 1)
 		Choice for turning on (1) or off (0) the nebular emission modeling.
 
-	:param dust_ext_law: (default: 'Cal2000')
-		Choice for the dust attenuation law. Options are: (1)'CF2000' or 0 for Charlot & Fall (2000), (2)'Cal2000' or 1 for Calzetti et al. (2000).
+	:param dust_ext_law: (default: 1)
+		Choice for the dust attenuation law. Options are: (a) 0 for Charlot & Fall (2000), (b) 1 for Calzetti et al. (2000).
 
-	:param sfh_form: (default: 'delayed_tau_sfh')
-		Choice for the parametric SFH model. Options are: (1)0 or 'tau_sfh', (2)1 or 'delayed_tau_sfh', (3)2 or 'log_normal_sfh', (4)3 or 'gaussian_sfh', (5)4 or 'double_power_sfh'.
+	:param sfh_form: (default: 4)
+		Choice for the parametric SFH model. Options are: (a) 0 for exponentially declining or tau model, (b) 1 for delayed tau model, (c) 2 for log normal model, (d) 3 for Gaussian form, (e) 4 for double power-law model.
 
 	:param add_agn: (default: 0)
 		Choice for turning on (value: 1) or off (value: 0) the AGN dusty torus modeling.
@@ -288,8 +287,8 @@ def generate_modelSED_spec(sp=None,imf_type=1,duste_switch=1,add_neb_emission=1,
 	:param add_igm_absorption: (default: 0)
 		Choice for turning on (value: 1) or off (value: 0) the IGM absorption modeling.
 
-	:param igm_type: (default: 'madau1995')
-		Choice for the IGM absorption model. Only relevant if add_igm_absorption=1. Options are: (1)0 or 'madau1995' for Madau (1995), and (2)1 or 'inoue2014' for Inoue et al. (2014).
+	:param igm_type: (default: 0)
+		Choice for the IGM absorption model. Options are: (a) 0 for Madau (1995), and (b) 1 for Inoue+(2014).
 
 	:param cosmo: (default: 'flat_LCDM')
 		Choices for the cosmology. Options are: (1)'flat_LCDM' or 0, (2)'WMAP5' or 1, (3)'WMAP7' or 2, (4)'WMAP9' or 3, (5)'Planck13' or 4, (6)'Planck15' or 5.
@@ -325,12 +324,12 @@ def generate_modelSED_spec(sp=None,imf_type=1,duste_switch=1,add_neb_emission=1,
 	sp.params['imf_type'] = imf_type
 
 	# dust emission:
-	if duste_switch == 'duste' or duste_switch == 1:
+	if duste_switch == 1:
 		sp.params["add_dust_emission"] = True
 		sp.params["duste_gamma"] = math.pow(10.0,params_val['log_gamma']) 
 		sp.params["duste_umin"] = math.pow(10.0,params_val['log_umin'])
 		sp.params["duste_qpah"] = math.pow(10.0,params_val['log_qpah'])
-	elif duste_switch == 'noduste' or duste_switch == 0:
+	elif duste_switch == 0:
 		sp.params["add_dust_emission"] = False
 
 	# nebular emission:
@@ -348,7 +347,7 @@ def generate_modelSED_spec(sp=None,imf_type=1,duste_switch=1,add_neb_emission=1,
 		sp.params["fagn"] = 0
 
 	# dust atenuation:
-	if dust_ext_law=='CF2000' or dust_ext_law==0:
+	if dust_ext_law==0:
 		sp.params["dust_type"] = 0  
 		sp.params["dust_tesc"] = 7.0
 		sp.params["dust_index"] = params_val['dust_index']
@@ -356,7 +355,7 @@ def generate_modelSED_spec(sp=None,imf_type=1,duste_switch=1,add_neb_emission=1,
 		sp.params["dust1_index"] = dust1_index
 		sp.params["dust1"] = params_val['dust1']
 		sp.params["dust2"] = params_val['dust2']
-	elif dust_ext_law=='Cal2000' or dust_ext_law==1:
+	elif dust_ext_law==1:
 		sp.params["dust_type"] = 2  
 		sp.params["dust1"] = 0
 		sp.params["dust2"] = params_val['dust2']
@@ -367,10 +366,10 @@ def generate_modelSED_spec(sp=None,imf_type=1,duste_switch=1,add_neb_emission=1,
 	sp.params['tage'] = age
 
 	# generate the SED:
-	if sfh_form=='tau_sfh' or sfh_form=='delayed_tau_sfh' or sfh_form==0 or sfh_form==1:
-		if sfh_form=='tau_sfh' or sfh_form==0:
+	if sfh_form==0 or sfh_form==1:
+		if sfh_form==0:
 			sp.params["sfh"] = 1
-		elif sfh_form=='delayed_tau_sfh' or sfh_form==1:
+		elif sfh_form==1:
 			sp.params["sfh"] = 4
 		sp.params["const"] = 0
 		sp.params["sf_start"] = 0
@@ -390,7 +389,7 @@ def generate_modelSED_spec(sp=None,imf_type=1,duste_switch=1,add_neb_emission=1,
 		norm0 = formed_mass/mass
 		extnc_spec = extnc_spec*norm0
 
-	elif sfh_form=='log_normal_sfh' or sfh_form=='gaussian_sfh' or sfh_form=='double_power_sfh' or sfh_form==2 or sfh_form==3 or sfh_form==4:
+	elif sfh_form==2 or sfh_form==3 or sfh_form==4:
 		sp.params["sfh"] = 3
 		SFR_fSM,mass,wave,extnc_spec,dust_mass = csp_spec_restframe_fit(sp=sp,sfh_form=sfh_form,formed_mass=formed_mass,
 																age=age,tau=tau,t0=t0,alpha=alpha,beta=beta)
@@ -401,10 +400,10 @@ def generate_modelSED_spec(sp=None,imf_type=1,duste_switch=1,add_neb_emission=1,
 	# IGM absorption:
 	redsh_spec = redsh_spec0
 	if add_igm_absorption == 1:
-		if igm_type==0 or igm_type=='madau1995':
+		if igm_type==0:
 			trans = igm_att_madau(redsh_wave,params_val['z'])
 			redsh_spec = redsh_spec0*trans
-		elif igm_type==1 or igm_type=='inoue2014':
+		elif igm_type==1:
 			trans = igm_att_inoue(redsh_wave,params_val['z'])
 			redsh_spec = redsh_spec0*trans
 
@@ -419,8 +418,8 @@ def generate_modelSED_spec(sp=None,imf_type=1,duste_switch=1,add_neb_emission=1,
 	return spec_SED
 
 
-def generate_modelSED_photo(sp=None,imf_type=1,duste_switch=0,add_neb_emission=1,dust_ext_law='Cal2000',sfh_form='delayed_tau_sfh',
-	add_agn=0,filters=[],add_igm_absorption=0,igm_type='madau1995',cosmo='flat_LCDM',H0=70.0,Om0=0.3,gas_logu=-2.0,params_val={'log_mass':0.0,
+def generate_modelSED_photo(sp=None,imf_type=1,duste_switch=0,add_neb_emission=1,dust_ext_law=1,sfh_form=4,
+	add_agn=0,filters=[],add_igm_absorption=0,igm_type=0,cosmo='flat_LCDM',H0=70.0,Om0=0.3,gas_logu=-2.0,params_val={'log_mass':0.0,
 	'z':0.001,'log_fagn':-3.0,'log_tauagn':1.0,'log_qpah':0.54,'log_umin':0.0,'log_gamma':-2.0,'dust1':0.5,'dust2':0.5,
 	'dust_index':-0.7,'log_age':1.0,'log_alpha':0.1,'log_beta':0.1,'log_t0':0.4,'log_tau':0.4,'logzsol':0.0}):
 	"""Function for generating a model photometric SED given some parameters.
@@ -437,11 +436,11 @@ def generate_modelSED_photo(sp=None,imf_type=1,duste_switch=0,add_neb_emission=1
 	:param add_neb_emission: (default: 1)
 		Choice for turning on (1) or off (0) the nebular emission modeling.
 
-	:param dust_ext_law: (default: 'Cal2000')
-		Choice for the dust attenuation law. Options are: (1)'CF2000' or 0 for Charlot & Fall (2000), (2)'Cal2000' or 1 for Calzetti et al. (2000).
+	:param dust_ext_law: (default: 1)
+		Choice for the dust attenuation law. Options are: (a) 0 for Charlot & Fall (2000), (b) 1 for Calzetti et al. (2000).
 
-	:param sfh_form: (default: 'delayed_tau_sfh')
-		Choice for the parametric SFH model. Options are: (1)0 or 'tau_sfh', (2)1 or 'delayed_tau_sfh', (3)2 or 'log_normal_sfh', (4)3 or 'gaussian_sfh', (5)4 or 'double_power_sfh'.
+	:param sfh_form: (default: 4)
+		Choice for the parametric SFH model. Options are: (a) 0 for exponentially declining or tau model, (b) 1 for delayed tau model, (c) 2 for log normal model, (d) 3 for Gaussian form, (e) 4 for double power-law model.
 
 	:param add_agn: (default: 0)
 		Choice for turning on (value: 1) or off (value: 0) the AGN dusty torus modeling.
@@ -452,8 +451,8 @@ def generate_modelSED_photo(sp=None,imf_type=1,duste_switch=0,add_neb_emission=1
 	:param add_igm_absorption: (default: 0)
 		Choice for turning on (value: 1) or off (value: 0) the IGM absorption modeling.
 
-	:param igm_type: (default: 'madau1995')
-		Choice for the IGM absorption model. Only relevant if add_igm_absorption=1. Options are: (1)0 or 'madau1995' for Madau (1995), and (2)1 or 'inoue2014' for Inoue et al. (2014).
+	:param igm_type: (default: 0)
+		Choice for the IGM absorption model. Options are: (a) 0 for Madau (1995), and (b) 1 for Inoue+(2014).
 
 	:param cosmo: (default: 'flat_LCDM')
 		Choices for the cosmology. Options are: (1)'flat_LCDM' or 0, (2)'WMAP5' or 1, (3)'WMAP7' or 2, (4)'WMAP9' or 3, (5)'Planck13' or 4, (6)'Planck15' or 5.
@@ -490,12 +489,12 @@ def generate_modelSED_photo(sp=None,imf_type=1,duste_switch=0,add_neb_emission=1
 	sp.params['imf_type'] = imf_type
 
 	# dust emission:
-	if duste_switch == 'duste' or duste_switch == 1:
+	if duste_switch == 1:
 		sp.params["add_dust_emission"] = True
 		sp.params["duste_gamma"] = math.pow(10.0,params_val['log_gamma']) 
 		sp.params["duste_umin"] = math.pow(10.0,params_val['log_umin'])
 		sp.params["duste_qpah"] = math.pow(10.0,params_val['log_qpah'])
-	elif duste_switch == 'noduste' or duste_switch == 0:
+	elif duste_switch == 0:
 		sp.params["add_dust_emission"] = False
 
 	# nebular emission:
@@ -513,7 +512,7 @@ def generate_modelSED_photo(sp=None,imf_type=1,duste_switch=0,add_neb_emission=1
 		sp.params["fagn"] = 0
 
 	# dust atenuation:
-	if dust_ext_law=='CF2000' or dust_ext_law==0:
+	if dust_ext_law==0:
 		sp.params["dust_type"] = 0  
 		sp.params["dust_tesc"] = 7.0
 		sp.params["dust_index"] = params_val['dust_index']
@@ -521,7 +520,7 @@ def generate_modelSED_photo(sp=None,imf_type=1,duste_switch=0,add_neb_emission=1
 		sp.params["dust1_index"] = dust1_index
 		sp.params["dust1"] = params_val['dust1']
 		sp.params["dust2"] = params_val['dust2']
-	elif dust_ext_law=='Cal2000' or dust_ext_law==1:
+	elif dust_ext_law==1:
 		sp.params["dust_type"] = 2  
 		sp.params["dust1"] = 0
 		sp.params["dust2"] = params_val['dust2']
@@ -532,10 +531,10 @@ def generate_modelSED_photo(sp=None,imf_type=1,duste_switch=0,add_neb_emission=1
 	sp.params['tage'] = age
 
 	# generate the SED:
-	if sfh_form=='tau_sfh' or sfh_form=='delayed_tau_sfh' or sfh_form==0 or sfh_form==1:
-		if sfh_form=='tau_sfh' or sfh_form==0:
+	if sfh_form==0 or sfh_form==1:
+		if sfh_form==0:
 			sp.params["sfh"] = 1
-		elif sfh_form=='delayed_tau_sfh' or sfh_form==1:
+		elif sfh_form==1:
 			sp.params["sfh"] = 4
 		sp.params["const"] = 0
 		sp.params["sf_start"] = 0
@@ -555,7 +554,7 @@ def generate_modelSED_photo(sp=None,imf_type=1,duste_switch=0,add_neb_emission=1
 		norm0 = formed_mass/mass
 		extnc_spec = extnc_spec*norm0
 
-	elif sfh_form=='log_normal_sfh' or sfh_form=='gaussian_sfh' or sfh_form=='double_power_sfh' or sfh_form==2 or sfh_form==3 or sfh_form==4:
+	elif sfh_form==2 or sfh_form==3 or sfh_form==4:
 		sp.params["sfh"] = 3
 		SFR_fSM,mass,wave,extnc_spec,dust_mass = csp_spec_restframe_fit(sp=sp,sfh_form=sfh_form,formed_mass=formed_mass,
 																age=age,tau=tau,t0=t0,alpha=alpha,beta=beta)
@@ -570,10 +569,10 @@ def generate_modelSED_photo(sp=None,imf_type=1,duste_switch=0,add_neb_emission=1
 	# IGM absorption:
 	redsh_spec = redsh_spec0
 	if add_igm_absorption == 1:
-		if igm_type==0 or igm_type=='madau1995':
+		if igm_type==0:
 			trans = igm_att_madau(redsh_wave,params_val['z'])
 			redsh_spec = redsh_spec0*trans
-		elif igm_type==1 or igm_type=='inoue2014':
+		elif igm_type==1:
 			trans = igm_att_inoue(redsh_wave,params_val['z'])
 			redsh_spec = redsh_spec0*trans
 
@@ -593,8 +592,8 @@ def generate_modelSED_photo(sp=None,imf_type=1,duste_switch=0,add_neb_emission=1
 
 	return photo_SED
 
-def generate_modelSED_specphoto(sp=None,imf_type=1,duste_switch=1,add_neb_emission=1,dust_ext_law='Cal2000',sfh_form='delayed_tau_sfh',
-	add_agn=0,filters=['galex_fuv','galex_nuv','sdss_u','sdss_g','sdss_r','sdss_i','sdss_z'],add_igm_absorption=0,igm_type='inoue2014',
+def generate_modelSED_specphoto(sp=None,imf_type=1,duste_switch=1,add_neb_emission=1,dust_ext_law=1,sfh_form=4,
+	add_agn=0,filters=['galex_fuv','galex_nuv','sdss_u','sdss_g','sdss_r','sdss_i','sdss_z'],add_igm_absorption=0,igm_type=0,
 	cosmo='flat_LCDM',H0=70.0,Om0=0.3,gas_logu=-2.0,params_val={'log_mass':0.0,'z':0.001,'log_fagn':-3.0,'log_tauagn':1.0,'log_qpah':0.54,
 	'log_umin':0.0,'log_gamma':-2.0,'dust1':0.5,'dust2':0.5,'dust_index':-0.7,'log_age':1.0,'log_alpha':0.1,'log_beta':0.1,'log_t0':0.4,
 	'log_tau':0.4,'logzsol':0.0}):
@@ -612,12 +611,11 @@ def generate_modelSED_specphoto(sp=None,imf_type=1,duste_switch=1,add_neb_emissi
 	:param add_neb_emission:
 		Choice for turning on (1) or off (0) the nebular emission modeling
 
-	:param dust_ext_law:
-		Choice of dust attenuation law. Options are: ['CF2000':Charlot&Fall(2000), 'Cal2000':Calzetti+2000]
+	:param dust_ext_law: (default: 1)
+		Choice for the dust attenuation law. Options are: (a) 0 for Charlot & Fall (2000), (b) 1 for Calzetti et al. (2000).
 
-	:param sfh_form:
-		Choice for the parametric SFH model. 
-		Options are: ['tau_sfh', 'delayed_tau_sfh', 'log_normal_sfh', 'gaussian_sfh', 'double_power_sfh']
+	:param sfh_form: (default: 4)
+		Choice for the parametric SFH model. Options are: (a) 0 for exponentially declining or tau model, (b) 1 for delayed tau model, (c) 2 for log normal model, (d) 3 for Gaussian form, (e) 4 for double power-law model.
 
 	:param add_agn:
 		Choice for turning on (1) or off (0) the AGN dusty torus modeling
@@ -628,8 +626,8 @@ def generate_modelSED_specphoto(sp=None,imf_type=1,duste_switch=1,add_neb_emissi
 	:param add_igm_absorption:
 		Switch for the IGM absorption.
 
-	:param igm_type:
-		Choice for the IGM absorption model. Options are: [0/'madau1995':Madau(1995); 1/'inoue2014':Inoue+(2014)]
+	:param igm_type: (default: 0)
+		Choice for the IGM absorption model. Options are: (a) 0 for Madau (1995), and (b) 1 for Inoue+(2014).
 
 	:param cosmo (default: 'flat_LCDM'):
 		Choices for the cosmological parameters. The choices are: ['flat_LCDM', 'WMAP5', 
@@ -658,12 +656,12 @@ def generate_modelSED_specphoto(sp=None,imf_type=1,duste_switch=1,add_neb_emissi
 	sp.params['imf_type'] = imf_type
 
 	# dust emission:
-	if duste_switch == 'duste' or duste_switch == 1:
+	if duste_switch == 1:
 		sp.params["add_dust_emission"] = True
 		sp.params["duste_gamma"] = math.pow(10.0,params_val['log_gamma']) 
 		sp.params["duste_umin"] = math.pow(10.0,params_val['log_umin'])
 		sp.params["duste_qpah"] = math.pow(10.0,params_val['log_qpah'])
-	elif duste_switch == 'noduste' or duste_switch == 0:
+	elif duste_switch == 0:
 		sp.params["add_dust_emission"] = False
 
 	# nebular emission:
@@ -681,7 +679,7 @@ def generate_modelSED_specphoto(sp=None,imf_type=1,duste_switch=1,add_neb_emissi
 		sp.params["fagn"] = 0
 
 	# dust atenuation:
-	if dust_ext_law=='CF2000' or dust_ext_law==0:
+	if dust_ext_law==0:
 		sp.params["dust_type"] = 0  
 		sp.params["dust_tesc"] = 7.0
 		sp.params["dust_index"] = params_val['dust_index']
@@ -689,7 +687,7 @@ def generate_modelSED_specphoto(sp=None,imf_type=1,duste_switch=1,add_neb_emissi
 		sp.params["dust1_index"] = dust1_index
 		sp.params["dust1"] = params_val['dust1']
 		sp.params["dust2"] = params_val['dust2']
-	elif dust_ext_law=='Cal2000' or dust_ext_law==1:
+	elif dust_ext_law==1:
 		sp.params["dust_type"] = 2  
 		sp.params["dust1"] = 0
 		sp.params["dust2"] = params_val['dust2']
@@ -699,10 +697,10 @@ def generate_modelSED_specphoto(sp=None,imf_type=1,duste_switch=1,add_neb_emissi
 	sp.params['gas_logz'] = params_val['logzsol']
 	sp.params['tage'] = age
 
-	if sfh_form=='tau_sfh' or sfh_form=='delayed_tau_sfh' or sfh_form==0 or sfh_form==1:
-		if sfh_form=='tau_sfh' or sfh_form==0:
+	if sfh_form==0 or sfh_form==1:
+		if sfh_form==0:
 			sp.params["sfh"] = 1
-		elif sfh_form=='delayed_tau_sfh' or sfh_form==1:
+		elif sfh_form==1:
 			sp.params["sfh"] = 4
 		sp.params["const"] = 0
 		sp.params["sf_start"] = 0
@@ -721,7 +719,7 @@ def generate_modelSED_specphoto(sp=None,imf_type=1,duste_switch=1,add_neb_emissi
 		# normalization:
 		norm0 = formed_mass/mass
 		extnc_spec = extnc_spec*norm0
-	elif sfh_form=='log_normal_sfh' or sfh_form=='gaussian_sfh' or sfh_form=='double_power_sfh' or sfh_form==2 or sfh_form==3 or sfh_form==4:
+	elif sfh_form==2 or sfh_form==3 or sfh_form==4:
 		sp.params["sfh"] = 3
 		SFR_fSM,mass,wave,extnc_spec,dust_mass = csp_spec_restframe_fit(sp=sp,sfh_form=sfh_form,formed_mass=formed_mass,
 																age=age,tau=tau,t0=t0,alpha=alpha,beta=beta)
@@ -733,10 +731,10 @@ def generate_modelSED_specphoto(sp=None,imf_type=1,duste_switch=1,add_neb_emissi
 	# IGM absorption:
 	redsh_spec = redsh_spec0
 	if add_igm_absorption == 1:
-		if igm_type==0 or igm_type=='madau1995':
+		if igm_type==0:
 			trans = igm_att_madau(redsh_wave,params_val['z'])
 			redsh_spec = redsh_spec0*trans
-		elif igm_type==1 or igm_type=='inoue2014':
+		elif igm_type==1:
 			trans = igm_att_inoue(redsh_wave,params_val['z'])
 			redsh_spec = redsh_spec0*trans
 
@@ -760,8 +758,8 @@ def generate_modelSED_specphoto(sp=None,imf_type=1,duste_switch=1,add_neb_emissi
 
 	return spec_SED,photo_SED
 
-def generate_modelSED_spec_decompose(sp=None,imf=1, duste_switch='duste',add_neb_emission=1,dust_ext_law='Cal2000',add_agn=1,
-	add_igm_absorption=0,igm_type=1,sfh_form='delayed_tau_sfh',funit='erg/s/cm2/A',cosmo='flat_LCDM',H0=70.0,Om0=0.3,
+def generate_modelSED_spec_decompose(sp=None,imf=1, duste_switch=1,add_neb_emission=1,dust_ext_law=1,add_agn=1,
+	add_igm_absorption=0,igm_type=0,sfh_form=4,funit='erg/s/cm2/A',cosmo='flat_LCDM',H0=70.0,Om0=0.3,
 	gas_logu=-2.0,params_val={'log_mass':0.0,'z':0.001,'log_fagn':-3.0,'log_tauagn':1.0,'log_qpah':0.54,'log_umin':0.0,
 	'log_gamma':-2.0,'dust1':0.5,'dust2':0.5,'dust_index':-0.7,'log_age':1.0,'log_alpha':0.1,'log_beta':0.1,'log_t0':0.4,
 	'log_tau':0.4,'logzsol':0.0}):
@@ -795,18 +793,18 @@ def generate_modelSED_spec_decompose(sp=None,imf=1, duste_switch='duste',add_neb
 	# get nebular emission:
 	if add_neb_emission == 1:
 		add_neb_emission_temp  = 1
-		spec_SED_temp1 = generate_modelSED_spec(sp=sp,imf_type=imf,duste_switch='noduste',add_neb_emission=add_neb_emission_temp,
+		spec_SED_temp1 = generate_modelSED_spec(sp=sp,imf_type=imf,duste_switch=0,add_neb_emission=add_neb_emission_temp,
 							dust_ext_law=dust_ext_law,sfh_form=sfh_form,add_agn=0,add_igm_absorption=add_igm_absorption,igm_type=igm_type,
 							cosmo=cosmo,H0=H0,Om0=Om0,gas_logu=gas_logu,params_val=params_val)
 		add_neb_emission_temp  = 0
-		spec_SED_temp2 = generate_modelSED_spec(sp=sp,imf_type=imf,duste_switch='noduste',add_neb_emission=add_neb_emission_temp,
+		spec_SED_temp2 = generate_modelSED_spec(sp=sp,imf_type=imf,duste_switch=0,add_neb_emission=add_neb_emission_temp,
 							dust_ext_law=dust_ext_law,sfh_form=sfh_form,add_agn=0,add_igm_absorption=add_igm_absorption,igm_type=igm_type,
 							cosmo=cosmo,H0=H0,Om0=Om0,gas_logu=gas_logu,params_val=params_val)
 		spec_flux_nebe = spec_SED_temp1['flux'] - spec_SED_temp2['flux']
 		spec_SED['flux_nebe'] = convert_unit_spec_from_ergscm2A(spec_SED_temp['wave'],spec_flux_nebe,funit=funit)
 
 	# get dust emission:
-	if duste_switch == 'duste' or duste_switch == 1:
+	if duste_switch == 1:
 		duste_switch_temp = 0
 		spec_SED_temp = generate_modelSED_spec(sp=sp,imf_type=imf,duste_switch=duste_switch_temp,add_neb_emission=add_neb_emission,
 							dust_ext_law=dust_ext_law,sfh_form=sfh_form,add_agn=add_agn,add_igm_absorption=add_igm_absorption,igm_type=igm_type,
@@ -826,8 +824,8 @@ def generate_modelSED_spec_decompose(sp=None,imf=1, duste_switch='duste',add_neb
 	return spec_SED
 
 
-def generate_modelSED_specphoto_decompose(sp=None, imf=1, duste_switch='duste',add_neb_emission=1,dust_ext_law='Cal2000',
-	add_agn=1,add_igm_absorption=0,igm_type=1,cosmo='flat_LCDM',H0=70.0,Om0=0.3,gas_logu=-2.0,sfh_form='delayed_tau_sfh',
+def generate_modelSED_specphoto_decompose(sp=None, imf=1, duste_switch=1,add_neb_emission=1,dust_ext_law=1,
+	add_agn=1,add_igm_absorption=0,igm_type=0,cosmo='flat_LCDM',H0=70.0,Om0=0.3,gas_logu=-2.0,sfh_form=4,
 	funit='erg/s/cm2/A',filters=['galex_fuv','galex_nuv','sdss_u','sdss_g','sdss_r','sdss_i','sdss_z'],
 	params_val={'log_mass':0.0,'z':0.001,'log_fagn':-3.0,'log_tauagn':1.0,'log_qpah':0.54,'log_umin':0.0,'log_gamma':-2.0,
 	'dust1':0.5,'dust2':0.5,'dust_index':-0.7,'log_age':1.0,'log_alpha':0.1,'log_beta':0.1,'log_t0':0.4,'log_tau':0.4,
@@ -870,11 +868,11 @@ def generate_modelSED_specphoto_decompose(sp=None, imf=1, duste_switch='duste',a
 
 	# get nebular emission:
 	if add_neb_emission == 1:
-		spec_SED_temp1 = generate_modelSED_spec(sp=sp,imf_type=imf,duste_switch='noduste',add_neb_emission=1,dust_ext_law=dust_ext_law,
+		spec_SED_temp1 = generate_modelSED_spec(sp=sp,imf_type=imf,duste_switch=0,add_neb_emission=1,dust_ext_law=dust_ext_law,
 							sfh_form=sfh_form,add_agn=add_agn,add_igm_absorption=add_igm_absorption,igm_type=igm_type,cosmo=cosmo,H0=H0,Om0=Om0,gas_logu=gas_logu,
 							params_val=params_val)
 
-		spec_SED_temp2 = generate_modelSED_spec(sp=sp,imf_type=imf,duste_switch='noduste',add_neb_emission=0,dust_ext_law=dust_ext_law,
+		spec_SED_temp2 = generate_modelSED_spec(sp=sp,imf_type=imf,duste_switch=0,add_neb_emission=0,dust_ext_law=dust_ext_law,
 							sfh_form=sfh_form,add_agn=add_agn,add_igm_absorption=add_igm_absorption,igm_type=igm_type,cosmo=cosmo,H0=H0,Om0=Om0,gas_logu=gas_logu,
 							params_val=params_val)
 
@@ -882,7 +880,7 @@ def generate_modelSED_specphoto_decompose(sp=None, imf=1, duste_switch='duste',a
 		spec_SED['flux_nebe'] = convert_unit_spec_from_ergscm2A(spec_SED_temp['wave'],spec_flux_nebe,funit=funit)
 
 	# get dust emission:
-	if duste_switch == 'duste' or duste_switch == 1:
+	if duste_switch == 1:
 		duste_switch_temp = 0
 		spec_SED_temp = generate_modelSED_spec(sp=sp,imf_type=imf,duste_switch=duste_switch_temp,add_neb_emission=add_neb_emission,
 							dust_ext_law=dust_ext_law,sfh_form=sfh_form,add_agn=add_agn,add_igm_absorption=add_igm_absorption,igm_type=igm_type,
@@ -901,7 +899,7 @@ def generate_modelSED_specphoto_decompose(sp=None, imf=1, duste_switch='duste',a
 	return spec_SED,photo_SED
 
 
-def save_models_photo(filters=[],gal_z=None,imf_type=1,sfh_form=4,dust_ext_law=1,add_igm_absorption=0,igm_type=1,duste_switch=0,
+def save_models_photo(filters=[],gal_z=None,imf_type=1,sfh_form=4,dust_ext_law=1,add_igm_absorption=0,igm_type=0,duste_switch=0,
 	add_neb_emission=1,add_agn=0,gas_logu=-2.0,nmodels=100000, logzsol_range=[-2.0,0.2],log_tau_range=[-1.0,1.5],log_age_range=[-1.0,1.14],
 	log_alpha_range=[-2.0,2.0],log_beta_range=[-2.0,2.0],log_t0_range=[-1.0,1.14],dust_index_range=[-0.7,-0.7],dust1_range=[0.0,3.0],
 	dust2_range=[0.0,4.0],log_gamma_range=[-4.0, 0.0],log_umin_range=[-1.0, 1.39],log_qpah_range=[-3.0, 1.0], 
@@ -918,17 +916,17 @@ def save_models_photo(filters=[],gal_z=None,imf_type=1,sfh_form=4,dust_ext_law=1
 	:param imf_type: (default: 1)
 		Choice for the IMF. Options are: (1)0 for Salpeter(1955), (2)1 for Chabrier(2003), and (3)2 for Kroupa(2001).
 
-	:param sfh_form: (default: 1)
-		Choice for the SFH model. Options are: (1)0 or 'tau_sfh', (2)1 or 'delayed_tau_sfh', (3)2 or 'log_normal_sfh', (4)3 or 'gaussian_sfh', and (5)4 or 'double_power_sfh'.
+	:param sfh_form: (default: 4)
+		Choice for the parametric SFH model. Options are: (a) 0 for exponentially declining or tau model, (b) 1 for delayed tau model, (c) 2 for log normal model, (d) 3 for Gaussian form, (e) 4 for double power-law model.
 
 	:param dust_ext_law: (default: 1)
-		Choice for the dust attenuation law. Options are: (1)'CF2000' or 0 for Charlot & Fall (2000), (2)'Cal2000' or 1 for Calzetti et al. (2000).
+		Choice for the dust attenuation law. Options are: (a) 0 for Charlot & Fall (2000), (b) 1 for Calzetti et al. (2000).
 
 	:param add_igm_absorption: (default: 0)
 		Switch for the IGM absorption. Options are: (1)0 means turn off, and (2)1 means turn on.
 
-	:param igm_type: (default: 1)
-		Choice for the IGM absorption model. Options are: (1)0 or 'madau1995' for Madau (1995), and (2)1 or 'inoue2014' for Inoue et al. (2014).
+	:param igm_type: (default: 0)
+		Choice for the IGM absorption model. Options are: (a) 0 for Madau (1995), and (b) 1 for Inoue+(2014).
 
 	:param duste_switch: (default: 0)
 		Switch for the dust emission modeling. Options are: (1)0 means turn off, and (2)1 means turn on.
@@ -988,43 +986,9 @@ def save_models_photo(filters=[],gal_z=None,imf_type=1,sfh_form=4,dust_ext_law=1
 	file_out.write("add_neb_emission %d\n" % add_neb_emission)
 	file_out.write("gas_logu %lf\n" % gas_logu)
 	file_out.write("add_igm_absorption %d\n" % add_igm_absorption)
-
-	# SFH choice
-	if sfh_form=='tau_sfh' or sfh_form==0:
-		sfh_form1 = 0
-	elif sfh_form=='delayed_tau_sfh' or sfh_form==1:
-		sfh_form1 = 1
-	elif sfh_form=='log_normal_sfh' or sfh_form==2:
-		sfh_form1 = 2
-	elif sfh_form=='gaussian_sfh' or sfh_form==3:
-		sfh_form1 = 3
-	elif sfh_form=='double_power_sfh' or sfh_form==4:
-		sfh_form1 = 4
-	else:
-		print ("SFH choice is not recognized!")
-		sys.exit()
-	file_out.write("sfh_form %d\n" % sfh_form1)
-
-	# dust law
-	if dust_ext_law=='CF2000' or dust_ext_law==0:
-		dust_ext_law1 = 0
-	elif dust_ext_law=='Cal2000' or dust_ext_law==1:
-		dust_ext_law1 = 1
-	else:
-		print ("dust_ext_law is not recognized!")
-		sys.exit()
-	file_out.write("dust_ext_law %d\n" % dust_ext_law1)
-
-	# IGM type
-	if igm_type=='madau1995' or igm_type==0:
-		igm_type1 = 0
-	elif igm_type=='inoue2014' or igm_type==1:
-		igm_type1 = 1
-	else:
-		print ("igm_type is not recognized!")
-		sys.exit()
-	file_out.write("igm_type %d\n" % igm_type1)
-
+	file_out.write("sfh_form %d\n" % sfh_form)
+	file_out.write("dust_ext_law %d\n" % dust_ext_law)
+	file_out.write("igm_type %d\n" % igm_type)
 	file_out.write("duste_switch %d\n" % duste_switch)
 	file_out.write("add_agn %d\n" % add_agn)
 	file_out.write("nmodels %d\n" % nmodels)
@@ -1105,11 +1069,11 @@ def save_models_rest_spec(imf_type=1,sfh_form=4,dust_ext_law=1,duste_switch=0,ad
 	:param imf_type: (default: 1)
 		Choice for the IMF. Options are: (1)0 for Salpeter(1955), (2)1 for Chabrier(2003), and (3)2 for Kroupa(2001).
 
-	:param sfh_form: (default: 1)
-		Choice for the SFH model. Options are: (1)0 or 'tau_sfh', (2)1 or 'delayed_tau_sfh', (3)2 or 'log_normal_sfh', (4)3 or 'gaussian_sfh', and (5)4 or 'double_power_sfh'.
+	:param sfh_form: (default: 4)
+		Choice for the parametric SFH model. Options are: (a) 0 for exponentially declining or tau model, (b) 1 for delayed tau model, (c) 2 for log normal model, (d) 3 for Gaussian form, (e) 4 for double power-law model.
 
 	:param dust_ext_law: (default: 1)
-		Choice for the dust attenuation law. Options are: (1)'CF2000' or 0 for Charlot & Fall (2000), (2)'Cal2000' or 1 for Calzetti et al. (2000).
+		Choice for the dust attenuation law. Options are: (a) 0 for Charlot & Fall (2000), (b) 1 for Calzetti et al. (2000).
 
 	:param duste_switch: (default: 0)
 		Switch for the dust emission modeling. Options are: (1)0 means turn off, and (2)1 means turn on.
@@ -1145,33 +1109,8 @@ def save_models_rest_spec(imf_type=1,sfh_form=4,dust_ext_law=1,duste_switch=0,ad
 	file_out.write("imf_type %d\n" % imf_type)
 	file_out.write("add_neb_emission %d\n" % add_neb_emission)
 	file_out.write("gas_logu %lf\n" % gas_logu)
-
-	# SFH
-	if sfh_form=='tau_sfh' or sfh_form==0:
-		sfh_form1 = 0
-	elif sfh_form=='delayed_tau_sfh' or sfh_form==1:
-		sfh_form1 = 1
-	elif sfh_form=='log_normal_sfh' or sfh_form==2:
-		sfh_form1 = 2
-	elif sfh_form=='gaussian_sfh' or sfh_form==3:
-		sfh_form1 = 3
-	elif sfh_form=='double_power_sfh' or sfh_form==4:
-		sfh_form1 = 4
-	else:
-		print ("SFH choice is not recognized!")
-		sys.exit()
-	file_out.write("sfh_form %d\n" % sfh_form1)
-
-	# dust law
-	if dust_ext_law=='CF2000' or dust_ext_law==0:
-		dust_ext_law1 = 0
-	elif dust_ext_law=='Cal2000' or dust_ext_law==1:
-		dust_ext_law1 = 1
-	else:
-		print ("dust_ext_law is not recognized!")
-		sys.exit()
-	file_out.write("dust_ext_law %d\n" % dust_ext_law1)
-
+	file_out.write("sfh_form %d\n" % sfh_form)
+	file_out.write("dust_ext_law %d\n" % dust_ext_law)
 	file_out.write("duste_switch %d\n" % duste_switch)
 	file_out.write("add_agn %d\n" % add_agn)
 	file_out.write("nmodels %d\n" % nmodels)

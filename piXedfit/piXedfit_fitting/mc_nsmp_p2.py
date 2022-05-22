@@ -36,7 +36,7 @@ def store_to_fits(sampler_params=None,sampler_log_sfr=None,sampler_log_mw_age=No
 	hdr['cosmo'] = cosmo_str
 	hdr['H0'] = H0
 	hdr['Om0'] = Om0
-	if duste_switch == 'duste':
+	if duste_switch==1:
 		if fix_dust_index == 1:
 			hdr['dust_index'] = fix_dust_index_val
 	if add_igm_absorption == 1:
@@ -108,7 +108,7 @@ def store_to_fits(sampler_params=None,sampler_log_sfr=None,sampler_log_mw_age=No
 	cols0.append(col)
 
 	#=> dust mass
-	if duste_switch == 'duste':
+	if duste_switch==1:
 		col_count = col_count + 1
 		str_temp = 'col%d' % col_count
 		hdr[str_temp] = 'log_dustmass'
@@ -154,14 +154,14 @@ def calc_sampler_mwage(nsamples=0,sampler_pop_mass=[],sampler_tau=[],sampler_t0=
 		pop_mass = sampler_pop_mass[int(ii)]
 		tau = sampler_tau[int(ii)]
 		age = sampler_age[int(ii)]
-		if sfh_form == 'tau_sfh' or sfh_form == 'delayed_tau_sfh':
+		if sfh_form==0 or sfh_form==1:
 			sampler_mw_age0[int(count)] = calc_mw_age(sfh_form=sfh_form,tau=tau,age=age,
 																formed_mass=pop_mass)
-		elif sfh_form == 'log_normal_sfh' or sfh_form == 'gaussian_sfh':
+		elif sfh_form==2 or sfh_form==3:
 			t0 = sampler_t0[int(ii)]
 			sampler_mw_age0[int(count)] = calc_mw_age(sfh_form=sfh_form,tau=tau,t0=t0,age=age,
 																formed_mass=pop_mass)
-		elif sfh_form == 'double_power_sfh':
+		elif sfh_form==4:
 			alpha = sampler_alpha[int(ii)]
 			beta = sampler_beta[int(ii)]
 			sampler_mw_age0[int(count)] = calc_mw_age(sfh_form=sfh_form,tau=tau,alpha=alpha,beta=beta,
@@ -390,9 +390,9 @@ def calc_sampler_SFR_othSFH(nsamples=0,sampler_params=None):
 		alpha = 0.0
 		beta = 0.0
 
-		if sfh_form == 'log_normal_sfh' or sfh_form == 'gaussian_sfh':
+		if sfh_form==2 or sfh_form==3:
 			t0 = pow(10.0,sampler_params['log_t0'][int(ii)])
-		if sfh_form == 'double_power_sfh':
+		if sfh_form==4:
 			alpha = pow(10.0,sampler_params['log_alpha'][int(ii)])
 			beta = pow(10.0,sampler_params['log_beta'][int(ii)])
 		
@@ -498,7 +498,7 @@ for pp in range(0,int(f['mod'].attrs['nparams_all'])):
 	str_temp = 'par%d' % pp 
 	params_temp.append(f['mod'].attrs[str_temp])
 
-if duste_switch=='duste' or duste_switch==1:
+if duste_switch==1:
 	if 'dust_index' in params_temp:
 		fix_dust_index = 0 
 	else:
@@ -512,27 +512,6 @@ f.close()
 global add_igm_absorption,igm_type
 add_igm_absorption = int(config_data['add_igm_absorption'])
 igm_type = int(config_data['igm_type'])
-
-if sfh_form == 0:
-	sfh_form = 'tau_sfh'
-elif sfh_form == 1:
-	sfh_form = 'delayed_tau_sfh'
-elif sfh_form == 2:
-	sfh_form = 'log_normal_sfh'
-elif sfh_form == 3:
-	sfh_form = 'gaussian_sfh'
-elif sfh_form == 4:
-	sfh_form = 'double_power_sfh'
-
-if duste_switch == 0:
-	duste_switch = 'noduste'
-elif duste_switch == 1:
-	duste_switch = 'duste'
-
-if dust_ext_law == 0:
-	dust_ext_law = 'CF2000'
-elif dust_ext_law == 1:
-	dust_ext_law = 'Cal2000'
 
 # number of walkers, steps, and nsteps_cut
 global nwalkers, nsteps, nsteps_cut 
@@ -600,9 +579,9 @@ f.close()
 global sp 
 sp = fsps.StellarPopulation(zcontinuous=1, imf_type=imf)
 # dust emission switch
-if duste_switch == 'duste':
+if duste_switch==1:
 	sp.params["add_dust_emission"] = True
-elif duste_switch == 'noduste':
+elif duste_switch==0:
 	sp.params["add_dust_emission"] = False
 # nebular emission switch
 if add_neb_emission == 1:
@@ -616,32 +595,32 @@ if add_agn == 0:
 elif add_agn == 1:
 	sp.params["fagn"] = 1
 
-if sfh_form=='tau_sfh' or sfh_form=='delayed_tau_sfh':
-	if sfh_form == 'tau_sfh':
+if sfh_form==0 or sfh_form==1:
+	if sfh_form == 0:
 		sp.params["sfh"] = 1
-	elif sfh_form == 'delayed_tau_sfh':
+	elif sfh_form == 1:
 		sp.params["sfh"] = 4
 	sp.params["const"] = 0
 	sp.params["sf_start"] = 0
 	sp.params["sf_trunc"] = 0
 	sp.params["fburst"] = 0
 	sp.params["tburst"] = 30.0
-	if dust_ext_law == 'CF2000' :
+	if dust_ext_law == 0:
 		sp.params["dust_type"] = 0  
 		sp.params["dust_tesc"] = 7.0
 		dust1_index = -1.0
 		sp.params["dust1_index"] = dust1_index
-	elif dust_ext_law == 'Cal2000':
+	elif dust_ext_law == 1:
 		sp.params["dust_type"] = 2  
 		sp.params["dust1"] = 0
-elif sfh_form=='log_normal_sfh' or sfh_form=='gaussian_sfh' or sfh_form=='double_power_sfh':
+elif sfh_form==2 or sfh_form==3 or sfh_form==4:
 	sp.params["sfh"] = 3
-	if dust_ext_law == 'CF2000' :
+	if dust_ext_law == 0:
 		sp.params["dust_type"] = 0  
 		sp.params["dust_tesc"] = 7.0
 		dust1_index = -1.0
 		sp.params["dust1_index"] = dust1_index
-	elif dust_ext_law == 'Cal2000':
+	elif dust_ext_law == 1:
 		sp.params["dust_type"] = 2  
 		sp.params["dust1"] = 0
 
@@ -661,28 +640,28 @@ sampler_log_sfr = None
 sampler_log_mw_age = None
 sampler_logdustmass = None
 sampler_log_fagn_bol = None
-if sfh_form == 'tau_sfh' or sfh_form == 'delayed_tau_sfh':
+if sfh_form==0 or sfh_form==1:
 	# SFR
 	sampler_SFR_exp = 1.0/np.exp(sampler_age/sampler_tau)
-	if sfh_form == 'tau_sfh':
+	if sfh_form==0:
 		sampler_log_sfr = np.log10(sampler_pop_mass*sampler_SFR_exp/sampler_tau/(1.0-sampler_SFR_exp)/1e+9)
-	if sfh_form == 'delayed_tau_sfh':
+	if sfh_form==1:
 		sampler_log_sfr = np.log10(sampler_pop_mass*sampler_age*sampler_SFR_exp/((sampler_tau*sampler_tau)-((sampler_age*sampler_tau)+(sampler_tau*sampler_tau))*sampler_SFR_exp)/1e+9)
 	# MW-age
 	sampler_log_mw_age = calc_sampler_mwage(nsamples=nsamples,sampler_pop_mass=sampler_pop_mass,sampler_tau=sampler_tau,sampler_age=sampler_age)
 	# dust-mass
-	if duste_switch == 'duste':
-		if add_agn == 1:
+	if duste_switch==1:
+		if add_agn==1:
 			sampler_logdustmass, sampler_log_fagn_bol = calc_sampler_dustmass_fagnbol_mainSFH(nsamples=nsamples,sampler_params=sampler_params)
-		elif add_agn == 0:
+		elif add_agn==0:
 			sampler_logdustmass = calc_sampler_dustmass_mainSFH(nsamples=nsamples,sampler_params=sampler_params)
 
-elif sfh_form == 'log_normal_sfh' or sfh_form == 'gaussian_sfh':
+elif sfh_form==2 or sfh_form==3:
 	sampler_t0 = np.power(10.0,sampler_params['log_t0'])
 	# MW-age
 	sampler_log_mw_age = calc_sampler_mwage(nsamples=nsamples,sampler_pop_mass=sampler_pop_mass,sampler_tau=sampler_tau,sampler_t0=sampler_t0,sampler_age=sampler_age)
 	# SFR and dust-mass
-	if duste_switch == 'duste':
+	if duste_switch==1:
 		if add_agn == 1:
 			sampler_log_sfr, sampler_logdustmass, sampler_log_fagn_bol = calc_sampler_SFR_dustmass_fagnbol_othSFH(nsamples=nsamples,sampler_params=sampler_params)
 		elif add_agn == 0:
@@ -691,14 +670,14 @@ elif sfh_form == 'log_normal_sfh' or sfh_form == 'gaussian_sfh':
 		sampler_log_sfr = calc_sampler_SFR_othSFH(nsamples=nsamples,sampler_params=sampler_params)
 
 
-elif sfh_form == 'double_power_sfh':
+elif sfh_form==4:
 	sampler_alpha = np.power(10.0,sampler_params['log_alpha'])
 	sampler_beta = np.power(10.0,sampler_params['log_beta'])
 	# MW-age
 	sampler_log_mw_age = calc_sampler_mwage(nsamples=nsamples,sampler_pop_mass=sampler_pop_mass,sampler_tau=sampler_tau,
 													sampler_alpha=sampler_alpha, sampler_beta=sampler_beta, sampler_age=sampler_age)
 	# SFR and dust-mass
-	if duste_switch == 'duste':
+	if duste_switch==1:
 		if add_agn == 1:
 			sampler_log_sfr, sampler_logdustmass, sampler_log_fagn_bol = calc_sampler_SFR_dustmass_fagnbol_othSFH(nsamples=nsamples,sampler_params=sampler_params)
 		elif add_agn == 0:
