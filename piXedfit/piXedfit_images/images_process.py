@@ -523,19 +523,24 @@ class images_processing:
 											deblend_nthresh=deblend_nthresh, deblend_cont=deblend_cont, 
 											segmentation_map=True)
 
-			if np.max(segm_map0)>1:
-				dim_y, dim_x = data_img.shape[0], data_img.shape[1]
-				y_cent = (dim_y-1)/2
-				x_cent = (dim_x-1)/2
+			dim_y, dim_x = data_img.shape[0], data_img.shape[1]
+			x_cent, y_cent = (dim_x-1)/2, (dim_y-1)/2
+			
+			segm_map1 = np.zeros((dim_y,dim_x))
+			rows, cols = np.where(segm_map0==segm_map0[int(y_cent)][int(x_cent)])
+			segm_map1[rows,cols] = 1
 
-				segm_map1 = np.zeros((dim_y,dim_x))
-				rows, cols = np.where(segm_map0==segm_map0[int(y_cent)][int(x_cent)])
-				segm_map1[rows,cols] = 1
-			else:
-				segm_map1 = segm_map0
+			#if np.max(segm_map0)>=1:
+			#	dim_y, dim_x = data_img.shape[0], data_img.shape[1]
+			#	y_cent = (dim_y-1)/2
+			#	x_cent = (dim_x-1)/2
+			#	segm_map1 = np.zeros((dim_y,dim_x))
+			#	rows, cols = np.where(segm_map0==segm_map0[int(y_cent)][int(x_cent)])
+			#	segm_map1[rows,cols] = 1
+			#else:
+			#	segm_map1 = segm_map0
 
 			segm_maps.append(segm_map1)
-
 
 		return segm_maps
 
