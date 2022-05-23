@@ -94,6 +94,8 @@ def match_spectra_poly_legendre_fit(in_spec_wave,in_spec_flux,ref_spec_wave,ref_
 	which is derived from polynomial interpolation to the continuum flux ratio as a function of wavelength
 	"""
 
+	from scipy.stats import sigmaclip
+
 	if len(wave_clean)==0:
 		# get wavelength grids (in the final wave sampling) that are free from emission lines:
 		wave_clean,wave_mask = get_no_nebem_wave_fit(z,final_wave,del_wave_nebem)
@@ -106,14 +108,17 @@ def match_spectra_poly_legendre_fit(in_spec_wave,in_spec_flux,ref_spec_wave,ref_
 
 	flux_ratio = ref_spec_flux_clean/in_spec_flux_clean
 
+	res0 = (ref_spec_flux_clean-in_spec_flux_clean)/ref_spec_flux_clean
+	res,lower,upper = sigmaclip(res0, low=2.5, high=2.5)
+
 	# remove bad fluxes
-	idx = np.where((np.isnan(flux_ratio)==False) & (np.isinf(flux_ratio)==False))
-	if len(idx[0])>0:
-		flux_ratio = flux_ratio[idx[0]]
-		wave_clean = wave_clean[idx[0]]
+	idx = np.where((np.isnan(flux_ratio)==False) & (np.isinf(flux_ratio)==False) & (flux_ratio>0.0) & (res0>=lower) & (res0<=upper))
+	flux_ratio = flux_ratio[idx[0]]
+	wave_clean = wave_clean[idx[0]]
 
 	# fit polynomial function
 	final_wave = in_spec_wave
+	order = int(order)
 	poly_legendre = np.polynomial.legendre.Legendre.fit(wave_clean, flux_ratio, order)
 	factor = poly_legendre(final_wave)
 

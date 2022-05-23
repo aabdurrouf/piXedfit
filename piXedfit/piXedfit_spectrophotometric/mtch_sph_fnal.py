@@ -117,7 +117,8 @@ npixs = len(rows)
 
 # data of pre-calculated model rest-frame spectra
 if config_data['models_spec']=='none':
-	models_spec = dir_mod+"spec_dpl_c20_nduste_nagn_50k.hdf5"
+	#models_spec = dir_mod+"spec_dpl_c20_nduste_nagn_50k.hdf5"
+	models_spec = dir_mod+"s_dpl_cf20_nd_na_50k.hdf5"
 else:
 	models_spec = config_data['models_spec']
 
@@ -146,7 +147,7 @@ map_bfit_mod_spec_wave = spec_wave_clean
 map_bfit_mod_spec_flux = np.zeros((dim_y,dim_x,len(spec_wave_clean)))
 
 # polynomial order
-poly_order = 3.0
+poly_order = 3
 
 for pp in range(0,npixs):
 	# obs SED

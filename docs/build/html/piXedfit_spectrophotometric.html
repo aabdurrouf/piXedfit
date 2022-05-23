@@ -94,9 +94,9 @@
 <li class="toctree-l1"><a class="reference internal" href="image_pros.html">Image processing</a></li>
 <li class="toctree-l1"><a class="reference internal" href="image_ifs_match.html">Spatial and Spectral Matching of imaging and IFS data</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pixel_binning.html">Pixel binning</a></li>
-<li class="toctree-l1"><a class="reference internal" href="fit_ing_SEDs.html">SED fitting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fit_ing_SEDs.html">Fitting individual SED</a></li>
 <li class="toctree-l1"><a class="reference internal" href="fit_res_SEDs.html">Fitting spatially resolved SEDs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="plot_fitres.html">Analyze fitting results</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_fitres.html">Analyzing fitting results</a></li>
 <li class="toctree-l1"><a class="reference internal" href="get_maps_prop.html">Get maps of spatially resolved properties</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Tutorials</span></p>
@@ -186,7 +186,7 @@
 <span id="pixedfit-spectrophotometric"></span><span id="mod-specphoto"></span><h1>piXedfit_spectrophotometric<a class="headerlink" href="#module-piXedfit.piXedfit_spectrophotometric" title="Permalink to this headline">¶</a></h1>
 <dl class="py function">
 <dt id="piXedfit.piXedfit_spectrophotometric.match_imgifs_spatial">
-<code class="sig-prename descclassname">piXedfit.piXedfit_spectrophotometric.</code><code class="sig-name descname">match_imgifs_spatial</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">photo_fluxmap</span></em>, <em class="sig-param"><span class="n">ifs_data</span></em>, <em class="sig-param"><span class="n">ifs_survey</span><span class="o">=</span><span class="default_value">'manga'</span></em>, <em class="sig-param"><span class="n">spec_smoothing</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">kernel_sigma</span><span class="o">=</span><span class="default_value">3.5</span></em>, <em class="sig-param"><span class="n">name_out_fits</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#piXedfit.piXedfit_spectrophotometric.match_imgifs_spatial" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">piXedfit.piXedfit_spectrophotometric.</code><code class="sig-name descname">match_imgifs_spatial</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">photo_fluxmap</span></em>, <em class="sig-param"><span class="n">ifs_data</span></em>, <em class="sig-param"><span class="n">ifs_survey</span><span class="o">=</span><span class="default_value">'manga'</span></em>, <em class="sig-param"><span class="n">spec_smoothing</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">kernel_sigma</span><span class="o">=</span><span class="default_value">3.5</span></em>, <em class="sig-param"><span class="n">nproc</span><span class="o">=</span><span class="default_value">10</span></em>, <em class="sig-param"><span class="n">name_out_fits</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#piXedfit.piXedfit_spectrophotometric.match_imgifs_spatial" title="Permalink to this definition">¶</a></dt>
 <dd><p>Function for matching (spatially, pixel-by-pixel) between an IFS data cube and a post-processed multiwavelength imaging
 data.</p>
 <dl class="field-list simple">
@@ -200,6 +200,8 @@ The survey from which the IFS data is taken. Options are: ‘manga’ and ‘cal
 If True, spectrum of each pixel will be smoothed by convolving it with a Gaussian kernel with a standard deviation given by the input kernel_sigma.</p></li>
 <li><p><strong>kernel_sigma</strong> – (default: 3.5)
 Standard deviation of the kernel to be convolved with the spectrum of each pixel.</p></li>
+<li><p><strong>nproc</strong> – (default: 10)
+Number of cores to be used for the calculation.</p></li>
 <li><p><strong>name_out_fits</strong> – Name of output FITS file.</p></li>
 </ul>
 </dd>

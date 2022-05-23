@@ -13,11 +13,88 @@ global PIXEDFIT_HOME
 PIXEDFIT_HOME = os.environ['PIXEDFIT_HOME']
 
 
-__all__ = ["specphoto_califagalexsdss2masswise", "specphoto_mangagalexsdss2masswise", 
-			"match_imgifs_spatial", "match_imgifs_spectral"]
+__all__ = ["match_imgifs_spatial", "match_imgifs_spectral"]
 
 
-def specphoto_califagalexsdss2masswise(photo_fluxmap, califa_file, spec_smoothing=False, kernel_sigma=2.6, name_out_fits=None):
+def specphoto_califagalexsdss2masswise(photo_fluxmap, califa_file, spec_smoothing=False, kernel_sigma=2.6, 
+	nproc=10, name_out_fits=None):
+	"""Function for matching (spatially on pixel scales) between IFS data cube from CALIFA and the multiwavelength imaging 
+	data (12 bands from GALEX, SDSS, 2MASS, and WISE). 
+
+	:param photo_fluxmap:
+		Input 3D data cube of photometry. This should have the same format as the output of :func:`piXedfit.piXedfit_images.images_processing.flux_map`.
+
+	:param califa_file:
+		Input CALIFA data cube.
+
+	:param spec_smoothing: (default: False)
+		If True, spectrum of each pixel will be smoothed by convolving it with a Gaussian kernel with a standard deviation given by the input kernel_sigma.  
+
+	:param kernel_sigma: (default: 2.6)
+		Standard deviation of the kernel to be convolved with the spectrum of each pixel.
+
+	:param nproc: (default: 10)
+		Number of cores to be used for the calculation.
+
+	:param name_out_fits:
+		Name of output FITS file.
+	"""
+
+	CODE_dir = PIXEDFIT_HOME+'/piXedfit/piXedfit_spectrophotometric/'
+	temp_dir = PIXEDFIT_HOME+'/data/temp/'
+
+	# make configuration file
+	name_config = "config_file%d.dat" % (random.randint(0,10000))
+	file_out = open(name_config,"w")
+	file_out.write("photo_fluxmap %s\n" % photo_fluxmap)
+	file_out.write("califa_file %s\n" % califa_file)
+	if spec_smoothing==True or spec_smoothing==1:
+		spec_smoothing1 = 1
+	elif spec_smoothing==False or spec_smoothing==0:
+		spec_smoothing1 = 0
+	else:
+		print ("Not known input for spec_smoothing!")
+		sys.exit()
+	file_out.write("spec_smoothing %d\n" % spec_smoothing1)
+	file_out.write("kernel_sigma %lf\n" % kernel_sigma)
+	if name_out_fits==None:
+		temp1 = photo_fluxmap.replace('.fits','')
+		temp2 = califa_file.replace('.fits','')
+		name_out_fits = "specphoto_%s_%s.fits" % (temp1,temp2)
+	file_out.write("name_out_fits %s\n" % name_out_fits)
+	file_out.close()
+
+	os.system('mv %s %s' % (name_config,temp_dir))
+
+	# get number of wavelength points
+	cube = fits.open(califa_file)
+	min_wave = float(cube[0].header['CRVAL3'])
+	del_wave = float(cube[0].header['CDELT3'])
+	nwaves = int(cube[0].header['NAXIS3'])
+	max_wave = min_wave + (nwaves-1)*del_wave
+	wave = np.linspace(min_wave,max_wave,nwaves)
+	cube.close()
+
+	# determine number of cores
+	if nproc>10:
+		nwaves = len(wave)
+		modulo = []
+		nproc0 = []
+		for ii in range(int(nproc),int(nproc)-4,-1):
+			mod0 = nwaves % ii
+			modulo.append(mod0)
+			nproc0.append(ii)
+		idx0, min_val = min(enumerate(np.asarray(modulo)), key=operator.itemgetter(1))
+		nproc_new = int(nproc0[idx0])
+	else:
+		nproc_new = nproc
+
+	os.system("mpirun -n %d python %s./sp_clf.py %s" % (nproc_new,CODE_dir,name_config))
+
+	return name_out_fits
+
+
+def old_specphoto_califagalexsdss2masswise(photo_fluxmap, califa_file, spec_smoothing=False, kernel_sigma=2.6, name_out_fits=None):
 	"""Function for matching (spatially on pixel scales) between IFS data cube from CALIFA and the multiwavelength imaging 
 	data (12 bands from GALEX, SDSS, 2MASS, and WISE). 
 
@@ -270,7 +347,83 @@ def specphoto_califagalexsdss2masswise(photo_fluxmap, califa_file, spec_smoothin
 	return name_out_fits
 
 
-def specphoto_mangagalexsdss2masswise(photo_fluxmap, manga_file, spec_smoothing=False, kernel_sigma=3.5, name_out_fits=None):
+def specphoto_mangagalexsdss2masswise(photo_fluxmap, manga_file, spec_smoothing=False, kernel_sigma=3.5, 
+	nproc=10, name_out_fits=None):
+	
+	"""Function for matching (spatially on pixel scales) between IFS data cube from MaNGA and the multiwavelength imaging 
+	data (12 bands from GALEX, SDSS, 2MASS, and WISE). 
+
+	:param photo_fluxmap:
+		Input 3D data cube of photometry. This should have the same format as the output of :func:`piXedfit.piXedfit_images.images_processing.flux_map`.
+
+	:param manga_file:
+		Input MaNGA data cube.
+
+	:param spec_smoothing: (default: False)
+		If True, spectrum of each pixel will be smoothed by convolving it with a Gaussian kernel with a standard deviation given by the input kernel_sigma. 
+
+	:param kernel_sigma: (default: 3.5)
+		Standard deviation of the kernel to be convolved with the spectrum of each pixel.
+
+	:param nproc: (default: 10)
+		Number of cores to be used for the calculation.
+
+	:param name_out_fits:
+		Name of output FITS file.
+	"""
+
+	CODE_dir = PIXEDFIT_HOME+'/piXedfit/piXedfit_spectrophotometric/'
+	temp_dir = PIXEDFIT_HOME+'/data/temp/'
+
+	# make configuration file
+	name_config = "config_file%d.dat" % (random.randint(0,10000))
+	file_out = open(name_config,"w")
+	file_out.write("photo_fluxmap %s\n" % photo_fluxmap)
+	file_out.write("manga_file %s\n" % manga_file)
+	if spec_smoothing==True or spec_smoothing==1:
+		spec_smoothing1 = 1
+	elif spec_smoothing==False or spec_smoothing==0:
+		spec_smoothing1 = 0
+	else:
+		print ("Not known input for spec_smoothing!")
+		sys.exit()
+	file_out.write("spec_smoothing %d\n" % spec_smoothing1)
+	file_out.write("kernel_sigma %lf\n" % kernel_sigma)
+	if name_out_fits==None:
+		temp1 = photo_fluxmap.replace('.fits','')
+		temp2 = manga_file.replace('.fits','')
+		name_out_fits = "specphoto_%s_%s.fits" % (temp1,temp2)
+	file_out.write("name_out_fits %s\n" % name_out_fits)
+	file_out.close()
+
+	os.system('mv %s %s' % (name_config,temp_dir))
+
+	## open MaNGA IFS data
+	cube = fits.open(manga_file)
+	wave = cube['WAVE'].data
+	cube.close()
+
+	# determine number of cores
+	if nproc>10:
+		nwaves = len(wave)
+		modulo = []
+		nproc0 = []
+		for ii in range(int(nproc),int(nproc)-4,-1):
+			mod0 = nwaves % ii
+			modulo.append(mod0)
+			nproc0.append(ii)
+		idx0, min_val = min(enumerate(np.asarray(modulo)), key=operator.itemgetter(1))
+		nproc_new = int(nproc0[idx0])
+	else:
+		nproc_new = nproc
+
+	os.system("mpirun -n %d python %s./sp_mga.py %s" % (nproc_new,CODE_dir,name_config))
+
+	return name_out_fits
+
+
+
+def old_specphoto_mangagalexsdss2masswise(photo_fluxmap, manga_file, spec_smoothing=False, kernel_sigma=3.5, name_out_fits=None):
 	
 	"""Function for matching (spatially on pixel scales) between IFS data cube from MaNGA and the multiwavelength imaging 
 	data (12 bands from GALEX, SDSS, 2MASS, and WISE). 
@@ -500,7 +653,8 @@ def specphoto_mangagalexsdss2masswise(photo_fluxmap, manga_file, spec_smoothing=
 	return name_out_fits
 
 
-def match_imgifs_spatial(photo_fluxmap,ifs_data,ifs_survey='manga',spec_smoothing=False,kernel_sigma=3.5,name_out_fits=None):
+def match_imgifs_spatial(photo_fluxmap,ifs_data,ifs_survey='manga',spec_smoothing=False,kernel_sigma=3.5,
+	nproc=10, name_out_fits=None):
 	
 	"""Function for matching (spatially, pixel-by-pixel) between an IFS data cube and a post-processed multiwavelength imaging 
 	data.  
@@ -520,16 +674,19 @@ def match_imgifs_spatial(photo_fluxmap,ifs_data,ifs_survey='manga',spec_smoothin
 	:param kernel_sigma: (default: 3.5)
 		Standard deviation of the kernel to be convolved with the spectrum of each pixel.
 
+	:param nproc: (default: 10)
+		Number of cores to be used for the calculation.
+
 	:param name_out_fits:
 		Name of output FITS file.
 	"""
 
 	if ifs_survey=='manga':
 		specphoto_mangagalexsdss2masswise(photo_fluxmap,ifs_data,spec_smoothing=spec_smoothing,
-										kernel_sigma=kernel_sigma,name_out_fits=name_out_fits)
+										kernel_sigma=kernel_sigma,nproc=nproc,name_out_fits=name_out_fits)
 	elif ifs_survey=='califa':
 		specphoto_califagalexsdss2masswise(photo_fluxmap,ifs_data,spec_smoothing=spec_smoothing,
-										kernel_sigma=kernel_sigma,name_out_fits=name_out_fits)
+										kernel_sigma=kernel_sigma,nproc=nproc,name_out_fits=name_out_fits)
 	else:
 		print ("The inputted ifs_source is not recognized!")
 		sys.exit()
