@@ -42,8 +42,8 @@ name_out_fits = config_data['name_out_fits']
 hdu = fits.open(photo_fluxmap)
 header_photo_fluxmap = hdu[0].header
 photo_gal_region = hdu['GALAXY_REGION'].data
-photo_flux_map = hdu['FLUX'].data          							# structure: (band,y,x)
-photo_fluxerr_map = hdu['FLUX_ERR'].data  		 					# structure: (band,y,x)
+photo_flux_map = hdu['FLUX'].data 									# structure: (band,y,x)
+photo_fluxerr_map = hdu['FLUX_ERR'].data 							# structure: (band,y,x)
 unit_photo_fluxmap = float(header_photo_fluxmap['unit'])
 data_stamp_image = hdu['stamp_image'].data 
 header_stamp_image = hdu['stamp_image'].header
@@ -57,8 +57,8 @@ filter_ref_psfmatch = header_photo_fluxmap['fpsfmtch']
 
 ## open MaNGA IFS data
 cube = fits.open(manga_file)
-map_flux0 = cube['FLUX'].data                   					# structure: (wave,y,x)
-map_var = 1.0/cube['IVAR'].data                						# variance
+map_flux0 = cube['FLUX'].data 										# structure: (wave,y,x)
+map_var = 1.0/cube['IVAR'].data 									# variance
 wave = cube['WAVE'].data
 nwaves = len(wave)
 # reconstructed r-band image
@@ -67,7 +67,7 @@ header_manga2D = cube['RIMG'].header
 # E(B-V) of foreground Galactic dust attenuation
 Gal_EBV = float(cube[0].header['EBVGAL'])
 cube.close()
-unit_ifu = 1.0e-17    												# in erg/s/cm^2/Ang.
+unit_ifu = 1.0e-17 													# in erg/s/cm^2/Ang.
 # dimension 
 dim_y = rimg.shape[0]
 dim_x = rimg.shape[1]
@@ -113,7 +113,7 @@ hdu.close()
 kernel_resize = resize_psf(kernel_data, 0.25, pixsize_manga, order=3)
 kernel_resize = kernel_resize/np.sum(kernel_resize)
 
-# get module or the number of spectral pixels that will be left over after the initial calculation
+# get the number of spectral pixels that will be left over after the initial calculation
 nwaves_calc = int(nwaves/size)*size
 
 numDataPerRank = int(nwaves_calc/size)
@@ -143,7 +143,7 @@ for ii in recvbuf_idx:
 	align_psfmatch_layer_ifu_var, footprint = reproject_exact((data_image,header_manga2D), header_stamp_image)
 	align_psfmatch_layer_ifu_var = align_psfmatch_layer_ifu_var*pixsize_image*pixsize_image
 		
-	map_ifu_flux_temp0[:,:,int(count)] = align_psfmatch_layer_ifu_flux 							# in unit_ifu          
+	map_ifu_flux_temp0[:,:,int(count)] = align_psfmatch_layer_ifu_flux 							# in unit_ifu
 	map_ifu_flux_err_temp0[:,:,int(count)] = np.sqrt(align_psfmatch_layer_ifu_var)				# in unit_ifu
 
 	count = count + 1
@@ -181,7 +181,7 @@ if rank == 0:
 			psfmatch_layer_ifu_var = convolve_fft(layer_ifu_var, kernel_resize, allow_huge=True, mask=mask_region)
 
 			# align to stamp image:
-			data_image = psfmatch_layer_ifu_flux/pixsize_manga/pixsize_manga       		# surface brightness
+			data_image = psfmatch_layer_ifu_flux/pixsize_manga/pixsize_manga 				# surface brightness
 			align_psfmatch_layer_ifu_flux, footprint = reproject_exact((data_image,header_manga2D), header_stamp_image)
 			align_psfmatch_layer_ifu_flux = align_psfmatch_layer_ifu_flux*pixsize_image*pixsize_image
 
@@ -189,8 +189,8 @@ if rank == 0:
 			align_psfmatch_layer_ifu_var, footprint = reproject_exact((data_image,header_manga2D), header_stamp_image)
 			align_psfmatch_layer_ifu_var = align_psfmatch_layer_ifu_var*pixsize_image*pixsize_image
 				
-			map_ifu_flux_temp[ww] = align_psfmatch_layer_ifu_flux               			# in unit_ifu          
-			map_ifu_flux_err_temp[ww] = np.sqrt(align_psfmatch_layer_ifu_var)   			# in unit_ifu
+			map_ifu_flux_temp[ww] = align_psfmatch_layer_ifu_flux 							# in unit_ifu
+			map_ifu_flux_err_temp[ww] = np.sqrt(align_psfmatch_layer_ifu_var) 				# in unit_ifu
 	#========================================================#
 
 	#========================================================#
@@ -235,8 +235,8 @@ if rank == 0:
 	map_specphoto_spec_flux_err = np.transpose(map_specphoto_spec_flux_err0, axes=(2, 0, 1))
 
 	# photo SED is given to the full map as it was with photometry only
-	map_specphoto_phot_flux = photo_flux_map*unit_photo_fluxmap/unit_ifu                 ### in unit_ifu
-	map_specphoto_phot_flux_err = photo_fluxerr_map*unit_photo_fluxmap/unit_ifu          ### in unit_ifu
+	map_specphoto_phot_flux = photo_flux_map*unit_photo_fluxmap/unit_ifu 					### in unit_ifu
+	map_specphoto_phot_flux_err = photo_fluxerr_map*unit_photo_fluxmap/unit_ifu 			### in unit_ifu
 	#========================================================#
 
 	# Store into fits file 

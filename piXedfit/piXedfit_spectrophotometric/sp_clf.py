@@ -13,7 +13,6 @@ sys.path.insert(0, PIXEDFIT_HOME)
 
 #from piXedfit.piXedfit_images import k_lmbd_Fitz1986_LMC
 
-
 ## USAGE: mpirun -np [npros] python ./sp_spat_clf (1)name_config
 
 global comm, size, rank
@@ -42,8 +41,8 @@ name_out_fits = config_data['name_out_fits']
 hdu = fits.open(photo_fluxmap)
 header_photo_fluxmap = hdu[0].header
 photo_gal_region = hdu['GALAXY_REGION'].data
-photo_flux_map = hdu['FLUX'].data          						# structure: (band,y,x)
-photo_fluxerr_map = hdu['FLUX_ERR'].data   						# structure: (band,y,x)
+photo_flux_map = hdu['FLUX'].data 								# structure: (band,y,x)
+photo_fluxerr_map = hdu['FLUX_ERR'].data 						# structure: (band,y,x)
 unit_photo_fluxmap = float(header_photo_fluxmap['unit'])
 data_stamp_image = hdu['stamp_image'].data 
 header_stamp_image = hdu['stamp_image'].header
@@ -58,9 +57,9 @@ filter_ref_psfmatch = header_photo_fluxmap['fpsfmtch']
 # open CALIFA IFS data
 cube = fits.open(califa_file)
 header_califa3D = cube[0].header
-map_flux0 = cube['PRIMARY'].data                   				# structure: (wave,y,x)
-map_var = np.square(cube['ERROR'].data)   						# variance
-map_spec_mask = cube['BADPIX'].data               				# mask
+map_flux0 = cube['PRIMARY'].data 								# structure: (wave,y,x)
+map_var = np.square(cube['ERROR'].data) 						# variance
+map_spec_mask = cube['BADPIX'].data 							# mask
 cube.close()
 # modify header to make it has only 2D WCS keywords
 w = WCS(naxis=2)
@@ -73,18 +72,15 @@ header_califa2D = w.to_header()
 min_wave = float(header_califa3D['CRVAL3'])
 del_wave = float(header_califa3D['CDELT3'])
 nwaves = int(header_califa3D['NAXIS3'])
-max_wave = min_wave + (nwaves-1)*del_wave
+max_wave = min_wave + ((nwaves-1)*del_wave)
 wave = np.linspace(min_wave,max_wave,nwaves)
 # get flux unit
-unit_ifu = 1.0e-16    											# in erg/s/cm^2/Ang. 
+unit_ifu = 1.0e-16 												# in erg/s/cm^2/Ang. 
 # get dimension
 dim_y = map_flux0.shape[1]
 dim_x = map_flux0.shape[2]
 
 pixsize_califa = 1.0
-
-#  transpose (wave,y,x) ==> (y,x,wave)
-map_spec_mask_trans = np.transpose(map_spec_mask, axes=(1, 2, 0))
 
 # determine IFU region:
 gal_region = np.zeros((dim_y,dim_x))
@@ -237,20 +233,15 @@ if rank == 0:
 	map_specphoto_spec_flux0 = np.zeros((dimy_stamp_image,dimx_stamp_image,nwaves,))
 	map_specphoto_spec_flux_err0 = np.zeros((dimy_stamp_image,dimx_stamp_image,nwaves))
 
-	#if adopt_photo_region == False:
 	rows, cols = np.where((align_map_mask==0) & (photo_gal_region==1))
 	spec_gal_region[rows,cols] = 1
 	# flux in CALIFA has been corrected for the foreground dust extinction
-	corr_spec = map_ifu_flux_temp_trans[rows,cols]
-	corr_spec_err = map_ifu_flux_err_temp_trans[rows,cols]
-	# store in temporary arrays
-	map_specphoto_spec_flux0[rows,cols] = corr_spec
-	map_specphoto_spec_flux_err0[rows,cols] = corr_spec_err
+	map_specphoto_spec_flux0[rows,cols] = map_ifu_flux_temp_trans[rows,cols]
+	map_specphoto_spec_flux_err0[rows,cols] = map_ifu_flux_err_temp_trans[rows,cols]
 
 	# transpose from (y,x,wave) => (wave,y,x):
 	# and convert into a new flux unit which is the same as flux unit for spec+photo with MaNGA:
 	unit_ifu_new = 1.0e-17          # in erg/s/cm^2/Ang.
-
 	map_specphoto_spec_flux = np.transpose(map_specphoto_spec_flux0, axes=(2, 0, 1))*unit_ifu/unit_ifu_new
 	map_specphoto_spec_flux_err = np.transpose(map_specphoto_spec_flux_err0, axes=(2, 0, 1))*unit_ifu/unit_ifu_new
 

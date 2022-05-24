@@ -103,6 +103,7 @@ def match_spectra_poly_legendre_fit(in_spec_wave,in_spec_flux,ref_spec_wave,ref_
 	# get flux ratio of continuum between the two spectra in the final wave sampling:
 	f = interp1d(in_spec_wave,in_spec_flux)
 	in_spec_flux_clean = f(wave_clean)
+
 	f = interp1d(ref_spec_wave,ref_spec_flux)
 	ref_spec_flux_clean = f(wave_clean)
 
@@ -126,7 +127,6 @@ def match_spectra_poly_legendre_fit(in_spec_wave,in_spec_flux,ref_spec_wave,ref_
 	final_flux = in_spec_flux*factor
 
 	# get model/reference spectrum
-
 
 	return final_wave, final_flux, factor, ref_spec_flux_clean
 
