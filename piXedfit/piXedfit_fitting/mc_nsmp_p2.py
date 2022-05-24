@@ -38,7 +38,7 @@ def store_to_fits(sampler_params=None,sampler_log_sfr=None,sampler_log_mw_age=No
 	hdr['Om0'] = Om0
 	if duste_switch==1:
 		if fix_dust_index == 1:
-			hdr['dust_index'] = fix_dust_index_val
+			hdr['dust_index'] = def_params_val['dust_index']
 	if add_igm_absorption == 1:
 		hdr['igm_type'] = igm_type
 	for bb in range(0,nbands):
