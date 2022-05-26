@@ -127,7 +127,7 @@ def pixel_binning(fits_fluxmap, ref_band=None, Dmin_bin=2.0, SNR=[], redc_chi2_l
 	else:
 		SN_threshold = np.asarray(SNR)
 		idx0 = np.where(SNR==0)
-		SN_threshold[idx0[0]] = 1.0e-35 
+		SN_threshold[idx0[0]] = -1.0e+10 
 
 	dim_y = gal_region.shape[0]
 	dim_x = gal_region.shape[1]
