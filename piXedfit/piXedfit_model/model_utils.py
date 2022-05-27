@@ -979,6 +979,9 @@ def calc_bollum_from_spec_rest(spec_wave=[],spec_lum=[]):
 	""" Function for calculating bolometric luminosity of rest-frame model spectrum in L_sun/A.
 	"""
 
+	spec_wave = np.asarray(spec_wave)
+	spec_lum = np.asarray(spec_lum)
+
 	# integrate
 	wave_left = spec_wave[0:len(spec_wave)-1]
 	lum_left = spec_lum[0:len(spec_wave)-1]
