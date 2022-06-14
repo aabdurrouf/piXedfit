@@ -186,7 +186,7 @@
 <span id="pixedfit-fitting"></span><span id="api-fitting"></span><h1>piXedfit_fitting<a class="headerlink" href="#module-piXedfit.piXedfit_fitting" title="Permalink to this headline">¶</a></h1>
 <dl class="py function">
 <dt id="piXedfit.piXedfit_fitting.SEDfit_from_binmap">
-<code class="sig-prename descclassname">piXedfit.piXedfit_fitting.</code><code class="sig-name descname">SEDfit_from_binmap</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">fits_binmap</span></em>, <em class="sig-param"><span class="n">binid_range</span><span class="o">=</span><span class="default_value">[]</span></em>, <em class="sig-param"><span class="n">bin_ids</span><span class="o">=</span><span class="default_value">[]</span></em>, <em class="sig-param"><span class="n">models_spec</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">fit_method</span><span class="o">=</span><span class="default_value">'mcmc'</span></em>, <em class="sig-param"><span class="n">gal_z</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">z_range</span><span class="o">=</span><span class="default_value">[0.0, 1.0]</span></em>, <em class="sig-param"><span class="n">nrands_z</span><span class="o">=</span><span class="default_value">10</span></em>, <em class="sig-param"><span class="n">add_igm_absorption</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">igm_type</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">likelihood</span><span class="o">=</span><span class="default_value">'gauss'</span></em>, <em class="sig-param"><span class="n">dof</span><span class="o">=</span><span class="default_value">3.0</span></em>, <em class="sig-param"><span class="n">gauss_likelihood_form</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">nwalkers</span><span class="o">=</span><span class="default_value">100</span></em>, <em class="sig-param"><span class="n">nsteps</span><span class="o">=</span><span class="default_value">600</span></em>, <em class="sig-param"><span class="n">nsteps_cut</span><span class="o">=</span><span class="default_value">50</span></em>, <em class="sig-param"><span class="n">nproc</span><span class="o">=</span><span class="default_value">10</span></em>, <em class="sig-param"><span class="n">perc_chi2</span><span class="o">=</span><span class="default_value">90.0</span></em>, <em class="sig-param"><span class="n">cosmo</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">H0</span><span class="o">=</span><span class="default_value">70.0</span></em>, <em class="sig-param"><span class="n">Om0</span><span class="o">=</span><span class="default_value">0.3</span></em>, <em class="sig-param"><span class="n">store_full_samplers</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">name_out_fits</span><span class="o">=</span><span class="default_value">[]</span></em><span class="sig-paren">)</span><a class="headerlink" href="#piXedfit.piXedfit_fitting.SEDfit_from_binmap" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">piXedfit.piXedfit_fitting.</code><code class="sig-name descname">SEDfit_from_binmap</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">fits_binmap</span></em>, <em class="sig-param"><span class="n">binid_range</span><span class="o">=</span><span class="default_value">[]</span></em>, <em class="sig-param"><span class="n">bin_ids</span><span class="o">=</span><span class="default_value">[]</span></em>, <em class="sig-param"><span class="n">models_spec</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">fit_method</span><span class="o">=</span><span class="default_value">'mcmc'</span></em>, <em class="sig-param"><span class="n">gal_z</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">params_range</span><span class="o">=</span><span class="default_value">{'dust1': [0.0, 4.0], 'dust2': [0.0, 4.0], 'dust_index': [- 2.2, 0.4], 'log_age': [- 1.0, 1.14], 'log_alpha': [- 2.0, 2.0], 'log_beta': [- 2.0, 2.0], 'log_fagn': [- 5.0, 0.48], 'log_gamma': [- 4.0, 0.0], 'log_qpah': [- 3.0, 1.0], 'log_t0': [- 1.0, 1.14], 'log_tau': [- 1.0, 1.5], 'log_tauagn': [0.7, 2.18], 'log_umin': [- 1.0, 1.39], 'logzsol': [- 2.0, 0.2], 'z': [0.0, 1.0]}</span></em>, <em class="sig-param"><span class="n">nrands_z</span><span class="o">=</span><span class="default_value">10</span></em>, <em class="sig-param"><span class="n">add_igm_absorption</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">igm_type</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">likelihood</span><span class="o">=</span><span class="default_value">'gauss'</span></em>, <em class="sig-param"><span class="n">dof</span><span class="o">=</span><span class="default_value">3.0</span></em>, <em class="sig-param"><span class="n">nwalkers</span><span class="o">=</span><span class="default_value">100</span></em>, <em class="sig-param"><span class="n">nsteps</span><span class="o">=</span><span class="default_value">600</span></em>, <em class="sig-param"><span class="n">nsteps_cut</span><span class="o">=</span><span class="default_value">50</span></em>, <em class="sig-param"><span class="n">nproc</span><span class="o">=</span><span class="default_value">10</span></em>, <em class="sig-param"><span class="n">initfit_nmodels_mcmc</span><span class="o">=</span><span class="default_value">30000.0</span></em>, <em class="sig-param"><span class="n">perc_chi2</span><span class="o">=</span><span class="default_value">90.0</span></em>, <em class="sig-param"><span class="n">cosmo</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">H0</span><span class="o">=</span><span class="default_value">70.0</span></em>, <em class="sig-param"><span class="n">Om0</span><span class="o">=</span><span class="default_value">0.3</span></em>, <em class="sig-param"><span class="n">store_full_samplers</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">name_out_fits</span><span class="o">=</span><span class="default_value">[]</span></em><span class="sig-paren">)</span><a class="headerlink" href="#piXedfit.piXedfit_fitting.SEDfit_from_binmap" title="Permalink to this definition">¶</a></dt>
 <dd><p>A function for performing SED fitting to set of spatially resolved SEDs from the reduced data cube that is produced after the pixel binning.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -195,13 +195,15 @@
 This is a mandatory parameter.</p></li>
 <li><p><strong>binid_range</strong> – Range of bin IDs that are going to be fit. Allowed format is [idmin,idmax]. The id starts from 0. If empty, [], fitting will be done to SEDs of all spatial bins.</p></li>
 <li><p><strong>bin_ids</strong> – Bin ids whose the SEDs are going to be fit. Allowed format is a 1D array. The id starts from 0. Both binid_range and bin_ids can’t be empty, []. If both of them are not empty, the bin_ids will be used.</p></li>
-<li><p><strong>models_spec</strong> – (Mandatory)</p></li>
+<li><p><strong>models_spec</strong> – Model spectral templates in the rest-frame that is generated prior to the fitting. This set of models will be used in the main fitting step if fit_method=’rdsps’ or initial fitting if fit_method=’mcmc’.</p></li>
 <li><p><strong>fit_method</strong> – (default: ‘mcmc’)
 Choice for the fitting method. Options are: (1)’mcmc’, and (2)’rdsps’.</p></li>
 <li><p><strong>gal_z</strong> – Redshift of the galaxy. If gal_z=None, then redshift is taken from the header of the FITS file.
 If gal_z in the FITS file header is negatiive, then redshift is set to be free.</p></li>
-<li><p><strong>z_range</strong> – (default: [0.0,1.0])</p></li>
-<li><p><strong>nrands_z</strong> – (default: 10)</p></li>
+<li><p><strong>params_range</strong> – Ranges of parameters. The format of this input argument is python dictionary.
+The range for redshift (‘z’) only relevant if gal_z=None (i.e., redshift becomes free parameter).</p></li>
+<li><p><strong>nrands_z</strong> – (default: 10)
+Number of random redshift to be generated in the main fitting if fit_method=’rdsps’ or initial fitting if fit_method=’mcmc’.</p></li>
 <li><p><strong>add_igm_absorption</strong> – (default: 0)
 Switch for the IGM absorption. Options are: (1)0 means turn off, and (2)1 means turn on.</p></li>
 <li><p><strong>igm_type</strong> – (default: 0)
@@ -210,18 +212,17 @@ Choice for the IGM absorption model. Options are: (a) 0 for Madau (1995), and (b
 Choice of likelihood function for the RDSPS method. Only relevant if the fit_method=’rdsps’. Options are: (1)’gauss’, and (2) ‘student_t’.</p></li>
 <li><p><strong>dof</strong> – (default: 2.0)
 Degree of freedom (nu) in the Student’s likelihood function. Only relevant if the fit_method=’rdsps’ and likelihood=’student_t’.</p></li>
-<li><p><strong>gauss_likelihood_form</strong> – (default: 0)
-Choice for the Gaussian likelihood function. Options are: (1)0 for full/original form, and (2)1 for reduced/simplified form.
-Only relevant for 2 cases: (1) fit_method=’rdsps’ and likelihood=’gauss’, and (2) fit_method=’mcmc’.
-gauss_likelihood_form=0 means the Gaussian likelihood function uses the original/full Gaussian function form, whereas gauss_likelihood_form=1 means the likelihood function uses simplified form: P=exp(-0.5*chi^2).</p></li>
 <li><p><strong>nwalkers</strong> – (default: 100)
 Number of walkers to be set in the MCMC process. This parameter is only applicable if fit_method=’mcmc’.</p></li>
 <li><p><strong>nsteps</strong> – (default: 600)
 Number of steps for each walker in the MCMC process. Only relevant if fit_method=’mcmc’.</p></li>
 <li><p><strong>nsteps_cut</strong> – (optional, default: 50)
-Number of first steps of each walkers that will be cut when constructing the final sampler chains. Only relevant if fit_method=’mcmc’.</p></li>
+Number of first steps of each walkers that will be cut when constructing the final sampler chains.
+Only relevant if fit_method=’mcmc’.</p></li>
 <li><p><strong>nproc</strong> – (default: 10)
 Number of processors (cores) to be used in the calculation.</p></li>
+<li><p><strong>initfit_nmodels_mcmc</strong> – (default: 30000)
+Number of models to be used for initial fitting in the MCMC method.</p></li>
 <li><p><strong>perc_chi2</strong> – (optional, default: 90.0)
 Lowest chi-square Percentage from the full model SEDs that are considered in the calculation of posterior-weighted averaging.
 This parameter is only relevant for the RDSPS fitting method and it is not applicable for the MCMC method.</p></li>
@@ -245,7 +246,7 @@ Example: name_out_fits = [‘bin1.fits’, ‘bin2.fits’, …, ‘binN.fits’
 
 <dl class="py function">
 <dt id="piXedfit.piXedfit_fitting.SEDfit_from_binmap_specphoto">
-<code class="sig-prename descclassname">piXedfit.piXedfit_fitting.</code><code class="sig-name descname">SEDfit_from_binmap_specphoto</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">fits_binmap</span></em>, <em class="sig-param"><span class="n">binid_range</span><span class="o">=</span><span class="default_value">[]</span></em>, <em class="sig-param"><span class="n">bin_ids</span><span class="o">=</span><span class="default_value">[]</span></em>, <em class="sig-param"><span class="n">models_spec</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">fit_method</span><span class="o">=</span><span class="default_value">'mcmc'</span></em>, <em class="sig-param"><span class="n">gal_z</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">spec_sigma</span><span class="o">=</span><span class="default_value">2.6</span></em>, <em class="sig-param"><span class="n">poly_order</span><span class="o">=</span><span class="default_value">5.0</span></em>, <em class="sig-param"><span class="n">z_range</span><span class="o">=</span><span class="default_value">[0.0, 1.0]</span></em>, <em class="sig-param"><span class="n">nrands_z</span><span class="o">=</span><span class="default_value">10</span></em>, <em class="sig-param"><span class="n">add_igm_absorption</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">igm_type</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">likelihood</span><span class="o">=</span><span class="default_value">'gauss'</span></em>, <em class="sig-param"><span class="n">dof</span><span class="o">=</span><span class="default_value">3.0</span></em>, <em class="sig-param"><span class="n">gauss_likelihood_form</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">nwalkers</span><span class="o">=</span><span class="default_value">100</span></em>, <em class="sig-param"><span class="n">nsteps</span><span class="o">=</span><span class="default_value">600</span></em>, <em class="sig-param"><span class="n">nsteps_cut</span><span class="o">=</span><span class="default_value">50</span></em>, <em class="sig-param"><span class="n">nproc</span><span class="o">=</span><span class="default_value">10</span></em>, <em class="sig-param"><span class="n">perc_chi2</span><span class="o">=</span><span class="default_value">90.0</span></em>, <em class="sig-param"><span class="n">spec_chi_sigma_clip</span><span class="o">=</span><span class="default_value">3.0</span></em>, <em class="sig-param"><span class="n">cosmo</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">H0</span><span class="o">=</span><span class="default_value">70.0</span></em>, <em class="sig-param"><span class="n">Om0</span><span class="o">=</span><span class="default_value">0.3</span></em>, <em class="sig-param"><span class="n">del_wave_nebem</span><span class="o">=</span><span class="default_value">10.0</span></em>, <em class="sig-param"><span class="n">store_full_samplers</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">name_out_fits</span><span class="o">=</span><span class="default_value">[]</span></em><span class="sig-paren">)</span><a class="headerlink" href="#piXedfit.piXedfit_fitting.SEDfit_from_binmap_specphoto" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">piXedfit.piXedfit_fitting.</code><code class="sig-name descname">SEDfit_from_binmap_specphoto</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">fits_binmap</span></em>, <em class="sig-param"><span class="n">binid_range</span><span class="o">=</span><span class="default_value">[]</span></em>, <em class="sig-param"><span class="n">bin_ids</span><span class="o">=</span><span class="default_value">[]</span></em>, <em class="sig-param"><span class="n">models_spec</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">fit_method</span><span class="o">=</span><span class="default_value">'mcmc'</span></em>, <em class="sig-param"><span class="n">gal_z</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">spec_sigma</span><span class="o">=</span><span class="default_value">2.6</span></em>, <em class="sig-param"><span class="n">poly_order</span><span class="o">=</span><span class="default_value">5.0</span></em>, <em class="sig-param"><span class="n">params_range</span><span class="o">=</span><span class="default_value">{'dust1': [0.0, 4.0], 'dust2': [0.0, 4.0], 'dust_index': [- 2.2, 0.4], 'log_age': [- 1.0, 1.14], 'log_alpha': [- 2.0, 2.0], 'log_beta': [- 2.0, 2.0], 'log_fagn': [- 5.0, 0.48], 'log_gamma': [- 4.0, 0.0], 'log_qpah': [- 3.0, 1.0], 'log_t0': [- 1.0, 1.14], 'log_tau': [- 1.0, 1.5], 'log_tauagn': [0.7, 2.18], 'log_umin': [- 1.0, 1.39], 'logzsol': [- 2.0, 0.2], 'z': [0.0, 1.0]}</span></em>, <em class="sig-param"><span class="n">nrands_z</span><span class="o">=</span><span class="default_value">10</span></em>, <em class="sig-param"><span class="n">add_igm_absorption</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">igm_type</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">likelihood</span><span class="o">=</span><span class="default_value">'gauss'</span></em>, <em class="sig-param"><span class="n">dof</span><span class="o">=</span><span class="default_value">3.0</span></em>, <em class="sig-param"><span class="n">nwalkers</span><span class="o">=</span><span class="default_value">100</span></em>, <em class="sig-param"><span class="n">nsteps</span><span class="o">=</span><span class="default_value">600</span></em>, <em class="sig-param"><span class="n">nsteps_cut</span><span class="o">=</span><span class="default_value">50</span></em>, <em class="sig-param"><span class="n">nproc</span><span class="o">=</span><span class="default_value">10</span></em>, <em class="sig-param"><span class="n">initfit_nmodels_mcmc</span><span class="o">=</span><span class="default_value">30000</span></em>, <em class="sig-param"><span class="n">perc_chi2</span><span class="o">=</span><span class="default_value">90.0</span></em>, <em class="sig-param"><span class="n">spec_chi_sigma_clip</span><span class="o">=</span><span class="default_value">3.0</span></em>, <em class="sig-param"><span class="n">cosmo</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">H0</span><span class="o">=</span><span class="default_value">70.0</span></em>, <em class="sig-param"><span class="n">Om0</span><span class="o">=</span><span class="default_value">0.3</span></em>, <em class="sig-param"><span class="n">del_wave_nebem</span><span class="o">=</span><span class="default_value">10.0</span></em>, <em class="sig-param"><span class="n">store_full_samplers</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">name_out_fits</span><span class="o">=</span><span class="default_value">[]</span></em><span class="sig-paren">)</span><a class="headerlink" href="#piXedfit.piXedfit_fitting.SEDfit_from_binmap_specphoto" title="Permalink to this definition">¶</a></dt>
 <dd><p>A function for performing SED fitting to set of spatially resolved SEDs from the reduced data cube that is produced after the pixel binning.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -254,7 +255,7 @@ Example: name_out_fits = [‘bin1.fits’, ‘bin2.fits’, …, ‘binN.fits’
 This is a mandatory parameter.</p></li>
 <li><p><strong>binid_range</strong> – Range of bin IDs that are going to be fit. Allowed format is [idmin,idmax]. The id starts from 0. If empty, [], fitting will be done to SEDs of all spatial bins.</p></li>
 <li><p><strong>bin_ids</strong> – Bin ids whose the SEDs are going to be fit. Allowed format is a 1D array. The id starts from 0. Both binid_range and bin_ids can’t be empty, []. If both of them are not empty, the bin_ids will be used.</p></li>
-<li><p><strong>models_spec</strong> – (Mandatory)</p></li>
+<li><p><strong>models_spec</strong> – Model spectral templates in the rest-frame that is generated prior to the fitting. This set of models will be used in the main fitting step if fit_method=’rdsps’ or initial fitting if fit_method=’mcmc’.</p></li>
 <li><p><strong>fit_method</strong> – (default: ‘mcmc’)
 Choice for the fitting method. Options are: (1)’mcmc’, and (2)’rdsps’.</p></li>
 <li><p><strong>gal_z</strong> – Redshift of the galaxy. If gal_z=None, then redshift is taken from the header of the FITS file.
@@ -262,9 +263,10 @@ If gal_z in the FITS file header is negatiive, then redshift is set to be free.<
 <li><p><strong>spec_sigma</strong> – (default: 2.6)
 Spectral resolution.</p></li>
 <li><p><strong>poly_order</strong> – (default: 5.0)</p></li>
-<li><p><strong>spec_chi_sigma_clip</strong> – </p></li>
-<li><p><strong>z_range</strong> – (default: [0.0,1.0])</p></li>
-<li><p><strong>nrands_z</strong> – (default: 10)</p></li>
+<li><p><strong>params_range</strong> – Ranges of parameters. The format of this input argument is python dictionary.
+The range for redshift (‘z’) only relevant if gal_z=None (i.e., redshift becomes free parameter).</p></li>
+<li><p><strong>nrands_z</strong> – (default: 10)
+Number of random redshift to be generated in the main fitting if fit_method=’rdsps’ or initial fitting if fit_method=’mcmc’.</p></li>
 <li><p><strong>add_igm_absorption</strong> – (default: 0)
 Switch for the IGM absorption. Options are: (1)0 means turn off, and (2)1 means turn on.</p></li>
 <li><p><strong>igm_type</strong> – (default: 0)
@@ -273,10 +275,6 @@ Choice for the IGM absorption model. Options are: (a) 0 for Madau (1995), and (b
 Choice of likelihood function for the RDSPS method. Only relevant if the fit_method=’rdsps’. Options are: (1)’gauss’, and (2) ‘student_t’.</p></li>
 <li><p><strong>dof</strong> – (default: 2.0)
 Degree of freedom (nu) in the Student’s likelihood function. Only relevant if the fit_method=’rdsps’ and likelihood=’student_t’.</p></li>
-<li><p><strong>gauss_likelihood_form</strong> – (default: 0)
-Choice for the Gaussian likelihood function. Options are: (1)0 for full/original form, and (2)1 for reduced/simplified form.
-Only relevant for 2 cases: (1) fit_method=’rdsps’ and likelihood=’gauss’, and (2) fit_method=’mcmc’.
-gauss_likelihood_form=0 means the Gaussian likelihood function uses the original/full Gaussian function form, whereas gauss_likelihood_form=1 means the likelihood function uses simplified form: P=exp(-0.5*chi^2).</p></li>
 <li><p><strong>nwalkers</strong> – (default: 100)
 Number of walkers to be set in the MCMC process. This parameter is only applicable if fit_method=’mcmc’.</p></li>
 <li><p><strong>nsteps</strong> – (default: 600)
@@ -285,9 +283,12 @@ Number of steps for each walker in the MCMC process. Only relevant if fit_method
 Number of first steps of each walkers that will be cut when constructing the final sampler chains. Only relevant if fit_method=’mcmc’.</p></li>
 <li><p><strong>nproc</strong> – (default: 10)
 Number of processors (cores) to be used in the calculation.</p></li>
+<li><p><strong>initfit_nmodels_mcmc</strong> – (default: 30000)
+Number of models to be used for initial fitting in the MCMC method.</p></li>
 <li><p><strong>perc_chi2</strong> – (optional, default: 90.0)
 Lowest chi-square Percentage from the full model SEDs that are considered in the calculation of posterior-weighted averaging.
 This parameter is only relevant for the RDSPS fitting method and it is not applicable for the MCMC method.</p></li>
+<li><p><strong>spec_chi_sigma_clip</strong> – (default: 3.0)</p></li>
 <li><p><strong>cosmo</strong> – <p>(default: 0)
 Choices for the cosmology. Options are: (1)’flat_LCDM’ or 0, (2)’WMAP5’ or 1, (3)’WMAP7’ or 2, (4)’WMAP9’ or 3, (5)’Planck13’ or 4, (6)’Planck15’ or 5.
 These options are similar to the choices available in the <a class="reference external" href="https://docs.astropy.org/en/stable/cosmology/#built-in-cosmologies">Astropy Cosmology</a> package.</p>
@@ -309,7 +310,7 @@ Example: name_out_fits = [‘bin1.fits’, ‘bin2.fits’, …, ‘binN.fits’
 
 <dl class="py function">
 <dt id="piXedfit.piXedfit_fitting.SEDfit_pixels_from_fluxmap">
-<code class="sig-prename descclassname">piXedfit.piXedfit_fitting.</code><code class="sig-name descname">SEDfit_pixels_from_fluxmap</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">fits_fluxmap</span></em>, <em class="sig-param"><span class="n">x_range</span><span class="o">=</span><span class="default_value">[]</span></em>, <em class="sig-param"><span class="n">y_range</span><span class="o">=</span><span class="default_value">[]</span></em>, <em class="sig-param"><span class="n">models_spec</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">fit_method</span><span class="o">=</span><span class="default_value">'mcmc'</span></em>, <em class="sig-param"><span class="n">gal_z</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">z_range</span><span class="o">=</span><span class="default_value">[0.0, 1.0]</span></em>, <em class="sig-param"><span class="n">nrands_z</span><span class="o">=</span><span class="default_value">10</span></em>, <em class="sig-param"><span class="n">add_igm_absorption</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">igm_type</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">likelihood</span><span class="o">=</span><span class="default_value">'gauss'</span></em>, <em class="sig-param"><span class="n">dof</span><span class="o">=</span><span class="default_value">3.0</span></em>, <em class="sig-param"><span class="n">gauss_likelihood_form</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">nwalkers</span><span class="o">=</span><span class="default_value">100</span></em>, <em class="sig-param"><span class="n">nsteps</span><span class="o">=</span><span class="default_value">600</span></em>, <em class="sig-param"><span class="n">nsteps_cut</span><span class="o">=</span><span class="default_value">50</span></em>, <em class="sig-param"><span class="n">nproc</span><span class="o">=</span><span class="default_value">10</span></em>, <em class="sig-param"><span class="n">cosmo</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">H0</span><span class="o">=</span><span class="default_value">70.0</span></em>, <em class="sig-param"><span class="n">Om0</span><span class="o">=</span><span class="default_value">0.3</span></em>, <em class="sig-param"><span class="n">perc_chi2</span><span class="o">=</span><span class="default_value">10.0</span></em>, <em class="sig-param"><span class="n">store_full_samplers</span><span class="o">=</span><span class="default_value">1</span></em><span class="sig-paren">)</span><a class="headerlink" href="#piXedfit.piXedfit_fitting.SEDfit_pixels_from_fluxmap" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">piXedfit.piXedfit_fitting.</code><code class="sig-name descname">SEDfit_pixels_from_fluxmap</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">fits_fluxmap</span></em>, <em class="sig-param"><span class="n">x_range</span><span class="o">=</span><span class="default_value">[]</span></em>, <em class="sig-param"><span class="n">y_range</span><span class="o">=</span><span class="default_value">[]</span></em>, <em class="sig-param"><span class="n">models_spec</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">fit_method</span><span class="o">=</span><span class="default_value">'mcmc'</span></em>, <em class="sig-param"><span class="n">gal_z</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">params_range</span><span class="o">=</span><span class="default_value">{'dust1': [0.0, 4.0], 'dust2': [0.0, 4.0], 'dust_index': [- 2.2, 0.4], 'log_age': [- 1.0, 1.14], 'log_alpha': [- 2.0, 2.0], 'log_beta': [- 2.0, 2.0], 'log_fagn': [- 5.0, 0.48], 'log_gamma': [- 4.0, 0.0], 'log_qpah': [- 3.0, 1.0], 'log_t0': [- 1.0, 1.14], 'log_tau': [- 1.0, 1.5], 'log_tauagn': [0.7, 2.18], 'log_umin': [- 1.0, 1.39], 'logzsol': [- 2.0, 0.2], 'z': [0.0, 1.0]}</span></em>, <em class="sig-param"><span class="n">nrands_z</span><span class="o">=</span><span class="default_value">10</span></em>, <em class="sig-param"><span class="n">add_igm_absorption</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">igm_type</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">likelihood</span><span class="o">=</span><span class="default_value">'gauss'</span></em>, <em class="sig-param"><span class="n">dof</span><span class="o">=</span><span class="default_value">2.0</span></em>, <em class="sig-param"><span class="n">nwalkers</span><span class="o">=</span><span class="default_value">100</span></em>, <em class="sig-param"><span class="n">nsteps</span><span class="o">=</span><span class="default_value">600</span></em>, <em class="sig-param"><span class="n">nsteps_cut</span><span class="o">=</span><span class="default_value">50</span></em>, <em class="sig-param"><span class="n">nproc</span><span class="o">=</span><span class="default_value">10</span></em>, <em class="sig-param"><span class="n">initfit_nmodels_mcmc</span><span class="o">=</span><span class="default_value">30000.0</span></em>, <em class="sig-param"><span class="n">cosmo</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">H0</span><span class="o">=</span><span class="default_value">70.0</span></em>, <em class="sig-param"><span class="n">Om0</span><span class="o">=</span><span class="default_value">0.3</span></em>, <em class="sig-param"><span class="n">perc_chi2</span><span class="o">=</span><span class="default_value">10.0</span></em>, <em class="sig-param"><span class="n">store_full_samplers</span><span class="o">=</span><span class="default_value">1</span></em><span class="sig-paren">)</span><a class="headerlink" href="#piXedfit.piXedfit_fitting.SEDfit_pixels_from_fluxmap" title="Permalink to this definition">¶</a></dt>
 <dd><p>A function for performing SED fitting on pixel-by-pixel basis.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -320,13 +321,15 @@ of the image processing by <code class="xref py py-func docutils literal notrans
 If x_range=[], the whole x-axis range of the data cube is considered.</p></li>
 <li><p><strong>y_range</strong> – Range of y-axis coordinate within which SED fitting will be performed to the pixels. The format is [ymin,ymax].
 If y_range=[], the whole y-axis range of the data cube is considered.</p></li>
-<li><p><strong>models_spec</strong> – </p></li>
+<li><p><strong>models_spec</strong> – Model spectral templates in the rest-frame that is generated prior to the fitting. This set of models will be used in the main fitting step if fit_method=’rdsps’ or initial fitting if fit_method=’mcmc’.</p></li>
 <li><p><strong>fit_method</strong> – (default: ‘mcmc’)
 Choice for the fitting method. Options are: (1)’mcmc’, and (2)’rdsps’.</p></li>
 <li><p><strong>gal_z</strong> – Redshift of the galaxy. If gal_z=None, then redshift is taken from the FITS file header.
 If gal_z from the header is negative, then redshift is set to be free. <strong>As for the current version of **piXedfit</strong>, photo-z hasn’t been implemented**.</p></li>
-<li><p><strong>z_range</strong> – </p></li>
-<li><p><strong>nrands_z</strong> – </p></li>
+<li><p><strong>params_range</strong> – Ranges of parameters. The format of this input argument is python dictionary.
+The range for redshift (‘z’) only relevant if gal_z=None (i.e., redshift becomes free parameter).</p></li>
+<li><p><strong>nrands_z</strong> – (default: 10)
+Number of random redshift to be generated in the main fitting if fit_method=’rdsps’ or initial fitting if fit_method=’mcmc’.</p></li>
 <li><p><strong>add_igm_absorption</strong> – (default: 0)
 Switch for the IGM absorption. Options are: (1)0 means turn off, and (2)1 means turn on.</p></li>
 <li><p><strong>igm_type</strong> – (default: 0)
@@ -335,10 +338,6 @@ Choice for the IGM absorption model. Options are: (a) 0 for Madau (1995), and (b
 Choice of likelihood function for the RDSPS method. Only relevant if the fit_method=’rdsps’. Options are: (1)’gauss’, and (2) ‘student_t’.</p></li>
 <li><p><strong>dof</strong> – (default: 2.0)
 Degree of freedom (nu) in the Student’s likelihood function. Only relevant if the fit_method=’rdsps’ and likelihood=’student_t’.</p></li>
-<li><p><strong>gauss_likelihood_form</strong> – (default: 0)
-Choice for the Gaussian likelihood function. Options are: (1)0 for full/original form, and (2)1 for reduced/simplified form.
-Only relevant for 2 cases: (1) fit_method=’rdsps’ and likelihood=’gauss’, and (2) fit_method=’mcmc’.
-gauss_likelihood_form=0 means the Gaussian likelihood function uses the original/full Gaussian function form, whereas gauss_likelihood_form=1 means the likelihood function uses simplified form: P=exp(-0.5*chi^2).</p></li>
 <li><p><strong>nwalkers</strong> – (default: 100)
 Number of walkers to be set in the MCMC process. This parameter is only applicable if fit_method=’mcmc’.</p></li>
 <li><p><strong>nsteps</strong> – (default: 600)
@@ -347,6 +346,8 @@ Number of steps for each walker in the MCMC process. Only relevant if fit_method
 Number of first steps of each walkers that will be cut when constructing the final sampler chains. Only relevant if fit_method=’mcmc’.</p></li>
 <li><p><strong>nproc</strong> – (default: 10)
 Number of processors (cores) to be used in the calculation.</p></li>
+<li><p><strong>initfit_nmodels_mcmc</strong> – (default: 30000)
+Number of models to be used for initial fitting in the MCMC method.</p></li>
 <li><p><strong>cosmo</strong> – <p>(default: 0)
 Choices for the cosmology. Options are: (1)’flat_LCDM’ or 0, (2)’WMAP5’ or 1, (3)’WMAP7’ or 2, (4)’WMAP9’ or 3, (5)’Planck13’ or 4, (6)’Planck15’ or 5.
 These options are similar to the choices available in the <a class="reference external" href="https://docs.astropy.org/en/stable/cosmology/#built-in-cosmologies">Astropy Cosmology</a> package.</p>
@@ -461,34 +462,121 @@ Desired name for the output FITS file.</p></li>
 </dl>
 </dd></dl>
 
-<dl class="py function">
-<dt id="piXedfit.piXedfit_fitting.singleSEDfit">
-<code class="sig-prename descclassname">piXedfit.piXedfit_fitting.</code><code class="sig-name descname">singleSEDfit</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">obs_flux</span></em>, <em class="sig-param"><span class="n">obs_flux_err</span></em>, <em class="sig-param"><span class="n">filters</span></em>, <em class="sig-param"><span class="n">models_spec</span></em>, <em class="sig-param"><span class="n">fit_method</span><span class="o">=</span><span class="default_value">'mcmc'</span></em>, <em class="sig-param"><span class="n">gal_z</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">z_range</span><span class="o">=</span><span class="default_value">[0.0, 1.0]</span></em>, <em class="sig-param"><span class="n">nrands_z</span><span class="o">=</span><span class="default_value">10</span></em>, <em class="sig-param"><span class="n">add_igm_absorption</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">igm_type</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">likelihood</span><span class="o">=</span><span class="default_value">'gauss'</span></em>, <em class="sig-param"><span class="n">dof</span><span class="o">=</span><span class="default_value">2.0</span></em>, <em class="sig-param"><span class="n">gauss_likelihood_form</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">nwalkers</span><span class="o">=</span><span class="default_value">100</span></em>, <em class="sig-param"><span class="n">nsteps</span><span class="o">=</span><span class="default_value">600</span></em>, <em class="sig-param"><span class="n">nsteps_cut</span><span class="o">=</span><span class="default_value">50</span></em>, <em class="sig-param"><span class="n">nproc</span><span class="o">=</span><span class="default_value">10</span></em>, <em class="sig-param"><span class="n">perc_chi2</span><span class="o">=</span><span class="default_value">90.0</span></em>, <em class="sig-param"><span class="n">cosmo</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">H0</span><span class="o">=</span><span class="default_value">70.0</span></em>, <em class="sig-param"><span class="n">Om0</span><span class="o">=</span><span class="default_value">0.3</span></em>, <em class="sig-param"><span class="n">store_full_samplers</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">name_out_fits</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#piXedfit.piXedfit_fitting.singleSEDfit" title="Permalink to this definition">¶</a></dt>
-<dd><p>Function for performing SED fitting to a single photometric SED.</p>
+<dl class="py class">
+<dt id="piXedfit.piXedfit_fitting.priors">
+<em class="property">class </em><code class="sig-prename descclassname">piXedfit.piXedfit_fitting.</code><code class="sig-name descname">priors</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">ranges</span><span class="o">=</span><span class="default_value">{'dust1': [0.0, 4.0], 'dust2': [0.0, 4.0], 'dust_index': [- 2.2, 0.4], 'log_age': [- 3.0, 1.14], 'log_alpha': [- 2.0, 2.0], 'log_beta': [- 2.0, 2.0], 'log_fagn': [- 5.0, 0.48], 'log_gamma': [- 4.0, 0.0], 'log_qpah': [- 3.0, 1.0], 'log_t0': [- 1.0, 1.14], 'log_tau': [- 1.0, 1.5], 'log_tauagn': [0.7, 2.18], 'log_umin': [- 1.0, 1.39], 'logzsol': [- 2.0, 0.2], 'z': [0.0, 1.0]}</span></em><span class="sig-paren">)</span><a class="headerlink" href="#piXedfit.piXedfit_fitting.priors" title="Permalink to this definition">¶</a></dt>
+<dd><p>Functions for defining priors.</p>
+<dl class="py method">
+<dt id="piXedfit.piXedfit_fitting.priors.gamma">
+<code class="sig-name descname">gamma</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">param</span></em>, <em class="sig-param"><span class="n">a</span></em>, <em class="sig-param"><span class="n">loc</span></em>, <em class="sig-param"><span class="n">scale</span></em><span class="sig-paren">)</span><a class="headerlink" href="#piXedfit.piXedfit_fitting.priors.gamma" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function for assigning a prior in the form of Gamma function to a parameter.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>obs_flux</strong> – 1D array containing the multiband fluxes. The number of elements should be the same as that of the input filters.</p></li>
-<li><p><strong>obs_flux_err</strong> – 1D array containing the multiband flux errors. The number of elements should be the same as that of the input filters.</p></li>
-<li><p><strong>filters</strong> – List of photometric filters names. The accepted naming for the filters can be seen using <code class="xref py py-func docutils literal notranslate"><span class="pre">list_filters()</span></code> function in the <code class="xref py py-mod docutils literal notranslate"><span class="pre">utils.filtering</span></code> module.</p></li>
-<li><p><strong>models_spec</strong> – </p></li>
+<li><p><strong>param</strong> – The parameter that will be assigned the prior.</p></li>
+<li><p><strong>a</strong> – </p></li>
+<li><p><strong>loc</strong> – </p></li>
+<li><p><strong>scale</strong> – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns prior</dt>
+<dd class="field-even"><p></p></dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="piXedfit.piXedfit_fitting.priors.gaussian">
+<code class="sig-name descname">gaussian</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">param</span></em>, <em class="sig-param"><span class="n">loc</span></em>, <em class="sig-param"><span class="n">scale</span></em><span class="sig-paren">)</span><a class="headerlink" href="#piXedfit.piXedfit_fitting.priors.gaussian" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function for assigning gaussian prior to a parameter.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>param</strong> – The parameter that will be assigned the prior.</p></li>
+<li><p><strong>loc</strong> – </p></li>
+<li><p><strong>scale</strong> – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns prior</dt>
+<dd class="field-even"><p></p></dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="piXedfit.piXedfit_fitting.priors.params_ranges">
+<code class="sig-name descname">params_ranges</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#piXedfit.piXedfit_fitting.priors.params_ranges" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function for defining ranges of the parameters.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns params_ranges</dt>
+<dd class="field-odd"><p></p></dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="piXedfit.piXedfit_fitting.priors.studentt">
+<code class="sig-name descname">studentt</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">param</span></em>, <em class="sig-param"><span class="n">df</span></em>, <em class="sig-param"><span class="n">loc</span></em>, <em class="sig-param"><span class="n">scale</span></em><span class="sig-paren">)</span><a class="headerlink" href="#piXedfit.piXedfit_fitting.priors.studentt" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function for assigning Student’s t prior to a parameter.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>param</strong> – The parameter that will be assigned the prior.</p></li>
+<li><p><strong>df</strong> – </p></li>
+<li><p><strong>loc</strong> – </p></li>
+<li><p><strong>scale</strong> – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns prior</dt>
+<dd class="field-even"><p></p></dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="piXedfit.piXedfit_fitting.priors.uniform">
+<code class="sig-name descname">uniform</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">param</span></em><span class="sig-paren">)</span><a class="headerlink" href="#piXedfit.piXedfit_fitting.priors.uniform" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function for assigning uniform prior to a parameter.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>param</strong> – The parameter that will be assigned the prior.</p>
+</dd>
+<dt class="field-even">Returns prior</dt>
+<dd class="field-even"><p></p></dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt id="piXedfit.piXedfit_fitting.singleSEDfit">
+<code class="sig-prename descclassname">piXedfit.piXedfit_fitting.</code><code class="sig-name descname">singleSEDfit</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">obs_flux</span></em>, <em class="sig-param"><span class="n">obs_flux_err</span></em>, <em class="sig-param"><span class="n">filters</span></em>, <em class="sig-param"><span class="n">models_spec</span></em>, <em class="sig-param"><span class="n">params_ranges</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">params_priors</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">fit_method</span><span class="o">=</span><span class="default_value">'mcmc'</span></em>, <em class="sig-param"><span class="n">gal_z</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">nrands_z</span><span class="o">=</span><span class="default_value">10</span></em>, <em class="sig-param"><span class="n">add_igm_absorption</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">igm_type</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">likelihood</span><span class="o">=</span><span class="default_value">'gauss'</span></em>, <em class="sig-param"><span class="n">dof</span><span class="o">=</span><span class="default_value">2.0</span></em>, <em class="sig-param"><span class="n">nwalkers</span><span class="o">=</span><span class="default_value">100</span></em>, <em class="sig-param"><span class="n">nsteps</span><span class="o">=</span><span class="default_value">600</span></em>, <em class="sig-param"><span class="n">nsteps_cut</span><span class="o">=</span><span class="default_value">50</span></em>, <em class="sig-param"><span class="n">nproc</span><span class="o">=</span><span class="default_value">10</span></em>, <em class="sig-param"><span class="n">initfit_nmodels_mcmc</span><span class="o">=</span><span class="default_value">30000</span></em>, <em class="sig-param"><span class="n">perc_chi2</span><span class="o">=</span><span class="default_value">90.0</span></em>, <em class="sig-param"><span class="n">cosmo</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">H0</span><span class="o">=</span><span class="default_value">70.0</span></em>, <em class="sig-param"><span class="n">Om0</span><span class="o">=</span><span class="default_value">0.3</span></em>, <em class="sig-param"><span class="n">store_full_samplers</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">name_out_fits</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#piXedfit.piXedfit_fitting.singleSEDfit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function for performing fitting to a single photometric SED.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>obs_flux</strong> – (1D array; float)
+Input fluxes in multiple bands. The number of elements of the array should be the sama as that of obs_flux_err and filters.</p></li>
+<li><p><strong>obs_flux_err</strong> – (1D array; float)
+Input flux uncertainties in multiple bands.</p></li>
+<li><p><strong>filters</strong> – (list; string)
+List of photometric filters. The list of filters recognized by piXedfit can be accesses using <a class="reference internal" href="utils.html#piXedfit.utils.filtering.list_filters" title="piXedfit.utils.filtering.list_filters"><code class="xref py py-func docutils literal notranslate"><span class="pre">piXedfit.utils.filtering.list_filters()</span></code></a>.</p></li>
+<li><p><strong>models_spec</strong> – Model spectral templates in the rest-frame generated prior to the fitting using <a class="reference internal" href="piXedfit_model.html#piXedfit.piXedfit_model.save_models_rest_spec" title="piXedfit.piXedfit_model.save_models_rest_spec"><code class="xref py py-func docutils literal notranslate"><span class="pre">piXedfit.piXedfit_model.save_models_rest_spec()</span></code></a>.
+This set of models will be used in the main fitting step if fit_method=’rdsps’ or initial fitting if fit_method=’mcmc’.</p></li>
+<li><p><strong>params_ranges</strong> – </p></li>
+<li><p><strong>params_priors</strong> – </p></li>
 <li><p><strong>fit_method</strong> – (default: ‘mcmc’)
-Choice for the fitting method. Options are: (1)’mcmc’, and (2)’rdsps’.</p></li>
-<li><p><strong>gal_z</strong> – Redshift of the galaxy. If gal_z=None, then redshift is set to be a free parameter in the fitting. As for the current version of <strong>piXedfit</strong>, photo-z hasn’t been implemented.</p></li>
-<li><p><strong>z_range</strong> – (default: [0.0,1.0])</p></li>
-<li><p><strong>nrands_z</strong> – (default: 10)</p></li>
+Method in SED fitting. Options are: (a)’mcmc’ for Markov Chain Monte Carlo, and (b)’rdsps’ for Random Dense Sampling of Parameter Space.</p></li>
+<li><p><strong>gal_z</strong> – Redshift of the galaxy. If gal_z=None, then redshift is set to be a free parameter in the fitting.</p></li>
+<li><p><strong>params_range</strong> – Ranges of parameters. The format of this input argument is python dictionary.
+The range for redshift (‘z’) only relevant if gal_z=None (i.e., redshift becomes free parameter).</p></li>
+<li><p><strong>nrands_z</strong> – (default: 10)
+Number of random redshifts to be generated (within the chosen range as set in the params_range) in the main fitting if fit_method=’rdsps’ or initial fitting if fit_method=’mcmc’.
+This is only relevant if gal_z=None (i.e., photometric redshift is activated).</p></li>
 <li><p><strong>add_igm_absorption</strong> – (default: 0)
-Switch for the IGM absorption. Options are: (1)0 means turn off, and (2)1 means turn on.</p></li>
+Switch for the IGM absorption. Options are: (a)0 for switch off, and (b)1 for switch on.</p></li>
 <li><p><strong>igm_type</strong> – (default: 0)
 Choice for the IGM absorption model. Options are: (a) 0 for Madau (1995), and (b) 1 for Inoue+(2014).</p></li>
 <li><p><strong>likelihood</strong> – (default: ‘gauss’)
 Choice of likelihood function for the RDSPS method. Only relevant if the fit_method=’rdsps’. Options are: (1)’gauss’, and (2) ‘student_t’.</p></li>
 <li><p><strong>dof</strong> – (default: 2.0)
 Degree of freedom (nu) in the Student’s likelihood function. Only relevant if the fit_method=’rdsps’ and likelihood=’student_t’.</p></li>
-<li><p><strong>gauss_likelihood_form</strong> – (default: 0)
-Choice for the Gaussian likelihood function. Options are: (1)0 for full/original form, and (2)1 for reduced/simplified form.
-Only relevant for 2 cases: (1) fit_method=’rdsps’ and likelihood=’gauss’, and (2) fit_method=’mcmc’.
-gauss_likelihood_form=0 means the Gaussian likelihood function uses the original/full Gaussian function form, whereas gauss_likelihood_form=1 means the likelihood function uses simplified form: P=exp(-0.5*chi^2).</p></li>
 <li><p><strong>nwalkers</strong> – (default: 100)
 Number of walkers to be set in the MCMC process. This parameter is only applicable if fit_method=’mcmc’.</p></li>
 <li><p><strong>nsteps</strong> – (default: 600)
@@ -497,6 +585,8 @@ Number of steps for each walker in the MCMC process. Only relevant if fit_method
 Number of first steps of each walkers that will be cut when constructing the final sampler chains. Only relevant if fit_method=’mcmc’.</p></li>
 <li><p><strong>nproc</strong> – (default: 10)
 Number of processors (cores) to be used in the calculation.</p></li>
+<li><p><strong>initfit_nmodels_mcmc</strong> – (default: 30000)
+Number of models to be used for initial fitting in the MCMC method.</p></li>
 <li><p><strong>perc_chi2</strong> – (default: 90.0)
 Lowest chi-square Percentage from the full model SEDs that are considered in the calculation of posterior-weighted averaging.
 This parameter is only relevant for the RDSPS fitting method and it is not applicable for the MCMC method.</p></li>
@@ -520,62 +610,73 @@ Name of output FITS file. This parameter is optional.</p></li>
 
 <dl class="py function">
 <dt id="piXedfit.piXedfit_fitting.singleSEDfit_specphoto">
-<code class="sig-prename descclassname">piXedfit.piXedfit_fitting.</code><code class="sig-name descname">singleSEDfit_specphoto</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">obs_flux</span></em>, <em class="sig-param"><span class="n">obs_flux_err</span></em>, <em class="sig-param"><span class="n">filters</span></em>, <em class="sig-param"><span class="n">spec_wave</span></em>, <em class="sig-param"><span class="n">spec_flux</span></em>, <em class="sig-param"><span class="n">spec_flux_err</span></em>, <em class="sig-param"><span class="n">models_spec</span></em>, <em class="sig-param"><span class="n">fit_method</span><span class="o">=</span><span class="default_value">'mcmc'</span></em>, <em class="sig-param"><span class="n">gal_z</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">spec_sigma</span><span class="o">=</span><span class="default_value">2.6</span></em>, <em class="sig-param"><span class="n">poly_order</span><span class="o">=</span><span class="default_value">5.0</span></em>, <em class="sig-param"><span class="n">z_range</span><span class="o">=</span><span class="default_value">[0.0, 1.0]</span></em>, <em class="sig-param"><span class="n">nrands_z</span><span class="o">=</span><span class="default_value">10</span></em>, <em class="sig-param"><span class="n">add_igm_absorption</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">igm_type</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">likelihood</span><span class="o">=</span><span class="default_value">'gauss'</span></em>, <em class="sig-param"><span class="n">dof</span><span class="o">=</span><span class="default_value">2.0</span></em>, <em class="sig-param"><span class="n">gauss_likelihood_form</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">nwalkers</span><span class="o">=</span><span class="default_value">100</span></em>, <em class="sig-param"><span class="n">nsteps</span><span class="o">=</span><span class="default_value">600</span></em>, <em class="sig-param"><span class="n">nsteps_cut</span><span class="o">=</span><span class="default_value">50</span></em>, <em class="sig-param"><span class="n">nproc</span><span class="o">=</span><span class="default_value">10</span></em>, <em class="sig-param"><span class="n">perc_chi2</span><span class="o">=</span><span class="default_value">90.0</span></em>, <em class="sig-param"><span class="n">spec_chi_sigma_clip</span><span class="o">=</span><span class="default_value">3.0</span></em>, <em class="sig-param"><span class="n">cosmo</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">H0</span><span class="o">=</span><span class="default_value">70.0</span></em>, <em class="sig-param"><span class="n">Om0</span><span class="o">=</span><span class="default_value">0.3</span></em>, <em class="sig-param"><span class="n">del_wave_nebem</span><span class="o">=</span><span class="default_value">10.0</span></em>, <em class="sig-param"><span class="n">store_full_samplers</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">name_out_fits</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#piXedfit.piXedfit_fitting.singleSEDfit_specphoto" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">piXedfit.piXedfit_fitting.</code><code class="sig-name descname">singleSEDfit_specphoto</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">obs_flux</span></em>, <em class="sig-param"><span class="n">obs_flux_err</span></em>, <em class="sig-param"><span class="n">filters</span></em>, <em class="sig-param"><span class="n">spec_wave</span></em>, <em class="sig-param"><span class="n">spec_flux</span></em>, <em class="sig-param"><span class="n">spec_flux_err</span></em>, <em class="sig-param"><span class="n">models_spec</span></em>, <em class="sig-param"><span class="n">fit_method</span><span class="o">=</span><span class="default_value">'mcmc'</span></em>, <em class="sig-param"><span class="n">gal_z</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">spec_sigma</span><span class="o">=</span><span class="default_value">2.6</span></em>, <em class="sig-param"><span class="n">poly_order</span><span class="o">=</span><span class="default_value">8.0</span></em>, <em class="sig-param"><span class="n">params_range</span><span class="o">=</span><span class="default_value">{'dust1': [0.0, 4.0], 'dust2': [0.0, 4.0], 'dust_index': [- 2.2, 0.4], 'log_age': [- 1.0, 1.14], 'log_alpha': [- 2.0, 2.0], 'log_beta': [- 2.0, 2.0], 'log_fagn': [- 5.0, 0.48], 'log_gamma': [- 4.0, 0.0], 'log_qpah': [- 3.0, 1.0], 'log_t0': [- 1.0, 1.14], 'log_tau': [- 1.0, 1.5], 'log_tauagn': [0.7, 2.18], 'log_umin': [- 1.0, 1.39], 'logzsol': [- 2.0, 0.2], 'z': [0.0, 1.0]}</span></em>, <em class="sig-param"><span class="n">nrands_z</span><span class="o">=</span><span class="default_value">10</span></em>, <em class="sig-param"><span class="n">add_igm_absorption</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">igm_type</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">likelihood</span><span class="o">=</span><span class="default_value">'gauss'</span></em>, <em class="sig-param"><span class="n">dof</span><span class="o">=</span><span class="default_value">2.0</span></em>, <em class="sig-param"><span class="n">nwalkers</span><span class="o">=</span><span class="default_value">100</span></em>, <em class="sig-param"><span class="n">nsteps</span><span class="o">=</span><span class="default_value">600</span></em>, <em class="sig-param"><span class="n">nsteps_cut</span><span class="o">=</span><span class="default_value">50</span></em>, <em class="sig-param"><span class="n">nproc</span><span class="o">=</span><span class="default_value">10</span></em>, <em class="sig-param"><span class="n">initfit_nmodels_mcmc</span><span class="o">=</span><span class="default_value">30000</span></em>, <em class="sig-param"><span class="n">perc_chi2</span><span class="o">=</span><span class="default_value">90.0</span></em>, <em class="sig-param"><span class="n">spec_chi_sigma_clip</span><span class="o">=</span><span class="default_value">3.0</span></em>, <em class="sig-param"><span class="n">cosmo</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">H0</span><span class="o">=</span><span class="default_value">70.0</span></em>, <em class="sig-param"><span class="n">Om0</span><span class="o">=</span><span class="default_value">0.3</span></em>, <em class="sig-param"><span class="n">del_wave_nebem</span><span class="o">=</span><span class="default_value">10.0</span></em>, <em class="sig-param"><span class="n">store_full_samplers</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">name_out_fits</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#piXedfit.piXedfit_fitting.singleSEDfit_specphoto" title="Permalink to this definition">¶</a></dt>
 <dd><p>Function for performing SED fitting to a single photometric SED.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>obs_flux</strong> – 1D array containing the multiband fluxes. The number of elements should be the same as that of the input filters.</p></li>
-<li><p><strong>obs_flux_err</strong> – 1D array containing the multiband flux errors. The number of elements should be the same as that of the input filters.</p></li>
-<li><p><strong>filters</strong> – List of photometric filters names. The accepted naming for the filters can be seen using <code class="xref py py-func docutils literal notranslate"><span class="pre">list_filters()</span></code> function in the <code class="xref py py-mod docutils literal notranslate"><span class="pre">utils.filtering</span></code> module.</p></li>
-<li><p><strong>spec_wave</strong> – </p></li>
-<li><p><strong>spec_flux</strong> – </p></li>
-<li><p><strong>spec_flux_err</strong> – </p></li>
-<li><p><strong>models_spec</strong> – </p></li>
+<li><p><strong>obs_flux</strong> – (1D array; float)
+Input fluxes in multiple bands. The number of elements of the array should be the sama as that of obs_flux_err and filters.</p></li>
+<li><p><strong>obs_flux_err</strong> – (1D array; float)
+Input flux uncertainties in multiple bands.</p></li>
+<li><p><strong>filters</strong> – (list; string)
+List of photometric filters. The list of filters recognized by piXedfit can be accesses using <a class="reference internal" href="utils.html#piXedfit.utils.filtering.list_filters" title="piXedfit.utils.filtering.list_filters"><code class="xref py py-func docutils literal notranslate"><span class="pre">piXedfit.utils.filtering.list_filters()</span></code></a>.</p></li>
+<li><p><strong>spec_wave</strong> – (1D array; float)
+Wavelength grids of the input spectrum.</p></li>
+<li><p><strong>spec_flux</strong> – (1D array; float)
+Flux grids of the input spectrum.</p></li>
+<li><p><strong>spec_flux_err</strong> – (1D array; float)
+Flux uncertainties of the input spectrum.</p></li>
+<li><p><strong>models_spec</strong> – Model spectral templates in the rest-frame generated prior to the fitting using <a class="reference internal" href="piXedfit_model.html#piXedfit.piXedfit_model.save_models_rest_spec" title="piXedfit.piXedfit_model.save_models_rest_spec"><code class="xref py py-func docutils literal notranslate"><span class="pre">piXedfit.piXedfit_model.save_models_rest_spec()</span></code></a>.
+This set of models will be used in the main fitting step if fit_method=’rdsps’ or initial fitting if fit_method=’mcmc’.</p></li>
 <li><p><strong>fit_method</strong> – (default: ‘mcmc’)
-Choice for the fitting method. Options are: (1)’mcmc’, and (2)’rdsps’.</p></li>
-<li><p><strong>gal_z</strong> – Redshift of the galaxy. If gal_z=None, then redshift is set to be a free parameter in the fitting. As for the current version of <strong>piXedfit</strong>, photo-z hasn’t been implemented.</p></li>
-<li><p><strong>spec_sigma</strong> – </p></li>
-<li><p><strong>poly_order</strong> – </p></li>
-<li><p><strong>z_range</strong> – (default: [0.0,1.0])</p></li>
-<li><p><strong>nrands_z</strong> – (default: 10)</p></li>
+Method in SED fitting. Options are: (a)’mcmc’ for Markov Chain Monte Carlo, and (b)’rdsps’ for Random Dense Sampling of Parameter Space.</p></li>
+<li><p><strong>gal_z</strong> – (float)
+Redshift of the galaxy. If gal_z=None, then redshift is set to be a free parameter in the fitting.</p></li>
+<li><p><strong>spec_sigma</strong> – (default:2.6; float)
+Spectral resolution in Angstrom of the input spectrum.</p></li>
+<li><p><strong>poly_order</strong> – (default:8.0; integer)
+Degree of the legendre polynomial function.</p></li>
+<li><p><strong>params_range</strong> – (Dictionary)
+Ranges of parameters. The format of this input argument is python dictionary.
+The range for redshift (‘z’) only relevant if gal_z=None (i.e., redshift becomes free parameter).</p></li>
+<li><p><strong>nrands_z</strong> – (default: 10; integer)
+Number of random redshift to be generated in the main fitting if fit_method=’rdsps’ or initial fitting if fit_method=’mcmc’.</p></li>
 <li><p><strong>add_igm_absorption</strong> – (default: 0)
 Switch for the IGM absorption. Options are: (1)0 means turn off, and (2)1 means turn on.</p></li>
 <li><p><strong>igm_type</strong> – (default: 0)
 Choice for the IGM absorption model. Options are: (a) 0 for Madau (1995), and (b) 1 for Inoue+(2014).</p></li>
 <li><p><strong>likelihood</strong> – (default: ‘gauss’)
 Choice of likelihood function for the RDSPS method. Only relevant if the fit_method=’rdsps’. Options are: (1)’gauss’, and (2) ‘student_t’.</p></li>
-<li><p><strong>dof</strong> – (default: 2.0)
+<li><p><strong>dof</strong> – (default: 2.0; float)
 Degree of freedom (nu) in the Student’s likelihood function. Only relevant if the fit_method=’rdsps’ and likelihood=’student_t’.</p></li>
-<li><p><strong>gauss_likelihood_form</strong> – (default: 0)
-Choice for the Gaussian likelihood function. Options are: (1)0 for full/original form, and (2)1 for reduced/simplified form.
-Only relevant for 2 cases: (1) fit_method=’rdsps’ and likelihood=’gauss’, and (2) fit_method=’mcmc’.
-gauss_likelihood_form=0 means the Gaussian likelihood function uses the original/full Gaussian function form, whereas gauss_likelihood_form=1 means the likelihood function uses simplified form: P=exp(-0.5*chi^2).</p></li>
-<li><p><strong>nwalkers</strong> – (default: 100)
+<li><p><strong>nwalkers</strong> – (default: 100; integer)
 Number of walkers to be set in the MCMC process. This parameter is only applicable if fit_method=’mcmc’.</p></li>
-<li><p><strong>nsteps</strong> – (default: 600)
+<li><p><strong>nsteps</strong> – (default: 600; integer)
 Number of steps for each walker in the MCMC process. Only relevant if fit_method=’mcmc’.</p></li>
-<li><p><strong>nsteps_cut</strong> – (default: 50)
+<li><p><strong>nsteps_cut</strong> – (default: 50; integer)
 Number of first steps of each walkers that will be cut when constructing the final sampler chains. Only relevant if fit_method=’mcmc’.</p></li>
-<li><p><strong>nproc</strong> – (default: 10)
+<li><p><strong>nproc</strong> – (default: 10; integer)
 Number of processors (cores) to be used in the calculation.</p></li>
-<li><p><strong>perc_chi2</strong> – (default: 90.0)
+<li><p><strong>initfit_nmodels_mcmc</strong> – (default: 30000; integer)
+Number of models to be used for initial fitting in the MCMC method.</p></li>
+<li><p><strong>perc_chi2</strong> – (default: 90.0; float)
 Lowest chi-square Percentage from the full model SEDs that are considered in the calculation of posterior-weighted averaging.
 This parameter is only relevant for the RDSPS fitting method and it is not applicable for the MCMC method.</p></li>
-<li><p><strong>spec_chi_sigma_clip</strong> – (default: 3.0)</p></li>
+<li><p><strong>spec_chi_sigma_clip</strong> – (default: 3.0; float)</p></li>
 <li><p><strong>cosmo</strong> – <p>(default: 0)
 Choices for the cosmology. Options are: (1)’flat_LCDM’ or 0, (2)’WMAP5’ or 1, (3)’WMAP7’ or 2, (4)’WMAP9’ or 3, (5)’Planck13’ or 4, (6)’Planck15’ or 5.
 These options are similar to the choices available in the <a class="reference external" href="https://docs.astropy.org/en/stable/cosmology/#built-in-cosmologies">Astropy Cosmology</a> package.</p>
 </p></li>
-<li><p><strong>H0</strong> – (default: 70.0)
+<li><p><strong>H0</strong> – (default: 70.0; float)
 The Hubble constant at z=0. Only relevant when cosmo=’flat_LCDM’ is chosen.</p></li>
-<li><p><strong>Om0</strong> – (default: 0.3)
+<li><p><strong>Om0</strong> – (default: 0.3; float)
 The Omega matter at z=0.0. Only relevant when cosmo=’flat_LCDM’ is chosen.</p></li>
-<li><p><strong>del_wave_nebem</strong> – </p></li>
+<li><p><strong>del_wave_nebem</strong> – (default: 10; float)</p></li>
 <li><p><strong>store_full_samplers</strong> – (default: 1 or True)
 Flag indicating whether full sampler models will be stored into the output FITS file or not.
 Options are: (a) 1 or True and (b) 0 or False.</p></li>
-<li><p><strong>name_out_fits</strong> – (optional, default: None)
+<li><p><strong>name_out_fits</strong> – (optional, default: None; string)
 Name of output FITS file. This parameter is optional.</p></li>
 </ul>
 </dd>

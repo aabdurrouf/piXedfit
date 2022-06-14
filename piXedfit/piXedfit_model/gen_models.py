@@ -24,7 +24,7 @@ __all__ = ["generate_modelSED_propspecphoto", "generate_modelSED_spec", "generat
 			"generate_modelSED_spec_decompose", "generate_modelSED_specphoto_decompose","save_models_photo", "save_models_rest_spec",
 			"add_fagn_bol_samplers"]
 
-def generate_modelSED_propspecphoto(sp=None,imf_type=1,duste_switch=1,add_neb_emission=1,dust_ext_law=1,
+def generate_modelSED_propspecphoto(sp=None,imf_type=1,duste_switch=1,add_neb_emission=1,dust_law=1,
 	sfh_form=4,add_agn=0,filters=['galex_fuv','galex_nuv','sdss_u','sdss_g','sdss_r','sdss_i','sdss_z'],
 	add_igm_absorption=0,igm_type=0,cosmo='flat_LCDM',H0=70.0,Om0=0.3,gas_logu=-2.0,params_val={'log_mass':0.0,
 	'z':0.001,'log_fagn':-3.0,'log_tauagn':1.0,'log_qpah':0.54,'log_umin':0.0,'log_gamma':-2.0,'dust1':0.5,'dust2':0.5,
@@ -43,7 +43,7 @@ def generate_modelSED_propspecphoto(sp=None,imf_type=1,duste_switch=1,add_neb_em
 	:param add_neb_emission:
 		Choice for turning on (1) or off (0) the nebular emission modeling
 
-	:param dust_ext_law: (default: 1)
+	:param dust_law: (default: 1)
 		Choice for the dust attenuation law. Options are: (a) 0 for Charlot & Fall (2000), (b) 1 for Calzetti et al. (2000).
 
 	:param sfh_form: (default: 4)
@@ -137,7 +137,7 @@ def generate_modelSED_propspecphoto(sp=None,imf_type=1,duste_switch=1,add_neb_em
 		#sp.params["tage"] = age
 
 		# dust atenuation:
-		if dust_ext_law==0:
+		if dust_law==0:
 			sp.params["dust_type"] = 0  
 			sp.params["dust_tesc"] = 7.0
 			sp.params["dust_index"] = params_val['dust_index']
@@ -145,7 +145,7 @@ def generate_modelSED_propspecphoto(sp=None,imf_type=1,duste_switch=1,add_neb_em
 			sp.params["dust1_index"] = dust1_index
 			sp.params["dust1"] = params_val['dust1']
 			sp.params["dust2"] = params_val['dust2']
-		elif dust_ext_law==1:
+		elif dust_law==1:
 			sp.params["dust_type"] = 2  
 			sp.params["dust1"] = 0
 			sp.params["dust2"] = params_val['dust2']
@@ -181,7 +181,7 @@ def generate_modelSED_propspecphoto(sp=None,imf_type=1,duste_switch=1,add_neb_em
 	elif sfh_form==2 or sfh_form==3 or sfh_form==4:
 		sp.params["sfh"] = 3
 		# dust atenuation:
-		if dust_ext_law==0:
+		if dust_law==0:
 			sp.params["dust_type"] = 0  
 			sp.params["dust_tesc"] = 7.0
 			sp.params["dust_index"] = params_val['dust_index']
@@ -189,7 +189,7 @@ def generate_modelSED_propspecphoto(sp=None,imf_type=1,duste_switch=1,add_neb_em
 			sp.params["dust1_index"] = dust1_index
 			sp.params["dust1"] = params_val['dust1']
 			sp.params["dust2"] = params_val['dust2']
-		elif dust_ext_law==1:
+		elif dust_law==1:
 			sp.params["dust_type"] = 2  
 			sp.params["dust1"] = 0
 			sp.params["dust2"] = params_val['dust2']
@@ -256,7 +256,7 @@ def generate_modelSED_propspecphoto(sp=None,imf_type=1,duste_switch=1,add_neb_em
 
 
 
-def generate_modelSED_spec(sp=None,imf_type=1,duste_switch=1,add_neb_emission=1,dust_ext_law=1,sfh_form=4,
+def generate_modelSED_spec(sp=None,imf_type=1,duste_switch=1,add_neb_emission=1,dust_law=1,sfh_form=4,
 	add_agn=0,add_igm_absorption=0,igm_type=0,cosmo='flat_LCDM',H0=70.0,Om0=0.3,gas_logu=-2.0,params_val={'log_mass':0.0,
 	'z':0.001,'log_fagn':-3.0,'log_tauagn':1.0,'log_qpah':0.54,'log_umin':0.0,'log_gamma':-2.0,'dust1':0.5,'dust2':0.5,
 	'dust_index':-0.7,'log_age':1.0,'log_alpha':0.1,'log_beta':0.1,'log_t0':0.4,'log_tau':0.4,'logzsol':0.0}):
@@ -275,7 +275,7 @@ def generate_modelSED_spec(sp=None,imf_type=1,duste_switch=1,add_neb_emission=1,
 	:param add_neb_emission: (default: 1)
 		Choice for turning on (1) or off (0) the nebular emission modeling.
 
-	:param dust_ext_law: (default: 1)
+	:param dust_law: (default: 1)
 		Choice for the dust attenuation law. Options are: (a) 0 for Charlot & Fall (2000), (b) 1 for Calzetti et al. (2000).
 
 	:param sfh_form: (default: 4)
@@ -347,7 +347,7 @@ def generate_modelSED_spec(sp=None,imf_type=1,duste_switch=1,add_neb_emission=1,
 		sp.params["fagn"] = 0
 
 	# dust atenuation:
-	if dust_ext_law==0:
+	if dust_law==0:
 		sp.params["dust_type"] = 0  
 		sp.params["dust_tesc"] = 7.0
 		sp.params["dust_index"] = params_val['dust_index']
@@ -355,7 +355,7 @@ def generate_modelSED_spec(sp=None,imf_type=1,duste_switch=1,add_neb_emission=1,
 		sp.params["dust1_index"] = dust1_index
 		sp.params["dust1"] = params_val['dust1']
 		sp.params["dust2"] = params_val['dust2']
-	elif dust_ext_law==1:
+	elif dust_law==1:
 		sp.params["dust_type"] = 2  
 		sp.params["dust1"] = 0
 		sp.params["dust2"] = params_val['dust2']
@@ -407,10 +407,6 @@ def generate_modelSED_spec(sp=None,imf_type=1,duste_switch=1,add_neb_emission=1,
 			trans = igm_att_inoue(redsh_wave,params_val['z'])
 			redsh_spec = redsh_spec0*trans
 
-	# normalize:
-	#norm0 = formed_mass/mass
-	#redsh_spec = redsh_spec0*norm0
-
 	spec_SED = {}
 	spec_SED['wave'] = redsh_wave
 	spec_SED['flux'] = redsh_spec
@@ -418,7 +414,7 @@ def generate_modelSED_spec(sp=None,imf_type=1,duste_switch=1,add_neb_emission=1,
 	return spec_SED
 
 
-def generate_modelSED_photo(sp=None,imf_type=1,duste_switch=0,add_neb_emission=1,dust_ext_law=1,sfh_form=4,
+def generate_modelSED_photo(sp=None,imf_type=1,duste_switch=0,add_neb_emission=1,dust_law=1,sfh_form=4,
 	add_agn=0,filters=[],add_igm_absorption=0,igm_type=0,cosmo='flat_LCDM',H0=70.0,Om0=0.3,gas_logu=-2.0,params_val={'log_mass':0.0,
 	'z':0.001,'log_fagn':-3.0,'log_tauagn':1.0,'log_qpah':0.54,'log_umin':0.0,'log_gamma':-2.0,'dust1':0.5,'dust2':0.5,
 	'dust_index':-0.7,'log_age':1.0,'log_alpha':0.1,'log_beta':0.1,'log_t0':0.4,'log_tau':0.4,'logzsol':0.0}):
@@ -436,7 +432,7 @@ def generate_modelSED_photo(sp=None,imf_type=1,duste_switch=0,add_neb_emission=1
 	:param add_neb_emission: (default: 1)
 		Choice for turning on (1) or off (0) the nebular emission modeling.
 
-	:param dust_ext_law: (default: 1)
+	:param dust_law: (default: 1)
 		Choice for the dust attenuation law. Options are: (a) 0 for Charlot & Fall (2000), (b) 1 for Calzetti et al. (2000).
 
 	:param sfh_form: (default: 4)
@@ -512,7 +508,7 @@ def generate_modelSED_photo(sp=None,imf_type=1,duste_switch=0,add_neb_emission=1
 		sp.params["fagn"] = 0
 
 	# dust atenuation:
-	if dust_ext_law==0:
+	if dust_law==0:
 		sp.params["dust_type"] = 0  
 		sp.params["dust_tesc"] = 7.0
 		sp.params["dust_index"] = params_val['dust_index']
@@ -520,7 +516,7 @@ def generate_modelSED_photo(sp=None,imf_type=1,duste_switch=0,add_neb_emission=1
 		sp.params["dust1_index"] = dust1_index
 		sp.params["dust1"] = params_val['dust1']
 		sp.params["dust2"] = params_val['dust2']
-	elif dust_ext_law==1:
+	elif dust_law==1:
 		sp.params["dust_type"] = 2  
 		sp.params["dust1"] = 0
 		sp.params["dust2"] = params_val['dust2']
@@ -592,7 +588,7 @@ def generate_modelSED_photo(sp=None,imf_type=1,duste_switch=0,add_neb_emission=1
 
 	return photo_SED
 
-def generate_modelSED_specphoto(sp=None,imf_type=1,duste_switch=1,add_neb_emission=1,dust_ext_law=1,sfh_form=4,
+def generate_modelSED_specphoto(sp=None,imf_type=1,duste_switch=1,add_neb_emission=1,dust_law=1,sfh_form=4,
 	add_agn=0,filters=['galex_fuv','galex_nuv','sdss_u','sdss_g','sdss_r','sdss_i','sdss_z'],add_igm_absorption=0,igm_type=0,
 	cosmo='flat_LCDM',H0=70.0,Om0=0.3,gas_logu=-2.0,params_val={'log_mass':0.0,'z':0.001,'log_fagn':-3.0,'log_tauagn':1.0,'log_qpah':0.54,
 	'log_umin':0.0,'log_gamma':-2.0,'dust1':0.5,'dust2':0.5,'dust_index':-0.7,'log_age':1.0,'log_alpha':0.1,'log_beta':0.1,'log_t0':0.4,
@@ -611,7 +607,7 @@ def generate_modelSED_specphoto(sp=None,imf_type=1,duste_switch=1,add_neb_emissi
 	:param add_neb_emission:
 		Choice for turning on (1) or off (0) the nebular emission modeling
 
-	:param dust_ext_law: (default: 1)
+	:param dust_law: (default: 1)
 		Choice for the dust attenuation law. Options are: (a) 0 for Charlot & Fall (2000), (b) 1 for Calzetti et al. (2000).
 
 	:param sfh_form: (default: 4)
@@ -679,7 +675,7 @@ def generate_modelSED_specphoto(sp=None,imf_type=1,duste_switch=1,add_neb_emissi
 		sp.params["fagn"] = 0
 
 	# dust atenuation:
-	if dust_ext_law==0:
+	if dust_law==0:
 		sp.params["dust_type"] = 0  
 		sp.params["dust_tesc"] = 7.0
 		sp.params["dust_index"] = params_val['dust_index']
@@ -687,7 +683,7 @@ def generate_modelSED_specphoto(sp=None,imf_type=1,duste_switch=1,add_neb_emissi
 		sp.params["dust1_index"] = dust1_index
 		sp.params["dust1"] = params_val['dust1']
 		sp.params["dust2"] = params_val['dust2']
-	elif dust_ext_law==1:
+	elif dust_law==1:
 		sp.params["dust_type"] = 2  
 		sp.params["dust1"] = 0
 		sp.params["dust2"] = params_val['dust2']
@@ -758,7 +754,7 @@ def generate_modelSED_specphoto(sp=None,imf_type=1,duste_switch=1,add_neb_emissi
 
 	return spec_SED,photo_SED
 
-def generate_modelSED_spec_decompose(sp=None,imf=1, duste_switch=1,add_neb_emission=1,dust_ext_law=1,add_agn=1,
+def generate_modelSED_spec_decompose(sp=None,imf=1, duste_switch=1,add_neb_emission=1,dust_law=1,add_agn=1,
 	add_igm_absorption=0,igm_type=0,sfh_form=4,funit='erg/s/cm2/A',cosmo='flat_LCDM',H0=70.0,Om0=0.3,
 	gas_logu=-2.0,params_val={'log_mass':0.0,'z':0.001,'log_fagn':-3.0,'log_tauagn':1.0,'log_qpah':0.54,'log_umin':0.0,
 	'log_gamma':-2.0,'dust1':0.5,'dust2':0.5,'dust_index':-0.7,'log_age':1.0,'log_alpha':0.1,'log_beta':0.1,'log_t0':0.4,
@@ -780,12 +776,12 @@ def generate_modelSED_spec_decompose(sp=None,imf=1, duste_switch=1,add_neb_emiss
 	spec_SED['flux_agn'] = []
 
 	# generate model spectrum: total
-	spec_SED_tot = generate_modelSED_spec(sp=sp,imf_type=imf,duste_switch=duste_switch,add_neb_emission=add_neb_emission,dust_ext_law=dust_ext_law,
+	spec_SED_tot = generate_modelSED_spec(sp=sp,imf_type=imf,duste_switch=duste_switch,add_neb_emission=add_neb_emission,dust_law=dust_law,
 					sfh_form=sfh_form,add_agn=add_agn,add_igm_absorption=add_igm_absorption,igm_type=igm_type,cosmo=cosmo,H0=H0,Om0=Om0,gas_logu=gas_logu,params_val=params_val)
 	spec_SED['wave'] = spec_SED_tot['wave']
 	spec_SED['flux_total'] = convert_unit_spec_from_ergscm2A(spec_SED_tot['wave'],spec_SED_tot['flux'],funit=funit)
 
-	spec_SED_temp = generate_modelSED_spec(sp=sp,imf_type=imf,duste_switch=0,add_neb_emission=0,dust_ext_law=dust_ext_law,sfh_form=sfh_form,add_agn=0,
+	spec_SED_temp = generate_modelSED_spec(sp=sp,imf_type=imf,duste_switch=0,add_neb_emission=0,dust_law=dust_law,sfh_form=sfh_form,add_agn=0,
 					add_igm_absorption=add_igm_absorption,igm_type=igm_type,cosmo=cosmo,H0=H0,Om0=Om0,gas_logu=gas_logu,params_val=params_val)
 	spec_flux_stellar = spec_SED_temp['flux']
 	spec_SED['flux_stellar'] = convert_unit_spec_from_ergscm2A(spec_SED_temp['wave'],spec_flux_stellar,funit=funit)
@@ -794,11 +790,11 @@ def generate_modelSED_spec_decompose(sp=None,imf=1, duste_switch=1,add_neb_emiss
 	if add_neb_emission == 1:
 		add_neb_emission_temp  = 1
 		spec_SED_temp1 = generate_modelSED_spec(sp=sp,imf_type=imf,duste_switch=0,add_neb_emission=add_neb_emission_temp,
-							dust_ext_law=dust_ext_law,sfh_form=sfh_form,add_agn=0,add_igm_absorption=add_igm_absorption,igm_type=igm_type,
+							dust_law=dust_law,sfh_form=sfh_form,add_agn=0,add_igm_absorption=add_igm_absorption,igm_type=igm_type,
 							cosmo=cosmo,H0=H0,Om0=Om0,gas_logu=gas_logu,params_val=params_val)
 		add_neb_emission_temp  = 0
 		spec_SED_temp2 = generate_modelSED_spec(sp=sp,imf_type=imf,duste_switch=0,add_neb_emission=add_neb_emission_temp,
-							dust_ext_law=dust_ext_law,sfh_form=sfh_form,add_agn=0,add_igm_absorption=add_igm_absorption,igm_type=igm_type,
+							dust_law=dust_law,sfh_form=sfh_form,add_agn=0,add_igm_absorption=add_igm_absorption,igm_type=igm_type,
 							cosmo=cosmo,H0=H0,Om0=Om0,gas_logu=gas_logu,params_val=params_val)
 		spec_flux_nebe = spec_SED_temp1['flux'] - spec_SED_temp2['flux']
 		spec_SED['flux_nebe'] = convert_unit_spec_from_ergscm2A(spec_SED_temp['wave'],spec_flux_nebe,funit=funit)
@@ -807,7 +803,7 @@ def generate_modelSED_spec_decompose(sp=None,imf=1, duste_switch=1,add_neb_emiss
 	if duste_switch == 1:
 		duste_switch_temp = 0
 		spec_SED_temp = generate_modelSED_spec(sp=sp,imf_type=imf,duste_switch=duste_switch_temp,add_neb_emission=add_neb_emission,
-							dust_ext_law=dust_ext_law,sfh_form=sfh_form,add_agn=add_agn,add_igm_absorption=add_igm_absorption,igm_type=igm_type,
+							dust_law=dust_law,sfh_form=sfh_form,add_agn=add_agn,add_igm_absorption=add_igm_absorption,igm_type=igm_type,
 							cosmo=cosmo,H0=H0,Om0=Om0,gas_logu=gas_logu,params_val=params_val)
 		spec_flux_duste = spec_SED_tot['flux'] - spec_SED_temp['flux']
 		spec_SED['flux_duste'] = convert_unit_spec_from_ergscm2A(spec_SED_temp['wave'],spec_flux_duste,funit=funit)
@@ -815,7 +811,7 @@ def generate_modelSED_spec_decompose(sp=None,imf=1, duste_switch=1,add_neb_emiss
 	if add_agn == 1:
 		add_agn_temp = 0
 		spec_SED_temp = generate_modelSED_spec(sp=sp,imf_type=imf,duste_switch=duste_switch,add_neb_emission=add_neb_emission,
-							dust_ext_law=dust_ext_law,sfh_form=sfh_form,add_agn=add_agn_temp,add_igm_absorption=add_igm_absorption,
+							dust_law=dust_law,sfh_form=sfh_form,add_agn=add_agn_temp,add_igm_absorption=add_igm_absorption,
 							igm_type=igm_type,cosmo=cosmo,H0=H0,Om0=Om0,gas_logu=gas_logu,params_val=params_val)
 		spec_flux_agn = spec_SED_tot['flux'] - spec_SED_temp['flux']
 		spec_SED['flux_agn'] = convert_unit_spec_from_ergscm2A(spec_SED_temp['wave'],spec_flux_agn,funit=funit)
@@ -824,7 +820,7 @@ def generate_modelSED_spec_decompose(sp=None,imf=1, duste_switch=1,add_neb_emiss
 	return spec_SED
 
 
-def generate_modelSED_specphoto_decompose(sp=None, imf=1, duste_switch=1,add_neb_emission=1,dust_ext_law=1,
+def generate_modelSED_specphoto_decompose(sp=None, imf=1, duste_switch=1,add_neb_emission=1,dust_law=1,
 	add_agn=1,add_igm_absorption=0,igm_type=0,cosmo='flat_LCDM',H0=70.0,Om0=0.3,gas_logu=-2.0,sfh_form=4,
 	funit='erg/s/cm2/A',filters=['galex_fuv','galex_nuv','sdss_u','sdss_g','sdss_r','sdss_i','sdss_z'],
 	params_val={'log_mass':0.0,'z':0.001,'log_fagn':-3.0,'log_tauagn':1.0,'log_qpah':0.54,'log_umin':0.0,'log_gamma':-2.0,
@@ -852,14 +848,14 @@ def generate_modelSED_specphoto_decompose(sp=None, imf=1, duste_switch=1,add_neb
 
 	# generate model spectrum: total
 	spec_SED_tot,photo_SED_tot = generate_modelSED_specphoto(sp=sp,imf_type=imf,duste_switch=duste_switch,add_neb_emission=add_neb_emission,
-										dust_ext_law=dust_ext_law,sfh_form=sfh_form,add_agn=add_agn,filters=filters,add_igm_absorption=add_igm_absorption,
+										dust_law=dust_law,sfh_form=sfh_form,add_agn=add_agn,filters=filters,add_igm_absorption=add_igm_absorption,
 										igm_type=igm_type,cosmo=cosmo,H0=H0,Om0=Om0,gas_logu=gas_logu,params_val=params_val)
 	spec_SED['wave'] = spec_SED_tot['wave']
 	spec_SED['flux_total'] = convert_unit_spec_from_ergscm2A(spec_SED_tot['wave'],spec_SED_tot['flux'],funit=funit)
 
 	photo_SED['flux'] = convert_unit_spec_from_ergscm2A(photo_SED_tot['wave'],photo_SED_tot['flux'],funit=funit)
 
-	spec_SED_temp = generate_modelSED_spec(sp=sp,imf_type=imf,duste_switch=0,add_neb_emission=0,dust_ext_law=dust_ext_law,sfh_form=sfh_form,
+	spec_SED_temp = generate_modelSED_spec(sp=sp,imf_type=imf,duste_switch=0,add_neb_emission=0,dust_law=dust_law,sfh_form=sfh_form,
 											add_agn=0,add_igm_absorption=add_igm_absorption,igm_type=igm_type,cosmo=cosmo,H0=H0,Om0=Om0,gas_logu=gas_logu,
 											params_val=params_val)
 	spec_flux_stellar = spec_SED_temp['flux']
@@ -868,11 +864,11 @@ def generate_modelSED_specphoto_decompose(sp=None, imf=1, duste_switch=1,add_neb
 
 	# get nebular emission:
 	if add_neb_emission == 1:
-		spec_SED_temp1 = generate_modelSED_spec(sp=sp,imf_type=imf,duste_switch=0,add_neb_emission=1,dust_ext_law=dust_ext_law,
+		spec_SED_temp1 = generate_modelSED_spec(sp=sp,imf_type=imf,duste_switch=0,add_neb_emission=1,dust_law=dust_law,
 							sfh_form=sfh_form,add_agn=add_agn,add_igm_absorption=add_igm_absorption,igm_type=igm_type,cosmo=cosmo,H0=H0,Om0=Om0,gas_logu=gas_logu,
 							params_val=params_val)
 
-		spec_SED_temp2 = generate_modelSED_spec(sp=sp,imf_type=imf,duste_switch=0,add_neb_emission=0,dust_ext_law=dust_ext_law,
+		spec_SED_temp2 = generate_modelSED_spec(sp=sp,imf_type=imf,duste_switch=0,add_neb_emission=0,dust_law=dust_law,
 							sfh_form=sfh_form,add_agn=add_agn,add_igm_absorption=add_igm_absorption,igm_type=igm_type,cosmo=cosmo,H0=H0,Om0=Om0,gas_logu=gas_logu,
 							params_val=params_val)
 
@@ -883,7 +879,7 @@ def generate_modelSED_specphoto_decompose(sp=None, imf=1, duste_switch=1,add_neb
 	if duste_switch == 1:
 		duste_switch_temp = 0
 		spec_SED_temp = generate_modelSED_spec(sp=sp,imf_type=imf,duste_switch=duste_switch_temp,add_neb_emission=add_neb_emission,
-							dust_ext_law=dust_ext_law,sfh_form=sfh_form,add_agn=add_agn,add_igm_absorption=add_igm_absorption,igm_type=igm_type,
+							dust_law=dust_law,sfh_form=sfh_form,add_agn=add_agn,add_igm_absorption=add_igm_absorption,igm_type=igm_type,
 							cosmo=cosmo,H0=H0,Om0=Om0,gas_logu=gas_logu,params_val=params_val)
 		spec_flux_duste = spec_SED_tot['flux'] - spec_SED_temp['flux']
 		spec_SED['flux_duste'] = convert_unit_spec_from_ergscm2A(spec_SED_temp['wave'],spec_flux_duste,funit=funit)
@@ -891,7 +887,7 @@ def generate_modelSED_specphoto_decompose(sp=None, imf=1, duste_switch=1,add_neb
 	if add_agn == 1:
 		add_agn_temp = 0
 		spec_SED_temp = generate_modelSED_spec(sp=sp,imf_type=imf,duste_switch=duste_switch,add_neb_emission=add_neb_emission,
-							dust_ext_law=dust_ext_law,sfh_form=sfh_form,add_agn=add_agn_temp,add_igm_absorption=add_igm_absorption,igm_type=igm_type,
+							dust_law=dust_law,sfh_form=sfh_form,add_agn=add_agn_temp,add_igm_absorption=add_igm_absorption,igm_type=igm_type,
 							cosmo=cosmo,H0=H0,Om0=Om0,gas_logu=gas_logu,params_val=params_val)
 		spec_flux_agn = spec_SED_tot['flux'] - spec_SED_temp['flux']
 		spec_SED['flux_agn'] = convert_unit_spec_from_ergscm2A(spec_SED_temp['wave'],spec_flux_agn,funit=funit)
@@ -899,11 +895,11 @@ def generate_modelSED_specphoto_decompose(sp=None, imf=1, duste_switch=1,add_neb
 	return spec_SED,photo_SED
 
 
-def save_models_photo(filters=[],gal_z=None,imf_type=1,sfh_form=4,dust_ext_law=1,add_igm_absorption=0,igm_type=0,duste_switch=0,
-	add_neb_emission=1,add_agn=0,gas_logu=-2.0,nmodels=100000, logzsol_range=[-2.0,0.2],log_tau_range=[-1.0,1.5],log_age_range=[-1.0,1.14],
-	log_alpha_range=[-2.0,2.0],log_beta_range=[-2.0,2.0],log_t0_range=[-1.0,1.14],dust_index_range=[-0.7,-0.7],dust1_range=[0.0,3.0],
-	dust2_range=[0.0,4.0],log_gamma_range=[-4.0, 0.0],log_umin_range=[-1.0, 1.39],log_qpah_range=[-3.0, 1.0], 
-	log_fagn_range=[-5.0,0.48],log_tauagn_range=[0.7, 2.18],nproc=10,cosmo=0,H0=70.0,Om0=0.3,name_out_fits=None):
+def save_models_photo(filters=[],gal_z=None,imf_type=1,sfh_form=4,dust_law=1,add_igm_absorption=0,igm_type=0,duste_switch=0,
+	add_neb_emission=1,add_agn=0,gas_logu=-2.0,nmodels=100000, params_range ={'logzsol':[-2.0,0.2],'log_tau':[-1.0,1.5],
+	'log_age':[-3.0,1.14],'log_alpha':[-2.0,2.0],'log_beta':[-2.0,2.0],'log_t0':[-1.0,1.14],'dust_index':[-2.2,0.4],'dust1':[0.0,4.0], 
+	'dust2':[0.0,4.0],'log_gamma':[-4.0, 0.0],'log_umin':[-1.0,1.39],'log_qpah':[-3.0,1.0],'log_fagn':[-5.0,0.48],'log_tauagn':[0.7, 2.18]},
+	nproc=10,cosmo=0,H0=70.0,Om0=0.3,name_out_fits=None):
 	"""Function for generating pre-calculated model SEDs and store them into a FITS file. This is supposed to be created one for one redshift (i.e, one galaxy or a group of galaxies with similar redshift). 
 	This FITS file can be used in fitting all the spatial bins in the galaxy (or a group of galaxies with similar redshift).  
 
@@ -919,7 +915,7 @@ def save_models_photo(filters=[],gal_z=None,imf_type=1,sfh_form=4,dust_ext_law=1
 	:param sfh_form: (default: 4)
 		Choice for the parametric SFH model. Options are: (a) 0 for exponentially declining or tau model, (b) 1 for delayed tau model, (c) 2 for log normal model, (d) 3 for Gaussian form, (e) 4 for double power-law model.
 
-	:param dust_ext_law: (default: 1)
+	:param dust_law: (default: 1)
 		Choice for the dust attenuation law. Options are: (a) 0 for Charlot & Fall (2000), (b) 1 for Calzetti et al. (2000).
 
 	:param add_igm_absorption: (default: 0)
@@ -942,6 +938,9 @@ def save_models_photo(filters=[],gal_z=None,imf_type=1,sfh_form=4,dust_ext_law=1
 
 	:param nmodels: (default: 100000)
 		Number of model SEDs to be generated.
+
+	:param params_range:
+		Ranges of parameters. The format of this input argument is python dictionary.
 
 	:param nproc: (default: 10)
 		Number of processors (cores) to be used in the calculation.
@@ -966,6 +965,18 @@ def save_models_photo(filters=[],gal_z=None,imf_type=1,sfh_form=4,dust_ext_law=1
 	dir_file = PIXEDFIT_HOME+'/data/temp/'
 	CODE_dir = PIXEDFIT_HOME+'/piXedfit/piXedfit_model/'
 
+	def_params_range ={'logzsol':[-2.0,0.2],'log_tau':[-1.0,1.5],'log_age':[-3.0,1.14],'log_alpha':[-2.0,2.0],
+			'log_beta':[-2.0,2.0],'log_t0':[-1.0,1.14],'dust_index':[-2.2,0.4],'dust1':[0.0,4.0], 'dust2':[0.0,4.0],
+			'log_gamma':[-4.0, 0.0],'log_umin':[-1.0,1.39],'log_qpah':[-3.0,1.0],'log_fagn':[-5.0,0.48],'log_tauagn':[0.7, 2.18]}
+
+	# get keys in input params_range:
+	keys = list(params_range.keys())
+
+	# merge with the default one
+	params_range1 = def_params_range
+	for ii in range(0,len(keys)):
+		params_range1[keys[ii]] = params_range[keys[ii]]
+
 	# number of filters
 	nbands = len(filters)
 
@@ -987,39 +998,39 @@ def save_models_photo(filters=[],gal_z=None,imf_type=1,sfh_form=4,dust_ext_law=1
 	file_out.write("gas_logu %lf\n" % gas_logu)
 	file_out.write("add_igm_absorption %d\n" % add_igm_absorption)
 	file_out.write("sfh_form %d\n" % sfh_form)
-	file_out.write("dust_ext_law %d\n" % dust_ext_law)
+	file_out.write("dust_law %d\n" % dust_law)
 	file_out.write("igm_type %d\n" % igm_type)
 	file_out.write("duste_switch %d\n" % duste_switch)
 	file_out.write("add_agn %d\n" % add_agn)
 	file_out.write("nmodels %d\n" % nmodels)
-	file_out.write("pr_logzsol_min %lf\n" % logzsol_range[0])
-	file_out.write("pr_logzsol_max %lf\n" % logzsol_range[1])
-	file_out.write("pr_log_tau_min %lf\n" % log_tau_range[0])
-	file_out.write("pr_log_tau_max %lf\n" % log_tau_range[1])
-	file_out.write("pr_log_t0_min %lf\n" % log_t0_range[0])
-	file_out.write("pr_log_t0_max %lf\n" % log_t0_range[1])
-	file_out.write("pr_log_alpha_min %lf\n" % log_alpha_range[0])
-	file_out.write("pr_log_alpha_max %lf\n" % log_alpha_range[1])
-	file_out.write("pr_log_beta_min %lf\n" % log_beta_range[0])
-	file_out.write("pr_log_beta_max %lf\n" % log_beta_range[1])
-	file_out.write("pr_log_age_min %lf\n" % log_age_range[0])
-	file_out.write("pr_log_age_max %lf\n" % log_age_range[1])
-	file_out.write("pr_dust_index_min %lf\n" % dust_index_range[0])
-	file_out.write("pr_dust_index_max %lf\n" % dust_index_range[1])
-	file_out.write("pr_dust1_min %lf\n" % dust1_range[0])
-	file_out.write("pr_dust1_max %lf\n" % dust1_range[1])
-	file_out.write("pr_dust2_min %lf\n" % dust2_range[0])
-	file_out.write("pr_dust2_max %lf\n" % dust2_range[1])
-	file_out.write("pr_log_gamma_min %lf\n" % log_gamma_range[0])
-	file_out.write("pr_log_gamma_max %lf\n" % log_gamma_range[1])
-	file_out.write("pr_log_umin_min %lf\n" % log_umin_range[0])
-	file_out.write("pr_log_umin_max %lf\n" % log_umin_range[1])
-	file_out.write("pr_log_qpah_min %lf\n" % log_qpah_range[0])
-	file_out.write("pr_log_qpah_max %lf\n" % log_qpah_range[1])
-	file_out.write("pr_log_fagn_min %lf\n" % log_fagn_range[0])
-	file_out.write("pr_log_fagn_max %lf\n" % log_fagn_range[1])
-	file_out.write("pr_log_tauagn_min %lf\n" % log_tauagn_range[0])
-	file_out.write("pr_log_tauagn_max %lf\n" % log_tauagn_range[1])
+	file_out.write("pr_logzsol_min %lf\n" % params_range1['logzsol'][0])
+	file_out.write("pr_logzsol_max %lf\n" % params_range1['logzsol'][1])
+	file_out.write("pr_log_tau_min %lf\n" % params_range1['log_tau'][0])
+	file_out.write("pr_log_tau_max %lf\n" % params_range1['log_tau'][1])
+	file_out.write("pr_log_t0_min %lf\n" % params_range1['log_t0'][0])
+	file_out.write("pr_log_t0_max %lf\n" % params_range1['log_t0'][1])
+	file_out.write("pr_log_alpha_min %lf\n" % params_range1['log_alpha'][0])
+	file_out.write("pr_log_alpha_max %lf\n" % params_range1['log_alpha'][1])
+	file_out.write("pr_log_beta_min %lf\n" % params_range1['log_beta'][0])
+	file_out.write("pr_log_beta_max %lf\n" % params_range1['log_beta'][1])
+	file_out.write("pr_log_age_min %lf\n" % params_range1['log_age'][0])
+	file_out.write("pr_log_age_max %lf\n" % params_range1['log_age'][1])
+	file_out.write("pr_dust_index_min %lf\n" % params_range1['dust_index'][0])
+	file_out.write("pr_dust_index_max %lf\n" % params_range1['dust_index'][1])
+	file_out.write("pr_dust1_min %lf\n" % params_range1['dust1'][0])
+	file_out.write("pr_dust1_max %lf\n" % params_range1['dust1'][1])
+	file_out.write("pr_dust2_min %lf\n" % params_range1['dust2'][0])
+	file_out.write("pr_dust2_max %lf\n" % params_range1['dust2'][1])
+	file_out.write("pr_log_gamma_min %lf\n" % params_range1['log_gamma'][0])
+	file_out.write("pr_log_gamma_max %lf\n" % params_range1['log_gamma'][1])
+	file_out.write("pr_log_umin_min %lf\n" % params_range1['log_umin'][0])
+	file_out.write("pr_log_umin_max %lf\n" % params_range1['log_umin'][1])
+	file_out.write("pr_log_qpah_min %lf\n" % params_range1['log_qpah'][0])
+	file_out.write("pr_log_qpah_max %lf\n" % params_range1['log_qpah'][1])
+	file_out.write("pr_log_fagn_min %lf\n" % params_range1['log_fagn'][0])
+	file_out.write("pr_log_fagn_max %lf\n" % params_range1['log_fagn'][1])
+	file_out.write("pr_log_tauagn_min %lf\n" % params_range1['log_tauagn'][0])
+	file_out.write("pr_log_tauagn_max %lf\n" % params_range1['log_tauagn'][1])
 
 	# cosmology
 	if cosmo=='flat_LCDM' or cosmo==0:
@@ -1059,11 +1070,11 @@ def save_models_photo(filters=[],gal_z=None,imf_type=1,sfh_form=4,dust_ext_law=1
 	return name_out_fits
 
 
-def save_models_rest_spec(imf_type=1,sfh_form=4,dust_ext_law=1,duste_switch=0,add_neb_emission=1,add_agn=0,gas_logu=-2.0,
-	nmodels=100000,logzsol_range=[-2.0,0.2],log_tau_range=[-1.0,1.5],log_age_range=[-1.0,1.14],log_alpha_range=[-2.0,2.0],
-	log_beta_range=[-2.0,2.0],log_t0_range=[-1.0,1.14],dust_index_range=[-0.7,-0.7],dust1_range=[0.0,3.0],
-	dust2_range=[0.0,4.0],log_gamma_range=[-4.0, 0.0],log_umin_range=[-1.0,1.39],log_qpah_range=[-3.0,1.0],
-	log_fagn_range=[-5.0,0.48],log_tauagn_range=[0.7, 2.18],nproc=10,name_out=None):
+def save_models_rest_spec(imf_type=1,sfh_form=4,dust_law=1,duste_switch=0,add_neb_emission=1,add_agn=0,gas_logu=-2.0,
+	nmodels=100000,params_range={'logzsol':[-2.0,0.2],'log_tau':[-1.0,1.5],'log_age':[-3.0,1.14],'log_alpha':[-2.0,2.0],
+	'log_beta':[-2.0,2.0],'log_t0':[-1.0,1.14],'dust_index':[-2.2,0.4],'dust1':[0.0,4.0], 'dust2':[0.0,4.0],
+	'log_gamma':[-4.0, 0.0],'log_umin':[-1.0,1.39],'log_qpah':[-3.0,1.0],'log_fagn':[-5.0,0.48],
+	'log_tauagn':[0.7, 2.18]},nproc=10,name_out=None):
 	"""Function for generating rest-frame model spectra.  
 
 	:param imf_type: (default: 1)
@@ -1072,7 +1083,7 @@ def save_models_rest_spec(imf_type=1,sfh_form=4,dust_ext_law=1,duste_switch=0,ad
 	:param sfh_form: (default: 4)
 		Choice for the parametric SFH model. Options are: (a) 0 for exponentially declining or tau model, (b) 1 for delayed tau model, (c) 2 for log normal model, (d) 3 for Gaussian form, (e) 4 for double power-law model.
 
-	:param dust_ext_law: (default: 1)
+	:param dust_law: (default: 1)
 		Choice for the dust attenuation law. Options are: (a) 0 for Charlot & Fall (2000), (b) 1 for Calzetti et al. (2000).
 
 	:param duste_switch: (default: 0)
@@ -1090,6 +1101,9 @@ def save_models_rest_spec(imf_type=1,sfh_form=4,dust_ext_law=1,duste_switch=0,ad
 	:param nmodels: (default: 100000)
 		Number of model SEDs to be generated.
 
+	:param params_range:
+		Ranges of parameters. The format of this input argument is python dictionary.
+
 	:param nproc: (default: 10)
 		Number of processors (cores) to be used in the calculation.
 
@@ -1103,6 +1117,18 @@ def save_models_rest_spec(imf_type=1,sfh_form=4,dust_ext_law=1,duste_switch=0,ad
 	dir_file = PIXEDFIT_HOME+'/data/temp/'
 	CODE_dir = PIXEDFIT_HOME+'/piXedfit/piXedfit_model/'
 
+	def_params_range ={'logzsol':[-2.0,0.2],'log_tau':[-1.0,1.5],'log_age':[-3.0,1.14],'log_alpha':[-2.0,2.0],
+			'log_beta':[-2.0,2.0],'log_t0':[-1.0,1.14],'dust_index':[-2.2,0.4],'dust1':[0.0,4.0], 'dust2':[0.0,4.0],
+			'log_gamma':[-4.0, 0.0],'log_umin':[-1.0,1.39],'log_qpah':[-3.0,1.0],'log_fagn':[-5.0,0.48],'log_tauagn':[0.7, 2.18]}
+
+	# get keys in input params_range:
+	keys = list(params_range.keys())
+
+	# merge with the default one
+	params_range1 = def_params_range
+	for ii in range(0,len(keys)):
+		params_range1[keys[ii]] = params_range[keys[ii]]
+
 	# make configuration file
 	name_config = "config_file%d.dat" % (random.randint(0,10000))
 	file_out = open(name_config,"w")
@@ -1110,38 +1136,38 @@ def save_models_rest_spec(imf_type=1,sfh_form=4,dust_ext_law=1,duste_switch=0,ad
 	file_out.write("add_neb_emission %d\n" % add_neb_emission)
 	file_out.write("gas_logu %lf\n" % gas_logu)
 	file_out.write("sfh_form %d\n" % sfh_form)
-	file_out.write("dust_ext_law %d\n" % dust_ext_law)
+	file_out.write("dust_law %d\n" % dust_law)
 	file_out.write("duste_switch %d\n" % duste_switch)
 	file_out.write("add_agn %d\n" % add_agn)
 	file_out.write("nmodels %d\n" % nmodels)
-	file_out.write("pr_logzsol_min %lf\n" % logzsol_range[0])
-	file_out.write("pr_logzsol_max %lf\n" % logzsol_range[1])
-	file_out.write("pr_log_tau_min %lf\n" % log_tau_range[0])
-	file_out.write("pr_log_tau_max %lf\n" % log_tau_range[1])
-	file_out.write("pr_log_t0_min %lf\n" % log_t0_range[0])
-	file_out.write("pr_log_t0_max %lf\n" % log_t0_range[1])
-	file_out.write("pr_log_alpha_min %lf\n" % log_alpha_range[0])
-	file_out.write("pr_log_alpha_max %lf\n" % log_alpha_range[1])
-	file_out.write("pr_log_beta_min %lf\n" % log_beta_range[0])
-	file_out.write("pr_log_beta_max %lf\n" % log_beta_range[1])
-	file_out.write("pr_log_age_min %lf\n" % log_age_range[0])
-	file_out.write("pr_log_age_max %lf\n" % log_age_range[1])
-	file_out.write("pr_dust_index_min %lf\n" % dust_index_range[0])
-	file_out.write("pr_dust_index_max %lf\n" % dust_index_range[1])
-	file_out.write("pr_dust1_min %lf\n" % dust1_range[0])
-	file_out.write("pr_dust1_max %lf\n" % dust1_range[1])
-	file_out.write("pr_dust2_min %lf\n" % dust2_range[0])
-	file_out.write("pr_dust2_max %lf\n" % dust2_range[1])
-	file_out.write("pr_log_gamma_min %lf\n" % log_gamma_range[0])
-	file_out.write("pr_log_gamma_max %lf\n" % log_gamma_range[1])
-	file_out.write("pr_log_umin_min %lf\n" % log_umin_range[0])
-	file_out.write("pr_log_umin_max %lf\n" % log_umin_range[1])
-	file_out.write("pr_log_qpah_min %lf\n" % log_qpah_range[0])
-	file_out.write("pr_log_qpah_max %lf\n" % log_qpah_range[1])
-	file_out.write("pr_log_fagn_min %lf\n" % log_fagn_range[0])
-	file_out.write("pr_log_fagn_max %lf\n" % log_fagn_range[1])
-	file_out.write("pr_log_tauagn_min %lf\n" % log_tauagn_range[0])
-	file_out.write("pr_log_tauagn_max %lf\n" % log_tauagn_range[1])
+	file_out.write("pr_logzsol_min %lf\n" % params_range1['logzsol'][0])
+	file_out.write("pr_logzsol_max %lf\n" % params_range1['logzsol'][1])
+	file_out.write("pr_log_tau_min %lf\n" % params_range1['log_tau'][0])
+	file_out.write("pr_log_tau_max %lf\n" % params_range1['log_tau'][1])
+	file_out.write("pr_log_t0_min %lf\n" % params_range1['log_t0'][0])
+	file_out.write("pr_log_t0_max %lf\n" % params_range1['log_t0'][1])
+	file_out.write("pr_log_alpha_min %lf\n" % params_range1['log_alpha'][0])
+	file_out.write("pr_log_alpha_max %lf\n" % params_range1['log_alpha'][1])
+	file_out.write("pr_log_beta_min %lf\n" % params_range1['log_beta'][0])
+	file_out.write("pr_log_beta_max %lf\n" % params_range1['log_beta'][1])
+	file_out.write("pr_log_age_min %lf\n" % params_range1['log_age'][0])
+	file_out.write("pr_log_age_max %lf\n" % params_range1['log_age'][1])
+	file_out.write("pr_dust_index_min %lf\n" % params_range1['dust_index'][0])
+	file_out.write("pr_dust_index_max %lf\n" % params_range1['dust_index'][1])
+	file_out.write("pr_dust1_min %lf\n" % params_range1['dust1'][0])
+	file_out.write("pr_dust1_max %lf\n" % params_range1['dust1'][1])
+	file_out.write("pr_dust2_min %lf\n" % params_range1['dust2'][0])
+	file_out.write("pr_dust2_max %lf\n" % params_range1['dust2'][1])
+	file_out.write("pr_log_gamma_min %lf\n" % params_range1['log_gamma'][0])
+	file_out.write("pr_log_gamma_max %lf\n" % params_range1['log_gamma'][1])
+	file_out.write("pr_log_umin_min %lf\n" % params_range1['log_umin'][0])
+	file_out.write("pr_log_umin_max %lf\n" % params_range1['log_umin'][1])
+	file_out.write("pr_log_qpah_min %lf\n" % params_range1['log_qpah'][0])
+	file_out.write("pr_log_qpah_max %lf\n" % params_range1['log_qpah'][1])
+	file_out.write("pr_log_fagn_min %lf\n" % params_range1['log_fagn'][0])
+	file_out.write("pr_log_fagn_max %lf\n" % params_range1['log_fagn'][1])
+	file_out.write("pr_log_tauagn_min %lf\n" % params_range1['log_tauagn'][0])
+	file_out.write("pr_log_tauagn_max %lf\n" % params_range1['log_tauagn'][1])
 
 	# output files name:
 	if name_out == None:

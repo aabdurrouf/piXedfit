@@ -62,26 +62,13 @@ global duste_switch
 duste_switch = int(config_data['duste_switch'])
 
 # dust extinction law
-global dust_ext_law
-dust_ext_law = int(config_data['dust_ext_law'])
-#if int(config_data['dust_ext_law']) == 0:
-#	dust_ext_law = 'CF2000'
-#elif int(config_data['dust_ext_law']) == 1:
-#	dust_ext_law = 'Cal2000'
+global dust_law
+dust_law = int(config_data['dust_law'])
 
 # igm absorption
 global add_igm_absorption,igm_type
 add_igm_absorption = int(config_data['add_igm_absorption'])
 igm_type = int(config_data['igm_type'])
-
-# dust_index is set fix or not
-global fix_dust_index, fix_dust_index_val
-if float(config_data['pr_dust_index_min']) == float(config_data['pr_dust_index_max']):     # dust_index is fixed
-	fix_dust_index = 1
-	fix_dust_index_val = float(config_data['pr_dust_index_min'])
-elif float(config_data['pr_dust_index_min']) != float(config_data['pr_dust_index_max']):   # dust_index varies
-	fix_dust_index = 0
-	fix_dust_index_val = 0
 
 # AGN
 global add_agn 
@@ -149,10 +136,6 @@ def_params_val={'log_mass':0.0,'z':0.001,'log_fagn':-3.0,'log_tauagn':1.0,'log_q
 				'dust1':0.5,'dust2':0.5,'dust_index':-0.7,'log_age':1.0,'log_alpha':0.1,'log_beta':0.1,'log_t0':0.4,
 				'log_tau':0.4,'logzsol':0.0}
 
-if fix_dust_index == 1:
-	def_params_val['dust_index'] = fix_dust_index_val
-if fix_dust_index == 0:
-	def_params_val['dust_index'] = -0.7
 if free_z == 0:
 	def_params_val['z'] = gal_z
 
@@ -193,28 +176,28 @@ if sfh_form==0 or sfh_form==1:
 	sp.params["sf_trunc"] = 0
 	sp.params["fburst"] = 0
 	sp.params["tburst"] = 30.0
-	if dust_ext_law == 0:
+	if dust_law == 0:
 		sp.params["dust_type"] = 0  
 		sp.params["dust_tesc"] = 7.0
 		dust1_index = -1.0
 		sp.params["dust1_index"] = dust1_index
-	elif dust_ext_law == 1:
+	elif dust_law == 1:
 		sp.params["dust_type"] = 2  
 		sp.params["dust1"] = 0
 elif sfh_form==2 or sfh_form==3 or sfh_form==4:
 	sp.params["sfh"] = 3
-	if dust_ext_law == 0: 
+	if dust_law == 0: 
 		sp.params["dust_type"] = 0  
 		sp.params["dust_tesc"] = 7.0
 		dust1_index = -1.0
 		sp.params["dust1_index"] = dust1_index
-	elif dust_ext_law == 1:
+	elif dust_law == 1:
 		sp.params["dust_type"] = 2  
 		sp.params["dust1"] = 0
 
 # get number of parameters:
 global params, nparams
-params0, nparams0 = get_params(free_z, sfh_form, duste_switch, dust_ext_law, add_agn, fix_dust_index)
+params0, nparams0 = get_params(free_z, sfh_form, duste_switch, dust_law, add_agn)
 params = params0[:int(nparams0-1)]
 nparams = len(params)
 if rank == 0:
@@ -234,11 +217,16 @@ nparams_fsps = len(params_fsps)
 global priors_min, priors_max
 priors_min = np.zeros(nparams)
 priors_max = np.zeros(nparams)
-for ii in range(0,nparams): 
-	str_temp = 'pr_%s_min' % params[ii]
-	priors_min[ii] = float(config_data[str_temp])
-	str_temp = 'pr_%s_max' % params[ii]
-	priors_max[ii] = float(config_data[str_temp])
+for pp in range(0,nparams): 
+	str_temp = 'pr_%s_min' % params[pp]
+	priors_min[pp] = float(config_data[str_temp])
+	str_temp = 'pr_%s_max' % params[pp]
+	priors_max[pp] = float(config_data[str_temp])
+
+# generate random parameters
+rand_params = np.zeros((nparams,nmodels))
+for pp in range(0,nparams):
+	rand_params[pp] = np.random.uniform(priors_min[pp],priors_max[pp],nmodels)
 
 global interp_filters_waves, interp_filters_trans
 interp_filters_waves,interp_filters_trans = interp_filters_curves(filters)
@@ -263,8 +251,9 @@ mod_fluxes_temp = np.zeros((nbands,numDataPerRank))
 count = 0
 for ii in recvbuf_idx:
 	params_val = def_params_val
-	for pp in range(0,nparams): 
-		temp_val = np.random.uniform(priors_min[pp],priors_max[pp],1)
+	for pp in range(0,nparams):
+		temp_val = rand_params[pp][int(ii)]  
+		#temp_val = np.random.uniform(priors_min[pp],priors_max[pp],1)
 		mod_params_temp[pp][int(count)] = temp_val
 		params_val[params[pp]] = temp_val
 
@@ -343,15 +332,12 @@ if rank == 0:
 	hdr = fits.Header()
 	hdr['imf_type'] = imf
 	hdr['sfh_form'] = sfh_form
-	hdr['dust_ext_law'] = dust_ext_law
+	hdr['dust_law'] = dust_law
 	hdr['duste_switch'] = duste_switch
 	hdr['add_neb_emission'] = add_neb_emission
 	hdr['gas_logu'] = gas_logu
 	hdr['add_agn'] = add_agn
 	hdr['add_igm_absorption'] = add_igm_absorption
-	if duste_switch==1:
-		if fix_dust_index == 1:
-			hdr['dust_index'] = fix_dust_index_val
 	hdr['cosmo'] = cosmo_str
 	hdr['H0'] = H0
 	hdr['Om0'] = Om0

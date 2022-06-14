@@ -13,7 +13,6 @@ __all__ = ["gauss_prob", "ln_gauss_prob", "student_t_prob", "ln_student_t_prob",
 			"gauss_prob_reduced", "ln_gauss_prob_reduced", "calc_chi2", "calc_modprob_leastnorm_gauss_reduced", 
 			"calc_modprob_leastnorm_gauss", "plot_triangle_posteriors"]
 
-
 def prod(iterable):
 	from operator import mul
 	from functools import reduce

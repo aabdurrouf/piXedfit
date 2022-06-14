@@ -358,19 +358,27 @@ def pixel_binning(fits_fluxmap, ref_band=None, Dmin_bin=2.0, SNR=[], redc_chi2_l
 		hdr = fits.Header()
 		hdr['nfilters'] = nbands
 		hdr['refband'] = ref_band
-		hdr['RA'] = header['RA']
-		hdr['DEC'] = header['DEC']
+		if 'RA' in header:
+			hdr['RA'] = header['RA']
+		if 'DEC' in header:
+			hdr['DEC'] = header['DEC']
 		hdr['z'] = header['z']
-		hdr['GalEBV'] = header['GalEBV']
+		if 'GalEBV' in header:
+			hdr['GalEBV'] = header['GalEBV']
 		hdr['nbins'] = count_bin
 		hdr['unit'] = header['unit']
 		hdr['bunit'] = 'erg/s/cm^2/A'
 		hdr['struct'] = '(band,y,x)'
-		hdr['fsamp'] = header['fsamp']
-		hdr['pixsize'] = header['pixsize']
-		hdr['fpsfmtch'] = header['fpsfmtch']
-		hdr['psffwhm'] = header['psffwhm']
-		hdr['specphot'] = header['specphot']
+		if 'fsamp' in header:
+			hdr['fsamp'] = header['fsamp']
+		if 'pixsize' in header:
+			hdr['pixsize'] = header['pixsize']
+		if 'fpsfmtch' in header:
+			hdr['fpsfmtch'] = header['fpsfmtch']
+		if 'psffwhm' in header:
+			hdr['psffwhm'] = header['psffwhm']
+		if 'specphot' in header:
+			hdr['specphot'] = header['specphot']
 
 		for bb in range(0,nbands):
 			str_temp = 'fil%d' % bb
@@ -385,21 +393,29 @@ def pixel_binning(fits_fluxmap, ref_band=None, Dmin_bin=2.0, SNR=[], redc_chi2_l
 		hdr = fits.Header()
 		hdr['nfilters'] = nbands
 		hdr['refband'] = ref_band
-		hdr['RA'] = header['RA']
-		hdr['DEC'] = header['DEC']
+		if 'RA' in header:
+			hdr['RA'] = header['RA']
+		if 'DEC' in header:
+			hdr['DEC'] = header['DEC']
 		hdr['z'] = header['z']
-		hdr['GalEBV'] = header['GalEBV']
+		if 'GalEBV' in header:
+			hdr['GalEBV'] = header['GalEBV']
 		hdr['nbinsph'] = count_bin
 		hdr['nbinssp'] = count_bin_specphoto
 		hdr['unit'] = header['unit']
 		hdr['bunit'] = 'erg/s/cm^2/A'
 		hdr['structph'] = '(band,y,x)'
 		hdr['structsp'] = '(wavelength,y,x)'
-		hdr['fsamp'] = header['fsamp']    
-		hdr['pixsize'] = header['pixsize']       
-		hdr['fpsfmtch'] = header['fpsfmtch']   
-		hdr['psffwhm'] = header['psffwhm']
-		hdr['specphot'] = header['specphot']
+		if 'fsamp' in header:
+			hdr['fsamp'] = header['fsamp']
+		if 'pixsize' in header:    
+			hdr['pixsize'] = header['pixsize']       
+		if 'fpsfmtch' in header:
+			hdr['fpsfmtch'] = header['fpsfmtch']
+		if 'psffwhm' in header:
+			hdr['psffwhm'] = header['psffwhm']
+		if 'specphot' in header:
+			hdr['specphot'] = header['specphot']
 
 		for bb in range(0,nbands):
 			str_temp = 'fil%d' % bb

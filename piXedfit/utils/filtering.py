@@ -245,10 +245,15 @@ def cwave_filters(filters):
 
 	f = h5py.File(dir_file+'filters_w.hdf5', 'r')
 	nbands = len(filters)
-	cwaves = np.zeros(nbands)
-	for bb in range(0,nbands):
-		str_temp = 'cw_%s' % filters[bb]
-		cwaves[bb] = f[filters[bb]].attrs[str_temp]
+
+	if nbands>1:
+		cwaves = np.zeros(nbands)
+		for bb in range(0,nbands):
+			str_temp = 'cw_%s' % filters[bb]
+			cwaves[bb] = f[filters[bb]].attrs[str_temp]
+	else:
+		str_temp = 'cw_%s' % filters
+		cwaves = f[filters].attrs[str_temp]
 	f.close()
 
 	return cwaves

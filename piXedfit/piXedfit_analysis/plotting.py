@@ -145,7 +145,7 @@ def plot_SED_rdsps(name_sampler_fits=None, logscale_x=True, logscale_y=True, xra
 	# some parameters 
 	imf = int(header_samplers['imf'])
 	sfh_form = header_samplers['sfh_form']
-	dust_ext_law = header_samplers['dust_ext_law']
+	dust_law = header_samplers['dust_law']
 	duste_switch = header_samplers['duste_stat']
 	add_neb_emission = int(header_samplers['add_neb_emission'])
 	add_agn = header_samplers['add_agn']
@@ -154,10 +154,6 @@ def plot_SED_rdsps(name_sampler_fits=None, logscale_x=True, logscale_y=True, xra
 		igm_type = int(header_samplers['igm_type'])
 	elif add_igm_absorption == 0:
 		igm_type = 0
-
-	if duste_switch==1:
-		if 'dust_index' in header_samplers:
-			def_params_val['dust_index'] = float(header_samplers['dust_index'])
 
 	# redshift
 	free_z = int(header_samplers['free_z'])
@@ -195,7 +191,7 @@ def plot_SED_rdsps(name_sampler_fits=None, logscale_x=True, logscale_y=True, xra
 				params_val[params[pp]] = data_samplers[params[pp]][idx]
 
 		spec_SED = generate_modelSED_spec_decompose(params_val=params_val, imf=imf, duste_switch=duste_switch,
-								add_neb_emission=add_neb_emission,dust_ext_law=dust_ext_law,add_agn=add_agn,
+								add_neb_emission=add_neb_emission,dust_law=dust_law,add_agn=add_agn,
 								add_igm_absorption=add_igm_absorption,igm_type=igm_type,cosmo=cosmo,H0=H0,Om0=Om0,
 								sfh_form=sfh_form,funit=funit)
 
@@ -212,7 +208,7 @@ def plot_SED_rdsps(name_sampler_fits=None, logscale_x=True, logscale_y=True, xra
 					params_val[params[pp]] = data_minchi2_params[params[pp]][0]
 
 			spec_SED = generate_modelSED_spec_decompose(params_val=params_val, imf=imf, duste_switch=duste_switch,
-									add_neb_emission=add_neb_emission,dust_ext_law=dust_ext_law,add_agn=add_agn,
+									add_neb_emission=add_neb_emission,dust_law=dust_law,add_agn=add_agn,
 									add_igm_absorption=add_igm_absorption,igm_type=igm_type,cosmo=cosmo,H0=H0,Om0=Om0,
 									sfh_form=sfh_form,funit=funit)
 
@@ -317,7 +313,6 @@ def plot_SED_rdsps(name_sampler_fits=None, logscale_x=True, logscale_y=True, xra
 	photo_SED['flux'] = bfit_photo_SED
 
 	return name_plot,spec_SED,photo_SED
-
 
 
 def plot_SED_rdsps_with_residual(name_sampler_fits, logscale_x=True, logscale_y=True, xrange=None, yrange=None, 
@@ -452,7 +447,7 @@ def plot_SED_rdsps_with_residual(name_sampler_fits, logscale_x=True, logscale_y=
 	# some parameters 
 	imf = int(header_samplers['imf'])
 	sfh_form = header_samplers['sfh_form']
-	dust_ext_law = header_samplers['dust_ext_law']
+	dust_law = header_samplers['dust_law']
 	duste_switch = header_samplers['duste_stat']
 	add_neb_emission = int(header_samplers['add_neb_emission'])
 	add_agn = header_samplers['add_agn']
@@ -461,10 +456,6 @@ def plot_SED_rdsps_with_residual(name_sampler_fits, logscale_x=True, logscale_y=
 		igm_type = int(header_samplers['igm_type'])
 	elif add_igm_absorption == 0:
 		igm_type = 0
-
-	if duste_switch==1:
-		if 'dust_index' in header_samplers:
-			def_params_val['dust_index'] = float(header_samplers['dust_index'])
 
 	# redshift
 	free_z = int(header_samplers['free_z'])
@@ -500,10 +491,9 @@ def plot_SED_rdsps_with_residual(name_sampler_fits, logscale_x=True, logscale_y=
 		for pp in range(0,nparams):
 			if params[pp] in def_params:
 				params_val[params[pp]] = data_samplers[params[pp]][idx]
-		print (params_val)
 
 		spec_SED = generate_modelSED_spec_decompose(params_val=params_val, imf=imf, duste_switch=duste_switch,
-								add_neb_emission=add_neb_emission,dust_ext_law=dust_ext_law,add_agn=add_agn,
+								add_neb_emission=add_neb_emission,dust_law=dust_law,add_agn=add_agn,
 								add_igm_absorption=add_igm_absorption,igm_type=igm_type,cosmo=cosmo,H0=H0,Om0=Om0,
 								sfh_form=sfh_form,funit=funit)
 
@@ -511,25 +501,25 @@ def plot_SED_rdsps_with_residual(name_sampler_fits, logscale_x=True, logscale_y=
 		bfit_photo_SED = filtering(spec_SED['wave'],spec_SED['flux_total'],filters)
 
 	elif store_full_samplers == 0:
-		spec_SED = {} 
+		spec_SED = {}
+		spec_SED['wave'] = data_bfit_spec['spec_wave']
+		spec_SED['flux_total'] = convert_unit_spec_from_ergscm2A(spec_SED['wave'],data_bfit_spec['spec_flux'],funit=funit)
+		 
 		if decompose==1 or decompose==True:
 			# generate the spectrum
 			params_val = def_params_val
 			for pp in range(0,nparams):
 				if params[pp] in def_params:
 					params_val[params[pp]] = data_minchi2_params[params[pp]][0]
-
+					
 			spec_SED = generate_modelSED_spec_decompose(params_val=params_val, imf=imf, duste_switch=duste_switch,
-									add_neb_emission=add_neb_emission,dust_ext_law=dust_ext_law,add_agn=add_agn,
+									add_neb_emission=add_neb_emission,dust_law=dust_law,add_agn=add_agn,
 									add_igm_absorption=add_igm_absorption,igm_type=igm_type,cosmo=cosmo,H0=H0,Om0=Om0,
 									sfh_form=sfh_form,funit=funit)
 
-		spec_SED['wave'] = data_bfit_spec['spec_wave']
-		spec_SED['flux_total'] = convert_unit_spec_from_ergscm2A(spec_SED['wave'],data_bfit_spec['spec_flux'],funit=funit)
-		bfit_photo_SED = data_bfit_photo['photo_flux']
-
+		#bfit_photo_SED = data_bfit_photo['photo_flux']
+		bfit_photo_SED = filtering(spec_SED['wave'],spec_SED['flux_total'],filters)
 		redcd_bfit_chi2 = float(header_samplers['redcd_chi2'])
-
 
 	# plotting
 	fig1 = plt.figure(figsize=(14,7))
@@ -679,18 +669,14 @@ def plot_SED_rdsps_with_residual(name_sampler_fits, logscale_x=True, logscale_y=
 	return name_plot,spec_SED,photo_SED,residuals
 
 
-def plot_SED_mcmc(name_sampler_fits, nchains=100, logscale_x=True, logscale_y=True, xrange=None, yrange=None, wunit='micron', 
-	funit='erg/s/cm2/A', decompose=1, shadow_plot=1, add_neb_emission=None, cosmo=0, H0=70.0, Om0=0.3, gas_logu=-2.0, 
-	xticks=None, photo_color='red', fontsize_tick=20, fontsize_label=25, show_legend=True, loc_legend=2, fontsize_legend=18, 
-	markersize=100, lw=1.0, name_plot=None):
+def plot_SED_mcmc(name_sampler_fits, logscale_x=True, logscale_y=True, xrange=None, yrange=None, wunit='micron', 
+	funit='erg/s/cm2/A', decompose=1, xticks=None, photo_color='blue', fontsize_tick=20, fontsize_label=25, 
+	show_legend=True, loc_legend=2, fontsize_legend=18, markersize=100, lw=1.0, name_plot=None):
 
 	"""Function for producing an SED plot from a fitting result obtained with the MCMC method. 
 
 	:param name_sampler_fits:
 		Name of input FITS file containing sampler chains from the MCMC fitting. This FITS file must be output of :func:`singleSEDfit` or :func:`SEDfit_from_binmap` functions. 
-
-	:param nchains: (default: 100)
-		Number of randomly selected sampler chains to be used for calculating median posterior model SED.
 
 	:param logscale_x: (optional, default: True)
 		Flag stating whether the x-axis is plotted in logarithmic scale (value: True) or not (value: False).
@@ -715,33 +701,11 @@ def plot_SED_mcmc(name_sampler_fits, nchains=100, logscale_x=True, logscale_y=Tr
 	:param decompose: (default: 1)
 		Flag stating whether the best-fit model SED is broken-down into its components (value: 1 or True) or not (value: 0 or False).
 
-	:param shadow_plot: (default: 1)
-		Switch for shadow plot (a plot in which uncertainty is plotted as transprent region around the median value). 
-		Options are: (1)1 or True and (2)0 or False. If shadow_plot=0 or False, actual model SEDs are plotted.
-
-	:param add_neb_emission: (optional, default: None)
-		Flag stating whether to include emission lines. Options are: None, 0, and 1. If None, the decision whether to plot emission lines 
-		or not is based on the `add_neb_emission` flag in the header of the `name_sampler_fits` (which tells whether the emission lines modeling
-		is included in the fitting).
-
-	:param cosmo: (default: 0)
-		Choices for the cosmology. Options are: (1)'flat_LCDM' or 0, (2)'WMAP5' or 1, (3)'WMAP7' or 2, (4)'WMAP9' or 3, (5)'Planck13' or 4, (6)'Planck15' or 5.
-		These options are similar to the choices available in the `Astropy Cosmology <https://docs.astropy.org/en/stable/cosmology/#built-in-cosmologies>`_ package.
-
-	:param H0: (default: 70.0)
-		The Hubble constant at z=0. Only relevant when cosmo='flat_LCDM' is chosen.
-
-	:param Om0: (default: 0.3)
-		The Omega matter at z=0.0. Only relevant when cosmo='flat_LCDM' is chosen.
-
-	:param gas_logu: (default: -2.0)
-		Gas ionization parameter in logarithmic scale.
-
 	:param xticks: (optional, default: None)
 		List of ticks values in x-axis. If None, the default from matplotlib is used. If xticks is not None, the accepted input is in list format  
 		xticks = []. The unit should be the same as the input wunit.
 
-	:param photo_color: (optional, default: 'red')
+	:param photo_color: (optional, default: 'blue')
 		Color of photometric fluxes points (in string). The accepted input is the same as that available in matplotlib.
 
 	:param fontsize_tick: (optional, default: 20)
@@ -750,7 +714,7 @@ def plot_SED_mcmc(name_sampler_fits, nchains=100, logscale_x=True, logscale_y=Tr
 	:param show_legend: (optional, default: True)
 		Flag whether to show legend or not.
 
-	:param loc_legend: (optional, default: 4)
+	:param loc_legend: (optional, default: 2)
 		Location of the legend.
 	
 	:param fontsize_label: (optional, default: 25)
@@ -768,27 +732,6 @@ def plot_SED_mcmc(name_sampler_fits, nchains=100, logscale_x=True, logscale_y=Tr
 	:param name_plot: (optional, default: None)
 		Name of the output plot. This is optional parameter.
 
-
-	:returns name_plot:
-		Name of the output pot.
-
-	:returns wave:
-		Wavelength grids of the median posterior model SED.
-
-	:returns p16_spec_tot:
-		The 16th percentile posterior model spectroscopic SED.
-
-	:returns p50_spec_tot:
-		The 50th percentile posterior model spectroscopic SED.
-
-	:returns p84_spec_tot:
-		The 84th percentile posterior model spectroscopic SED.
-
-	:returns photo_cwave:
-		Central wavelengths of the photometric filters.
-
-	:returns p50_photo_flux:
-		Median posterior model photometric SED. 
 	"""
 
 	def_params = ['logzsol','log_tau','log_t0','log_alpha','log_beta', 'log_age','dust_index','dust1','dust2',
@@ -801,131 +744,25 @@ def plot_SED_mcmc(name_sampler_fits, nchains=100, logscale_x=True, logscale_y=Tr
 	# open the FITS file
 	hdu = fits.open(name_sampler_fits)
 	header_samplers = hdu[0].header
-	data_samplers = hdu[1].data
+	data_samplers = hdu['samplers'].data
+	data_obs_sed = hdu['obs_photo'].data
+	data_bfit_photo = hdu['bfit_photo'].data 
+	data_bfit_spec = hdu['bfit_spec'].data
 	hdu.close()
 
-	sfh_form = header_samplers['sfh_form']
-	dust_ext_law = header_samplers['dust_ext_law']
 	duste_switch = header_samplers['duste_stat'] 
-	if add_neb_emission == None:
-		add_neb_emission = int(header_samplers['add_neb_emission'])
-	else:
-		add_neb_emission = add_neb_emission
+	add_neb_emission = int(header_samplers['add_neb_emission'])
+	add_agn = int(header_samplers['add_agn'])
 
-	if add_neb_emission == 1:
-		if gas_logu == -2.0:
-			if 'gas_logu' in header_samplers: 
-				gas_logu = float(header_samplers['gas_logu'])
-			else:
-				gas_logu = -2.0
-
-	# parameters in the fitting
-	nparams = int(header_samplers['nparams'])
-	params = []
-	for pp in range(0,nparams):
-		str_temp = 'param%d' % pp
-		params.append(header_samplers[str_temp])
-
-	# filters and observed fluxes
+	# get filters
 	nbands = int(header_samplers['nfilters'])
 	filters = []
-	obs_fluxes = np.zeros(nbands)
-	obs_flux_err = np.zeros(nbands)
 	for bb in range(0,nbands):
 		str_temp = 'fil%d' % bb
 		filters.append(header_samplers[str_temp])
-		str_temp = "flux%d" % bb
-		obs_fluxes[bb] = float(header_samplers[str_temp])
-		str_temp = "flux_err%d" % bb
-		obs_flux_err[bb] = float(header_samplers[str_temp])
 
 	# central wavelength of all filters:
-	#photo_cwave = filtering.cwave_filters(filters)
 	photo_cwave = cwave_filters(filters)
-	
-	free_z = int(header_samplers['free_z'])
-	nsamplers = int(header_samplers['nrows'])
-	imf = int(header_samplers['imf'])
-
-	# AGN switch
-	add_agn = int(header_samplers['add_agn'])
-
-	# igm_absorption switch:
-	add_igm_absorption = int(header_samplers['add_igm_absorption'])
-	if add_igm_absorption == 1:
-		igm_type = int(header_samplers['igm_type'])
-	elif add_igm_absorption == 0:
-		igm_type = 0
-
-	if free_z == 0:
-		gal_z = float(header_samplers['gal_z'])
-		def_params_val['z'] = gal_z
-
-	if duste_switch==1:
-		if 'dust_index' in header_samplers:
-			def_params_val['dust_index'] = float(header_samplers['dust_index'])
-
-	# cosmology parameter:
-	if 'cosmo' in header_samplers:
-		cosmo = header_samplers['cosmo']
-		H0 = float(header_samplers['H0'])
-		Om0 = float(header_samplers['Om0'])
-	else:
-		cosmo = cosmo
-		H0 = H0
-		Om0 = Om0
-
-	# call fsps
-	global sp
-	sp = fsps.StellarPopulation(zcontinuous=1, imf_type=imf)
-
-	## exclude saturated samplers: log(SFR)~-29.99..
-	idx_sel = np.where(data_samplers['log_sfr']>-29.0)
-
-	#rand_idx = np.random.uniform(0,nsamplers,nchains)
-	rand_idx = np.random.uniform(0,len(idx_sel[0]),nchains)
-
-	rand_wave = []
-	rand_spec_tot = []
-	rand_spec_stellar = []
-	rand_spec_duste = []
-	rand_spec_agn = []
-	rand_spec_nebe = []
-	rand_photo_flux = []
-	for ii in range(0,nchains):
-		#idx = rand_idx[ii]
-		idx = idx_sel[0][int(rand_idx[ii])]
-
-		params_val = def_params_val
-		for pp in range(0,nparams):
-			params_val[params[pp]] = data_samplers[params[pp]][int(idx)]
-
-		spec_SED = generate_modelSED_spec_decompose(sp=sp,params_val=params_val, imf=imf, duste_switch=duste_switch,
-								add_neb_emission=add_neb_emission,dust_ext_law=dust_ext_law,add_agn=add_agn,add_igm_absorption=add_igm_absorption,
-								igm_type=igm_type,cosmo=cosmo,H0=H0,Om0=Om0,gas_logu=gas_logu,sfh_form=sfh_form,funit=funit)
-
-		if ii == 0:
-			if wunit==0 or wunit=='angstrom':
-				rand_wave = spec_SED['wave']
-			elif wunit==1 or wunit=='micron':
-				rand_wave = spec_SED['wave']/1.0e+4
-
-		rand_spec_tot.append(spec_SED['flux_total'])
-		rand_spec_stellar.append(spec_SED['flux_stellar'])
-
-		if add_neb_emission == 1:
-			rand_spec_nebe.append(spec_SED['flux_nebe'])
-		if duste_switch==1:
-			rand_spec_duste.append(spec_SED['flux_duste'])
-		if add_agn == 1:
-			rand_spec_agn.append(spec_SED['flux_agn'])
-
-		# photometric SED:
-		#mod_fluxes = filtering.filtering(spec_SED['wave'],spec_SED['flux_total'],filters)
-		mod_fluxes = filtering(spec_SED['wave'],spec_SED['flux_total'],filters)
-		rand_photo_flux.append(mod_fluxes)
-
-		# end of for ii: nchains
 
 	# plotting:
 	fig1 = plt.figure(figsize=(14,7))
@@ -967,14 +804,14 @@ def plot_SED_mcmc(name_sampler_fits, nchains=100, logscale_x=True, logscale_y=Tr
 
 	# convert unit of observed SED:
 	if funit=='erg/s/cm2/A' or funit==0:
-		obs_fluxes = obs_fluxes
-		obs_flux_err = obs_flux_err
+		obs_fluxes = data_obs_sed['flux']
+		obs_flux_err = data_obs_sed['flux_err']
 	elif funit=='erg/s/cm2' or funit==1:
-		obs_fluxes = np.asarray(obs_fluxes)*np.asarray(photo_cwave)
-		obs_flux_err = np.asarray(obs_flux_err)*np.asarray(photo_cwave)
+		obs_fluxes = data_obs_sed['flux']*np.asarray(photo_cwave)
+		obs_flux_err = data_obs_sed['flux_err']*np.asarray(photo_cwave)
 	elif funit=='Jy' or funit==2:
-		obs_fluxes = np.asarray(obs_fluxes)*np.asarray(photo_cwave)*np.asarray(photo_cwave)/1.0e-23/2.998e+18
-		obs_flux_err = np.asarray(obs_flux_err)*np.asarray(photo_cwave)*np.asarray(photo_cwave)/1.0e-23/2.998e+18
+		obs_fluxes = data_obs_sed['flux']*np.asarray(photo_cwave)*np.asarray(photo_cwave)/1.0e-23/2.998e+18
+		obs_flux_err = data_obs_sed['flux_err']*np.asarray(photo_cwave)*np.asarray(photo_cwave)/1.0e-23/2.998e+18
 	else:
 		print ("The input funit is not recognized!")
 		sys.exit()
@@ -984,74 +821,66 @@ def plot_SED_mcmc(name_sampler_fits, nchains=100, logscale_x=True, logscale_y=Tr
 	if yrange != None:
 		plt.ylim(yrange[0],yrange[1])
 
-	p16_spec_tot = []
-	p50_spec_tot = []
-	p84_spec_tot = []
-	if shadow_plot==1 or shadow_plot==True:
-		# total:
-		p16_spec_tot = np.percentile(rand_spec_tot,16,axis=0)
-		p50_spec_tot = np.percentile(rand_spec_tot,50,axis=0)
-		p84_spec_tot = np.percentile(rand_spec_tot,84,axis=0)
-		f1.fill_between(rand_wave,p16_spec_tot,p84_spec_tot,facecolor='gray',alpha=0.5,zorder=9)
-		if decompose==1 or decompose==True:
-			plt.plot(rand_wave,p50_spec_tot,lw=lw,color='black',zorder=9,label='total')
-		elif decompose==0 or decompose==False:
-			plt.plot(rand_wave,p50_spec_tot,lw=lw,color='black',zorder=9)
+	#==> plot best-fit model spectra
+	if wunit==0 or wunit=='angstrom':
+		spec_wave = data_bfit_spec['wave']
+	elif wunit==1 or wunit=='micron':
+		spec_wave = data_bfit_spec['wave']/1e+4
 
-		if decompose==1 or decompose==True:
-			# stellar emission
-			f1.fill_between(rand_wave,np.percentile(rand_spec_stellar,16,axis=0),np.percentile(rand_spec_stellar,84,axis=0),facecolor='orange',
-									alpha=0.25,zorder=8)
-			plt.plot(rand_wave,np.percentile(rand_spec_stellar,50,axis=0),lw=lw,color='darkorange',zorder=8,label='stellar emission')
-			# nebular emission
-			if add_neb_emission == 1:
-				f1.fill_between(rand_wave,np.percentile(rand_spec_nebe,16,axis=0),np.percentile(rand_spec_nebe,84,axis=0),
-									facecolor='cyan',alpha=0.25,zorder=8)
-				plt.plot(rand_wave,np.percentile(rand_spec_nebe,50,axis=0),lw=lw,color='darkcyan',zorder=8,label='nebular emission')
-			# dust emission
-			if duste_switch==1:
-				f1.fill_between(rand_wave,np.percentile(rand_spec_duste,16,axis=0),np.percentile(rand_spec_duste,84,axis=0),facecolor='red',
-									alpha=0.25,zorder=8)
-				plt.plot(rand_wave,np.percentile(rand_spec_duste,50,axis=0),lw=lw,color='darkred',zorder=8,label='dust emission')
-			# AGN dusty torus emission
-			if add_agn == 1:
-				f1.fill_between(rand_wave,np.percentile(rand_spec_agn,16,axis=0),np.percentile(rand_spec_agn,84,axis=0),facecolor='green',
-									alpha=0.25,zorder=8)
-				plt.plot(rand_wave,np.percentile(rand_spec_agn,50,axis=0),lw=lw,color='darkgreen',zorder=8,label='AGN torus emission')
+	p16_spec_tot = convert_unit_spec_from_ergscm2A(data_bfit_spec['wave'],data_bfit_spec['tot_p16'],funit=funit)
+	p50_spec_tot = convert_unit_spec_from_ergscm2A(data_bfit_spec['wave'],data_bfit_spec['tot_p50'],funit=funit)
+	p84_spec_tot = convert_unit_spec_from_ergscm2A(data_bfit_spec['wave'],data_bfit_spec['tot_p84'],funit=funit)
 
-			if show_legend == True:
-				plt.legend(fontsize=int(fontsize_legend), loc=loc_legend, ncol=2)
+	f1.fill_between(spec_wave,p16_spec_tot,p84_spec_tot,facecolor='gray',alpha=0.5,zorder=9)
+	if decompose==1 or decompose==True:
+		plt.plot(spec_wave,p50_spec_tot,lw=lw,color='black',zorder=9,label='total')
+	elif decompose==0 or decompose==False:
+		plt.plot(spec_wave,p50_spec_tot,lw=lw,color='black',zorder=9)
 
-	elif shadow_plot==0 or shadow_plot==False:
-		if decompose==1 or decompose==True:
-			for ii in range(0,nchains):
-				# total
-				plt.plot(rand_wave,rand_spec_tot[ii],lw=0.8,color='gray',alpha=0.6)
-				# stellar
-				plt.plot(rand_wave,rand_spec_stellar[ii],lw=0.5,color='orange',alpha=0.4)
-				if add_neb_emission == 1:
-					# nebular emission
-					plt.plot(rand_wave,rand_spec_nebe[ii],lw=0.5,color='cyan',alpha=0.4)
-				if duste_switch==1:
-					# dust emission
-					plt.plot(rand_wave,rand_spec_duste[ii],lw=0.5,color='red',alpha=0.4)
-				if add_agn == 1:
-					# AGN
-					plt.plot(rand_wave,rand_spec_agn[ii],lw=0.5,color='green',alpha=0.4)
+	if decompose==1 or decompose==True:
+		# stellar emission
+		p16_spec_stellar = convert_unit_spec_from_ergscm2A(data_bfit_spec['wave'],data_bfit_spec['stellar_p16'],funit=funit)
+		p50_spec_stellar = convert_unit_spec_from_ergscm2A(data_bfit_spec['wave'],data_bfit_spec['stellar_p50'],funit=funit)
+		p84_spec_stellar = convert_unit_spec_from_ergscm2A(data_bfit_spec['wave'],data_bfit_spec['stellar_p84'],funit=funit)
+		f1.fill_between(spec_wave,p16_spec_stellar,p84_spec_stellar,facecolor='orange',alpha=0.25,zorder=8)
+		plt.plot(spec_wave,p50_spec_stellar,lw=lw,color='darkorange',zorder=8,label='stellar emission')
 
-		elif decompose==0 or decompose==False:
-			for ii in range(0,nchains):
-				# total
-				plt.plot(rand_wave,rand_spec_tot[ii],lw=0.8,color='gray',alpha=0.6)
+		# nebular emission
+		if add_neb_emission == 1:
+			p16_spec_nebe = convert_unit_spec_from_ergscm2A(data_bfit_spec['wave'],data_bfit_spec['nebe_p16'],funit=funit)
+			p50_spec_nebe = convert_unit_spec_from_ergscm2A(data_bfit_spec['wave'],data_bfit_spec['nebe_p50'],funit=funit)
+			p84_spec_nebe = convert_unit_spec_from_ergscm2A(data_bfit_spec['wave'],data_bfit_spec['nebe_p84'],funit=funit)
+			f1.fill_between(spec_wave,p16_spec_nebe,p84_spec_nebe,facecolor='cyan',alpha=0.25,zorder=8)
+			plt.plot(spec_wave,p50_spec_nebe,lw=lw,color='darkcyan',zorder=8,label='nebular emission')
 
-	p50_photo_flux = np.percentile(rand_photo_flux,50,axis=0)
+		# dust emission
+		if duste_switch==1:
+			p16_spec_duste = convert_unit_spec_from_ergscm2A(data_bfit_spec['wave'],data_bfit_spec['duste_p16'],funit=funit)
+			p50_spec_duste = convert_unit_spec_from_ergscm2A(data_bfit_spec['wave'],data_bfit_spec['duste_p50'],funit=funit)
+			p84_spec_duste = convert_unit_spec_from_ergscm2A(data_bfit_spec['wave'],data_bfit_spec['duste_p84'],funit=funit)
+			f1.fill_between(spec_wave,p16_spec_duste,p84_spec_duste,facecolor='red',alpha=0.25,zorder=8)
+			plt.plot(spec_wave,p50_spec_duste,lw=lw,color='darkred',zorder=8,label='dust emission')
+
+		# AGN dusty torus emission
+		if add_agn == 1:
+			p16_spec_agn = convert_unit_spec_from_ergscm2A(data_bfit_spec['wave'],data_bfit_spec['agn_p16'],funit=funit)
+			p50_spec_agn = convert_unit_spec_from_ergscm2A(data_bfit_spec['wave'],data_bfit_spec['agn_p50'],funit=funit)
+			p84_spec_agn = convert_unit_spec_from_ergscm2A(data_bfit_spec['wave'],data_bfit_spec['agn_p84'],funit=funit)
+			f1.fill_between(spec_wave,p16_spec_agn,p84_spec_agn,facecolor='green',alpha=0.25,zorder=8)
+			plt.plot(spec_wave,p50_spec_agn,lw=lw,color='darkgreen',zorder=8,label='AGN torus emission')
+
+		if show_legend == True:
+			plt.legend(fontsize=int(fontsize_legend), loc=loc_legend, ncol=2)
+
+	#==> plot best-fit photometric SED
+	p50_photo_flux = convert_unit_spec_from_ergscm2A(photo_cwave,data_bfit_photo['p50'],funit=funit)
 
 	if wunit==0 or wunit=='angstrom':
 		plt.scatter(photo_cwave,p50_photo_flux, s=markersize, marker='s', lw=2, edgecolor='gray', color='none', zorder=9,alpha=0.5)
 	elif wunit==1 or wunit=='micron':
 		plt.scatter(photo_cwave/1.0e+4,p50_photo_flux, s=markersize, marker='s', lw=2, edgecolor='gray', color='none', zorder=9,alpha=0.5)
 
-	# plot observed SED:
+	#==> plot observed SED:
 	if wunit==0 or wunit=='angstrom':
 		plt.errorbar(photo_cwave,obs_fluxes,yerr=obs_flux_err,color=photo_color,markersize=1,fmt='o',zorder=10)
 		plt.scatter(photo_cwave,obs_fluxes, s=markersize, marker='s', lw=2, edgecolor=photo_color, color='none', zorder=11)
@@ -1066,25 +895,20 @@ def plot_SED_mcmc(name_sampler_fits, nchains=100, logscale_x=True, logscale_y=Tr
 		name_plot = "sed_%s.png" % (name_sampler_fits1)
 		
 	plt.savefig(name_plot)
-
-	wave = rand_wave
 	
-	return name_plot,wave,p16_spec_tot,p50_spec_tot,p84_spec_tot,photo_cwave,p50_photo_flux
+	return name_plot
 
 
-def plot_SED_mcmc_with_residual(name_sampler_fits, nchains=100, logscale_x=True, logscale_y=True, xrange=None, 
-	yrange=None, wunit='micron', funit='erg/s/cm2/A', decompose=1, shadow_plot=1, cosmo=0, H0=70.0, Om0=0.3, gas_logu=-2.0, 
-	add_neb_emission=None, xticks=None, photo_color='red', residual_range=[-1.0,1.0], fontsize_tick=18, 
-	fontsize_label=28, show_legend=True, fontsize_legend=20, markersize=100, lw=1.0, name_plot=None):
+def plot_SED_mcmc_with_residual(name_sampler_fits, logscale_x=True, logscale_y=True, xrange=None, 
+	yrange=None, wunit='micron', funit='erg/s/cm2/A', decompose=1, xticks=None, photo_color='blue', 
+	residual_range=[-1.0,1.0], fontsize_tick=18, fontsize_label=28, show_legend=True, loc_legend=2, 
+	fontsize_legend=20, markersize=100, lw=1.0, name_plot=None):
 	
 	"""Function for producing an SED plot from a fitting result obtained with the MCMC method.
 	This function add residuals (between observed SED and models) in the bottom panel of the SED plot. 
 
 	:param name_sampler_fits:
 		Name of input FITS file containing sampler chains from the MCMC fitting. This FITS file must be output of :func:`singleSEDfit` or :func:`SEDfit_from_binmap` functions.
-
-	:param nchains: (default: 100)
-		Number of randomly selected sampler chains to be used for calculating median posterior model SED.
 
 	:param logscale_x: (optional, default: True)
 		Flag stating whether the x-axis is plotted in logarithmic scale (value: True) or not (value: False).
@@ -1108,34 +932,12 @@ def plot_SED_mcmc_with_residual(name_sampler_fits, nchains=100, logscale_x=True,
 
 	:param decompose: (default: 1)
 		Flag stating whether the best-fit model SED is broken-down into its components (value: 1 or True) or not (value: 0 or False).
-
-	:param shadow_plot: (default: 1)
-		Switch for shadow plot (a plot in which uncertainty is plotted as transprent region around the median value). 
-		Options are: (1)1 or True and (2)0 or False. If shadow_plot=0 or False, actual model SEDs are plotted.
-
-	:param add_neb_emission: (default: None)
-		Flag stating whether to include emission lines. Options are: None, 0, and 1. If None, the decision whether to plot emission lines 
-		or not is based on the `add_neb_emission` flag in the header of the `name_sampler_fits` (which tells whether the emission lines modeling
-		is included in the fitting).
-
-	:param cosmo: (default: 0)
-		Choices for the cosmology. Options are: (1)'flat_LCDM' or 0, (2)'WMAP5' or 1, (3)'WMAP7' or 2, (4)'WMAP9' or 3, (5)'Planck13' or 4, (6)'Planck15' or 5.
-		These options are similar to the choices available in the `Astropy Cosmology <https://docs.astropy.org/en/stable/cosmology/#built-in-cosmologies>`_ package.
-
-	:param H0: (default: 70.0)
-		The Hubble constant at z=0. Only relevant when cosmo='flat_LCDM' is chosen.
-
-	:param Om0: (default: 0.3)
-		The Omega matter at z=0.0. Only relevant when cosmo='flat_LCDM' is chosen.
-
-	:param gas_logu: (default: -2.0)
-		Gas ionization parameter in logarithmic scale.
 	
 	:param xticks: (optional, default: None)
 		List of ticks values in x-axis. If None, the default from matplotlib is used. If xticks is not None, the accepted input is in list format  
 		xticks = []. The unit should be the same as the input wunit.
 
-	:param photo_color: (optional, default: 'red')
+	:param photo_color: (optional, default: 'blue')
 		Color of photometric fluxes points (in string). The accepted input is the same as that available in matplotlib.
 
 	:param residual_range: (default: [-1.0,1.0])
@@ -1151,6 +953,9 @@ def plot_SED_mcmc_with_residual(name_sampler_fits, nchains=100, logscale_x=True,
 	:param show_legend: (optional, default: True)
 		Flag whether to show legend or not.
 
+	:param loc_legend: (optional, default: 2)
+		Location of the legend.
+
 	:param fontsize_legend: (optional, default: 18)
 		Fontsize for the legend.
 
@@ -1162,31 +967,6 @@ def plot_SED_mcmc_with_residual(name_sampler_fits, nchains=100, logscale_x=True,
 	
 	:param name_plot: (optional, default: None)
 		Name of the output plot. This is optional parameter.
-
-
-	:returns name_plot:
-		Name of the output pot.
-
-	:returns wave:
-		Wavelength grids of the median posterior model SED.
-
-	:returns p16_spec_tot:
-		The 16th percentile posterior model spectroscopic SED.
-
-	:returns p50_spec_tot:
-		The 50th percentile posterior model spectroscopic SED.
-
-	:returns p84_spec_tot:
-		The 84th percentile posterior model spectroscopic SED.
-
-	:returns photo_cwave:
-		Central wavelengths of the photometric filters.
-
-	:returns p50_photo_flux:
-		Median posterior model photometric SED.
-
-	:returns residuals:
-		Residuals.
 	"""
 
 	from matplotlib.gridspec import GridSpec
@@ -1201,129 +981,25 @@ def plot_SED_mcmc_with_residual(name_sampler_fits, nchains=100, logscale_x=True,
 	# Open the FITS file
 	hdu = fits.open(name_sampler_fits)
 	header_samplers = hdu[0].header
-	data_samplers = hdu[1].data
+	data_samplers = hdu['samplers'].data
+	data_obs_sed = hdu['obs_photo'].data
+	data_bfit_photo = hdu['bfit_photo'].data 
+	data_bfit_spec = hdu['bfit_spec'].data
 	hdu.close()
-	
-	sfh_form = header_samplers['sfh_form']
-	dust_ext_law = header_samplers['dust_ext_law']
+
 	duste_switch = header_samplers['duste_stat'] 
-	if add_neb_emission == None:
-		add_neb_emission = int(header_samplers['add_neb_emission'])
-	else:
-		add_neb_emission = add_neb_emission
+	add_neb_emission = int(header_samplers['add_neb_emission'])
+	add_agn = int(header_samplers['add_agn'])
 
-	gas_logu = -2.0
-	if add_neb_emission == 1:
-		if gas_logu == -2.0:
-			if 'gas_logu' in header_samplers: 
-				gas_logu = float(header_samplers['gas_logu'])
-			else:
-				gas_logu = -2.0
-
-	# parameters in the fitting
-	nparams = int(header_samplers['nparams'])
-	params = []
-	for pp in range(0,nparams):
-		str_temp = 'param%d' % pp
-		params.append(header_samplers[str_temp])
-
-	# filters and observed SED
+	# get filters
 	nbands = int(header_samplers['nfilters'])
 	filters = []
-	obs_fluxes = np.zeros(nbands)
-	obs_flux_err = np.zeros(nbands)
 	for bb in range(0,nbands):
 		str_temp = 'fil%d' % bb
 		filters.append(header_samplers[str_temp])
-		str_temp = "flux%d" % bb
-		obs_fluxes[bb] = float(header_samplers[str_temp])
-		str_temp = "flux_err%d" % bb
-		obs_flux_err[bb] = float(header_samplers[str_temp])
 
-	# central wavelength of all filters
-	#photo_cwave = filtering.cwave_filters(filters)
+	# central wavelength of all filters:
 	photo_cwave = cwave_filters(filters)
-	
-	free_z = int(header_samplers['free_z'])
-	nsamplers = int(header_samplers['nrows'])
-	imf = int(header_samplers['imf'])
-	add_agn = int(header_samplers['add_agn'])
-
-	## get igm_absorption switch:
-	add_igm_absorption = int(header_samplers['add_igm_absorption'])
-	if add_igm_absorption == 1:
-		igm_type = int(header_samplers['igm_type'])
-	elif add_igm_absorption == 0:
-		igm_type = 0
-
-	# redshift
-	if free_z == 0:
-		gal_z = float(header_samplers['gal_z'])
-		def_params_val['z'] = gal_z
-
-	if duste_switch==1:
-		if 'dust_index' in header_samplers:
-			def_params_val['dust_index'] = float(header_samplers['dust_index'])
-
-	# cosmology parameter
-	if 'cosmo' in header_samplers:
-		cosmo = header_samplers['cosmo']
-		H0 = float(header_samplers['H0'])
-		Om0 = float(header_samplers['Om0'])
-	else:
-		cosmo = cosmo
-		H0 = H0
-		Om0 = Om0
-
-	# call FSPS
-	global sp
-	sp = fsps.StellarPopulation(zcontinuous=1, imf_type=imf)
-
-	## exclude saturated samplers: log(SFR)~-29.99..
-	idx_sel = np.where(data_samplers['log_sfr']>-29.0)
-
-	#rand_idx = np.random.uniform(0,nsamplers,nchains)
-	rand_idx = np.random.uniform(0,len(idx_sel[0]),nchains)
-
-	rand_wave = []
-	rand_spec_tot = []
-	rand_spec_stellar = []
-	rand_spec_duste = []
-	rand_spec_agn = []
-	rand_spec_nebe = []
-	rand_photo_flux = []
-	for ii in range(0,nchains):
-		#idx = rand_idx[ii]
-		idx = idx_sel[0][int(rand_idx[ii])]
-
-		params_val = def_params_val
-		for pp in range(0,nparams):
-			params_val[params[pp]] = data_samplers[params[pp]][int(idx)]
-
-		spec_SED = generate_modelSED_spec_decompose(sp=sp,params_val=params_val, imf=imf, duste_switch=duste_switch,
-							add_neb_emission=add_neb_emission,dust_ext_law=dust_ext_law,add_agn=add_agn,add_igm_absorption=add_igm_absorption,
-							igm_type=igm_type,cosmo=cosmo,H0=H0,Om0=Om0,gas_logu=gas_logu,sfh_form=sfh_form,funit=funit)
-
-		if ii == 0:
-			if wunit==0 or wunit=='angstrom':
-				rand_wave = spec_SED['wave']
-			elif wunit==1 or wunit=='micron':
-				rand_wave = spec_SED['wave']/1.0e+4
-
-		rand_spec_tot.append(spec_SED['flux_total'])
-		rand_spec_stellar.append(spec_SED['flux_stellar'])
-
-		if add_neb_emission == 1:
-			rand_spec_nebe.append(spec_SED['flux_nebe'])
-		if duste_switch==1:
-			rand_spec_duste.append(spec_SED['flux_duste'])
-		if add_agn == 1:
-			rand_spec_agn.append(spec_SED['flux_agn'])
-
-		# photometric SED
-		#mod_fluxes = filtering.filtering(spec_SED['wave'],spec_SED['flux_total'],filters)
-		mod_fluxes = filtering(spec_SED['wave'],spec_SED['flux_total'],filters)
-		rand_photo_flux.append(mod_fluxes)
 
 	# plotting
 	fig1 = plt.figure(figsize=(14,9))
@@ -1351,16 +1027,16 @@ def plot_SED_mcmc_with_residual(name_sampler_fits, nchains=100, logscale_x=True,
 		print ("The input funit is not recognized!")
 		sys.exit()
 
-	# Convert unit of observed SED:
+	# convert unit of observed SED:
 	if funit=='erg/s/cm2/A' or funit==0:
-		obs_fluxes = obs_fluxes
-		obs_flux_err = obs_flux_err
+		obs_fluxes = data_obs_sed['flux']
+		obs_flux_err = data_obs_sed['flux_err']
 	elif funit=='erg/s/cm2' or funit==1:
-		obs_fluxes = np.asarray(obs_fluxes)*np.asarray(photo_cwave)
-		obs_flux_err = np.asarray(obs_flux_err)*np.asarray(photo_cwave)
+		obs_fluxes = data_obs_sed['flux']*np.asarray(photo_cwave)
+		obs_flux_err = data_obs_sed['flux_err']*np.asarray(photo_cwave)
 	elif funit=='Jy' or funit==2:
-		obs_fluxes = np.asarray(obs_fluxes)*np.asarray(photo_cwave)*np.asarray(photo_cwave)/1.0e-23/2.998e+18
-		obs_flux_err = np.asarray(obs_flux_err)*np.asarray(photo_cwave)*np.asarray(photo_cwave)/1.0e-23/2.998e+18
+		obs_fluxes = data_obs_sed['flux']*np.asarray(photo_cwave)*np.asarray(photo_cwave)/1.0e-23/2.998e+18
+		obs_flux_err = data_obs_sed['flux_err']*np.asarray(photo_cwave)*np.asarray(photo_cwave)/1.0e-23/2.998e+18
 	else:
 		print ("The input funit is not recognized!")
 		sys.exit()
@@ -1384,75 +1060,66 @@ def plot_SED_mcmc_with_residual(name_sampler_fits, nchains=100, logscale_x=True,
 		xmin = xrange[0]
 		xmax = xrange[1]
 
+	#==> plot best-fit model spectra
+	if wunit==0 or wunit=='angstrom':
+		spec_wave = data_bfit_spec['wave']
+	elif wunit==1 or wunit=='micron':
+		spec_wave = data_bfit_spec['wave']/1e+4
 
-	p16_spec_tot = []
-	p50_spec_tot = []
-	p84_spec_tot = []
-	if shadow_plot==1 or shadow_plot==True:
-		# plot total:
-		p16_spec_tot = np.percentile(rand_spec_tot,16,axis=0)
-		p50_spec_tot = np.percentile(rand_spec_tot,50,axis=0)
-		p84_spec_tot = np.percentile(rand_spec_tot,84,axis=0)
-		f1.fill_between(rand_wave,p16_spec_tot,p84_spec_tot,facecolor='gray',alpha=0.5,zorder=9)
-		if decompose==1 or decompose==True:
-			plt.plot(rand_wave,p50_spec_tot,lw=lw,color='black',zorder=9,label='total')
-		elif decompose==0 or decompose==False:
-			plt.plot(rand_wave,p50_spec_tot,lw=lw,color='black',zorder=9)
+	p16_spec_tot = convert_unit_spec_from_ergscm2A(data_bfit_spec['wave'],data_bfit_spec['tot_p16'],funit=funit)
+	p50_spec_tot = convert_unit_spec_from_ergscm2A(data_bfit_spec['wave'],data_bfit_spec['tot_p50'],funit=funit)
+	p84_spec_tot = convert_unit_spec_from_ergscm2A(data_bfit_spec['wave'],data_bfit_spec['tot_p84'],funit=funit)
 
-		if decompose==1 or decompose==True:
-			# stellar emission
-			f1.fill_between(rand_wave,np.percentile(rand_spec_stellar,16,axis=0),np.percentile(rand_spec_stellar,84,axis=0),facecolor='orange',
-									alpha=0.25,zorder=8)
-			plt.plot(rand_wave,np.percentile(rand_spec_stellar,50,axis=0),lw=lw,color='darkorange',zorder=8,label='stellar emission')
-			# nebular emission
-			if add_neb_emission == 1:
-				f1.fill_between(rand_wave,np.percentile(rand_spec_nebe,16,axis=0),np.percentile(rand_spec_nebe,84,axis=0),
-									facecolor='cyan',alpha=0.25,zorder=8)
-				plt.plot(rand_wave,np.percentile(rand_spec_nebe,50,axis=0),lw=lw,color='darkcyan',zorder=8,label='nebular emission')
-			# dust emission
-			if duste_switch==1:
-				f1.fill_between(rand_wave,np.percentile(rand_spec_duste,16,axis=0),np.percentile(rand_spec_duste,84,axis=0),facecolor='red',
-									alpha=0.25,zorder=8)
-				plt.plot(rand_wave,np.percentile(rand_spec_duste,50,axis=0),lw=lw,color='darkred',zorder=8,label='dust emission')
-			# AGN emission
-			if add_agn == 1:
-				f1.fill_between(rand_wave,np.percentile(rand_spec_agn,16,axis=0),np.percentile(rand_spec_agn,84,axis=0),facecolor='green',
-									alpha=0.25,zorder=8)
-				plt.plot(rand_wave,np.percentile(rand_spec_agn,50,axis=0),lw=lw,color='darkgreen',zorder=8,label='AGN torus emission')
+	f1.fill_between(spec_wave,p16_spec_tot,p84_spec_tot,facecolor='gray',alpha=0.5,zorder=9)
+	if decompose==1 or decompose==True:
+		plt.plot(spec_wave,p50_spec_tot,lw=lw,color='black',zorder=9,label='total')
+	elif decompose==0 or decompose==False:
+		plt.plot(spec_wave,p50_spec_tot,lw=lw,color='black',zorder=9)
 
-			if show_legend == True:
-				plt.legend(fontsize=int(fontsize_legend), loc=2, ncol=2)
+	if decompose==1 or decompose==True:
+		# stellar emission
+		p16_spec_stellar = convert_unit_spec_from_ergscm2A(data_bfit_spec['wave'],data_bfit_spec['stellar_p16'],funit=funit)
+		p50_spec_stellar = convert_unit_spec_from_ergscm2A(data_bfit_spec['wave'],data_bfit_spec['stellar_p50'],funit=funit)
+		p84_spec_stellar = convert_unit_spec_from_ergscm2A(data_bfit_spec['wave'],data_bfit_spec['stellar_p84'],funit=funit)
+		f1.fill_between(spec_wave,p16_spec_stellar,p84_spec_stellar,facecolor='orange',alpha=0.25,zorder=8)
+		plt.plot(spec_wave,p50_spec_stellar,lw=lw,color='darkorange',zorder=8,label='stellar emission')
 
-	elif shadow_plot==0 or shadow_plot==False:
-		if decompose==1 or decompose==True:
-			for ii in range(0,nchains):
-				# total
-				plt.plot(rand_wave,rand_spec_tot[ii],lw=0.8,color='gray',alpha=0.6)
-				# stellar
-				plt.plot(rand_wave,rand_spec_stellar[ii],lw=0.5,color='orange',alpha=0.4)
-				if add_neb_emission == 1:
-					# nebular emission
-					plt.plot(rand_wave,rand_spec_nebe[ii],lw=0.5,color='cyan',alpha=0.4)
-				if duste_switch==1:
-					# dust emission
-					plt.plot(rand_wave,rand_spec_duste[ii],lw=0.5,color='red',alpha=0.4)
-				if add_agn == 1:
-					# AGN
-					plt.plot(rand_wave,rand_spec_agn[ii],lw=0.5,color='green',alpha=0.4)
+		# nebular emission
+		if add_neb_emission == 1:
+			p16_spec_nebe = convert_unit_spec_from_ergscm2A(data_bfit_spec['wave'],data_bfit_spec['nebe_p16'],funit=funit)
+			p50_spec_nebe = convert_unit_spec_from_ergscm2A(data_bfit_spec['wave'],data_bfit_spec['nebe_p50'],funit=funit)
+			p84_spec_nebe = convert_unit_spec_from_ergscm2A(data_bfit_spec['wave'],data_bfit_spec['nebe_p84'],funit=funit)
+			f1.fill_between(spec_wave,p16_spec_nebe,p84_spec_nebe,facecolor='cyan',alpha=0.25,zorder=8)
+			plt.plot(spec_wave,p50_spec_nebe,lw=lw,color='darkcyan',zorder=8,label='nebular emission')
 
-		elif decompose==0 or decompose==False:
-			for ii in range(0,nchains):
-				# total
-				plt.plot(rand_wave,rand_spec_tot[ii],lw=0.8,color='gray',alpha=0.6)
+		# dust emission
+		if duste_switch==1:
+			p16_spec_duste = convert_unit_spec_from_ergscm2A(data_bfit_spec['wave'],data_bfit_spec['duste_p16'],funit=funit)
+			p50_spec_duste = convert_unit_spec_from_ergscm2A(data_bfit_spec['wave'],data_bfit_spec['duste_p50'],funit=funit)
+			p84_spec_duste = convert_unit_spec_from_ergscm2A(data_bfit_spec['wave'],data_bfit_spec['duste_p84'],funit=funit)
+			f1.fill_between(spec_wave,p16_spec_duste,p84_spec_duste,facecolor='red',alpha=0.25,zorder=8)
+			plt.plot(spec_wave,p50_spec_duste,lw=lw,color='darkred',zorder=8,label='dust emission')
 
-	p50_photo_flux = np.percentile(rand_photo_flux,50,axis=0)
+		# AGN dusty torus emission
+		if add_agn == 1:
+			p16_spec_agn = convert_unit_spec_from_ergscm2A(data_bfit_spec['wave'],data_bfit_spec['agn_p16'],funit=funit)
+			p50_spec_agn = convert_unit_spec_from_ergscm2A(data_bfit_spec['wave'],data_bfit_spec['agn_p50'],funit=funit)
+			p84_spec_agn = convert_unit_spec_from_ergscm2A(data_bfit_spec['wave'],data_bfit_spec['agn_p84'],funit=funit)
+			f1.fill_between(spec_wave,p16_spec_agn,p84_spec_agn,facecolor='green',alpha=0.25,zorder=8)
+			plt.plot(spec_wave,p50_spec_agn,lw=lw,color='darkgreen',zorder=8,label='AGN torus emission')
+
+		if show_legend == True:
+			plt.legend(fontsize=int(fontsize_legend), loc=loc_legend, ncol=2)
+
+	#==> plot best-fit photometric SED
+	p50_photo_flux = convert_unit_spec_from_ergscm2A(photo_cwave,data_bfit_photo['p50'],funit=funit)
 
 	if wunit==0 or wunit=='angstrom':
-		plt.scatter(photo_cwave,p50_photo_flux, s=markersize, marker='s', lw=2, edgecolor='gray', color='none', zorder=9,alpha=1.0)
+		plt.scatter(photo_cwave,p50_photo_flux, s=markersize, marker='s', lw=2, edgecolor='gray', color='none', zorder=9,alpha=0.5)
 	elif wunit==1 or wunit=='micron':
-		plt.scatter(photo_cwave/1.0e+4,p50_photo_flux, s=markersize, marker='s', lw=2, edgecolor='gray', color='none', zorder=9,alpha=1.0)
+		plt.scatter(photo_cwave/1.0e+4,p50_photo_flux, s=markersize, marker='s', lw=2, edgecolor='gray', color='none', zorder=9,alpha=0.5)
 
-	# observed SED
+	#==> plot observed SED:
 	if wunit==0 or wunit=='angstrom':
 		plt.errorbar(photo_cwave,obs_fluxes,yerr=obs_flux_err,color=photo_color,markersize=1,fmt='o',zorder=10)
 		plt.scatter(photo_cwave,obs_fluxes, s=markersize, marker='s', lw=2, edgecolor=photo_color, color='none', zorder=11)
@@ -1515,10 +1182,7 @@ def plot_SED_mcmc_with_residual(name_sampler_fits, nchains=100, logscale_x=True,
 	plt.subplots_adjust(left=0.25, right=0.98, bottom=0.25, top=0.98)
 	plt.savefig(name_plot)
 
-	wave = rand_wave
-
-	return name_plot,wave,p16_spec_tot,p50_spec_tot,p84_spec_tot,photo_cwave,p50_photo_flux,residuals
-
+	return name_plot
 
 
 def plot_corner(name_sampler_fits, params=['log_sfr','log_mass','log_dustmass','log_fagn','log_fagn_bol','log_tauagn',

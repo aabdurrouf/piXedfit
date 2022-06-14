@@ -186,14 +186,12 @@
 <span id="pixedfit-analysis"></span><h1>piXedfit_analysis<a class="headerlink" href="#module-piXedfit.piXedfit_analysis" title="Permalink to this headline">¶</a></h1>
 <dl class="py function">
 <dt id="piXedfit.piXedfit_analysis.plot_SED_mcmc">
-<code class="sig-prename descclassname">piXedfit.piXedfit_analysis.</code><code class="sig-name descname">plot_SED_mcmc</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">name_sampler_fits</span></em>, <em class="sig-param"><span class="n">nchains</span><span class="o">=</span><span class="default_value">100</span></em>, <em class="sig-param"><span class="n">logscale_x</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">logscale_y</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">xrange</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">yrange</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">wunit</span><span class="o">=</span><span class="default_value">'micron'</span></em>, <em class="sig-param"><span class="n">funit</span><span class="o">=</span><span class="default_value">'erg/s/cm2/A'</span></em>, <em class="sig-param"><span class="n">decompose</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">shadow_plot</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">add_neb_emission</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">cosmo</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">H0</span><span class="o">=</span><span class="default_value">70.0</span></em>, <em class="sig-param"><span class="n">Om0</span><span class="o">=</span><span class="default_value">0.3</span></em>, <em class="sig-param"><span class="n">gas_logu</span><span class="o">=</span><span class="default_value">- 2.0</span></em>, <em class="sig-param"><span class="n">xticks</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">photo_color</span><span class="o">=</span><span class="default_value">'red'</span></em>, <em class="sig-param"><span class="n">fontsize_tick</span><span class="o">=</span><span class="default_value">20</span></em>, <em class="sig-param"><span class="n">fontsize_label</span><span class="o">=</span><span class="default_value">25</span></em>, <em class="sig-param"><span class="n">show_legend</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">loc_legend</span><span class="o">=</span><span class="default_value">2</span></em>, <em class="sig-param"><span class="n">fontsize_legend</span><span class="o">=</span><span class="default_value">18</span></em>, <em class="sig-param"><span class="n">markersize</span><span class="o">=</span><span class="default_value">100</span></em>, <em class="sig-param"><span class="n">lw</span><span class="o">=</span><span class="default_value">1.0</span></em>, <em class="sig-param"><span class="n">name_plot</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#piXedfit.piXedfit_analysis.plot_SED_mcmc" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">piXedfit.piXedfit_analysis.</code><code class="sig-name descname">plot_SED_mcmc</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">name_sampler_fits</span></em>, <em class="sig-param"><span class="n">logscale_x</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">logscale_y</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">xrange</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">yrange</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">wunit</span><span class="o">=</span><span class="default_value">'micron'</span></em>, <em class="sig-param"><span class="n">funit</span><span class="o">=</span><span class="default_value">'erg/s/cm2/A'</span></em>, <em class="sig-param"><span class="n">decompose</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">xticks</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">photo_color</span><span class="o">=</span><span class="default_value">'blue'</span></em>, <em class="sig-param"><span class="n">fontsize_tick</span><span class="o">=</span><span class="default_value">20</span></em>, <em class="sig-param"><span class="n">fontsize_label</span><span class="o">=</span><span class="default_value">25</span></em>, <em class="sig-param"><span class="n">show_legend</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">loc_legend</span><span class="o">=</span><span class="default_value">2</span></em>, <em class="sig-param"><span class="n">fontsize_legend</span><span class="o">=</span><span class="default_value">18</span></em>, <em class="sig-param"><span class="n">markersize</span><span class="o">=</span><span class="default_value">100</span></em>, <em class="sig-param"><span class="n">lw</span><span class="o">=</span><span class="default_value">1.0</span></em>, <em class="sig-param"><span class="n">name_plot</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#piXedfit.piXedfit_analysis.plot_SED_mcmc" title="Permalink to this definition">¶</a></dt>
 <dd><p>Function for producing an SED plot from a fitting result obtained with the MCMC method.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>name_sampler_fits</strong> – Name of input FITS file containing sampler chains from the MCMC fitting. This FITS file must be output of <code class="xref py py-func docutils literal notranslate"><span class="pre">singleSEDfit()</span></code> or <code class="xref py py-func docutils literal notranslate"><span class="pre">SEDfit_from_binmap()</span></code> functions.</p></li>
-<li><p><strong>nchains</strong> – (default: 100)
-Number of randomly selected sampler chains to be used for calculating median posterior model SED.</p></li>
 <li><p><strong>logscale_x</strong> – (optional, default: True)
 Flag stating whether the x-axis is plotted in logarithmic scale (value: True) or not (value: False).</p></li>
 <li><p><strong>logscale_y</strong> – (optional, default: True)
@@ -210,32 +208,16 @@ Wavelength unit. Options are: (1)0 or ‘angstrom’ for Angstrom unit and (2)1 
 Flux unit. Options are: (1)0 or ‘erg/s/cm2/A’, (2)1 or ‘erg/s/cm2’, and (3)2 or ‘Jy’.</p></li>
 <li><p><strong>decompose</strong> – (default: 1)
 Flag stating whether the best-fit model SED is broken-down into its components (value: 1 or True) or not (value: 0 or False).</p></li>
-<li><p><strong>shadow_plot</strong> – (default: 1)
-Switch for shadow plot (a plot in which uncertainty is plotted as transprent region around the median value).
-Options are: (1)1 or True and (2)0 or False. If shadow_plot=0 or False, actual model SEDs are plotted.</p></li>
-<li><p><strong>add_neb_emission</strong> – (optional, default: None)
-Flag stating whether to include emission lines. Options are: None, 0, and 1. If None, the decision whether to plot emission lines
-or not is based on the <cite>add_neb_emission</cite> flag in the header of the <cite>name_sampler_fits</cite> (which tells whether the emission lines modeling
-is included in the fitting).</p></li>
-<li><p><strong>cosmo</strong> – (default: 0)
-Choices for the cosmology. Options are: (1)’flat_LCDM’ or 0, (2)’WMAP5’ or 1, (3)’WMAP7’ or 2, (4)’WMAP9’ or 3, (5)’Planck13’ or 4, (6)’Planck15’ or 5.
-These options are similar to the choices available in the <a class="reference external" href="https://docs.astropy.org/en/stable/cosmology/#built-in-cosmologies">Astropy Cosmology</a> package.</p></li>
-<li><p><strong>H0</strong> – (default: 70.0)
-The Hubble constant at z=0. Only relevant when cosmo=’flat_LCDM’ is chosen.</p></li>
-<li><p><strong>Om0</strong> – (default: 0.3)
-The Omega matter at z=0.0. Only relevant when cosmo=’flat_LCDM’ is chosen.</p></li>
-<li><p><strong>gas_logu</strong> – (default: -2.0)
-Gas ionization parameter in logarithmic scale.</p></li>
 <li><p><strong>xticks</strong> – (optional, default: None)
 List of ticks values in x-axis. If None, the default from matplotlib is used. If xticks is not None, the accepted input is in list format
 xticks = []. The unit should be the same as the input wunit.</p></li>
-<li><p><strong>photo_color</strong> – (optional, default: ‘red’)
+<li><p><strong>photo_color</strong> – (optional, default: ‘blue’)
 Color of photometric fluxes points (in string). The accepted input is the same as that available in matplotlib.</p></li>
 <li><p><strong>fontsize_tick</strong> – (optional, default: 20)
 Fontsize for the tick. Only relevant if xticks is not None.</p></li>
 <li><p><strong>show_legend</strong> – (optional, default: True)
 Flag whether to show legend or not.</p></li>
-<li><p><strong>loc_legend</strong> – (optional, default: 4)
+<li><p><strong>loc_legend</strong> – (optional, default: 2)
 Location of the legend.</p></li>
 <li><p><strong>fontsize_label</strong> – (optional, default: 25)
 Fontsize for the x- and y-axis labels.</p></li>
@@ -249,41 +231,18 @@ Line width of the model SEDs.</p></li>
 Name of the output plot. This is optional parameter.</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns name_plot</dt>
-<dd class="field-even"><p>Name of the output pot.</p>
-</dd>
-<dt class="field-odd">Returns wave</dt>
-<dd class="field-odd"><p>Wavelength grids of the median posterior model SED.</p>
-</dd>
-<dt class="field-even">Returns p16_spec_tot</dt>
-<dd class="field-even"><p>The 16th percentile posterior model spectroscopic SED.</p>
-</dd>
-<dt class="field-odd">Returns p50_spec_tot</dt>
-<dd class="field-odd"><p>The 50th percentile posterior model spectroscopic SED.</p>
-</dd>
-<dt class="field-even">Returns p84_spec_tot</dt>
-<dd class="field-even"><p>The 84th percentile posterior model spectroscopic SED.</p>
-</dd>
-<dt class="field-odd">Returns photo_cwave</dt>
-<dd class="field-odd"><p>Central wavelengths of the photometric filters.</p>
-</dd>
-<dt class="field-even">Returns p50_photo_flux</dt>
-<dd class="field-even"><p>Median posterior model photometric SED.</p>
-</dd>
 </dl>
 </dd></dl>
 
 <dl class="py function">
 <dt id="piXedfit.piXedfit_analysis.plot_SED_mcmc_with_residual">
-<code class="sig-prename descclassname">piXedfit.piXedfit_analysis.</code><code class="sig-name descname">plot_SED_mcmc_with_residual</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">name_sampler_fits</span></em>, <em class="sig-param"><span class="n">nchains</span><span class="o">=</span><span class="default_value">100</span></em>, <em class="sig-param"><span class="n">logscale_x</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">logscale_y</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">xrange</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">yrange</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">wunit</span><span class="o">=</span><span class="default_value">'micron'</span></em>, <em class="sig-param"><span class="n">funit</span><span class="o">=</span><span class="default_value">'erg/s/cm2/A'</span></em>, <em class="sig-param"><span class="n">decompose</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">shadow_plot</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">cosmo</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">H0</span><span class="o">=</span><span class="default_value">70.0</span></em>, <em class="sig-param"><span class="n">Om0</span><span class="o">=</span><span class="default_value">0.3</span></em>, <em class="sig-param"><span class="n">gas_logu</span><span class="o">=</span><span class="default_value">- 2.0</span></em>, <em class="sig-param"><span class="n">add_neb_emission</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">xticks</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">photo_color</span><span class="o">=</span><span class="default_value">'red'</span></em>, <em class="sig-param"><span class="n">residual_range</span><span class="o">=</span><span class="default_value">[- 1.0, 1.0]</span></em>, <em class="sig-param"><span class="n">fontsize_tick</span><span class="o">=</span><span class="default_value">18</span></em>, <em class="sig-param"><span class="n">fontsize_label</span><span class="o">=</span><span class="default_value">28</span></em>, <em class="sig-param"><span class="n">show_legend</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">fontsize_legend</span><span class="o">=</span><span class="default_value">20</span></em>, <em class="sig-param"><span class="n">markersize</span><span class="o">=</span><span class="default_value">100</span></em>, <em class="sig-param"><span class="n">lw</span><span class="o">=</span><span class="default_value">1.0</span></em>, <em class="sig-param"><span class="n">name_plot</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#piXedfit.piXedfit_analysis.plot_SED_mcmc_with_residual" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">piXedfit.piXedfit_analysis.</code><code class="sig-name descname">plot_SED_mcmc_with_residual</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">name_sampler_fits</span></em>, <em class="sig-param"><span class="n">logscale_x</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">logscale_y</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">xrange</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">yrange</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">wunit</span><span class="o">=</span><span class="default_value">'micron'</span></em>, <em class="sig-param"><span class="n">funit</span><span class="o">=</span><span class="default_value">'erg/s/cm2/A'</span></em>, <em class="sig-param"><span class="n">decompose</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">xticks</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">photo_color</span><span class="o">=</span><span class="default_value">'blue'</span></em>, <em class="sig-param"><span class="n">residual_range</span><span class="o">=</span><span class="default_value">[- 1.0, 1.0]</span></em>, <em class="sig-param"><span class="n">fontsize_tick</span><span class="o">=</span><span class="default_value">18</span></em>, <em class="sig-param"><span class="n">fontsize_label</span><span class="o">=</span><span class="default_value">28</span></em>, <em class="sig-param"><span class="n">show_legend</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">loc_legend</span><span class="o">=</span><span class="default_value">2</span></em>, <em class="sig-param"><span class="n">fontsize_legend</span><span class="o">=</span><span class="default_value">20</span></em>, <em class="sig-param"><span class="n">markersize</span><span class="o">=</span><span class="default_value">100</span></em>, <em class="sig-param"><span class="n">lw</span><span class="o">=</span><span class="default_value">1.0</span></em>, <em class="sig-param"><span class="n">name_plot</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#piXedfit.piXedfit_analysis.plot_SED_mcmc_with_residual" title="Permalink to this definition">¶</a></dt>
 <dd><p>Function for producing an SED plot from a fitting result obtained with the MCMC method.
 This function add residuals (between observed SED and models) in the bottom panel of the SED plot.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>name_sampler_fits</strong> – Name of input FITS file containing sampler chains from the MCMC fitting. This FITS file must be output of <code class="xref py py-func docutils literal notranslate"><span class="pre">singleSEDfit()</span></code> or <code class="xref py py-func docutils literal notranslate"><span class="pre">SEDfit_from_binmap()</span></code> functions.</p></li>
-<li><p><strong>nchains</strong> – (default: 100)
-Number of randomly selected sampler chains to be used for calculating median posterior model SED.</p></li>
 <li><p><strong>logscale_x</strong> – (optional, default: True)
 Flag stating whether the x-axis is plotted in logarithmic scale (value: True) or not (value: False).</p></li>
 <li><p><strong>logscale_y</strong> – (optional, default: True)
@@ -300,27 +259,10 @@ Wavelength unit. Options are: (1)0 or ‘angstrom’ for Angstrom unit and (2)1 
 Flux unit. Options are: (1)0 or ‘erg/s/cm2/A’, (2)1 or ‘erg/s/cm2’, and (3)2 or ‘Jy’.</p></li>
 <li><p><strong>decompose</strong> – (default: 1)
 Flag stating whether the best-fit model SED is broken-down into its components (value: 1 or True) or not (value: 0 or False).</p></li>
-<li><p><strong>shadow_plot</strong> – (default: 1)
-Switch for shadow plot (a plot in which uncertainty is plotted as transprent region around the median value).
-Options are: (1)1 or True and (2)0 or False. If shadow_plot=0 or False, actual model SEDs are plotted.</p></li>
-<li><p><strong>add_neb_emission</strong> – (default: None)
-Flag stating whether to include emission lines. Options are: None, 0, and 1. If None, the decision whether to plot emission lines
-or not is based on the <cite>add_neb_emission</cite> flag in the header of the <cite>name_sampler_fits</cite> (which tells whether the emission lines modeling
-is included in the fitting).</p></li>
-<li><p><strong>cosmo</strong> – <p>(default: 0)
-Choices for the cosmology. Options are: (1)’flat_LCDM’ or 0, (2)’WMAP5’ or 1, (3)’WMAP7’ or 2, (4)’WMAP9’ or 3, (5)’Planck13’ or 4, (6)’Planck15’ or 5.
-These options are similar to the choices available in the <a class="reference external" href="https://docs.astropy.org/en/stable/cosmology/#built-in-cosmologies">Astropy Cosmology</a> package.</p>
-</p></li>
-<li><p><strong>H0</strong> – (default: 70.0)
-The Hubble constant at z=0. Only relevant when cosmo=’flat_LCDM’ is chosen.</p></li>
-<li><p><strong>Om0</strong> – (default: 0.3)
-The Omega matter at z=0.0. Only relevant when cosmo=’flat_LCDM’ is chosen.</p></li>
-<li><p><strong>gas_logu</strong> – (default: -2.0)
-Gas ionization parameter in logarithmic scale.</p></li>
 <li><p><strong>xticks</strong> – (optional, default: None)
 List of ticks values in x-axis. If None, the default from matplotlib is used. If xticks is not None, the accepted input is in list format
 xticks = []. The unit should be the same as the input wunit.</p></li>
-<li><p><strong>photo_color</strong> – (optional, default: ‘red’)
+<li><p><strong>photo_color</strong> – (optional, default: ‘blue’)
 Color of photometric fluxes points (in string). The accepted input is the same as that available in matplotlib.</p></li>
 <li><p><strong>residual_range</strong> – (default: [-1.0,1.0])
 Residuals between observed SED and the median posterior model SED.
@@ -331,6 +273,8 @@ Fontsize for the tick. Only relevant if xticks is not None.</p></li>
 Fontsize for the x- and y-axis labels.</p></li>
 <li><p><strong>show_legend</strong> – (optional, default: True)
 Flag whether to show legend or not.</p></li>
+<li><p><strong>loc_legend</strong> – (optional, default: 2)
+Location of the legend.</p></li>
 <li><p><strong>fontsize_legend</strong> – (optional, default: 18)
 Fontsize for the legend.</p></li>
 <li><p><strong>markersize</strong> – (optional, default: 100)
@@ -340,30 +284,6 @@ Line width of the model SEDs.</p></li>
 <li><p><strong>name_plot</strong> – (optional, default: None)
 Name of the output plot. This is optional parameter.</p></li>
 </ul>
-</dd>
-<dt class="field-even">Returns name_plot</dt>
-<dd class="field-even"><p>Name of the output pot.</p>
-</dd>
-<dt class="field-odd">Returns wave</dt>
-<dd class="field-odd"><p>Wavelength grids of the median posterior model SED.</p>
-</dd>
-<dt class="field-even">Returns p16_spec_tot</dt>
-<dd class="field-even"><p>The 16th percentile posterior model spectroscopic SED.</p>
-</dd>
-<dt class="field-odd">Returns p50_spec_tot</dt>
-<dd class="field-odd"><p>The 50th percentile posterior model spectroscopic SED.</p>
-</dd>
-<dt class="field-even">Returns p84_spec_tot</dt>
-<dd class="field-even"><p>The 84th percentile posterior model spectroscopic SED.</p>
-</dd>
-<dt class="field-odd">Returns photo_cwave</dt>
-<dd class="field-odd"><p>Central wavelengths of the photometric filters.</p>
-</dd>
-<dt class="field-even">Returns p50_photo_flux</dt>
-<dd class="field-even"><p>Median posterior model photometric SED.</p>
-</dd>
-<dt class="field-odd">Returns residuals</dt>
-<dd class="field-odd"><p>Residuals.</p>
 </dd>
 </dl>
 </dd></dl>

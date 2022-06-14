@@ -51,23 +51,14 @@ global duste_switch
 duste_switch = int(config_data['duste_switch'])
 
 # dust extinction law
-global dust_ext_law
-dust_ext_law = int(config_data['dust_ext_law'])
-
-# whether dust_index is set fix or not
-global fix_dust_index, fix_dust_index_val
-if float(config_data['pr_dust_index_min']) == float(config_data['pr_dust_index_max']):     # dust_index is fixed
-	fix_dust_index = 1
-	fix_dust_index_val = float(config_data['pr_dust_index_min'])
-elif float(config_data['pr_dust_index_min']) != float(config_data['pr_dust_index_max']):   # dust_index varies
-	fix_dust_index = 0
-	fix_dust_index_val = 0
+global dust_law
+dust_law = int(config_data['dust_law'])
 
 # AGN dusty torus
 global add_agn 
 add_agn = int(config_data['add_agn'])
 
-# number of model SEDs that will be generated
+# number of model SEDs to be generated
 global nmodels
 nmodels = int(int(config_data['nmodels'])/size)*size
 
@@ -82,11 +73,6 @@ def_params = ['logzsol','log_tau','log_t0','log_alpha','log_beta','log_age','dus
 def_params_val={'log_mass':0.0,'z':0.001,'log_fagn':-3.0,'log_tauagn':1.0,'log_qpah':0.54,'log_umin':0.0,'log_gamma':-2.0,
 				'dust1':0.5,'dust2':0.5,'dust_index':-0.7,'log_age':1.0,'log_alpha':0.1,'log_beta':0.1,'log_t0':0.4,
 				'log_tau':0.4,'logzsol':0.0}
-
-if fix_dust_index == 1:
-	def_params_val['dust_index'] = fix_dust_index_val
-if fix_dust_index == 0:
-	def_params_val['dust_index'] = -0.7
 
 global def_params_fsps, params_assoc_fsps, status_log
 def_params_fsps = ['logzsol', 'log_tau', 'log_age', 'dust_index', 'dust1', 'dust2', 'log_gamma', 'log_umin', 
@@ -125,29 +111,29 @@ if sfh_form==0 or sfh_form==1:
 	sp.params["sf_trunc"] = 0
 	sp.params["fburst"] = 0
 	sp.params["tburst"] = 30.0
-	if dust_ext_law == 0:
+	if dust_law == 0:
 		sp.params["dust_type"] = 0  
 		sp.params["dust_tesc"] = 7.0
 		dust1_index = -1.0
 		sp.params["dust1_index"] = dust1_index
-	elif dust_ext_law == 1:
+	elif dust_law == 1:
 		sp.params["dust_type"] = 2  
 		sp.params["dust1"] = 0
 elif sfh_form==2 or sfh_form==3 or sfh_form==4:
 	sp.params["sfh"] = 3
-	if dust_ext_law == 0: 
+	if dust_law == 0: 
 		sp.params["dust_type"] = 0  
 		sp.params["dust_tesc"] = 7.0
 		dust1_index = -1.0
 		sp.params["dust1_index"] = dust1_index
-	elif dust_ext_law == 1:
+	elif dust_law == 1:
 		sp.params["dust_type"] = 2  
 		sp.params["dust1"] = 0
 
 # get number of parameters:
 global params, nparams
 free_z = 0
-params0, nparams0 = get_params(free_z, sfh_form, duste_switch, dust_ext_law, add_agn, fix_dust_index)
+params0, nparams0 = get_params(free_z, sfh_form, duste_switch, dust_law, add_agn)
 params = params0[:int(nparams0-1)]   # exclude log_mass because models are normalized to solar mass
 nparams = len(params)
 if rank == 0:
@@ -166,13 +152,18 @@ nparams_fsps = len(params_fsps)
 global priors_min, priors_max
 priors_min = np.zeros(nparams)
 priors_max = np.zeros(nparams)
-for ii in range(0,nparams): 
-	str_temp = 'pr_%s_min' % params[ii]
-	priors_min[ii] = float(config_data[str_temp])
-	str_temp = 'pr_%s_max' % params[ii]
-	priors_max[ii] = float(config_data[str_temp])
+for pp in range(0,nparams): 
+	str_temp = 'pr_%s_min' % params[pp]
+	priors_min[pp] = float(config_data[str_temp])
+	str_temp = 'pr_%s_max' % params[pp]
+	priors_max[pp] = float(config_data[str_temp])
 
-# Generate random models uniformly drawn within the input ranges
+# generate random parameters
+rand_params = np.zeros((nparams,nmodels))
+for pp in range(0,nparams):
+	rand_params[pp] = np.random.uniform(priors_min[pp],priors_max[pp],nmodels)
+
+# scattering the multiple processes
 numDataPerRank = int(nmodels/size)
 idx_mpi = np.linspace(0,nmodels-1,nmodels)
 recvbuf_idx = np.empty(numDataPerRank, dtype='d')
@@ -199,13 +190,14 @@ if add_agn == 1:
 mod_fluxes_temp = np.zeros((nwaves,numDataPerRank))
 
 # wavelength
-mod_spec_wave = np.zeros(nwaves)
+mod_spec_wave = np.zeros(nwaves) 
 
 count = 0
 for ii in recvbuf_idx:
 	params_val = def_params_val
-	for pp in range(0,nparams): 
-		temp_val = np.random.uniform(priors_min[pp],priors_max[pp],1)
+	for pp in range(0,nparams):
+		temp_val = rand_params[pp][int(ii)] 
+		#temp_val = np.random.uniform(priors_min[pp],priors_max[pp],1)
 		mod_params_temp[pp][int(count)] = temp_val
 		params_val[params[pp]] = temp_val
 
@@ -229,7 +221,7 @@ for ii in recvbuf_idx:
 	sys.stdout.write('\r')
 	sys.stdout.write('rank: %d  Calculation process: %d from %d --> %d%%' % (rank,count,len(recvbuf_idx),count*100/len(recvbuf_idx)))
 	sys.stdout.flush()
-sys.stdout.write('\n')
+#sys.stdout.write('\n')
 
 # gather the scattered data
 mod_log_mass = np.zeros(nmodels)
@@ -268,15 +260,12 @@ if rank == 0:
 		# info
 		m.attrs['imf_type'] = imf 
 		m.attrs['sfh_form'] = sfh_form
-		m.attrs['dust_ext_law'] = dust_ext_law
+		m.attrs['dust_law'] = dust_law
 		m.attrs['duste_switch'] = duste_switch
 		m.attrs['add_neb_emission'] = add_neb_emission
 		m.attrs['gas_logu'] = gas_logu
 		m.attrs['add_agn'] = add_agn
 		m.attrs['funit'] = 'L_sun/A'
-		if duste_switch==1:
-			if fix_dust_index == 1:
-				m.attrs['dust_index'] = fix_dust_index_val
 		m.attrs['nmodels'] = nmodels
 		m.attrs['nparams'] = nparams
 		for pp in range(0,nparams):
@@ -336,5 +325,5 @@ if rank == 0:
 			str_temp = 'f%d' % ii
 			s.create_dataset(str_temp, data=np.array(mod_fluxes_trans[ii]), compression="gzip")
 
-
+	sys.stdout.write('\n')
 

@@ -8,6 +8,8 @@ from astropy.io import fits
 from astropy.cosmology import *
 from scipy.interpolate import interp1d
 from scipy.stats import sigmaclip
+from scipy.stats import norm as normal
+from scipy.stats import t, gamma
 
 global PIXEDFIT_HOME
 PIXEDFIT_HOME = os.environ['PIXEDFIT_HOME']
@@ -52,7 +54,7 @@ def bayesian_sedfit_gauss(gal_z,zz):
 	count = 0
 	for ii in recvbuf_idx:
 		# get the spectral fluxes
-		str_temp = 'mod/spec/f%d' % int(ii)
+		str_temp = 'mod/spec/f%d' % idx_parmod_sel[0][int(ii)]
 		extnc_spec = f[str_temp][:]
 
 		# redshifting
@@ -98,27 +100,37 @@ def bayesian_sedfit_gauss(gal_z,zz):
 
 		chi2 = chi2_photo + chi2_spec
 
-		if gauss_likelihood_form == 0:
-			idx1 = np.where((chi_spec0>=lower) & (chi_spec0<=upper))
-			m_merge = conv_mod_spec_flux_clean[idx1[0]].tolist() + norm_fluxes.tolist()
-			d_merge = spec_flux_clean[idx1[0]].tolist() + obs_fluxes.tolist()
-			derr_merge = spec_flux_err_clean[idx1[0]].tolist() + obs_flux_err.tolist()
-			lnprob0 = ln_gauss_prob(d_merge,derr_merge,m_merge)
-		elif gauss_likelihood_form == 1:
-			lnprob0 = -0.5*chi2
+		idx1 = np.where((chi_spec0>=lower) & (chi_spec0<=upper))
+		m_merge = conv_mod_spec_flux_clean[idx1[0]].tolist() + norm_fluxes.tolist()
+		d_merge = spec_flux_clean[idx1[0]].tolist() + obs_fluxes.tolist()
+		derr_merge = spec_flux_err_clean[idx1[0]].tolist() + obs_flux_err.tolist()
+		#lnprob0 = ln_gauss_prob(d_merge,derr_merge,m_merge)
+		lnlikeli = ln_gauss_prob(d_merge,derr_merge,m_merge)
+
+		# prior and get parameters
+		lnprior = 0
+		for pp in range(0,nparams):
+			str_temp = 'mod/par/%s' % params[pp]
+			if params_priors[params[pp]]['form'] == 'gaussian':
+				lnprior += np.log(normal.pdf(f[str_temp][idx_parmod_sel[0][int(ii)]],loc=params_priors[params[pp]]['loc'],scale=params_priors[params[pp]]['scale']))
+			elif params_priors[params[pp]]['form'] == 'studentt':
+				lnprior += np.log(t.pdf(f[str_temp][idx_parmod_sel[0][int(ii)]],params_priors[params[pp]]['df'],loc=params_priors[params[pp]]['loc'],scale=params_priors[params[pp]]['scale']))
+			elif params_priors[params[pp]]['form'] == 'gamma':
+				lnprior += np.log(gamma.pdf(f[str_temp][idx_parmod_sel[0][int(ii)]],params_priors[params[pp]]['a'],loc=params_priors[params[pp]]['loc'],scale=params_priors[params[pp]]['scale']))
 
 		mod_chi2_temp[int(count)] = chi2
 		mod_chi2_photo_temp[int(count)] = chi2_photo
 		mod_redcd_chi2_spec_temp[int(count)] = chi2_spec/len(chi_spec)
-		mod_prob_temp[int(count)] = lnprob0
+		#mod_prob_temp[int(count)] = lnprob0
+		mod_prob_temp[int(count)] = lnlikeli + lnprior
 
 		# get parameters
-		for pp in range(0,nparams-1):
+		for pp in range(0,nparams-1):				# exclude z
 			str_temp = 'mod/par/%s' % params[pp]
 			if params[pp]=='log_mass' or params[pp]=='log_sfr' or params[pp]=='log_dustmass':
-				mod_params_temp[pp][int(count)] = f[str_temp][int(ii)] + log10(norm)
+				mod_params_temp[pp][int(count)] = f[str_temp][idx_parmod_sel[0][int(ii)]] + log10(norm)
 			else:
-				mod_params_temp[pp][int(count)] = f[str_temp][int(ii)]
+				mod_params_temp[pp][int(count)] = f[str_temp][idx_parmod_sel[0][int(ii)]]
 
 		count = count + 1
 
@@ -138,7 +150,7 @@ def bayesian_sedfit_gauss(gal_z,zz):
 	comm.Gather(mod_chi2_photo_temp, mod_chi2_photo, root=0)
 	comm.Gather(mod_redcd_chi2_spec_temp, mod_redcd_chi2_spec, root=0)
 	comm.Gather(mod_prob_temp, mod_prob, root=0)
-	for pp in range(0,nparams-1):
+	for pp in range(0,nparams-1):					# exclude z
 		comm.Gather(mod_params_temp[pp], mod_params[pp], root=0)
 
 	# Broadcast
@@ -149,7 +161,7 @@ def bayesian_sedfit_gauss(gal_z,zz):
 	comm.Bcast(mod_params, root=0)
 
 	# add redshift
-	mod_params[int(nparams)-1] = np.zeros(nmodels)+gal_z
+	mod_params[int(nparams)-1] = np.zeros(nmodels) + gal_z
 
 	f.close()
 
@@ -187,7 +199,7 @@ def bayesian_sedfit_student_t(gal_z,zz):
 	count = 0
 	for ii in recvbuf_idx:
 		# get the spectral fluxes
-		str_temp = 'mod/spec/f%d' % int(ii)
+		str_temp = 'mod/spec/f%d' % idx_parmod_sel[0][int(ii)]
 		extnc_spec = f[str_temp][:]
 
 		# redshifting
@@ -236,20 +248,33 @@ def bayesian_sedfit_student_t(gal_z,zz):
 		# probability
 		chi_merge = chi_photo.tolist() + chi_spec.tolist()
 		chi_merge = np.asarray(chi_merge)
-		lnprob0 = ln_student_t_prob(dof,chi_merge)
+		#lnprob0 = ln_student_t_prob(dof,chi_merge)
+		lnlikeli = ln_student_t_prob(dof,chi_merge)
+
+		# prior and get parameters
+		lnprior = 0
+		for pp in range(0,nparams):
+			str_temp = 'mod/par/%s' % params[pp]
+			if params_priors[params[pp]]['form'] == 'gaussian':
+				lnprior += np.log(normal.pdf(f[str_temp][idx_parmod_sel[0][int(ii)]],loc=params_priors[params[pp]]['loc'],scale=params_priors[params[pp]]['scale']))
+			elif params_priors[params[pp]]['form'] == 'studentt':
+				lnprior += np.log(t.pdf(f[str_temp][idx_parmod_sel[0][int(ii)]],params_priors[params[pp]]['df'],loc=params_priors[params[pp]]['loc'],scale=params_priors[params[pp]]['scale']))
+			elif params_priors[params[pp]]['form'] == 'gamma':
+				lnprior += np.log(gamma.pdf(f[str_temp][idx_parmod_sel[0][int(ii)]],params_priors[params[pp]]['a'],loc=params_priors[params[pp]]['loc'],scale=params_priors[params[pp]]['scale']))
 
 		mod_chi2_temp[int(count)] = chi2
 		mod_chi2_photo_temp[int(count)] = chi2_photo
 		mod_redcd_chi2_spec_temp[int(count)] = chi2_spec/len(chi_spec)
-		mod_prob_temp[int(count)] = lnprob0
+		#mod_prob_temp[int(count)] = lnprob0
+		mod_prob_temp[int(count)] = lnlikeli + lnprior
 
 		# get parameters
-		for pp in range(0,nparams-1):
+		for pp in range(0,nparams-1):				# exclude z
 			str_temp = 'mod/par/%s' % params[pp]
 			if params[pp]=='log_mass' or params[pp]=='log_sfr' or params[pp]=='log_dustmass':
-				mod_params_temp[pp][int(count)] = f[str_temp][int(ii)] + log10(norm)
+				mod_params_temp[pp][int(count)] = f[str_temp][idx_parmod_sel[0][int(ii)]] + log10(norm)
 			else:
-				mod_params_temp[pp][int(count)] = f[str_temp][int(ii)]
+				mod_params_temp[pp][int(count)] = f[str_temp][idx_parmod_sel[0][int(ii)]]
 
 		count = count + 1
 
@@ -269,7 +294,7 @@ def bayesian_sedfit_student_t(gal_z,zz):
 	comm.Gather(mod_chi2_photo_temp, mod_chi2_photo, root=0)
 	comm.Gather(mod_redcd_chi2_spec_temp, mod_redcd_chi2_spec, root=0)
 	comm.Gather(mod_prob_temp, mod_prob, root=0)
-	for pp in range(0,nparams-1):
+	for pp in range(0,nparams-1):					# exclude z
 		comm.Gather(mod_params_temp[pp], mod_params[pp], root=0)
 
 	# Broadcast
@@ -280,7 +305,7 @@ def bayesian_sedfit_student_t(gal_z,zz):
 	comm.Bcast(mod_params, root=0)
 
 	# add redshift
-	mod_params[int(nparams)-1] = np.zeros(nmodels)+gal_z
+	mod_params[int(nparams)-1] = np.zeros(nmodels) + gal_z
 
 	f.close()
 	
@@ -313,7 +338,8 @@ def store_to_fits(sampler_params,mod_chi2,mod_chi2_photo,mod_redcd_chi2_spec,mod
 	idx_mod_wave = np.where((redsh_mod_wave>min_spec_wave-30) & (redsh_mod_wave<max_spec_wave+30))
 
 	# get spectral fluxes
-	str_temp = 'mod/spec/f%d' % (idx % nmodels)   # modulo
+	idx1 = idx % nmodels             # modulo
+	str_temp = 'mod/spec/f%d' % idx_parmod_sel[0][idx1]
 	extnc_spec = f[str_temp][:]
 	
 	# redshifting
@@ -365,9 +391,8 @@ def store_to_fits(sampler_params,mod_chi2,mod_chi2_photo,mod_redcd_chi2_spec,mod
 
 	array_lnprob = mod_prob[idx_sel[0]] - max(mod_prob[idx_sel[0]])  # normalize
 	array_prob = np.exp(array_lnprob)
+	array_prob = array_prob/np.sum(array_prob)						 # normalize
 	tot_prob = np.sum(array_prob)
-	array_prob = array_prob/tot_prob								# normalize
-
 	params_bfits = np.zeros((nparams,2))
 	for pp in range(0,nparams):
 		array_val = sampler_params[params[pp]][idx_sel[0]]
@@ -384,12 +409,9 @@ def store_to_fits(sampler_params,mod_chi2,mod_chi2_photo,mod_redcd_chi2_spec,mod
 	hdr['imf'] = imf
 	hdr['nparams'] = nparams
 	hdr['sfh_form'] = sfh_form
-	hdr['dust_ext_law'] = dust_ext_law
+	hdr['dust_law'] = dust_law
 	hdr['nfilters'] = nbands
 	hdr['duste_stat'] = duste_switch
-	if duste_switch==1:
-		if fix_dust_index == 1:
-			hdr['dust_index'] = fix_dust_index_val
 	hdr['add_neb_emission'] = add_neb_emission
 	if add_neb_emission == 1:
 		hdr['gas_logu'] = gas_logu
@@ -421,7 +443,6 @@ def store_to_fits(sampler_params,mod_chi2,mod_chi2_photo,mod_redcd_chi2_spec,mod
 	hdr['redcd_chi2'] = bfit_chi2/(nbands+len(chi_spec))
 	hdr['redcd_chi2_spec'] = bfit_rchi2_spec
 	hdr['redcd_chi2_photo'] = bfit_rchi2_photo
-
 	hdr['perc_chi2'] = perc_chi2
 
 	# add columns
@@ -439,8 +460,9 @@ def store_to_fits(sampler_params,mod_chi2,mod_chi2_photo,mod_redcd_chi2_spec,mod
 		hdr[str_temp] = params[pp]
 		col = fits.Column(name=params[pp], format='D', array=np.array([params_bfits[pp][0],params_bfits[pp][1]]))
 		cols0.append(col)
-
 	hdr['ncols'] = col_count
+	hdr['fitmethod'] = 'rdsps'
+	hdr['storesamp'] = 0
 
 	# combine header
 	primary_hdu = fits.PrimaryHDU(header=hdr)
@@ -536,9 +558,6 @@ likelihood_form = config_data['likelihood']
 global dof
 dof = float(config_data['dof'])
 
-global gauss_likelihood_form
-gauss_likelihood_form = int(config_data['gauss_likelihood_form'])
-
 global perc_chi2
 perc_chi2 = float(config_data['perc_chi2'])
 
@@ -547,13 +566,6 @@ global cosmo, H0, Om0
 cosmo = int(config_data['cosmo'])
 H0 = float(config_data['H0'])
 Om0 = float(config_data['Om0'])
-
-# generate random redshifts
-global rand_z, nrands_z
-pr_z_min = float(config_data['pr_z_min'])
-pr_z_max = float(config_data['pr_z_max'])
-nrands_z = int(config_data['nrands_z'])
-rand_z = np.random.uniform(pr_z_min, pr_z_max, nrands_z)
 
 # input SED
 global obs_fluxes, obs_flux_err, spec_wave, spec_flux, spec_flux_err
@@ -605,37 +617,98 @@ models_spec = config_data['models_spec']
 # data of pre-calculated model SEDs
 f = h5py.File(models_spec, 'r')
 
-# number of model SEDs
-global nmodels
-nmodels = int(f['mod'].attrs['nmodels']/size)*size
-
 # get list of parameters
 global nparams, params
 nparams = int(f['mod'].attrs['nparams_all'])  # include all possible parameters
 params = []
 for pp in range(0,nparams):
-	str_temp = 'par%d' % pp 
-	params.append(f['mod'].attrs[str_temp])
+	str_temp = 'par%d' % pp
+	attrs = f['mod'].attrs[str_temp]
+	if isinstance(attrs, str) == False:
+		attrs = attrs.decode()
+	params.append(attrs)
 # add redshift
 params.append('z')
 nparams = nparams + 1
 
+if rank==0:
+	print ("Number of parameters: %d" % nparams)
+	print ("List of parameters: ")
+	print (params)
+
+# number of model SEDs
+global nmodels_parent
+nmodels_parent = int(f['mod'].attrs['nmodels'])
+
+# get the prior ranges of the parameters.
+# for RDSPS fitting, a fix parameters can't be declared when the fitting run
+# it must be applied when building the model rest-frame spectral templates
+global priors_min, priors_max
+priors_min = np.zeros(nparams)
+priors_max = np.zeros(nparams)
+for pp in range(0,nparams):
+	str_temp1 = "pr_%s_min" % params[pp]
+	if str_temp1 in config_data:
+		str_temp2 = "pr_%s_max" % params[pp]
+		priors_min[pp] = float(config_data[str_temp1])
+		priors_max[pp] = float(config_data[str_temp2])
+	else:
+		str_temp = 'mod/par/%s' % params[pp]
+		priors_min[pp] = min(f[str_temp][:])
+		priors_max[pp] = max(f[str_temp][:])
+
+# get model indexes satisfying the preferred ranges
+status_idx = np.zeros(nmodels_parent)
+for pp in range(0,nparams-1): 								# exclude z						
+	str_temp = 'mod/par/%s' % params[pp]
+	idx0 = np.where((f[str_temp][:]>=priors_min[pp]) & (f[str_temp][:]<=priors_max[pp]))
+	status_idx[idx0[0]] = status_idx[idx0[0]] + 1
+
+global idx_parmod_sel, nmodels
+idx_parmod_sel = np.where(status_idx==nparams-1) 			# exclude z	
+nmodels = int(len(idx_parmod_sel[0])/size)*size
+idx_parmod_sel = idx_parmod_sel[0:int(nmodels)]
+
+if rank == 0:
+	print ("Number of parent models in models_spec: %d" % nmodels_parent)
+	print ("Number of models to be used for fitting: %d" % nmodels)
+
 # modeling configurations
-global imf, sfh_form, dust_ext_law, duste_switch, add_neb_emission, add_agn, gas_logu, fix_dust_index, fix_dust_index_val
+global imf, sfh_form, dust_law, duste_switch, add_neb_emission, add_agn, gas_logu
 imf = f['mod'].attrs['imf_type']
 sfh_form = f['mod'].attrs['sfh_form']
-dust_ext_law = f['mod'].attrs['dust_ext_law']
+dust_law = f['mod'].attrs['dust_law']
 duste_switch = f['mod'].attrs['duste_switch']
 add_neb_emission = f['mod'].attrs['add_neb_emission']
 add_agn = f['mod'].attrs['add_agn']
 gas_logu = f['mod'].attrs['gas_logu']
-if duste_switch==1:
-	if 'dust_index' in params:
-		fix_dust_index = 0 
-	else:
-		fix_dust_index = 1 
-		fix_dust_index_val = f['mod'].attrs['dust_index']
 f.close()
+
+# get preferred priors
+nparams_in_prior = int(config_data['pr_nparams'])
+params_in_prior = []
+for pp in range(0,nparams_in_prior):
+	params_in_prior.append(config_data['pr_param%d' % pp])
+
+global params_priors
+params_priors = {}
+for pp in range(0,nparams):
+	params_priors[params[pp]] = {}
+	if params[pp] in params_in_prior:
+		params_priors[params[pp]]['form'] = config_data['pr_form_%s' % params[pp]]
+		if params_priors[params[pp]]['form'] == 'gaussian':
+			params_priors[params[pp]]['loc'] = float(config_data['pr_form_%s_gauss_loc' % params[pp]])
+			params_priors[params[pp]]['scale'] = float(config_data['pr_form_%s_gauss_scale' % params[pp]])
+		elif params_priors[params[pp]]['form'] == 'studentt':
+			params_priors[params[pp]]['df'] = float(config_data['pr_form_%s_stdt_df' % params[pp]])
+			params_priors[params[pp]]['loc'] = float(config_data['pr_form_%s_stdt_loc' % params[pp]])
+			params_priors[params[pp]]['scale'] = float(config_data['pr_form_%s_stdt_scale' % params[pp]])
+		elif params_priors[params[pp]]['form'] == 'gamma':
+			params_priors[params[pp]]['a'] = float(config_data['pr_form_%s_gamma_a' % params[pp]])
+			params_priors[params[pp]]['loc'] = float(config_data['pr_form_%s_gamma_loc' % params[pp]])
+			params_priors[params[pp]]['scale'] = float(config_data['pr_form_%s_gamma_scale' % params[pp]])
+	else:
+		params_priors[params[pp]]['form'] = 'uniform'
 
 # igm absorption
 global add_igm_absorption,igm_type
@@ -648,6 +721,11 @@ interp_filters_waves,interp_filters_trans = interp_filters_curves(filters)
 # running the calculation
 global redcd_chi2
 redcd_chi2 = 2.0
+
+# generate random redshifts
+global rand_z, nrands_z
+nrands_z = int(config_data['nrands_z'])
+rand_z = np.random.uniform(float(config_data['pr_z_min']), float(config_data['pr_z_max']), nrands_z)
 
 # iteration for calculations
 nmodels_merge = int(nmodels*nrands_z)

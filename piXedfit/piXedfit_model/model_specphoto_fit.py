@@ -1,10 +1,7 @@
 import numpy as np
 from math import pow
 import sys, os
-import random
-import fsps
 from astropy.io import fits
-from scipy.interpolate import interp1d
 
 from ..utils.redshifting import cosmo_redshifting
 from ..utils.filtering import filtering, cwave_filters, filtering_interp_filters
@@ -312,7 +309,7 @@ def generate_modelSED_spec_restframe_props(sp=None,imf_type=1,sfh_form=4,add_agn
 	if sfh_form==0 or sfh_form==1:
 		wave, extnc_spec = sp.get_spectrum(peraa=True,tage=age) 	# spectrum in L_sun/AA
 		mass = sp.stellar_mass 
-		dust_mass0 = sp.dust_mass   								# in solar mass/norm
+		dust_mass0 = sp.dust_mass   									# in solar mass/norm
 
 		if add_agn == 1:
 			# total bolometric luminosity including AGN
@@ -329,13 +326,18 @@ def generate_modelSED_spec_restframe_props(sp=None,imf_type=1,sfh_form=4,add_agn
 		else:
 			log_fagn_bol = -10.0
 
+		# normalize
+		norm0 = formed_mass/mass
+		spec_flux = extnc_spec*norm0
+		dust_mass = dust_mass0*norm0
+
 	elif sfh_form==2 or sfh_form==3 or sfh_form==4:
-		SFR_fSM,mass,wave,extnc_spec,dust_mass0 = csp_spec_restframe_fit(sp=sp,sfh_form=sfh_form,formed_mass=formed_mass,
+		SFR_fSM,mass,wave,spec_flux,dust_mass = csp_spec_restframe_fit(sp=sp,sfh_form=sfh_form,formed_mass=formed_mass,
 																age=age,tau=tau,t0=t0,alpha=alpha,beta=beta)
 
 		if add_agn == 1:
 			# total bolometric luminosity including AGN
-			lbol_agn = calc_bollum_from_spec_rest(spec_wave=wave,spec_lum=extnc_spec)
+			lbol_agn = calc_bollum_from_spec_rest(spec_wave=wave,spec_lum=spec_flux)
 
 			# bolometric luminosity excluding AGN
 			sp.params["fagn"] = 0.0		
@@ -348,11 +350,6 @@ def generate_modelSED_spec_restframe_props(sp=None,imf_type=1,sfh_form=4,add_agn
 			log_fagn_bol = np.log10(fagn_bol)
 		else:
 			log_fagn_bol = -10.0
-
-	# normalize
-	norm0 = formed_mass/mass
-	spec_flux = extnc_spec*norm0
-	dust_mass = dust_mass0*norm0
 
 	# calculate SFR:
 	SFR_exp = 1.0/np.exp(age/tau)

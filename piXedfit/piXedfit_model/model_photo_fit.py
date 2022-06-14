@@ -1,10 +1,7 @@
 import numpy as np
-import math
+from math import pow
 import sys, os
-import random
-import fsps
 from astropy.io import fits
-from scipy.interpolate import interp1d
 
 from ..utils.redshifting import cosmo_redshifting
 from ..utils.filtering import filtering, cwave_filters, filtering_interp_filters
@@ -63,7 +60,7 @@ def generate_modelSED_photo_fit(sp=None,sfh_form=4,filters=['galex_fuv','galex_n
 				'log_gamma':1, 'log_umin':1, 'log_qpah':1,'log_fagn':1, 'log_tauagn':1}
 
 	# get stellar mass:
-	formed_mass = math.pow(10.0,params_val['log_mass'])
+	formed_mass = pow(10.0,params_val['log_mass'])
 
 	# input model parameters to FSPS:
 	nparams_fsps = len(params_fsps)
@@ -72,25 +69,25 @@ def generate_modelSED_photo_fit(sp=None,sfh_form=4,filters=['galex_fuv','galex_n
 		if status_log[params_fsps[pp]] == 0:
 			sp.params[str_temp] = params_val[params_fsps[pp]]
 		elif status_log[params_fsps[pp]] == 1:
-			sp.params[str_temp] = math.pow(10.0,params_val[params_fsps[pp]])
+			sp.params[str_temp] = pow(10.0,params_val[params_fsps[pp]])
 
 	# gas phase metallicity:
 	sp.params['gas_logz'] = params_val['logzsol']
 
 	# generate the SED:
 	if sfh_form==0 or sfh_form==1:
-		age = math.pow(10.0,params_val['log_age'])
+		age = pow(10.0,params_val['log_age'])
 		wave, extnc_spec = sp.get_spectrum(peraa=True,tage=age) ## spectrum in L_sun/AA
 		# get model mass:
 		mass = sp.stellar_mass
 		# get dust mass: 
 		dust_mass0 = sp.dust_mass   ## in solar mass/norm
 	elif sfh_form==2 or sfh_form==3 or sfh_form==4:
-		t0 = math.pow(10.0,params_val['log_t0'])
-		tau = math.pow(10.0,params_val['log_tau'])
-		age = math.pow(10.0,params_val['log_age'])
-		alpha = math.pow(10.0,params_val['log_alpha'])
-		beta = math.pow(10.0,params_val['log_beta'])
+		t0 = pow(10.0,params_val['log_t0'])
+		tau = pow(10.0,params_val['log_tau'])
+		age = pow(10.0,params_val['log_age'])
+		alpha = pow(10.0,params_val['log_alpha'])
+		beta = pow(10.0,params_val['log_beta'])
 		SFR_fSM,mass,wave,extnc_spec,dust_mass0 = csp_spec_restframe_fit(sp=sp,sfh_form=sfh_form,formed_mass=formed_mass,
 																age=age,tau=tau,t0=t0,alpha=alpha,beta=beta)
 
@@ -133,12 +130,12 @@ def generate_modelSED_propphoto_nomwage_fit(sp=None,imf_type=1,sfh_form=4,filter
 	status_log = {'logzsol':0, 'log_tau':1, 'log_age':1, 'dust_index':0, 'dust1':0, 'dust2':0,
 				'log_gamma':1, 'log_umin':1, 'log_qpah':1,'log_fagn':1, 'log_tauagn':1}
 
-	formed_mass = math.pow(10.0,params_val['log_mass'])
-	t0 = math.pow(10.0,params_val['log_t0'])
-	tau = math.pow(10.0,params_val['log_tau'])
-	age = math.pow(10.0,params_val['log_age'])
-	alpha = math.pow(10.0,params_val['log_alpha'])
-	beta = math.pow(10.0,params_val['log_beta'])
+	formed_mass = pow(10.0,params_val['log_mass'])
+	t0 = pow(10.0,params_val['log_t0'])
+	tau = pow(10.0,params_val['log_tau'])
+	age = pow(10.0,params_val['log_age'])
+	alpha = pow(10.0,params_val['log_alpha'])
+	beta = pow(10.0,params_val['log_beta'])
 
 	# input model parameters to FSPS
 	nparams_fsps = len(params_fsps)
@@ -147,7 +144,7 @@ def generate_modelSED_propphoto_nomwage_fit(sp=None,imf_type=1,sfh_form=4,filter
 		if status_log[params_fsps[pp]] == 0:
 			sp.params[str_temp] = params_val[params_fsps[pp]]
 		elif status_log[params_fsps[pp]] == 1:
-			sp.params[str_temp] = math.pow(10.0,params_val[params_fsps[pp]])
+			sp.params[str_temp] = pow(10.0,params_val[params_fsps[pp]])
 
 	sp.params['imf_type'] = imf_type
 	sp.params['gas_logz'] = params_val['logzsol']
