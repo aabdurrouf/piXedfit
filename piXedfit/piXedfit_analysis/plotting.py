@@ -714,9 +714,13 @@ def plot_corner(name_sampler_fits, params=['log_sfr','log_mass','log_dustmass','
 	header_samplers = hdu[0].header
 	data_samplers = hdu[1].data
 	hdu.close()
+
+	if header_samplers['storesamp'] == 0:
+		print ("The input FITS file does not contain sampler chains!")
+		sys.exit()
+
 	# number of parameters
 	nparams = len(params)
-
 	if nparams == len(def_params):                        # if default set is used 
 		nparams_fit = int(header_samplers['ncols']) - 1   # add SFR, mw_age, log_dustmass
 		params_new = []
