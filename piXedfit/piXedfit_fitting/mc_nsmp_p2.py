@@ -24,7 +24,7 @@ def store_to_fits(nsamples=None,sampler_params=None,sampler_log_sfr=None,sampler
 
 	#==> get median best-fit model SED
 	nchains = 200
-	idx_sel = np.where(sampler_params['log_sfr']>-29.0)
+	idx_sel = np.where(sampler_log_sfr>-29.0)
 	nchains = int(nchains/size)*size
 	numDataPerRank = int(nchains/size)
 	idx_mpi = np.random.uniform(0,len(idx_sel[0])-1,nchains)

@@ -28,6 +28,19 @@ def plot_SED_rdsps_photo(filters=None,obs_photo=None,bfit_photo=None,bfit_mod_sp
 
 	from matplotlib.gridspec import GridSpec
 
+	# observed SEDs
+	nbands = len(filters)
+	obs_fluxes = obs_photo['flux']
+	obs_flux_err = obs_photo['flux_err']
+
+	# central wavelength of all filters
+	photo_cwave = cwave_filters(filters)
+
+	# convert flux unit of observed SED
+	obs_fluxes = convert_unit_spec_from_ergscm2A(photo_cwave,obs_fluxes,funit=funit)
+	obs_flux_err = convert_unit_spec_from_ergscm2A(photo_cwave,obs_flux_err,funit=funit)
+
+	# plotting
 	fig1 = plt.figure(figsize=(14,7))
 
 	gs = GridSpec(nrows=2, ncols=1, height_ratios=[3, 1], left=0.1, right=0.98, top=0.98, bottom=0.13, hspace=0.001)
@@ -75,18 +88,6 @@ def plot_SED_rdsps_photo(filters=None,obs_photo=None,bfit_photo=None,bfit_mod_sp
 	if yrange != None:
 		plt.ylim(yrange[0],yrange[1])
 
-	# observed SEDs
-	nbands = len(filters)
-	obs_fluxes = obs_photo['flux']
-	obs_flux_err = obs_photo['flux_err']
-
-	# central wavelength of all filters
-	photo_cwave = cwave_filters(filters)
-
-	# convert flux unit of observed SED
-	obs_fluxes = convert_unit_spec_from_ergscm2A(photo_cwave,obs_fluxes,funit=funit)
-	obs_flux_err = convert_unit_spec_from_ergscm2A(photo_cwave,obs_flux_err,funit=funit)
-
 	if decompose==1 or decompose==True:
 		def_params = ['logzsol','log_tau','log_t0','log_alpha','log_beta', 'log_age','dust_index','dust1','dust2',
 						'log_gamma','log_umin', 'log_qpah', 'z', 'log_fagn','log_tauagn', 'log_mass']
@@ -120,7 +121,7 @@ def plot_SED_rdsps_photo(filters=None,obs_photo=None,bfit_photo=None,bfit_mod_sp
 		for pp in range(0,int(header_samplers['nparams'])):
 			str_temp = 'param%d' % pp
 			if header_samplers[str_temp] in def_params:
-				params_val[params[pp]] = minchi2_params[header_samplers[str_temp]][0]
+				params_val[header_samplers[str_temp]] = minchi2_params[header_samplers[str_temp]][0]
 
 		spec_SED = generate_modelSED_spec_decompose(params_val=params_val,imf=imf,duste_switch=duste_switch,
 										add_neb_emission=add_neb_emission,dust_law=dust_law,add_agn=add_agn,
@@ -311,7 +312,7 @@ def plot_SED_mcmc_photo(filters=None,obs_photo=None,bfit_photo=None,bfit_mod_spe
 		plt.plot(spec_wave,p50_spec_stellar,lw=lw,color='darkorange',zorder=8,label='stellar emission')
 
 		# nebular emission
-		if add_neb_emission == 1:
+		if header_samplers['add_neb_emission'] == 1:
 			p16_spec_nebe = convert_unit_spec_from_ergscm2A(bfit_mod_spec['wave'],bfit_mod_spec['nebe_p16'],funit=funit)
 			p50_spec_nebe = convert_unit_spec_from_ergscm2A(bfit_mod_spec['wave'],bfit_mod_spec['nebe_p50'],funit=funit)
 			p84_spec_nebe = convert_unit_spec_from_ergscm2A(bfit_mod_spec['wave'],bfit_mod_spec['nebe_p84'],funit=funit)
@@ -319,7 +320,7 @@ def plot_SED_mcmc_photo(filters=None,obs_photo=None,bfit_photo=None,bfit_mod_spe
 			plt.plot(spec_wave,p50_spec_nebe,lw=lw,color='darkcyan',zorder=8,label='nebular emission')
 
 		# dust emission
-		if duste_switch==1:
+		if header_samplers['duste_stat']==1:
 			p16_spec_duste = convert_unit_spec_from_ergscm2A(bfit_mod_spec['wave'],bfit_mod_spec['duste_p16'],funit=funit)
 			p50_spec_duste = convert_unit_spec_from_ergscm2A(bfit_mod_spec['wave'],bfit_mod_spec['duste_p50'],funit=funit)
 			p84_spec_duste = convert_unit_spec_from_ergscm2A(bfit_mod_spec['wave'],bfit_mod_spec['duste_p84'],funit=funit)
@@ -327,7 +328,7 @@ def plot_SED_mcmc_photo(filters=None,obs_photo=None,bfit_photo=None,bfit_mod_spe
 			plt.plot(spec_wave,p50_spec_duste,lw=lw,color='darkred',zorder=8,label='dust emission')
 
 		# AGN dusty torus emission
-		if add_agn == 1:
+		if header_samplers['add_agn'] == 1:
 			p16_spec_agn = convert_unit_spec_from_ergscm2A(bfit_mod_spec['wave'],bfit_mod_spec['agn_p16'],funit=funit)
 			p50_spec_agn = convert_unit_spec_from_ergscm2A(bfit_mod_spec['wave'],bfit_mod_spec['agn_p50'],funit=funit)
 			p84_spec_agn = convert_unit_spec_from_ergscm2A(bfit_mod_spec['wave'],bfit_mod_spec['agn_p84'],funit=funit)
@@ -431,7 +432,8 @@ def plot_SED_specphoto(filters=None,obs_photo=None,obs_spec=None,bfit_photo=None
 	plt.setp(f1.get_xticklabels(), fontsize=int(fontsize_tick))
 	
 	plt.ylim(min(obs_spec['flux'])*0.4,max(obs_spec['flux'])*1.8)
-	plt.xlim(min(obs_spec['wave'])-200,max(obs_spec['wave'])+200)
+	xmin, xmax = min(obs_spec['wave'])-200, max(obs_spec['wave'])+200
+	plt.xlim(xmin,xmax)
 
 	plt.ylabel(r'$F_{\lambda}$ [erg $s^{-1}cm^{-2}\AA^{-1}$]', fontsize=int(fontsize_label))
 	plt.xlabel(r'Wavelength $[\AA]$', fontsize=int(fontsize_label))
@@ -440,6 +442,9 @@ def plot_SED_specphoto(filters=None,obs_photo=None,obs_spec=None,bfit_photo=None
 		f1.set_yscale('log')
 	if logscale_x == True:
 		f1.set_xscale('log')
+
+	for axis in [f1.xaxis]:
+		axis.set_major_formatter(ScalarFormatter())
 
 	f1.fill_between(obs_spec['wave'],obs_spec['flux']-obs_spec['flux_err'],obs_spec['flux']+obs_spec['flux_err'], 
 					color='gray', alpha=0.2, edgecolor='none', zorder=3)
@@ -502,6 +507,16 @@ def plot_SED_specphoto(filters=None,obs_photo=None,obs_spec=None,bfit_photo=None
 		plt.xlim(xrange[0],xrange[1])
 		xmin = xrange[0]
 		xmax = xrange[1]
+
+	if wunit==0 or wunit=='angstrom':
+		plt.xlabel(r'Wavelength $[\AA]$', fontsize=int(fontsize_label))
+	elif wunit==1 or wunit=='micron':
+		plt.xlabel(r'Wavelength [$\mu$m]', fontsize=int(fontsize_label))
+
+	if xticks != None:
+		plt.xticks(xticks)
+	for axis in [f1.xaxis]:
+		axis.set_major_formatter(ScalarFormatter())
 
 	#==> best-fit model spectrum
 	if header_samplers['fitmethod'] == 'mcmc': 

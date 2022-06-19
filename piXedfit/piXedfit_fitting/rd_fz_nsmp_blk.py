@@ -403,6 +403,7 @@ def store_to_fits(sampler_params,mod_chi2,mod_prob,fits_name_out):
 	wave = f['mod/spec/wave'][:]
 	str_temp = 'mod/spec/f%d' % idx_parmod_sel[0][idx]
 	extnc_spec = f[str_temp][:]
+	f.close()
 	redsh_wave,redsh_spec = cosmo_redshifting(DL_Gpc=DL_Gpc,cosmo=cosmo,H0=H0,Om0=Om0,z=gal_z,wave=wave,spec=extnc_spec)
 	if add_igm_absorption == 1:
 		if igm_type == 0:
@@ -415,7 +416,6 @@ def store_to_fits(sampler_params,mod_chi2,mod_prob,fits_name_out):
 	norm = model_leastnorm(obs_fluxes,obs_flux_err,fluxes)
 	mod_fluxes = norm*fluxes
 	redsh_spec = norm*redsh_spec
-	f.close()
 
 	#==> Get median likelihood parameters
 	crit_chi2 = np.percentile(mod_chi2, perc_chi2)

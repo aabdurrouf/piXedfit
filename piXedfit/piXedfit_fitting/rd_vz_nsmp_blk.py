@@ -65,15 +65,20 @@ def bayesian_sedfit_gauss(gal_z,zz):
 		# prior and get parameters
 		lnprior = 0
 		for pp in range(0,nparams):
-			str_temp = 'mod/par/%s' % params[pp]
+			if params[pp] == 'z':
+				par_val = gal_z
+			else:
+				str_temp = 'mod/par/%s' % params[pp]
+				par_val = f[str_temp][idx_parmod_sel[0][int(ii)]]  
+
 			if params_priors[params[pp]]['form'] == 'gaussian':
-				lnprior += np.log(normal.pdf(f[str_temp][idx_parmod_sel[0][int(ii)]],loc=params_priors[params[pp]]['loc'],scale=params_priors[params[pp]]['scale']))
+				lnprior += np.log(normal.pdf(par_val,loc=params_priors[params[pp]]['loc'],scale=params_priors[params[pp]]['scale']))
 			elif params_priors[params[pp]]['form'] == 'studentt':
-				lnprior += np.log(t.pdf(f[str_temp][idx_parmod_sel[0][int(ii)]],params_priors[params[pp]]['df'],loc=params_priors[params[pp]]['loc'],scale=params_priors[params[pp]]['scale']))
+				lnprior += np.log(t.pdf(par_val,params_priors[params[pp]]['df'],loc=params_priors[params[pp]]['loc'],scale=params_priors[params[pp]]['scale']))
 			elif params_priors[params[pp]]['form'] == 'gamma':
-				lnprior += np.log(gamma.pdf(f[str_temp][idx_parmod_sel[0][int(ii)]],params_priors[params[pp]]['a'],loc=params_priors[params[pp]]['loc'],scale=params_priors[params[pp]]['scale']))
+				lnprior += np.log(gamma.pdf(par_val,params_priors[params[pp]]['a'],loc=params_priors[params[pp]]['loc'],scale=params_priors[params[pp]]['scale']))
 			elif params_priors[params[pp]]['form'] == 'arbitrary':
-				lnprior += np.log(fprior(f[str_temp][idx_parmod_sel[0][int(ii)]]))
+				lnprior += np.log(fprior(par_val))
 
 		mod_chi2_temp[int(count)] = chi2
 		#mod_prob_temp[int(count)] = lnprob0
@@ -161,15 +166,20 @@ def bayesian_sedfit_student_t(gal_z,zz):
 		# prior and get parameters
 		lnprior = 0
 		for pp in range(0,nparams):
-			str_temp = 'mod/par/%s' % params[pp]
+			if params[pp] == 'z':
+				par_val = gal_z
+			else:
+				str_temp = 'mod/par/%s' % params[pp]
+				par_val = f[str_temp][idx_parmod_sel[0][int(ii)]]  
+
 			if params_priors[params[pp]]['form'] == 'gaussian':
-				lnprior += np.log(normal.pdf(f[str_temp][idx_parmod_sel[0][int(ii)]],loc=params_priors[params[pp]]['loc'],scale=params_priors[params[pp]]['scale']))
+				lnprior += np.log(normal.pdf(par_val,loc=params_priors[params[pp]]['loc'],scale=params_priors[params[pp]]['scale']))
 			elif params_priors[params[pp]]['form'] == 'studentt':
-				lnprior += np.log(t.pdf(f[str_temp][idx_parmod_sel[0][int(ii)]],params_priors[params[pp]]['df'],loc=params_priors[params[pp]]['loc'],scale=params_priors[params[pp]]['scale']))
+				lnprior += np.log(t.pdf(par_val,params_priors[params[pp]]['df'],loc=params_priors[params[pp]]['loc'],scale=params_priors[params[pp]]['scale']))
 			elif params_priors[params[pp]]['form'] == 'gamma':
-				lnprior += np.log(gamma.pdf(f[str_temp][idx_parmod_sel[0][int(ii)]],params_priors[params[pp]]['a'],loc=params_priors[params[pp]]['loc'],scale=params_priors[params[pp]]['scale']))
+				lnprior += np.log(gamma.pdf(par_val,params_priors[params[pp]]['a'],loc=params_priors[params[pp]]['loc'],scale=params_priors[params[pp]]['scale']))
 			elif params_priors[params[pp]]['form'] == 'arbitrary':
-				lnprior += np.log(fprior(f[str_temp][idx_parmod_sel[0][int(ii)]]))
+				lnprior += np.log(fprior(par_val))
 
 		mod_chi2_temp[int(count)] = chi2
 		#mod_prob_temp[int(count)] = lnprob0
@@ -222,6 +232,7 @@ def store_to_fits(sampler_params,mod_chi2,mod_prob,fits_name_out):
 	idx1 = idx % nmodels             # modulo
 	str_temp = 'mod/spec/f%d' % idx_parmod_sel[0][idx1]
 	extnc_spec = f[str_temp][:]
+	f.close()
 	# best-fit z:
 	gal_z = sampler_params['z'][idx]
 	redsh_wave,redsh_spec = cosmo_redshifting(cosmo=cosmo,H0=H0,Om0=Om0,z=gal_z,wave=wave,spec=extnc_spec)
@@ -236,7 +247,6 @@ def store_to_fits(sampler_params,mod_chi2,mod_prob,fits_name_out):
 	norm = model_leastnorm(obs_fluxes,obs_flux_err,fluxes)
 	mod_fluxes = norm*fluxes
 	redsh_spec = norm*redsh_spec
-	f.close()
 
 	#==> Get median likelihood parameters
 	crit_chi2 = np.percentile(mod_chi2, perc_chi2)
@@ -342,18 +352,18 @@ def store_to_fits(sampler_params,mod_chi2,mod_prob,fits_name_out):
 	#==> best-fit photometric SED
 	photo_cwave = cwave_filters(filters)
 	cols0 = []
-	col = fits.Column(name='photo_wave', format='D', array=np.array(photo_cwave))
+	col = fits.Column(name='wave', format='D', array=np.array(photo_cwave))
 	cols0.append(col)
-	col = fits.Column(name='photo_flux', format='D', array=np.array(mod_fluxes))
+	col = fits.Column(name='flux', format='D', array=np.array(mod_fluxes))
 	cols0.append(col)
 	cols = fits.ColDefs(cols0)
 	hdu4 = fits.BinTableHDU.from_columns(cols, name='bfit_photo')
 
 	#==> best-fit model spectrum to the observed photometric SED
 	cols0 = []
-	col = fits.Column(name='spec_wave', format='D', array=np.array(redsh_wave))
+	col = fits.Column(name='wave', format='D', array=np.array(redsh_wave))
 	cols0.append(col)
-	col = fits.Column(name='spec_flux', format='D', array=np.array(redsh_spec))
+	col = fits.Column(name='flux', format='D', array=np.array(redsh_spec))
 	cols0.append(col)
 	cols = fits.ColDefs(cols0)
 	hdu5 = fits.BinTableHDU.from_columns(cols, name='bfit_mod_spec')

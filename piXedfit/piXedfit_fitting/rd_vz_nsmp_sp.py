@@ -21,7 +21,7 @@ from piXedfit.utils.filtering import interp_filters_curves, filtering_interp_fil
 from piXedfit.utils.redshifting import cosmo_redshifting
 from piXedfit.utils.igm_absorption import igm_att_madau, igm_att_inoue
 from piXedfit.piXedfit_spectrophotometric import spec_smoothing, match_spectra_poly_legendre_fit
-from piXedfit.piXedfit_model import get_no_nebem_wave_fit
+from piXedfit.piXedfit_model import get_no_nebem_wave_fit, generate_modelSED_spec
 
 
 def bayesian_sedfit_gauss(gal_z,zz):
@@ -111,15 +111,20 @@ def bayesian_sedfit_gauss(gal_z,zz):
 		# prior and get parameters
 		lnprior = 0
 		for pp in range(0,nparams):
-			str_temp = 'mod/par/%s' % params[pp]
+			if params[pp] == 'z':
+				par_val = gal_z
+			else:
+				str_temp = 'mod/par/%s' % params[pp]
+				par_val = f[str_temp][idx_parmod_sel[0][int(ii)]]  
+
 			if params_priors[params[pp]]['form'] == 'gaussian':
-				lnprior += np.log(normal.pdf(f[str_temp][idx_parmod_sel[0][int(ii)]],loc=params_priors[params[pp]]['loc'],scale=params_priors[params[pp]]['scale']))
+				lnprior += np.log(normal.pdf(par_val,loc=params_priors[params[pp]]['loc'],scale=params_priors[params[pp]]['scale']))
 			elif params_priors[params[pp]]['form'] == 'studentt':
-				lnprior += np.log(t.pdf(f[str_temp][idx_parmod_sel[0][int(ii)]],params_priors[params[pp]]['df'],loc=params_priors[params[pp]]['loc'],scale=params_priors[params[pp]]['scale']))
+				lnprior += np.log(t.pdf(par_val,params_priors[params[pp]]['df'],loc=params_priors[params[pp]]['loc'],scale=params_priors[params[pp]]['scale']))
 			elif params_priors[params[pp]]['form'] == 'gamma':
-				lnprior += np.log(gamma.pdf(f[str_temp][idx_parmod_sel[0][int(ii)]],params_priors[params[pp]]['a'],loc=params_priors[params[pp]]['loc'],scale=params_priors[params[pp]]['scale']))
+				lnprior += np.log(gamma.pdf(par_val,params_priors[params[pp]]['a'],loc=params_priors[params[pp]]['loc'],scale=params_priors[params[pp]]['scale']))
 			elif params_priors[params[pp]]['form'] == 'arbitrary':
-				lnprior += np.log(fprior(f[str_temp][idx_parmod_sel[0][int(ii)]]))
+				lnprior += np.log(fprior(par_val))
 
 		mod_chi2_temp[int(count)] = chi2
 		mod_chi2_photo_temp[int(count)] = chi2_photo
@@ -256,15 +261,20 @@ def bayesian_sedfit_student_t(gal_z,zz):
 		# prior and get parameters
 		lnprior = 0
 		for pp in range(0,nparams):
-			str_temp = 'mod/par/%s' % params[pp]
+			if params[pp] == 'z':
+				par_val = gal_z
+			else:
+				str_temp = 'mod/par/%s' % params[pp]
+				par_val = f[str_temp][idx_parmod_sel[0][int(ii)]]  
+
 			if params_priors[params[pp]]['form'] == 'gaussian':
-				lnprior += np.log(normal.pdf(f[str_temp][idx_parmod_sel[0][int(ii)]],loc=params_priors[params[pp]]['loc'],scale=params_priors[params[pp]]['scale']))
+				lnprior += np.log(normal.pdf(par_val,loc=params_priors[params[pp]]['loc'],scale=params_priors[params[pp]]['scale']))
 			elif params_priors[params[pp]]['form'] == 'studentt':
-				lnprior += np.log(t.pdf(f[str_temp][idx_parmod_sel[0][int(ii)]],params_priors[params[pp]]['df'],loc=params_priors[params[pp]]['loc'],scale=params_priors[params[pp]]['scale']))
+				lnprior += np.log(t.pdf(par_val,params_priors[params[pp]]['df'],loc=params_priors[params[pp]]['loc'],scale=params_priors[params[pp]]['scale']))
 			elif params_priors[params[pp]]['form'] == 'gamma':
-				lnprior += np.log(gamma.pdf(f[str_temp][idx_parmod_sel[0][int(ii)]],params_priors[params[pp]]['a'],loc=params_priors[params[pp]]['loc'],scale=params_priors[params[pp]]['scale']))
+				lnprior += np.log(gamma.pdf(par_val,params_priors[params[pp]]['a'],loc=params_priors[params[pp]]['loc'],scale=params_priors[params[pp]]['scale']))
 			elif params_priors[params[pp]]['form'] == 'arbitrary':
-				lnprior += np.log(fprior(f[str_temp][idx_parmod_sel[0][int(ii)]]))
+				lnprior += np.log(fprior(par_val))
 
 		mod_chi2_temp[int(count)] = chi2
 		mod_chi2_photo_temp[int(count)] = chi2_photo
@@ -332,19 +342,16 @@ def store_to_fits(sampler_params,mod_chi2,mod_chi2_photo,mod_redcd_chi2_spec,mod
 
 	# open file containing models
 	f = h5py.File(models_spec, 'r')
-
 	# get spectral wavelength
 	wave = f['mod/spec/wave'][:]
-
 	# cut model spectrum to match range given by the IFS spectra
 	redsh_mod_wave = (1.0+gal_z)*wave
 	idx_mod_wave = np.where((redsh_mod_wave>min_spec_wave-30) & (redsh_mod_wave<max_spec_wave+30))
-
 	# get spectral fluxes
 	idx1 = idx % nmodels             # modulo
 	str_temp = 'mod/spec/f%d' % idx_parmod_sel[0][idx1]
 	extnc_spec = f[str_temp][:]
-	
+	f.close()
 	# redshifting
 	redsh_wave,redsh_spec = cosmo_redshifting(cosmo=cosmo,H0=H0,Om0=Om0,z=gal_z,wave=wave,spec=extnc_spec)
 	# IGM absorption
@@ -360,10 +367,20 @@ def store_to_fits(sampler_params,mod_chi2,mod_chi2_photo,mod_redcd_chi2_spec,mod
 	# calculate normalization
 	norm = model_leastnorm(obs_fluxes,obs_flux_err,fluxes)
 	bfit_photo_fluxes = norm*fluxes
+
+	# generate model spectrum free of emission lines
+	params_val = def_params_val
+	for pp in range(0,nparams):
+		params_val[params[pp]] = sampler_params[params[pp]][idx]
+	params_val['z'] = gal_z
+	spec_SED = generate_modelSED_spec(imf_type=imf,duste_switch=duste_switch,add_neb_emission=0,
+						dust_law=dust_law,sfh_form=sfh_form,add_agn=add_agn,add_igm_absorption=add_igm_absorption,
+						igm_type=igm_type,cosmo=cosmo,H0=H0,Om0=Om0,gas_logu=gas_logu,params_val=params_val)
+	redsh_wave1,redsh_spec1 = spec_SED['wave'], spec_SED['flux']
 		
 	# cut and normalize model spectrum
 	# smoothing model spectrum to meet resolution of IFS
-	conv_mod_spec_wave,conv_mod_spec_flux = spec_smoothing(redsh_wave[idx_mod_wave[0]],redsh_spec[idx_mod_wave[0]]*norm,spec_sigma)
+	conv_mod_spec_wave,conv_mod_spec_flux = spec_smoothing(redsh_wave1[idx_mod_wave[0]],redsh_spec1[idx_mod_wave[0]]*norm,spec_sigma)
 
 	# get model continuum
 	func = interp1d(conv_mod_spec_wave,conv_mod_spec_flux)
@@ -383,7 +400,7 @@ def store_to_fits(sampler_params,mod_chi2,mod_chi2_photo,mod_redcd_chi2_spec,mod
 	chi_spec,lower,upper = sigmaclip(chi_spec0, low=spec_chi_sigma_clip, high=spec_chi_sigma_clip)
 
 	# get best-fit model spectrum anc polynomial corrrection factor
-	corr_factor = poly_legendre(redsh_wave[idx_mod_wave[0]])
+	corr_factor = poly_legendre(redsh_wave1[idx_mod_wave[0]])
 	bfit_spec_wave = conv_mod_spec_wave
 	bfit_spec_nwaves = len(bfit_spec_wave)
 	bfit_spec_flux = corr_factor*conv_mod_spec_flux
@@ -548,6 +565,11 @@ global comm, size, rank
 comm = MPI.COMM_WORLD
 size = comm.Get_size() 
 rank = comm.Get_rank() 
+
+global def_params_val
+def_params_val={'log_mass':0.0,'z':0.001,'log_fagn':-3.0,'log_tauagn':1.0,'log_qpah':0.54,'log_umin':0.0,
+				'log_gamma':-2.0,'dust1':0.5,'dust2':0.5,'dust_index':-0.7,'log_age':1.0,'log_alpha':0.1,
+				'log_beta':0.1,'log_t0':0.4,'log_tau':0.4,'logzsol':0.0}
 
 # configuration file
 config_file = str(sys.argv[2])

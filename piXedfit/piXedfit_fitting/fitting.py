@@ -39,7 +39,8 @@ class priors:
 		# merge with the default one
 		ranges1 = def_ranges
 		for ii in range(0,len(keys)):
-			ranges1[keys[ii]] = ranges[keys[ii]]
+			if keys[ii] in ranges1:
+				ranges1[keys[ii]] = ranges[keys[ii]]
 		
 		self.ranges = ranges1
 
