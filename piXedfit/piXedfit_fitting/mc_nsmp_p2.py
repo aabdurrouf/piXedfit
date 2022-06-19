@@ -162,6 +162,7 @@ def store_to_fits(nsamples=None,sampler_params=None,sampler_log_sfr=None,sampler
 				hdr[str_temp] = fix_params_val[pp]
 		hdr['fitmethod'] = 'mcmc'
 		hdr['storesamp'] = 0
+		hdr['specphot'] = 0
 		primary_hdu = fits.PrimaryHDU(header=hdr)
 
 		#==> inferred parameters
@@ -269,7 +270,7 @@ def store_to_fits(nsamples=None,sampler_params=None,sampler_log_sfr=None,sampler
 			cols0.append(col)
 
 		cols = fits.ColDefs(cols0)
-		hdu4 = fits.BinTableHDU.from_columns(cols, name='bfit_spec')
+		hdu4 = fits.BinTableHDU.from_columns(cols, name='bfit_mod_spec')
 
 		hdul = fits.HDUList([primary_hdu, hdu1, hdu2, hdu3, hdu4])
 		hdul.writeto(fits_name_out, overwrite=True)	
@@ -604,35 +605,6 @@ elif gal_z>0.0:
 	free_z = 0
 	def_params_val['z'] = gal_z
 
-# HDF5 file containing pre-calculated model SEDs for initial fitting
-global models_spec
-models_spec = config_data['models_spec']
-
-# data of pre-calculated model SEDs for initial fitting
-f = h5py.File(models_spec, 'r')
-
-# number of model SEDs
-global nmodels_parent
-nmodels_parent = int(f['mod'].attrs['nmodels']/size)*size
-
-# get number of models to be used for initil fitting
-global nmodels
-nmodels = int(int(config_data['initfit_nmodels_mcmc'])/size)*size
-
-# modeling configurations
-global imf, sfh_form, dust_law, duste_switch, add_neb_emission, add_agn, gas_logu
-imf = f['mod'].attrs['imf_type']
-sfh_form = f['mod'].attrs['sfh_form']
-dust_law = f['mod'].attrs['dust_law']
-duste_switch = f['mod'].attrs['duste_switch']
-add_neb_emission = f['mod'].attrs['add_neb_emission']
-add_agn = f['mod'].attrs['add_agn']
-gas_logu = f['mod'].attrs['gas_logu']
-
-# length of model spectral wavelength
-nwaves_mod = len(f['mod/spec/wave'][:])
-f.close()
-
 # igm absorption
 global add_igm_absorption,igm_type
 add_igm_absorption = int(config_data['add_igm_absorption'])
@@ -671,13 +643,27 @@ else:
 name_file = temp_dir+str(sys.argv[3])
 f = h5py.File(name_file, 'r')
 
+# get modeling configuration
+global imf, sfh_form, dust_law, duste_switch, add_neb_emission, add_agn, gas_logu, nwaves_mod
+imf = f['samplers'].attrs['imf']
+sfh_form = f['samplers'].attrs['sfh_form']
+dust_law = f['samplers'].attrs['dust_law']
+duste_switch = f['samplers'].attrs['duste_switch']
+add_neb_emission = f['samplers'].attrs['add_neb_emission']
+add_agn = f['samplers'].attrs['add_agn']
+gas_logu = f['samplers'].attrs['gas_logu']
+nwaves_mod = int(f['samplers'].attrs['nwaves_mod'])
+
 # get list of free parameters
 global params, nparams
 nparams = int(f['samplers'].attrs['nparams'])
 params = []
 for pp in range(0,nparams):
-	str_temp = 'par%d' % pp 
-	params.append(f['samplers'].attrs[str_temp])
+	str_temp = 'par%d' % pp
+	attrs = f['samplers'].attrs[str_temp]
+	if isinstance(attrs, str) == False:
+		attrs = attrs.decode()
+	params.append(attrs)
 
 # get list of fix parameters, if any
 global nfix_params, fix_params, fix_params_val
@@ -687,7 +673,11 @@ if nfix_params>0:
 	fix_params_val = np.zeros(nfix_params)
 	for pp in range(0,nfix_params):
 		str_temp = 'fpar%d' % pp
-		fix_params.append(f['samplers'].attrs[str_temp])
+		attrs = f['samplers'].attrs[str_temp]
+		if isinstance(attrs, str) == False:
+			attrs = attrs.decode()
+		fix_params.append(attrs)
+
 		str_temp = 'fpar%d_val' % pp
 		fix_params_val[pp] = float(f['samplers'].attrs[str_temp])
 

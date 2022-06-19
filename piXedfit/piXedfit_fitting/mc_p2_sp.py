@@ -16,6 +16,7 @@ from piXedfit.piXedfit_model import calc_mw_age, get_dust_mass_mainSFH_fit, get_
 from piXedfit.piXedfit_model import get_dust_mass_othSFH_fit, get_sfr_dust_mass_othSFH_fit 
 from piXedfit.piXedfit_model import get_sfr_dust_mass_fagnbol_othSFH_fit, construct_SFH
 from piXedfit.piXedfit_model import get_no_nebem_wave_fit, generate_modelSED_spec_restframe_fit
+from piXedfit.piXedfit_model import generate_modelSED_spec_decompose
 from piXedfit.utils.filtering import interp_filters_curves, filtering_interp_filters 
 from piXedfit.utils.posteriors import model_leastnorm
 from piXedfit.utils.redshifting import cosmo_redshifting
@@ -40,6 +41,14 @@ def store_to_fits(nsamples=None,sampler_params=None,sampler_log_sfr=None,sampler
 	bfit_photo_flux_temp = np.zeros((nbands,numDataPerRank))
 	bfit_spec_flux_temp = np.zeros((nwaves_spec,numDataPerRank))
 	bfit_corr_factor_temp = np.zeros((nwaves_spec,numDataPerRank))
+
+	# for best-fit model spectrum to the observed photometric SED
+	bfit_spec_tot_temp = np.zeros((nwaves_mod,numDataPerRank))
+	bfit_spec_stellar_temp = np.zeros((nwaves_mod,numDataPerRank))
+	bfit_spec_duste_temp = np.zeros((nwaves_mod,numDataPerRank))
+	bfit_spec_agn_temp = np.zeros((nwaves_mod,numDataPerRank))
+	bfit_spec_nebe_temp = np.zeros((nwaves_mod,numDataPerRank))
+	bfit_spec_wave = np.zeros(nwaves_mod)
 
 	# turn off nebular emission
 	sp.params["add_neb_emission"] = False
@@ -97,17 +106,54 @@ def store_to_fits(nsamples=None,sampler_params=None,sampler_log_sfr=None,sampler
 		bfit_spec_flux_temp[:,int(count)] = corr_factor*func(spec_wave) 
 		bfit_corr_factor_temp[:,int(count)] = corr_factor
 
+		#==> for best-fit model spectrum to the observed photometric SED
+		spec_SED = generate_modelSED_spec_decompose(sp=sp,params_val=params_val,imf=imf,duste_switch=duste_switch,
+						add_neb_emission=add_neb_emission,dust_law=dust_law,add_agn=add_agn,
+						add_igm_absorption=add_igm_absorption,igm_type=igm_type,cosmo=cosmo,H0=H0,
+						Om0=Om0,gas_logu=gas_logu,sfh_form=sfh_form,funit='erg/s/cm2/A')
+		bfit_spec_wave = spec_SED['wave']
+		bfit_spec_tot_temp[:,int(count)] = spec_SED['flux_total']
+		bfit_spec_stellar_temp[:,int(count)] = spec_SED['flux_stellar']
+		if add_neb_emission == 1:
+			bfit_spec_nebe_temp[:,int(count)] = spec_SED['flux_nebe']
+		if duste_switch==1:
+			bfit_spec_duste_temp[:,int(count)] = spec_SED['flux_duste']
+		if add_agn == 1:
+			bfit_spec_agn_temp[:,int(count)] = spec_SED['flux_agn']
+
 		count = count + 1
 
 	bfit_photo_flux = np.zeros((nbands,nchains))
 	bfit_spec_flux = np.zeros((nwaves_spec,nchains))
 	bfit_corr_factor = np.zeros((nwaves_spec,nchains))
 
+	bfit_spec_tot = np.zeros((nwaves_mod,nchains))
+	bfit_spec_stellar = np.zeros((nwaves_mod,nchains))
+	bfit_spec_duste = np.zeros((nwaves_mod,nchains))
+	bfit_spec_agn = np.zeros((nwaves_mod,nchains))
+	bfit_spec_nebe = np.zeros((nwaves_mod,nchains))
+
 	for bb in range(0,nbands):
 		comm.Gather(bfit_photo_flux_temp[bb], bfit_photo_flux[bb], root=0)
 	for bb in range(0,nwaves_spec):
 		comm.Gather(bfit_spec_flux_temp[bb], bfit_spec_flux[bb], root=0)
 		comm.Gather(bfit_corr_factor_temp[bb], bfit_corr_factor[bb], root=0)
+
+	for bb in range(0,nwaves_mod):
+		comm.Gather(bfit_spec_tot_temp[bb], bfit_spec_tot[bb], root=0)
+		comm.Gather(bfit_spec_stellar_temp[bb], bfit_spec_stellar[bb], root=0)
+
+	if add_neb_emission == 1:
+		for bb in range(0,nwaves_mod):
+			comm.Gather(bfit_spec_nebe_temp[bb], bfit_spec_nebe[bb], root=0)
+
+	if duste_switch == 1:
+		for bb in range(0,nwaves_mod):
+			comm.Gather(bfit_spec_duste_temp[bb], bfit_spec_duste[bb], root=0)
+
+	if add_agn == 1:
+		for bb in range(0,nwaves_mod):
+			comm.Gather(bfit_spec_agn_temp[bb], bfit_spec_agn[bb], root=0)
 
 	if rank == 0:
 		# get percentiles
@@ -122,6 +168,29 @@ def store_to_fits(nsamples=None,sampler_params=None,sampler_log_sfr=None,sampler
 		p16_corr_factor = np.percentile(bfit_corr_factor,16,axis=1)
 		p50_corr_factor = np.percentile(bfit_corr_factor,50,axis=1)
 		p84_corr_factor = np.percentile(bfit_corr_factor,84,axis=1)
+
+		p16_spec_tot = np.percentile(bfit_spec_tot,16,axis=1)
+		p50_spec_tot = np.percentile(bfit_spec_tot,50,axis=1)
+		p84_spec_tot = np.percentile(bfit_spec_tot,84,axis=1)
+
+		p16_spec_stellar = np.percentile(bfit_spec_stellar,16,axis=1)
+		p50_spec_stellar = np.percentile(bfit_spec_stellar,50,axis=1)
+		p84_spec_stellar = np.percentile(bfit_spec_stellar,84,axis=1)
+
+		if add_neb_emission == 1:
+			p16_spec_nebe = np.percentile(bfit_spec_nebe,16,axis=1)
+			p50_spec_nebe = np.percentile(bfit_spec_nebe,50,axis=1)
+			p84_spec_nebe = np.percentile(bfit_spec_nebe,84,axis=1)
+
+		if duste_switch == 1:
+			p16_spec_duste = np.percentile(bfit_spec_duste,16,axis=1)
+			p50_spec_duste = np.percentile(bfit_spec_duste,50,axis=1)
+			p84_spec_duste = np.percentile(bfit_spec_duste,84,axis=1)
+
+		if add_agn == 1:
+			p16_spec_agn = np.percentile(bfit_spec_agn,16,axis=1)
+			p50_spec_agn = np.percentile(bfit_spec_agn,50,axis=1)
+			p84_spec_agn = np.percentile(bfit_spec_agn,84,axis=1)
 
 		# sampler_id:
 		sampler_id = np.linspace(1, nsamples, nsamples)
@@ -191,6 +260,7 @@ def store_to_fits(nsamples=None,sampler_params=None,sampler_log_sfr=None,sampler
 		hdr['ncols'] = col_count
 		hdr['fitmethod'] = 'mcmc'
 		hdr['storesamp'] = 1
+		hdr['specphot'] = 1
 		primary_hdu = fits.PrimaryHDU(header=hdr)
 
 		#==> sampler chains
@@ -274,6 +344,17 @@ def store_to_fits(nsamples=None,sampler_params=None,sampler_log_sfr=None,sampler
 		cols = fits.ColDefs(cols0)
 		hdu4 = fits.BinTableHDU.from_columns(cols, name='obs_spec')
 
+		#==> best-fit photometric SED
+		cols0 = []
+		col = fits.Column(name='p16', format='D', array=np.array(p16_photo_flux))
+		cols0.append(col)
+		col = fits.Column(name='p50', format='D', array=np.array(p50_photo_flux))
+		cols0.append(col)
+		col = fits.Column(name='p84', format='D', array=np.array(p84_photo_flux))
+		cols0.append(col)
+		cols = fits.ColDefs(cols0)
+		hdu5 = fits.BinTableHDU.from_columns(cols, name='bfit_photo')
+
 		#==> best-fit spectrum
 		cols0 = []
 		col = fits.Column(name='wave', format='D', array=np.array(spec_wave))
@@ -285,18 +366,7 @@ def store_to_fits(nsamples=None,sampler_params=None,sampler_log_sfr=None,sampler
 		col = fits.Column(name='p84', format='D', array=np.array(p84_spec_flux))
 		cols0.append(col)
 		cols = fits.ColDefs(cols0)
-		hdu5 = fits.BinTableHDU.from_columns(cols, name='bfit_spec')
-
-		#==> best-fit photometric SED
-		cols0 = []
-		col = fits.Column(name='p16', format='D', array=np.array(p16_photo_flux))
-		cols0.append(col)
-		col = fits.Column(name='p50', format='D', array=np.array(p50_photo_flux))
-		cols0.append(col)
-		col = fits.Column(name='p84', format='D', array=np.array(p84_photo_flux))
-		cols0.append(col)
-		cols = fits.ColDefs(cols0)
-		hdu6 = fits.BinTableHDU.from_columns(cols, name='bfit_photo')
+		hdu6 = fits.BinTableHDU.from_columns(cols, name='bfit_spec')
 
 		#==> best-fit correction factor
 		cols0 = []
@@ -311,7 +381,53 @@ def store_to_fits(nsamples=None,sampler_params=None,sampler_log_sfr=None,sampler
 		cols = fits.ColDefs(cols0)
 		hdu7 = fits.BinTableHDU.from_columns(cols, name='corr_factor')
 
-		hdul = fits.HDUList([primary_hdu, hdu1, hdu2, hdu3, hdu4, hdu5, hdu6, hdu7])
+		#==> best-fit model spectrum to the observed photometric SED
+		cols0 = []
+		col = fits.Column(name='wave', format='D', array=np.array(bfit_spec_wave))
+		cols0.append(col)
+
+		col = fits.Column(name='tot_p16', format='D', array=np.array(p16_spec_tot))
+		cols0.append(col)
+		col = fits.Column(name='tot_p50', format='D', array=np.array(p50_spec_tot))
+		cols0.append(col)
+		col = fits.Column(name='tot_p84', format='D', array=np.array(p84_spec_tot))
+		cols0.append(col)
+
+		col = fits.Column(name='stellar_p16', format='D', array=np.array(p16_spec_stellar))
+		cols0.append(col)
+		col = fits.Column(name='stellar_p50', format='D', array=np.array(p50_spec_stellar))
+		cols0.append(col)
+		col = fits.Column(name='stellar_p84', format='D', array=np.array(p84_spec_stellar))
+		cols0.append(col)
+
+		if add_neb_emission == 1:
+			col = fits.Column(name='nebe_p16', format='D', array=np.array(p16_spec_nebe))
+			cols0.append(col)
+			col = fits.Column(name='nebe_p50', format='D', array=np.array(p50_spec_nebe))
+			cols0.append(col)
+			col = fits.Column(name='nebe_p84', format='D', array=np.array(p84_spec_nebe))
+			cols0.append(col)
+
+		if duste_switch == 1:
+			col = fits.Column(name='duste_p16', format='D', array=np.array(p16_spec_duste))
+			cols0.append(col)
+			col = fits.Column(name='duste_p50', format='D', array=np.array(p50_spec_duste))
+			cols0.append(col)
+			col = fits.Column(name='duste_p84', format='D', array=np.array(p84_spec_duste))
+			cols0.append(col)
+
+		if add_agn == 1:
+			col = fits.Column(name='agn_p16', format='D', array=np.array(p16_spec_agn))
+			cols0.append(col)
+			col = fits.Column(name='agn_p50', format='D', array=np.array(p50_spec_agn))
+			cols0.append(col)
+			col = fits.Column(name='agn_p84', format='D', array=np.array(p84_spec_agn))
+			cols0.append(col)
+
+		cols = fits.ColDefs(cols0)
+		hdu8 = fits.BinTableHDU.from_columns(cols, name='bfit_mod_spec')
+
+		hdul = fits.HDUList([primary_hdu, hdu1, hdu2, hdu3, hdu4, hdu5, hdu6, hdu7, hdu8])
 		hdul.writeto(fits_name_out, overwrite=True)	
 
 
@@ -330,17 +446,14 @@ def calc_sampler_mwage(nsamples=0,sampler_pop_mass=[],sampler_tau=[],sampler_t0=
 		tau = sampler_tau[int(ii)]
 		age = sampler_age[int(ii)]
 		if sfh_form==0 or sfh_form==1:
-			sampler_mw_age0[int(count)] = calc_mw_age(sfh_form=sfh_form,tau=tau,age=age,
-																formed_mass=pop_mass)
+			sampler_mw_age0[int(count)] = calc_mw_age(sfh_form=sfh_form,tau=tau,age=age,formed_mass=pop_mass)
 		elif sfh_form==2 or sfh_form==3:
 			t0 = sampler_t0[int(ii)]
-			sampler_mw_age0[int(count)] = calc_mw_age(sfh_form=sfh_form,tau=tau,t0=t0,age=age,
-																formed_mass=pop_mass)
+			sampler_mw_age0[int(count)] = calc_mw_age(sfh_form=sfh_form,tau=tau,t0=t0,age=age,formed_mass=pop_mass)
 		elif sfh_form==4:
 			alpha = sampler_alpha[int(ii)]
 			beta = sampler_beta[int(ii)]
-			sampler_mw_age0[int(count)] = calc_mw_age(sfh_form=sfh_form,tau=tau,alpha=alpha,beta=beta,
-															age=age,formed_mass=pop_mass)
+			sampler_mw_age0[int(count)] = calc_mw_age(sfh_form=sfh_form,tau=tau,alpha=alpha,beta=beta,age=age,formed_mass=pop_mass)
 
 		count = count + 1
 		sys.stdout.write('\r')
@@ -650,13 +763,27 @@ elif gal_z>0.0:
 name_file = temp_dir+str(sys.argv[3])
 f = h5py.File(name_file, 'r')
 
-# get list of parameters
+# get modeling configuration
+global imf, sfh_form, dust_law, duste_switch, add_neb_emission, add_agn, gas_logu, nwaves_mod
+imf = f['samplers'].attrs['imf']
+sfh_form = f['samplers'].attrs['sfh_form']
+dust_law = f['samplers'].attrs['dust_law']
+duste_switch = f['samplers'].attrs['duste_switch']
+add_neb_emission = f['samplers'].attrs['add_neb_emission']
+add_agn = f['samplers'].attrs['add_agn']
+gas_logu = f['samplers'].attrs['gas_logu']
+nwaves_mod = int(f['samplers'].attrs['nwaves_mod'])
+
+# get list of free parameters
 global params, nparams
 nparams = int(f['samplers'].attrs['nparams'])
 params = []
 for pp in range(0,nparams):
-	str_temp = 'par%d' % pp 
-	params.append(f['samplers'].attrs[str_temp])
+	str_temp = 'par%d' % pp
+	attrs = f['samplers'].attrs[str_temp]
+	if isinstance(attrs, str) == False:
+		attrs = attrs.decode()
+	params.append(attrs)
 
 # get list of fix parameters, if any
 global nfix_params, fix_params, fix_params_val
@@ -666,7 +793,11 @@ if nfix_params>0:
 	fix_params_val = np.zeros(nfix_params)
 	for pp in range(0,nfix_params):
 		str_temp = 'fpar%d' % pp
-		fix_params.append(f['samplers'].attrs[str_temp])
+		attrs = f['samplers'].attrs[str_temp]
+		if isinstance(attrs, str) == False:
+			attrs = attrs.decode()
+		fix_params.append(attrs)
+
 		str_temp = 'fpar%d_val' % pp
 		fix_params_val[pp] = float(f['samplers'].attrs[str_temp])
 
@@ -714,25 +845,6 @@ del_wave_nebem = float(config_data['del_wave_nebem'])
 # clipping for bad spectral points in the chi-square calculation
 global spec_chi_sigma_clip
 spec_chi_sigma_clip = float(config_data['spec_chi_sigma_clip'])
-
-# HDF5 file containing pre-calculated model SEDs for initial fitting
-global models_spec
-models_spec = config_data['models_spec']
-
-# data of pre-calculated model SEDs for initial fitting
-f = h5py.File(models_spec, 'r')
-
-# modeling configurations
-global imf, sfh_form, dust_law, duste_switch, add_neb_emission, add_agn, gas_logu
-imf = f['mod'].attrs['imf_type']
-sfh_form = f['mod'].attrs['sfh_form']
-dust_law = f['mod'].attrs['dust_law']
-duste_switch = f['mod'].attrs['duste_switch']
-add_neb_emission = f['mod'].attrs['add_neb_emission']
-add_agn = f['mod'].attrs['add_agn']
-gas_logu = f['mod'].attrs['gas_logu']
-
-f.close()
 
 # igm absorption
 global add_igm_absorption, igm_type

@@ -572,11 +572,6 @@ def generate_modelSED_photo(sp=None,imf_type=1,duste_switch=0,add_neb_emission=1
 			trans = igm_att_inoue(redsh_wave,params_val['z'])
 			redsh_spec = redsh_spec0*trans
 
-	# normalize:
-	#norm0 = formed_mass/mass
-	#redsh_spec = redsh_spec0*norm0
-	#dust_mass = dust_mass0*norm0
-
 	# filtering:
 	photo_SED_flux = filtering(redsh_wave,redsh_spec,filters)
 	# get central wavelength of all filters:
@@ -733,11 +728,6 @@ def generate_modelSED_specphoto(sp=None,imf_type=1,duste_switch=1,add_neb_emissi
 		elif igm_type==1:
 			trans = igm_att_inoue(redsh_wave,params_val['z'])
 			redsh_spec = redsh_spec0*trans
-
-	# normalize:
-	#norm0 = formed_mass/mass
-	#redsh_spec = redsh_spec0*norm0
-	#dust_mass = dust_mass0*norm0
 
 	# filtering:
 	photo_SED_flux = filtering(redsh_wave,redsh_spec,filters)

@@ -7,7 +7,7 @@ from astropy.nddata import Cutout2D
 from astropy.convolution import convolve, convolve_fft, Gaussian1DKernel, Gaussian2DKernel
 from astropy.stats import SigmaClip
 from astropy.modeling.models import Gaussian2D
-from scipy.interpolate import interp1d, interp2d
+from scipy.interpolate import interp1d
 
 from ..piXedfit_images.images_utils import get_largest_FWHM_PSF, k_lmbd_Fitz1986_LMC
 from ..piXedfit_model.model_utils import get_no_nebem_wave_fit

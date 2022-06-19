@@ -13,6 +13,7 @@ from scipy.interpolate import interp1d
 from scipy.stats import sigmaclip
 from scipy.stats import norm as normal
 from scipy.stats import t, gamma
+from scipy.interpolate import interp1d
 
 global PIXEDFIT_HOME
 PIXEDFIT_HOME = os.environ['PIXEDFIT_HOME']
@@ -27,7 +28,7 @@ from piXedfit.piXedfit_spectrophotometric import spec_smoothing
 from piXedfit.piXedfit_fitting import get_params
 
 
-def initfit_fz(gal_z,DL_Gpc,zz,nrands_z):
+def initfit_fz(gal_z,DL_Gpc):
 	# get wavelength free of emission lines
 	spec_wave_clean,waveid_excld = get_no_nebem_wave_fit(gal_z,spec_wave,del_wave_nebem)
 	spec_flux_clean = np.delete(spec_flux, waveid_excld)
@@ -123,9 +124,7 @@ def initfit_fz(gal_z,DL_Gpc,zz,nrands_z):
 		# get parameters
 		for pp in range(0,nparams):
 			str_temp = 'mod/par/%s' % params[pp]
-			if params[pp]=='z':
-				mod_params_temp[pp][int(count)] = gal_z
-			elif params[pp]=='log_mass':
+			if params[pp]=='log_mass':
 				mod_params_temp[pp][int(count)] = f[str_temp][idx_parmod_sel[0][int(ii)]] + log10(norm)
 			else:
 				mod_params_temp[pp][int(count)] = f[str_temp][idx_parmod_sel[0][int(ii)]]
@@ -133,9 +132,8 @@ def initfit_fz(gal_z,DL_Gpc,zz,nrands_z):
 		count = count + 1
 
 		sys.stdout.write('\r')
-		sys.stdout.write('rank %d --> progress: z %d of %d (%d%%) and model %d of %d (%d%%)' % (rank,zz+1,nrands_z,(zz+1)*100/nrands_z,count,numDataPerRank,count*100/numDataPerRank))
+		sys.stdout.write('rank %d --> progress: z 1 of 1 (100%%) and model %d of %d (%d%%)' % (rank,count,numDataPerRank,count*100/numDataPerRank))
 		sys.stdout.flush()
-	#sys.stdout.write('\n')
 
 	mod_params = np.zeros((nparams,nmodels))
 	mod_fluxes = np.zeros((nbands,nmodels))
@@ -165,7 +163,6 @@ def initfit_fz(gal_z,DL_Gpc,zz,nrands_z):
 		fluxes = mod_fluxes[:,idx0]
 		norm = model_leastnorm(obs_fluxes,obs_flux_err,fluxes)
 
-		#print ("reduced chi2 value of the best-fitting model: %lf" % (mod_chi2[idx0]/nbands))
 		if mod_chi2_photo[idx0]/nbands > redcd_chi2:  
 			sys_err_frac = 0.01
 			while sys_err_frac <= 0.5:
@@ -174,12 +171,10 @@ def initfit_fz(gal_z,DL_Gpc,zz,nrands_z):
 				if chi2/nbands <= redcd_chi2:
 					break
 				sys_err_frac = sys_err_frac + 0.01
-			#print ("After adding %lf fraction to systematic error, reduced chi2 of best-fit model becomes: %lf" % (sys_err_frac,chi2/nbands))
 			status_add_err[0] = 1
 		elif mod_chi2_photo[idx0]/nbands <= redcd_chi2:
 			status_add_err[0] = 0
 
-		#print ("reduced chi2 value of the best-fitting model: %lf" % (mod_chi2[idx0]/nbands))
 		if mod_redcd_chi2_spec[idx0] > redcd_chi2:  
 			sys_err_frac = 0.01
 			while sys_err_frac <= 0.5:
@@ -190,7 +185,6 @@ def initfit_fz(gal_z,DL_Gpc,zz,nrands_z):
 				if chi2_spec/len(chi_spec) <= redcd_chi2:
 					break
 				sys_err_frac = sys_err_frac + 0.01
-			#print ("After adding %lf fraction to systematic error, reduced chi2 of best-fit model becomes: %lf" % (sys_err_frac,chi2/nbands))
 			status_add_err[0] = 1
 		elif mod_redcd_chi2_spec[idx0] <= redcd_chi2:
 			status_add_err[0] = 0
@@ -237,9 +231,7 @@ def initfit_fz(gal_z,DL_Gpc,zz,nrands_z):
 			# get parameters
 			for pp in range(0,nparams):
 				str_temp = 'mod/par/%s' % params[pp]
-				if params[pp]=='z':
-					mod_params_temp[pp][int(count)] = gal_z
-				elif params[pp]=='log_mass':
+				if params[pp]=='log_mass':
 					mod_params_temp[pp][int(count)] = f[str_temp][idx_parmod_sel[0][int(ii)]] + log10(norm)
 				else:
 					mod_params_temp[pp][int(count)] = f[str_temp][idx_parmod_sel[0][int(ii)]]
@@ -379,14 +371,6 @@ def initfit_vz(gal_z,DL_Gpc,zz,nrands_z):
 
 	return mod_params, mod_chi2
 
-
-## prior function:
-def old_lnprior(theta):
-	idx_sel = np.where((theta>=priors_min) & (theta<=priors_max))
-	if len(idx_sel[0])==nparams:
-		return 0.0
-	return -np.inf
-
 def lnprior(theta):
 	idx_sel = np.where((theta>=priors_min) & (theta<=priors_max))
 	if len(idx_sel[0])==nparams:
@@ -398,6 +382,8 @@ def lnprior(theta):
 				lnprior += np.log(t.pdf(theta[pp],params_priors[params[pp]]['df'],loc=params_priors[params[pp]]['loc'],scale=params_priors[params[pp]]['scale']))
 			elif params_priors[params[pp]]['form'] == 'gamma':
 				lnprior += np.log(gamma.pdf(theta[pp],params_priors[params[pp]]['a'],loc=params_priors[params[pp]]['loc'],scale=params_priors[params[pp]]['scale']))
+			elif params_priors[params[pp]]['form'] == 'arbitrary':
+				lnprior += np.log(fprior(theta[pp]))
 		return lnprior
 	return -np.inf
 
@@ -616,7 +602,7 @@ models_spec = config_data['models_spec']
 f = h5py.File(models_spec, 'r')
 
 # modeling configurations
-global imf, sfh_form, dust_law, duste_switch, add_neb_emission, add_agn, gas_logu
+global imf, sfh_form, dust_law, duste_switch, add_neb_emission, add_agn, gas_logu, nwaves_mod
 imf = f['mod'].attrs['imf_type']
 sfh_form = f['mod'].attrs['sfh_form']
 dust_law = f['mod'].attrs['dust_law']
@@ -624,6 +610,8 @@ duste_switch = f['mod'].attrs['duste_switch']
 add_neb_emission = f['mod'].attrs['add_neb_emission']
 add_agn = f['mod'].attrs['add_agn']
 gas_logu = f['mod'].attrs['gas_logu']
+# length of model spectral wavelength, to be used later
+nwaves_mod = len(f['mod/spec/wave'][:])
 
 # get list of free parameters, their prior ranges, and fix parameters
 global params, nparams, priors_min, priors_max
@@ -728,6 +716,10 @@ for pp in range(0,nparams):
 			params_priors[params[pp]]['a'] = float(config_data['pr_form_%s_gamma_a' % params[pp]])
 			params_priors[params[pp]]['loc'] = float(config_data['pr_form_%s_gamma_loc' % params[pp]])
 			params_priors[params[pp]]['scale'] = float(config_data['pr_form_%s_gamma_scale' % params[pp]])
+		elif params_priors[params[pp]]['form'] == 'arbitrary':
+			name0 = config_data['pr_form_%s_arbit_name' % params[pp]]
+			data = np.loadtxt(temp_dir+name0)
+			fprior = interp1d(data[:,0],data[:,1])
 	else:
 		params_priors[params[pp]]['form'] = 'uniform'
 
@@ -806,7 +798,7 @@ nparams_fsps = len(params_fsps)
 
 # initial fitting
 if free_z == 0:
-	mod_params, mod_chi2 = initfit_fz(gal_z,DL_Gpc,0,1)
+	mod_params, mod_chi2 = initfit_fz(gal_z,DL_Gpc)
 	idx0, min_val = min(enumerate(mod_chi2), key=itemgetter(1))
 	minchi2_params_initfit = mod_params[:,idx0]
 
@@ -831,8 +823,6 @@ elif free_z == 1:
 
 if rank == 0:
 	sys.stdout.write('\n')
-	#print ("Best-fit parameters from initial fitting:")
-	#print (minchi2_params_initfit)
 
 # add priors for normalization:
 priors_min[int(nparams)-1] = minchi2_params_initfit[int(nparams)-1] - 1.5
@@ -861,6 +851,15 @@ with MPIPool() as pool:
 	# store samplers into HDF5 file
 	with h5py.File(sys.argv[4], 'w') as f:
 		s = f.create_group('samplers')
+		# modeling configuration
+		s.attrs['imf'] = imf
+		s.attrs['sfh_form'] = sfh_form
+		s.attrs['dust_law'] = dust_law
+		s.attrs['duste_switch'] = duste_switch
+		s.attrs['add_neb_emission'] = add_neb_emission
+		s.attrs['add_agn'] = add_agn
+		s.attrs['gas_logu'] = gas_logu
+		s.attrs['nwaves_mod'] = nwaves_mod
 		# free parameters
 		s.attrs['nparams'] = nparams
 		for pp in range(0,nparams):

@@ -8,6 +8,7 @@ from astropy.io import fits
 from astropy.cosmology import *
 from scipy.stats import norm as normal
 from scipy.stats import t, gamma
+from scipy.interpolate import interp1d
 
 global PIXEDFIT_HOME
 PIXEDFIT_HOME = os.environ['PIXEDFIT_HOME']
@@ -74,6 +75,8 @@ def bayesian_sedfit_gauss():
 				lnprior += np.log(t.pdf(f[str_temp][idx_parmod_sel[0][int(ii)]],params_priors[params[pp]]['df'],loc=params_priors[params[pp]]['loc'],scale=params_priors[params[pp]]['scale']))
 			elif params_priors[params[pp]]['form'] == 'gamma':
 				lnprior += np.log(gamma.pdf(f[str_temp][idx_parmod_sel[0][int(ii)]],params_priors[params[pp]]['a'],loc=params_priors[params[pp]]['loc'],scale=params_priors[params[pp]]['scale']))
+			elif params_priors[params[pp]]['form'] == 'arbitrary':
+				lnprior += np.log(fprior(f[str_temp][idx_parmod_sel[0][int(ii)]]))
 
 		mod_chi2_temp[int(count)] = chi2
 		#mod_prob_temp[int(count)] = lnprob0
@@ -113,10 +116,7 @@ def bayesian_sedfit_gauss():
 
 	if rank == 0:
 		idx0, min_val = min(enumerate(mod_chi2), key=itemgetter(1))
-
 		fluxes = mod_fluxes[:,idx0]
-
-		#print ("reduced chi2 value of the best-fitting model: %lf" % (mod_chi2[idx0]/nbands))
 		if mod_chi2[idx0]/nbands > redcd_chi2:  
 			sys_err_frac = 0.01
 			while sys_err_frac <= 0.5:
@@ -125,7 +125,6 @@ def bayesian_sedfit_gauss():
 				if chi2/nbands <= redcd_chi2:
 					break
 				sys_err_frac = sys_err_frac + 0.01
-			#print ("After adding %lf fraction to systematic error, reduced chi2 of best-fit model becomes: %lf" % (sys_err_frac,chi2/nbands))
 			status_add_err[0] = 1
 		elif mod_chi2[idx0]/nbands <= redcd_chi2:
 			status_add_err[0] = 0
@@ -169,6 +168,8 @@ def bayesian_sedfit_gauss():
 					lnprior += np.log(t.pdf(f[str_temp][idx_parmod_sel[0][int(ii)]],params_priors[params[pp]]['df'],loc=params_priors[params[pp]]['loc'],scale=params_priors[params[pp]]['scale']))
 				elif params_priors[params[pp]]['form'] == 'gamma':
 					lnprior += np.log(gamma.pdf(f[str_temp][idx_parmod_sel[0][int(ii)]],params_priors[params[pp]]['a'],loc=params_priors[params[pp]]['loc'],scale=params_priors[params[pp]]['scale']))
+				elif params_priors[params[pp]]['form'] == 'arbitrary':
+					lnprior += np.log(fprior(f[str_temp][idx_parmod_sel[0][int(ii)]]))
 
 			mod_chi2_temp[int(count)] = chi2
 			#mod_prob_temp[int(count)] = lnprob0
@@ -262,6 +263,8 @@ def bayesian_sedfit_student_t():
 				lnprior += np.log(t.pdf(f[str_temp][idx_parmod_sel[0][int(ii)]],params_priors[params[pp]]['df'],loc=params_priors[params[pp]]['loc'],scale=params_priors[params[pp]]['scale']))
 			elif params_priors[params[pp]]['form'] == 'gamma':
 				lnprior += np.log(gamma.pdf(f[str_temp][idx_parmod_sel[0][int(ii)]],params_priors[params[pp]]['a'],loc=params_priors[params[pp]]['loc'],scale=params_priors[params[pp]]['scale']))
+			elif params_priors[params[pp]]['form'] == 'arbitrary':
+				lnprior += np.log(fprior(f[str_temp][idx_parmod_sel[0][int(ii)]]))
 
 		mod_chi2_temp[int(count)] = chi2
 		#mod_prob_temp[int(count)] = lnprob0
@@ -304,7 +307,6 @@ def bayesian_sedfit_student_t():
 
 		fluxes = mod_fluxes[:,idx0]
 
-		#print ("reduced chi2 value of the best-fitting model: %lf" % (mod_chi2[idx0]/nbands))
 		if mod_chi2[idx0]/nbands > redcd_chi2:  
 			sys_err_frac = 0.01
 			while sys_err_frac <= 0.5:
@@ -313,7 +315,6 @@ def bayesian_sedfit_student_t():
 				if chi2/nbands <= redcd_chi2:
 					break
 				sys_err_frac = sys_err_frac + 0.01
-			#print ("After adding %lf fraction to systematic error, reduced chi2 of best-fit model becomes: %lf" % (sys_err_frac,chi2/nbands))
 			status_add_err[0] = 1
 		elif mod_chi2[idx0]/nbands <= redcd_chi2:
 			status_add_err[0] = 0
@@ -357,6 +358,8 @@ def bayesian_sedfit_student_t():
 					lnprior += np.log(t.pdf(f[str_temp][idx_parmod_sel[0][int(ii)]],params_priors[params[pp]]['df'],loc=params_priors[params[pp]]['loc'],scale=params_priors[params[pp]]['scale']))
 				elif params_priors[params[pp]]['form'] == 'gamma':
 					lnprior += np.log(gamma.pdf(f[str_temp][idx_parmod_sel[0][int(ii)]],params_priors[params[pp]]['a'],loc=params_priors[params[pp]]['loc'],scale=params_priors[params[pp]]['scale']))
+				elif params_priors[params[pp]]['form'] == 'arbitrary':
+					lnprior += np.log(fprior(f[str_temp][idx_parmod_sel[0][int(ii)]]))
 
 			mod_chi2_temp[int(count)] = chi2
 			#mod_prob_temp[int(count)] = lnprob0
@@ -395,6 +398,29 @@ def bayesian_sedfit_student_t():
 
 
 def store_to_fits(sampler_params,mod_chi2,mod_prob,fits_name_out):
+	#==> best-fit model SED
+	idx, min_val = min(enumerate(mod_chi2), key=itemgetter(1))
+	bfit_chi2 = mod_chi2[idx]
+
+	f = h5py.File(models_spec, 'r')
+	wave = f['mod/spec/wave'][:]
+	str_temp = 'mod/spec/f%d' % idx_parmod_sel[0][idx]
+	extnc_spec = f[str_temp][:]
+	redsh_wave,redsh_spec = cosmo_redshifting(DL_Gpc=DL_Gpc,cosmo=cosmo,H0=H0,Om0=Om0,z=gal_z,wave=wave,spec=extnc_spec)
+	if add_igm_absorption == 1:
+		if igm_type == 0:
+			trans = igm_att_madau(redsh_wave,gal_z)
+			redsh_spec = redsh_spec*trans
+		elif igm_type == 1:
+			trans = igm_att_inoue(redsh_wave,gal_z)
+			redsh_spec = redsh_spec*trans
+	fluxes = filtering_interp_filters(redsh_wave,redsh_spec,interp_filters_waves,interp_filters_trans)
+	norm = model_leastnorm(obs_fluxes,obs_flux_err,fluxes)
+	mod_fluxes = norm*fluxes
+	redsh_spec = norm*redsh_spec
+	f.close()
+
+	# sampler ids
 	nsamples = len(sampler_params[params[0]])
 	sampler_id = np.linspace(1, nsamples, nsamples)
 
@@ -418,16 +444,14 @@ def store_to_fits(sampler_params,mod_chi2,mod_prob,fits_name_out):
 	for bb in range(0,nbands):
 		str_temp = 'fil%d' % bb
 		hdr[str_temp] = filters[bb]
-		str_temp = 'flux%d' % bb
-		hdr[str_temp] = obs_fluxes[bb]
-		str_temp = 'flux_err%d' % bb 
-		hdr[str_temp] = obs_flux_err[bb]
 	hdr['gal_z'] = gal_z
 	hdr['free_z'] = 0
 	hdr['cosmo'] = cosmo
 	hdr['H0'] = H0
 	hdr['Om0'] = Om0
 	hdr['nrows'] = nsamples
+	# chi-square
+	hdr['redcd_chi2'] = bfit_chi2/nbands
 
 	# parameters
 	col_count = 1
@@ -450,7 +474,10 @@ def store_to_fits(sampler_params,mod_chi2,mod_prob,fits_name_out):
 	hdr['ncols'] = col_count
 	hdr['fitmethod'] = 'rdsps'
 	hdr['storesamp'] = 1
+	hdr['specphot'] = 0
+	primary_hdu = fits.PrimaryHDU(header=hdr)
 
+	#==> samplers
 	cols0 = []
 	col = fits.Column(name='id', format='K', array=np.array(sampler_id))
 	cols0.append(col)
@@ -461,12 +488,46 @@ def store_to_fits(sampler_params,mod_chi2,mod_prob,fits_name_out):
 	cols0.append(col)
 	col = fits.Column(name='lnprob', format='D', array=np.array(mod_prob))
 	cols0.append(col)
-
 	cols = fits.ColDefs(cols0)
-	hdu = fits.BinTableHDU.from_columns(cols)
-	primary_hdu = fits.PrimaryHDU(header=hdr)
+	hdu1 = fits.BinTableHDU.from_columns(cols, name='samplers')
 
-	hdul = fits.HDUList([primary_hdu, hdu])
+	#==> Parameters of model with minimum chi-square
+	cols0 = []
+	for pp in range(0,nparams):
+		col = fits.Column(name=params[pp], format='D', array=np.array([sampler_params[params[pp]][idx]]))
+		cols0.append(col)
+	cols = fits.ColDefs(cols0)
+	hdu2 = fits.BinTableHDU.from_columns(cols, name='minchi2_params')
+
+	#==> observed photometric SED
+	cols0 = []
+	col = fits.Column(name='flux', format='D', array=np.array(obs_fluxes))
+	cols0.append(col)
+	col = fits.Column(name='flux_err', format='D', array=np.array(obs_flux_err))
+	cols0.append(col)
+	cols = fits.ColDefs(cols0)
+	hdu3 = fits.BinTableHDU.from_columns(cols, name='obs_photo')
+
+	#==> best-fit model photometry
+	photo_cwave = cwave_filters(filters)
+	cols0 = []
+	col = fits.Column(name='wave', format='D', array=np.array(photo_cwave))
+	cols0.append(col)
+	col = fits.Column(name='flux', format='D', array=np.array(mod_fluxes))
+	cols0.append(col)
+	cols = fits.ColDefs(cols0)
+	hdu4 = fits.BinTableHDU.from_columns(cols, name='bfit_photo')
+
+	#==> best-fit model spectrum to the observed photometric SED
+	cols0 = []
+	col = fits.Column(name='wave', format='D', array=np.array(redsh_wave))
+	cols0.append(col)
+	col = fits.Column(name='flux', format='D', array=np.array(redsh_spec))
+	cols0.append(col)
+	cols = fits.ColDefs(cols0)
+	hdu5 = fits.BinTableHDU.from_columns(cols, name='bfit_mod_spec')
+
+	hdul = fits.HDUList([primary_hdu, hdu1, hdu2, hdu3, hdu4, hdu5])
 	hdul.writeto(fits_name_out, overwrite=True)	
 
 
@@ -645,6 +706,10 @@ for pp in range(0,nparams):
 			params_priors[params[pp]]['a'] = float(config_data['pr_form_%s_gamma_a' % params[pp]])
 			params_priors[params[pp]]['loc'] = float(config_data['pr_form_%s_gamma_loc' % params[pp]])
 			params_priors[params[pp]]['scale'] = float(config_data['pr_form_%s_gamma_scale' % params[pp]])
+		elif params_priors[params[pp]]['form'] == 'arbitrary':
+			name0 = config_data['pr_form_%s_arbit_name' % params[pp]]
+			data = np.loadtxt(temp_dir+name0)
+			fprior = interp1d(data[:,0],data[:,1])
 	else:
 		params_priors[params[pp]]['form'] = 'uniform'
 

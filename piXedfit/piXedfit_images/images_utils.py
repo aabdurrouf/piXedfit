@@ -1337,17 +1337,6 @@ def crop_ellipse_galregion_fits(input_fits,x_cent=None,y_cent=None,
 		map_flux[bb][rows,cols] = map_flux0[bb][rows,cols]
 		map_flux_err[bb][rows,cols] = map_flux_err0[bb][rows,cols]
 
-	# crop the flux maps following the modified gal_region
-	#nbands = int(header['nfilters'])
-	#map_flux = np.zeros((nbands,dim_y,dim_x))
-	#map_flux_err = np.zeros((nbands,dim_y,dim_x))
-	#for bb in range(0,nbands):
-	#	for yy in range(0,dim_y):
-	#		for xx in range(0,dim_x):
-	#			if gal_region[int(yy)][int(xx)] == 1:
-	#				map_flux[bb][int(yy)][int(xx)] = map_flux0[bb][int(yy)][int(xx)]
-	#				map_flux_err[bb][int(yy)][int(xx)] = map_flux_err0[bb][int(yy)][int(xx)]
-
 	# store to FITS file
 	hdul = fits.HDUList()
 	hdul.append(fits.ImageHDU(data=map_flux, header=header, name='flux'))
@@ -1446,19 +1435,6 @@ def crop_stars_galregion_fits(input_fits,x_cent=[],y_cent=[],radius=[],name_out_
 		map_flux[bb][rows,cols] = map_flux0[bb][rows,cols]
 		map_flux_err[bb][rows,cols] = map_flux_err0[bb][rows,cols]
 
-	# crop the flux maps following the modified gal_region:
-	#nbands = int(header['nfilters'])
-	#dim_y = gal_region0.shape[0]
-	#dim_x = gal_region0.shape[1]
-	#map_flux = np.zeros((nbands,dim_y,dim_x))
-	#map_flux_err = np.zeros((nbands,dim_y,dim_x))
-	#for bb in range(0,nbands):
-	#	for yy in range(0,dim_y):
-	#		for xx in range(0,dim_x):
-	#			if gal_region[int(yy)][int(xx)] == 1:
-	#				map_flux[bb][int(yy)][int(xx)] = map_flux0[bb][int(yy)][int(xx)]
-	#				map_flux_err[bb][int(yy)][int(xx)] = map_flux_err0[bb][int(yy)][int(xx)]
-
 	# store to fits file:
 	hdul = fits.HDUList()
 	hdul.append(fits.ImageHDU(data=map_flux, header=header, name='flux'))
@@ -1515,8 +1491,6 @@ def crop_image_given_xy(img_name=None, x=None, y=None, stamp_size=[], name_out_f
 
 	hdu.writeto(name_out_fits, overwrite=True)
 	print ("[produce %s]" % name_out_fits)
-
-
 
 
 def crop_2D_data(in_data=None, data_x_cent=None, data_y_cent=None, new_size_x=None, new_size_y=None):

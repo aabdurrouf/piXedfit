@@ -126,15 +126,9 @@ f = h5py.File(models_spec, 'r')
 # number of model SEDs
 nmodels = int(f['mod'].attrs['nmodels']/size)*size
 
-# cut model spectrum to match range given by the IFS spectra
-#rest_wave = f['mod/spec/wave'][:]
-#redsh_wave = (1.0+gal_z)*rest_wave
-#idx_mod_wave = np.where((redsh_wave>min_spec_wave-100) & (redsh_wave<max_spec_wave+100))
-
 # get wavelength free of emission lines
 del_wave_nebem = float(config_data['del_wave_nebem'])
 spec_wave_clean,wave_mask = get_no_nebem_wave_fit(gal_z,spec_wave,del_wave_nebem)
-
 
 # cut model spectrum to match range given by the IFS spectra
 rest_wave = f['mod/spec/wave'][:]

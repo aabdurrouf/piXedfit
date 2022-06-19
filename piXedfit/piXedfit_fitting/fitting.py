@@ -4,6 +4,7 @@ import sys, os
 import h5py
 from random import randint
 from astropy.io import fits
+from .fitutils import *
 
 global PIXEDFIT_HOME
 PIXEDFIT_HOME = os.environ['PIXEDFIT_HOME']
@@ -15,15 +16,8 @@ __all__ = ["singleSEDfit", "singleSEDfit_specphoto", "SEDfit_from_binmap", "SEDf
 			"get_inferred_params_mcmc", "get_inferred_params_rdsps", "maps_parameters", "maps_parameters_fit_pixels", 
 			"get_params", "priors"]
 
-
-def nproc_reduced(nproc,nwalkers,nsteps,nsteps_cut):
-	ngrids2 = (nwalkers*nsteps) - (nwalkers*nsteps_cut)        
-	for ii in range(0,nproc):
-		if ngrids2%nproc == 0:
-			nproc_new = nproc
-			break
-		nproc = nproc  - 1
-	return nproc_new
+CODE_dir = PIXEDFIT_HOME+'/piXedfit/piXedfit_fitting/'
+temp_dir = PIXEDFIT_HOME+'/data/temp/'
 
 
 class priors:
@@ -116,129 +110,21 @@ class priors:
 		prior = [param, "gamma", a, loc, scale]
 		return prior
 
-def write_filters_list(name,filters):
-	file_out = open(name,"w")
-	for bb in range(0,len(filters)):
-		file_out.write("%s\n" % filters[bb]) 
-	file_out.close()
+	def arbitrary(self, param, values, prob):
+		"""Function for assigning an arbitrary prior.
 
-def write_input_singleSED(name,obs_flux,obs_flux_err):
-	file_out = open(name,"w")
-	for bb in range(0,len(obs_flux)):
-		file_out.write("%e  %e\n" % (obs_flux[bb],obs_flux_err[bb]))
-	file_out.close()
+		:param param:
 
-def write_input_specphoto_hdf5(name,obs_flux,obs_flux_err,spec_wave,spec_flux,spec_flux_err):
-	with h5py.File(name, 'w') as f:
-		f.create_dataset('obs_flux', data=np.array(obs_flux), compression="gzip")
-		f.create_dataset('obs_flux_err', data=np.array(obs_flux_err), compression="gzip")
-		f.create_dataset('spec_wave', data=np.array(spec_wave), compression="gzip")
-		f.create_dataset('spec_flux', data=np.array(spec_flux), compression="gzip")
-		f.create_dataset('spec_flux_err', data=np.array(spec_flux_err), compression="gzip")
+		:param values:
 
-def write_conf_file(name,params_ranges,priors_coll,nwalkers,nsteps,nsteps_cut,nproc,cosmo,
-	H0,Om0,fit_method,likelihood,dof,models_spec,gal_z,nrands_z,add_igm_absorption,igm_type,
-	perc_chi2,initfit_nmodels_mcmc,spec_sigma=None,poly_order=None,del_wave_nebem=None,
-	spec_chi_sigma_clip=None):
+		:param prob:
 
-	file_out = open(name,"w")
-	file_out.write("nwalkers %d\n" % nwalkers)
-	file_out.write("nsteps %d\n" % nsteps)
-	file_out.write("nsteps_cut %d\n" % nsteps_cut)
-	file_out.write("ori_nproc %d\n" % nproc)
-	# cosmology
-	if cosmo=='flat_LCDM' or cosmo==0:
-		cosmo1 = 0
-	elif cosmo=='WMAP5' or cosmo==1:
-		cosmo1 = 1
-	elif cosmo=='WMAP7' or cosmo==2:
-		cosmo1 = 2
-	elif cosmo=='WMAP9' or cosmo==3:
-		cosmo1 = 3
-	elif cosmo=='Planck13' or cosmo==4:
-		cosmo1 = 4
-	elif cosmo=='Planck15' or cosmo==5:
-		cosmo1 = 5
-	#elif cosmo=='Planck18' or cosmo==6:
-	#	cosmo1 = 6
-	else:
-		print ("Input cosmo is not recognized!")
-		sys.exit()
-	file_out.write("cosmo %d\n" % cosmo1)
-	file_out.write("H0 %lf\n" % H0)
-	file_out.write("Om0 %lf\n" % Om0)
-	if fit_method=='rdsps' or fit_method=='RDSPS':
-		file_out.write("likelihood %s\n" % likelihood)
-		file_out.write("dof %lf\n" % dof)
-	file_out.write("models_spec %s\n" % models_spec)
-	file_out.write("gal_z %lf\n" % gal_z)
-	file_out.write("nrands_z %d\n" % nrands_z)
-	file_out.write("add_igm_absorption %d\n" % add_igm_absorption)
-	file_out.write("igm_type %d\n" % igm_type)
-	if fit_method=='rdsps' or fit_method=='RDSPS':
-		file_out.write("perc_chi2 %lf\n" % perc_chi2)
-	if spec_sigma != None:
-		file_out.write("spec_sigma %lf\n" % spec_sigma)
-	if poly_order != None:
-		file_out.write("poly_order %d\n" % poly_order)
-	if del_wave_nebem != None:
-		file_out.write("del_wave_nebem %lf\n" % del_wave_nebem)
-	if spec_chi_sigma_clip != None:
-		file_out.write("spec_chi_sigma_clip %lf\n" % spec_chi_sigma_clip)
-	file_out.write("initfit_nmodels_mcmc %d\n" % initfit_nmodels_mcmc)
-	# ranges of parameters
-	file_out.write("pr_z_min %lf\n" % params_ranges['z'][0])
-	file_out.write("pr_z_max %lf\n" % params_ranges['z'][1])
-	file_out.write("pr_logzsol_min %lf\n" % params_ranges['logzsol'][0])
-	file_out.write("pr_logzsol_max %lf\n" % params_ranges['logzsol'][1])
-	file_out.write("pr_log_tau_min %lf\n" % params_ranges['log_tau'][0])
-	file_out.write("pr_log_tau_max %lf\n" % params_ranges['log_tau'][1])
-	file_out.write("pr_log_t0_min %lf\n" % params_ranges['log_t0'][0])
-	file_out.write("pr_log_t0_max %lf\n" % params_ranges['log_t0'][1])
-	file_out.write("pr_log_alpha_min %lf\n" % params_ranges['log_alpha'][0])
-	file_out.write("pr_log_alpha_max %lf\n" % params_ranges['log_alpha'][1])
-	file_out.write("pr_log_beta_min %lf\n" % params_ranges['log_beta'][0])
-	file_out.write("pr_log_beta_max %lf\n" % params_ranges['log_beta'][1])
-	file_out.write("pr_log_age_min %lf\n" % params_ranges['log_age'][0])
-	file_out.write("pr_log_age_max %lf\n" % params_ranges['log_age'][1])
-	file_out.write("pr_dust_index_min %lf\n" % params_ranges['dust_index'][0])
-	file_out.write("pr_dust_index_max %lf\n" % params_ranges['dust_index'][1])
-	file_out.write("pr_dust1_min %lf\n" % params_ranges['dust1'][0])
-	file_out.write("pr_dust1_max %lf\n" % params_ranges['dust1'][1])
-	file_out.write("pr_dust2_min %lf\n" % params_ranges['dust2'][0])
-	file_out.write("pr_dust2_max %lf\n" % params_ranges['dust2'][1])
-	file_out.write("pr_log_gamma_min %lf\n" % params_ranges['log_gamma'][0])
-	file_out.write("pr_log_gamma_max %lf\n" % params_ranges['log_gamma'][1])
-	file_out.write("pr_log_umin_min %lf\n" % params_ranges['log_umin'][0])
-	file_out.write("pr_log_umin_max %lf\n" % params_ranges['log_umin'][1])
-	file_out.write("pr_log_qpah_min %lf\n" % params_ranges['log_qpah'][0])
-	file_out.write("pr_log_qpah_max %lf\n" % params_ranges['log_qpah'][1])
-	file_out.write("pr_log_fagn_min %lf\n" % params_ranges['log_fagn'][0])
-	file_out.write("pr_log_fagn_max %lf\n" % params_ranges['log_fagn'][1])
-	file_out.write("pr_log_tauagn_min %lf\n" % params_ranges['log_tauagn'][0])
-	file_out.write("pr_log_tauagn_max %lf\n" % params_ranges['log_tauagn'][1])
-	file_out.write("pr_nparams %d\n" % len(priors_coll))
-	for ii in range(0,len(priors_coll)):
-		priors = priors_coll[ii]
-		param = priors[0]
-		form = priors[1]
-		file_out.write("pr_param%d %s\n" % (ii,param))
-		file_out.write("pr_form_%s %s\n" % (param,form))
-		if form == 'gaussian':
-			loc, scale = priors[2], priors[3]
-			file_out.write("pr_form_%s_gauss_loc %lf\n" % (param,loc))
-			file_out.write("pr_form_%s_gauss_scale %lf\n" % (param,scale))
-		elif form == 'studentt':
-			df, loc, scale = priors[2], priors[3], priors[4]
-			file_out.write("pr_form_%s_stdt_df %lf\n" % (param,df))
-			file_out.write("pr_form_%s_stdt_loc %lf\n" % (param,loc))
-			file_out.write("pr_form_%s_stdt_scale %lf\n" % (param,scale))
-		elif form == 'gamma':
-			a, loc, scale = priors[2], priors[3], priors[4]
-			file_out.write("pr_form_%s_gamma_a %lf\n" % (param,a))
-			file_out.write("pr_form_%s_gamma_loc %lf\n" % (param,loc))
-			file_out.write("pr_form_%s_gamma_scale %lf\n" % (param,scale))
-	file_out.close()
+		"""
+		namepr = randname("arbtprior",".dat")
+		write_arbitprior(namepr,values,prob)
+		os.system('mv %s %s' % (namepr,temp_dir))
+		prior = [param, "arbitrary", namepr]
+		return prior
 
 
 def singleSEDfit(obs_flux,obs_flux_err,filters,models_spec,params_ranges=None,params_priors=None,fit_method='mcmc',
@@ -326,14 +212,11 @@ def singleSEDfit(obs_flux,obs_flux_err,filters,models_spec,params_ranges=None,pa
 		Name of output FITS file. This parameter is optional. 
 	"""
 
-	CODE_dir = PIXEDFIT_HOME+'/piXedfit/piXedfit_fitting/'
-	temp_dir = PIXEDFIT_HOME+'/data/temp/'
-
 	# get number of filters:
 	nbands = len(filters)
 
 	# file of filter list
-	name_filters_list = "filters_list%d.dat" % (randint(0,10000))
+	name_filters_list = randname("filters_list",".dat")
 	write_filters_list(name_filters_list,filters)
 	os.system('mv %s %s' % (name_filters_list,temp_dir))
 
@@ -356,28 +239,26 @@ def singleSEDfit(obs_flux,obs_flux_err,filters,models_spec,params_ranges=None,pa
 		free_z = 0
 
 	# configuration file
-	name_config = "config_file%d.dat" % (randint(0,10000))
-	write_conf_file(name_config,params_ranges,params_priors,nwalkers,nsteps,nsteps_cut,nproc,cosmo,H0,
+	name_config = randname("config_file",".dat")
+	flg_write = write_conf_file(name_config,params_ranges,params_priors,nwalkers,nsteps,nsteps_cut,nproc,cosmo,H0,
 					Om0,fit_method,likelihood,dof,models_spec,gal_z,nrands_z,add_igm_absorption,igm_type,
 					perc_chi2,initfit_nmodels_mcmc)
 	os.system('mv %s %s' % (name_config,temp_dir))
 
 	# input SED text file
-	name_SED_txt = "inputSED_file%d.dat" % (randint(0,20000))
+	name_SED_txt = randname("inputSED_file",".dat")
 	write_input_singleSED(name_SED_txt,obs_flux,obs_flux_err)
 	os.system('mv %s %s' % (name_SED_txt,temp_dir))
 
 	# output files name:
 	if name_out_fits == None:
-		random_int = (randint(0,20000))
 		if fit_method=='mcmc' or fit_method=='MCMC':
-			name_out_fits = "mcmc_fit%d.fits" % random_int
+			name_out_fits = randname("mcmc_fit",".fits")
 		elif fit_method=='rdsps' or fit_method=='RDSPS':
-			name_out_fits = "rdsps_fit%d.fits" % random_int
+			name_out_fits = randname("rdsps_fit",".fits")
 
 	if fit_method=='mcmc' or fit_method=='MCMC':
-		random_int = (randint(0,20000))
-		name_samplers_hdf5 = "samplers_%d.hdf5" % random_int
+		name_samplers_hdf5 = randname("samplers_",".hdf5")
 
 		os.system("mpirun -n %d python %s./mc_p1.py %s %s %s %s" % (nproc,CODE_dir,name_filters_list,name_config,
 																	name_SED_txt,name_samplers_hdf5))
@@ -422,6 +303,9 @@ def singleSEDfit(obs_flux,obs_flux_err,filters,models_spec,params_ranges=None,pa
 	os.system("rm %s%s" % (temp_dir,name_SED_txt))
 	if fit_method=='mcmc' or fit_method=='MCMC':
 		os.system("rm %s%s" % (temp_dir,name_samplers_hdf5))
+	if len(flg_write)>0:
+		for ii in range(0,len(flg_write)):
+			os.system("rm %s%s" % (temp_dir,flg_write[ii]))
 
 	return name_out_fits
 
@@ -530,14 +414,11 @@ def singleSEDfit_specphoto(obs_flux,obs_flux_err,filters,spec_wave,spec_flux,spe
 		Name of output FITS file. This parameter is optional. 
 	"""
 
-	CODE_dir = PIXEDFIT_HOME+'/piXedfit/piXedfit_fitting/'
-	temp_dir = PIXEDFIT_HOME+'/data/temp/'
-
 	# get number of filters:
 	nbands = len(filters)
 
 	# file of filter list
-	name_filters_list = "filters_list%d.dat" % (randint(0,10000))
+	name_filters_list = randname("filters_list",".dat")
 	write_filters_list(name_filters_list,filters)
 	os.system('mv %s %s' % (name_filters_list,temp_dir))
 
@@ -560,29 +441,27 @@ def singleSEDfit_specphoto(obs_flux,obs_flux_err,filters,spec_wave,spec_flux,spe
 		free_z = 0
 
 	# configuration file
-	name_config = "config_file%d.dat" % (randint(0,10000))
-	write_conf_file(name_config,params_ranges,params_priors,nwalkers,nsteps,nsteps_cut,nproc,cosmo,H0,
+	name_config = randname("config_file",".dat")
+	flg_write = write_conf_file(name_config,params_ranges,params_priors,nwalkers,nsteps,nsteps_cut,nproc,cosmo,H0,
 					Om0,fit_method,likelihood,dof,models_spec,gal_z,nrands_z,add_igm_absorption,igm_type,
 					perc_chi2,initfit_nmodels_mcmc,spec_sigma=spec_sigma,poly_order=poly_order,
 					del_wave_nebem=del_wave_nebem,spec_chi_sigma_clip=spec_chi_sigma_clip)
 	os.system('mv %s %s' % (name_config,temp_dir))
 
 	# input SED in HDF5
-	inputSED_file = "inputSED_file%d.hdf5" % (randint(0,20000))
+	inputSED_file = randname("inputSED_file",".hdf5")
 	write_input_specphoto_hdf5(inputSED_file,obs_flux,obs_flux_err,spec_wave,spec_flux,spec_flux_err)
 	os.system('mv %s %s' % (inputSED_file,temp_dir))
 
 	# output files name:
 	if name_out_fits == None:
-		random_int = (randint(0,20000))
 		if fit_method=='mcmc' or fit_method=='MCMC':
-			name_out_fits = "mcmc_fit%d.fits" % random_int
+			name_out_fits = randname("mcmc_fit",".fits")
 		elif fit_method=='rdsps' or fit_method=='RDSPS':
-			name_out_fits = "rdsps_fit%d.fits" % random_int
+			name_out_fits = randname("rdsps_fit",".fits")
 
 	if fit_method=='mcmc' or fit_method=='MCMC':
-		random_int = (randint(0,20000))
-		name_samplers_hdf5 = "samplers_%d.hdf5" % random_int
+		name_samplers_hdf5 = randname("samplers_",".hdf5")
 
 		os.system("mpirun -n %d python %s./mc_p1_sp.py %s %s %s %s" % (nproc,CODE_dir,name_filters_list,name_config,
 																		inputSED_file,name_samplers_hdf5))
@@ -627,6 +506,9 @@ def singleSEDfit_specphoto(obs_flux,obs_flux_err,filters,spec_wave,spec_flux,spe
 	os.system("rm %s%s" % (temp_dir,inputSED_file))
 	if fit_method=='mcmc' or fit_method=='MCMC':
 		os.system("rm %s%s" % (temp_dir,name_samplers_hdf5))
+	if len(flg_write)>0:
+		for ii in range(0,len(flg_write)):
+			os.system("rm %s%s" % (temp_dir,flg_write[ii]))
 
 	return name_out_fits
 
@@ -721,9 +603,6 @@ def SEDfit_from_binmap_specphoto(fits_binmap,binid_range=[],bin_ids=[],models_sp
 		Example: name_out_fits = ['bin1.fits', 'bin2.fits', ..., 'binN.fits'].
 	"""
 
-	CODE_dir = PIXEDFIT_HOME+'/piXedfit/piXedfit_fitting/'
-	temp_dir = PIXEDFIT_HOME+'/data/temp/'
-
 	# open the input FITS file
 	hdu = fits.open(fits_binmap)
 	header = hdu[0].header
@@ -764,7 +643,7 @@ def SEDfit_from_binmap_specphoto(fits_binmap,binid_range=[],bin_ids=[],models_sp
 	hdu.close()
 
 	# file of filter list
-	name_filters_list = "filters_list%d.dat" % (randint(0,10000))
+	name_filters_list = randname("filters_list",".dat")
 	write_filters_list(name_filters_list,filters)
 	os.system('mv %s %s' % (name_filters_list,temp_dir))
 
@@ -789,8 +668,8 @@ def SEDfit_from_binmap_specphoto(fits_binmap,binid_range=[],bin_ids=[],models_sp
 		free_z = 0
 
 	# configuration file
-	name_config = "config_file%d.dat" % (randint(0,10000))
-	write_conf_file(name_config,params_ranges,params_priors,nwalkers,nsteps,nsteps_cut,nproc,cosmo,H0,
+	name_config = randname("config_file",".dat")
+	flg_write = write_conf_file(name_config,params_ranges,params_priors,nwalkers,nsteps,nsteps_cut,nproc,cosmo,H0,
 					Om0,fit_method,likelihood,dof,models_spec,gal_z,nrands_z,add_igm_absorption,igm_type,
 					perc_chi2,initfit_nmodels_mcmc,spec_sigma=spec_sigma,poly_order=poly_order,
 					del_wave_nebem=del_wave_nebem,spec_chi_sigma_clip=spec_chi_sigma_clip)
@@ -831,14 +710,13 @@ def SEDfit_from_binmap_specphoto(fits_binmap,binid_range=[],bin_ids=[],models_sp
 		# spectrophotometric
 		if np.sum(bin_spec_flux[int(idx_bin)])>0:
 			# input SED in HDF5
-			inputSED_file = "inputSED_file%d.hdf5" % (randint(0,20000))
+			inputSED_file = randname("inputSED_file",".hdf5")
 			write_input_specphoto_hdf5(inputSED_file,bin_photo_flux[int(idx_bin)],bin_photo_flux_err[int(idx_bin)],
 										spec_wave,bin_spec_flux[int(idx_bin)],bin_spec_flux_err[int(idx_bin)])
 			os.system('mv %s %s' % (inputSED_file,temp_dir))
 
 			if fit_method=='mcmc' or fit_method=='MCMC':
-				random_int = (randint(0,20000))
-				name_samplers_hdf5 = "samplers_%d.hdf5" % random_int
+				name_samplers_hdf5 = randname("samplers_",".hdf5")
 
 				os.system("mpirun -n %d python %s./mc_p1_sp.py %s %s %s %s" % (nproc,CODE_dir,name_filters_list,name_config,inputSED_file,name_samplers_hdf5))
 				os.system('mv %s %s' % (name_samplers_hdf5,temp_dir))
@@ -850,6 +728,7 @@ def SEDfit_from_binmap_specphoto(fits_binmap,binid_range=[],bin_ids=[],models_sp
 				else:
 					print ("Input store_full_samplers not recognized!")
 					sys.exit()
+				os.system("rm %s%s" % (temp_dir,name_samplers_hdf5))
 
 			elif fit_method=='rdsps' or fit_method=='RDSPS':
 				if store_full_samplers==1 or store_full_samplers==True:
@@ -869,26 +748,19 @@ def SEDfit_from_binmap_specphoto(fits_binmap,binid_range=[],bin_ids=[],models_sp
 				print ("The input fit_method is not recognized!")
 				sys.exit()
 
-			# free disk space:
-			os.system("rm %s%s" % (temp_dir,name_config))
-			os.system("rm %s%s" % (temp_dir,name_filters_list))
 			os.system("rm %s%s" % (temp_dir,inputSED_file))
-			if fit_method=='mcmc' or fit_method=='MCMC':
-				os.system("rm %s%s" % (temp_dir,name_samplers_hdf5))
 
 		# photometric SED
 		else:
 			# store input SED into a text file
-			name_SED_txt = "inputSED_file%d.dat" % (randint(0,20000))
+			name_SED_txt = randname("inputSED_file",".dat")
 			write_input_singleSED(name_SED_txt,bin_photo_flux[int(idx_bin)],bin_photo_flux_err[int(idx_bin)])
 			os.system('mv %s %s' % (name_SED_txt,temp_dir))
 
 			if fit_method=='mcmc' or fit_method=='MCMC':
-				name_samplers_hdf5 = "samplers_%d.hdf5" % (randint(0,20000))
-
+				name_samplers_hdf5 = randname("samplers_",".hdf5")
 				os.system("mpirun -n %d python %s./mc_p1.py %s %s %s %s" % (nproc,CODE_dir,name_filters_list,name_config,name_SED_txt,name_samplers_hdf5))
 				os.system('mv %s %s' % (name_samplers_hdf5,temp_dir))
-					
 				if store_full_samplers==1 or store_full_samplers==True:
 					os.system("mpirun -n %d python %s./mc_p2.py %s %s %s %s" % (nproc_new,CODE_dir,name_filters_list,name_config,name_samplers_hdf5,name_out_fits1))
 				elif store_full_samplers==0 or store_full_samplers==False:
@@ -898,12 +770,9 @@ def SEDfit_from_binmap_specphoto(fits_binmap,binid_range=[],bin_ids=[],models_sp
 					sys.exit()
 
 				count_id = count_id + 1
-
-				os.system("rm %s%s" % (temp_dir,name_SED_txt))
 				os.system("rm %s%s" % (temp_dir,name_samplers_hdf5))
 
 			elif fit_method=='rdsps' or fit_method=='RDSPS':
-
 				if store_full_samplers==1 or store_full_samplers==True:
 					if free_z==0:
 						os.system("mpirun -n %d python %s./rd_fz.py %s %s %s %s" % (nproc_new,CODE_dir,name_filters_list,name_config,name_SED_txt,name_out_fits1))
@@ -918,13 +787,16 @@ def SEDfit_from_binmap_specphoto(fits_binmap,binid_range=[],bin_ids=[],models_sp
 					print ("Input store_full_samplers not recognized!")
 					sys.exit()
 
-				os.system("rm %s%s" % (temp_dir,name_SED_txt))
+			os.system("rm %s%s" % (temp_dir,name_SED_txt))
 
 		count_id = count_id + 1
 
 	# free disk space:
 	os.system("rm %s%s" % (temp_dir,name_filters_list))
 	os.system("rm %s%s" % (temp_dir,name_config))
+	if len(flg_write)>0:
+		for ii in range(0,len(flg_write)):
+			os.system("rm %s%s" % (temp_dir,flg_write[ii]))
 
 
 def SEDfit_from_binmap(fits_binmap,binid_range=[],bin_ids=[],models_spec=None,params_ranges=None,params_priors=None,
@@ -1016,9 +888,6 @@ def SEDfit_from_binmap(fits_binmap,binid_range=[],bin_ids=[],models_spec=None,pa
 		Example: name_out_fits = ['bin1.fits', 'bin2.fits', ..., 'binN.fits'].
 	"""
 
-	CODE_dir = PIXEDFIT_HOME+'/piXedfit/piXedfit_fitting/'
-	temp_dir = PIXEDFIT_HOME+'/data/temp/'
-
 	# open pixel binning maps
 	hdu = fits.open(fits_binmap)
 	header = hdu[0].header
@@ -1038,7 +907,7 @@ def SEDfit_from_binmap(fits_binmap,binid_range=[],bin_ids=[],models_spec=None,pa
 		filters.append(header[str_temp])
 
 	# file of filter list
-	name_filters_list = "filters_list%d.dat" % (randint(0,10000))
+	name_filters_list = randname("filters_list",".dat")
 	write_filters_list(name_filters_list,filters)
 	os.system('mv %s %s' % (name_filters_list,temp_dir))
 
@@ -1063,8 +932,8 @@ def SEDfit_from_binmap(fits_binmap,binid_range=[],bin_ids=[],models_spec=None,pa
 		free_z = 0
 
 	# configuration file
-	name_config = "config_file%d.dat" % (randint(0,10000))
-	write_conf_file(name_config,params_ranges,params_priors,nwalkers,nsteps,nsteps_cut,nproc,cosmo,H0,
+	name_config = randname("config_file",".dat")
+	flg_write = write_conf_file(name_config,params_ranges,params_priors,nwalkers,nsteps,nsteps_cut,nproc,cosmo,H0,
 					Om0,fit_method,likelihood,dof,models_spec,gal_z,nrands_z,add_igm_absorption,igm_type,
 					perc_chi2,initfit_nmodels_mcmc)
 	os.system('mv %s %s' % (name_config,temp_dir))
@@ -1096,7 +965,7 @@ def SEDfit_from_binmap(fits_binmap,binid_range=[],bin_ids=[],models_spec=None,pa
 			rows, cols = np.where(bin_map==idx_bin+1)
 
 			# input SED text file
-			name_SED_txt = "inputSED_file%d.dat" % (randint(0,20000))
+			name_SED_txt = randname("inputSED_file",".dat")
 			write_input_singleSED(name_SED_txt,bin_flux_trans[rows[0]][cols[0]],bin_flux_err_trans[rows[0]][cols[0]])
 			os.system('mv %s %s' % (name_SED_txt,temp_dir))
 
@@ -1106,8 +975,7 @@ def SEDfit_from_binmap(fits_binmap,binid_range=[],bin_ids=[],models_spec=None,pa
 			else:
 				name_out_fits1 = name_out_fits[int(count_id)]
 
-			random_int = (randint(0,20000))
-			name_samplers_hdf5 = "samplers_%d.hdf5" % random_int
+			name_samplers_hdf5 = randname("samplers_",".hdf5")
 
 			os.system("mpirun -n %d python %s./mc_p1.py %s %s %s %s" % (nproc,CODE_dir,name_filters_list,name_config,name_SED_txt,name_samplers_hdf5))
 			os.system('mv %s %s' % (name_samplers_hdf5,temp_dir))
@@ -1130,7 +998,7 @@ def SEDfit_from_binmap(fits_binmap,binid_range=[],bin_ids=[],models_spec=None,pa
 		if len(bin_ids) == 1:
 			rows, cols = np.where(bin_map==int(bin_ids[0])+1)
 
-			name_SED_txt = "inputSED_file%d.dat" % (randint(0,20000))
+			name_SED_txt = randname("inputSED_file",".dat")
 			write_input_singleSED(name_SED_txt,bin_flux_trans[rows[0]][cols[0]],bin_flux_err_trans[rows[0]][cols[0]])
 			os.system('mv %s %s' % (name_SED_txt,temp_dir))
 
@@ -1159,7 +1027,7 @@ def SEDfit_from_binmap(fits_binmap,binid_range=[],bin_ids=[],models_spec=None,pa
 		# multiple bins
 		else:
 			# input SEDs: store to hdf5 file
-			name_inputSEDs = "input_SEDs_%d.hdf5" % (randint(0,10000))
+			name_inputSEDs = randname("input_SEDs_",".hdf5")
 			with h5py.File(name_inputSEDs, 'w') as f:
 				m = f.create_group('obs_seds')
 				m.attrs['nbins_calc'] = len(bin_ids)
@@ -1177,14 +1045,14 @@ def SEDfit_from_binmap(fits_binmap,binid_range=[],bin_ids=[],models_spec=None,pa
 
 			# name outputs:
 			if len(name_out_fits) == 0:
-				name_outs = "name_outs_%d.dat" % (randint(0,10000))
+				name_outs = randname("name_outs",".dat")
 				file_out = open(name_outs,"w")
 				for idx_bin in bin_ids:
 					name0 = "rdsps_bin%d.fits" % (idx_bin+1)
 					file_out.write("%s\n" % name0)
 				file_out.close()
 			else:
-				name_outs = "name_outs_%d.dat" % (randint(0,10000))
+				name_outs = randname("name_outs",".dat")
 				file_out = open(name_outs,"w")
 				for zz in range(0,len(name_out_fits)):
 					file_out.write("%s\n" % name_out_fits[zz])
@@ -1218,6 +1086,9 @@ def SEDfit_from_binmap(fits_binmap,binid_range=[],bin_ids=[],models_spec=None,pa
 	# free disk space:
 	os.system("rm %s%s" % (temp_dir,name_filters_list))
 	os.system("rm %s%s" % (temp_dir,name_config))
+	if len(flg_write)>0:
+		for ii in range(0,len(flg_write)):
+			os.system("rm %s%s" % (temp_dir,flg_write[ii]))
 
 
 def SEDfit_pixels_from_fluxmap(fits_fluxmap,x_range=[],y_range=[],models_spec=None,params_ranges=None,params_priors=None,
@@ -1305,9 +1176,6 @@ def SEDfit_pixels_from_fluxmap(fits_fluxmap,x_range=[],y_range=[],models_spec=No
 		Options are: (a) 1 or True and (b) 0 or False.
 	"""
 
-	CODE_dir = PIXEDFIT_HOME+'/piXedfit/piXedfit_fitting/'
-	temp_dir = PIXEDFIT_HOME+'/data/temp/'
-
 	# open the input FITS file
 	hdu = fits.open(fits_fluxmap)
 	header = hdu[0].header
@@ -1328,7 +1196,7 @@ def SEDfit_pixels_from_fluxmap(fits_fluxmap,x_range=[],y_range=[],models_spec=No
 		str_temp = 'fil%d' % bb
 		filters.append(header[str_temp])
 	
-	name_filters_list = "filters_list%d.dat" % (randint(0,10000))
+	name_filters_list = randname("filters_list",".dat")
 	write_filters_list(name_filters_list,filters)
 	os.system('mv %s %s' % (name_filters_list,temp_dir))
 
@@ -1360,8 +1228,8 @@ def SEDfit_pixels_from_fluxmap(fits_fluxmap,x_range=[],y_range=[],models_spec=No
 		free_z = 0
 
 	# configuration file
-	name_config = "config_file%d.dat" % (randint(0,10000))
-	write_conf_file(name_config,params_ranges,params_priors,nwalkers,nsteps,nsteps_cut,nproc,cosmo,H0,
+	name_config = randname("config_file",".dat")
+	flg_write = write_conf_file(name_config,params_ranges,params_priors,nwalkers,nsteps,nsteps_cut,nproc,cosmo,H0,
 					Om0,fit_method,likelihood,dof,models_spec,gal_z,nrands_z,add_igm_absorption,igm_type,
 					perc_chi2,initfit_nmodels_mcmc,spec_sigma=spec_sigma,poly_order=poly_order,
 					del_wave_nebem=del_wave_nebem,spec_chi_sigma_clip=spec_chi_sigma_clip)
@@ -1381,16 +1249,13 @@ def SEDfit_pixels_from_fluxmap(fits_fluxmap,x_range=[],y_range=[],models_spec=No
 					obs_flux_err = map_flux_err_trans[yy][xx]
 
 					# input SED text file
-					name_SED_txt = "inputSED_file%d.dat" % (randint(0,20000))
+					name_SED_txt = randname("inputSED_file",".dat")
 					write_input_singleSED(name_SED_txt,obs_flux,obs_flux_err)
 					os.system('mv %s %s' % (name_SED_txt,temp_dir))
 
 					# name of output FITS file
 					name_out_fits = "pix_y%d_x%d_mcmc.fits" % (yy,xx)
-
-					random_int = (randint(0,20000))
-					name_samplers_hdf5 = "samplers_%d.hdf5" % random_int
-
+					name_samplers_hdf5 = randname("samplers_",".hdf5")
 					os.system("mpirun -n %d python %s./mc_p1.py %s %s %s %s" % (nproc,CODE_dir,name_filters_list,name_config,
 																				name_SED_txt,name_samplers_hdf5))
 					os.system('mv %s %s' % (name_samplers_hdf5,temp_dir))
@@ -1409,10 +1274,10 @@ def SEDfit_pixels_from_fluxmap(fits_fluxmap,x_range=[],y_range=[],models_spec=No
 					os.system('rm %s%s' % (temp_dir,name_samplers_hdf5))
 
 	elif fit_method=='rdsps' or fit_method=='RDSPS':
-		name_outs = "name_outs_%d.dat" % (randint(0,10000))
+		name_outs = randname("name_outs_",".dat")
 		file_out = open(name_outs,"w")
 		# input SEDs: store to hdf5 file
-		name_inputSEDs = "input_SEDs_%d.hdf5" % (randint(0,10000))
+		name_inputSEDs = randname("input_SEDs_",".hdf5")
 		with h5py.File(name_inputSEDs, 'w') as f:
 			m = f.create_group('obs_seds')
 			fl = m.create_group('flux')
@@ -1465,6 +1330,9 @@ def SEDfit_pixels_from_fluxmap(fits_fluxmap,x_range=[],y_range=[],models_spec=No
 	# free disk space:
 	os.system("rm %s%s" % (temp_dir,name_filters_list))
 	os.system("rm %s%s" % (temp_dir,name_config))
+	if len(flg_write)>0:
+		for ii in range(0,len(flg_write)):
+			os.system("rm %s%s" % (temp_dir,flg_write[ii]))
 
 
 def inferred_params_mcmc_list(list_name_fits=[],name_out_fits=None):
