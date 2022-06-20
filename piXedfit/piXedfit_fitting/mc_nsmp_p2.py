@@ -24,7 +24,7 @@ def store_to_fits(nsamples=None,sampler_params=None,sampler_log_sfr=None,sampler
 
 	#==> get median best-fit model SED
 	nchains = 200
-	idx_sel = np.where(sampler_log_sfr>-29.0)
+	idx_sel = np.where((sampler_log_sfr>-29.0) & (sampler_params['log_age']<1.2))
 	nchains = int(nchains/size)*size
 	numDataPerRank = int(nchains/size)
 	idx_mpi = np.random.uniform(0,len(idx_sel[0])-1,nchains)
@@ -43,26 +43,31 @@ def store_to_fits(nsamples=None,sampler_params=None,sampler_log_sfr=None,sampler
 	count = 0
 	for ii in recvbuf_idx:
 		params_val = def_params_val
+		param_stat = 0
 		for pp in range(0,nparams):
-			params_val[params[pp]] = sampler_params[params[pp]][int(idx_sel[0][int(ii)])]
+			val0 = sampler_params[params[pp]][int(idx_sel[0][int(ii)])]
+			params_val[params[pp]] = val0
+			if val0>=priors_min[pp] and val0<=priors_max[pp]:
+				param_stat = param_stat + 1
 
-		spec_SED = generate_modelSED_spec_decompose(sp=sp,params_val=params_val,imf=imf,duste_switch=duste_switch,
-						add_neb_emission=add_neb_emission,dust_law=dust_law,add_agn=add_agn,
-						add_igm_absorption=add_igm_absorption,igm_type=igm_type,cosmo=cosmo,H0=H0,
-						Om0=Om0,gas_logu=gas_logu,sfh_form=sfh_form,funit='erg/s/cm2/A')
+		if param_stat == nparams:
+			spec_SED = generate_modelSED_spec_decompose(sp=sp,params_val=params_val,imf=imf,duste_switch=duste_switch,
+							add_neb_emission=add_neb_emission,dust_law=dust_law,add_agn=add_agn,
+							add_igm_absorption=add_igm_absorption,igm_type=igm_type,cosmo=cosmo,H0=H0,
+							Om0=Om0,gas_logu=gas_logu,sfh_form=sfh_form,funit='erg/s/cm2/A')
 
-		bfit_photo_flux_temp[:,int(count)] = filtering(spec_SED['wave'],spec_SED['flux_total'],filters)
+			bfit_photo_flux_temp[:,int(count)] = filtering(spec_SED['wave'],spec_SED['flux_total'],filters)
 
-		bfit_spec_wave = spec_SED['wave']
-		bfit_spec_tot_temp[:,int(count)] = spec_SED['flux_total']
-		bfit_spec_stellar_temp[:,int(count)] = spec_SED['flux_stellar']
+			bfit_spec_wave = spec_SED['wave']
+			bfit_spec_tot_temp[:,int(count)] = spec_SED['flux_total']
+			bfit_spec_stellar_temp[:,int(count)] = spec_SED['flux_stellar']
 
-		if add_neb_emission == 1:
-			bfit_spec_nebe_temp[:,int(count)] = spec_SED['flux_nebe']
-		if duste_switch==1:
-			bfit_spec_duste_temp[:,int(count)] = spec_SED['flux_duste']
-		if add_agn == 1:
-			bfit_spec_agn_temp[:,int(count)] = spec_SED['flux_agn']
+			if add_neb_emission == 1:
+				bfit_spec_nebe_temp[:,int(count)] = spec_SED['flux_nebe']
+			if duste_switch==1:
+				bfit_spec_duste_temp[:,int(count)] = spec_SED['flux_duste']
+			if add_agn == 1:
+				bfit_spec_agn_temp[:,int(count)] = spec_SED['flux_agn']
 
 		count = count + 1
 
@@ -140,8 +145,7 @@ def store_to_fits(nsamples=None,sampler_params=None,sampler_log_sfr=None,sampler
 		if add_igm_absorption == 1:
 			hdr['igm_type'] = igm_type
 		for bb in range(0,nbands):
-			str_temp = 'fil%d' % bb
-			hdr[str_temp] = filters[bb]
+			hdr['fil%d' % bb] = filters[bb]
 
 		if free_z == 0:
 			hdr['gal_z'] = gal_z
@@ -150,16 +154,13 @@ def store_to_fits(nsamples=None,sampler_params=None,sampler_log_sfr=None,sampler
 			hdr['free_z'] = 1
 		# add free parameters
 		for pp in range(0,nparams):
-			str_temp = 'param%d' % pp
-			hdr[str_temp] = params[pp]
+			hdr['param%d' % pp] = params[pp]
 		# add fix parameters, if any
 		hdr['nfixpar'] = nfix_params
 		if nfix_params > 0:
 			for pp in range(0,nfix_params):
-				str_temp = 'fpar%d' % pp
-				hdr[str_temp] = fix_params[pp]
-				str_temp = 'fpar%d_val' % pp 
-				hdr[str_temp] = fix_params_val[pp]
+				hdr['fpar%d' % pp] = fix_params[pp]
+				hdr['fpar%d_val' % pp] = fix_params_val[pp]
 		hdr['fitmethod'] = 'mcmc'
 		hdr['storesamp'] = 0
 		hdr['specphot'] = 0
@@ -654,16 +655,19 @@ add_agn = f['samplers'].attrs['add_agn']
 gas_logu = f['samplers'].attrs['gas_logu']
 nwaves_mod = int(f['samplers'].attrs['nwaves_mod'])
 
-# get list of free parameters
-global params, nparams
+# get list of free parameters and their ranges
+global params, nparams, priors_min, priors_max
 nparams = int(f['samplers'].attrs['nparams'])
 params = []
+priors_min = np.zeros(nparams)
+priors_max = np.zeros(nparams)
 for pp in range(0,nparams):
-	str_temp = 'par%d' % pp
-	attrs = f['samplers'].attrs[str_temp]
+	attrs = f['samplers'].attrs['par%d' % pp]
 	if isinstance(attrs, str) == False:
 		attrs = attrs.decode()
 	params.append(attrs)
+	priors_min[pp] = float(f['samplers'].attrs['min_%s' % attrs])
+	priors_max[pp] = float(f['samplers'].attrs['max_%s' % attrs])
 
 # get list of fix parameters, if any
 global nfix_params, fix_params, fix_params_val
@@ -672,17 +676,14 @@ if nfix_params>0:
 	fix_params = []
 	fix_params_val = np.zeros(nfix_params)
 	for pp in range(0,nfix_params):
-		str_temp = 'fpar%d' % pp
-		attrs = f['samplers'].attrs[str_temp]
+		attrs = f['samplers'].attrs['fpar%d' % pp]
 		if isinstance(attrs, str) == False:
 			attrs = attrs.decode()
 		fix_params.append(attrs)
 
-		str_temp = 'fpar%d_val' % pp
-		fix_params_val[pp] = float(f['samplers'].attrs[str_temp])
-
+		fix_params_val[pp] = float(f['samplers'].attrs['fpar%d_val' % pp])
 		# modify default parameters for next FSPS call
-		def_params_val[fix_params[pp]] = float(f['samplers'].attrs[str_temp])
+		def_params_val[fix_params[pp]] = float(f['samplers'].attrs['fpar%d_val' % pp])
 
 # get observed sed
 global obs_fluxes, obs_flux_err

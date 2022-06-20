@@ -78,7 +78,7 @@ def initfit_fz(gal_z,DL_Gpc):
 		count = count + 1
 
 		sys.stdout.write('\r')
-		sys.stdout.write('rank %d --> progress: z 1 of 1 (100%%) and model %d of %d (%d%%)' % (rank,count,numDataPerRank,count*100/numDataPerRank))
+		sys.stdout.write('rank %d --> progress: %d of %d (%d%%)' % (rank,count,numDataPerRank,count*100/numDataPerRank))
 		sys.stdout.flush()
 
 	mod_params = np.zeros((nparams,nmodels))
@@ -631,20 +631,19 @@ with MPIPool() as pool:
 		s.attrs['add_agn'] = add_agn
 		s.attrs['gas_logu'] = gas_logu
 		s.attrs['nwaves_mod'] = nwaves_mod
-		# free parameters
+		# free parameters and the prior ranges
 		s.attrs['nparams'] = nparams
-		for pp in range(0,nparams):
-			str_temp = 'par%d' % pp 
-			s.attrs[str_temp] = params[pp]
+		for pp in range(0,nparams): 
+			s.attrs['par%d' % pp] = params[pp]
+			s.attrs['min_%s' % params[pp]] = priors_min[pp]
+			s.attrs['max_%s' % params[pp]] = priors_max[pp]
 			s.create_dataset(params[pp], data=np.array(samples[:,pp]))
 		# fix parameters, if any
 		s.attrs['nfix_params'] = nfix_params
 		if nfix_params>0:
-			for pp in range(0,nfix_params):
-				str_temp = 'fpar%d' % pp 
-				s.attrs[str_temp] = fix_params[pp]
-				str_temp = 'fpar%d_val' % pp 
-				s.attrs[str_temp] = def_params_val[fix_params[pp]]
+			for pp in range(0,nfix_params): 
+				s.attrs['fpar%d' % pp] = fix_params[pp] 
+				s.attrs['fpar%d_val' % pp] = def_params_val[fix_params[pp]]
 				
 		o = f.create_group('sed')
 		o.create_dataset('flux', data=np.array(obs_fluxes))

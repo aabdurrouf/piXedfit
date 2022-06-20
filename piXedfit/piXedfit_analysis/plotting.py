@@ -521,10 +521,10 @@ def plot_SED_specphoto(filters=None,obs_photo=None,obs_spec=None,bfit_photo=None
 	#==> best-fit model spectrum
 	if header_samplers['fitmethod'] == 'mcmc': 
 		bfit_spec_flux = convert_unit_spec_from_ergscm2A(bfit_spec['wave'],bfit_spec['p50'],funit=funit)
-		bfit_photo_flux = convert_unit_spec_from_ergscm2A(bfit_photo['wave'],bfit_photo['p50'],funit=funit)
+		bfit_photo_flux = convert_unit_spec_from_ergscm2A(photo_cwave,bfit_photo['p50'],funit=funit)
 	elif header_samplers['fitmethod'] == 'rdsps':
 		bfit_spec_flux = convert_unit_spec_from_ergscm2A(bfit_spec['wave'],bfit_spec['flux'],funit=funit)
-		bfit_photo_flux = convert_unit_spec_from_ergscm2A(bfit_photo['wave'],bfit_photo['flux'],funit=funit)
+		bfit_photo_flux = convert_unit_spec_from_ergscm2A(photo_cwave,bfit_photo['flux'],funit=funit)
 
 	if wunit==0 or wunit=='angstrom':
 		plt.plot(obs_spec['wave'], obs_spec_flux, lw=lw, color='black', zorder=4)
