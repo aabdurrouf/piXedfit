@@ -784,8 +784,8 @@ def get_no_nebem_wave_fit(z,wave,del_wave):
 
 	nebem_wave = (1.0+z)*nebem_wave0
 
-	min_wave = min(wave)
-	max_wave = max(wave)
+	min_wave = min(np.asarray(wave))
+	max_wave = max(np.asarray(wave))
 
 	idx = np.where((nebem_wave>min_wave-del_wave) & (nebem_wave<max_wave+del_wave))
 	nebem_wave = nebem_wave[idx[0]]

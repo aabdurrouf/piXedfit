@@ -117,14 +117,14 @@ def store_to_fits(nsamples=None,sampler_params=None,sampler_log_sfr=None,sampler
 							add_igm_absorption=add_igm_absorption,igm_type=igm_type,cosmo=cosmo,H0=H0,
 							Om0=Om0,gas_logu=gas_logu,sfh_form=sfh_form,funit='erg/s/cm2/A')
 			bfit_spec_wave = spec_SED['wave']
-			bfit_spec_tot_temp[:,int(count)] = spec_SED['flux_total']
-			bfit_spec_stellar_temp[:,int(count)] = spec_SED['flux_stellar']
+			bfit_spec_tot_temp[:,int(count)] = spec_SED['flux_total']*norm
+			bfit_spec_stellar_temp[:,int(count)] = spec_SED['flux_stellar']*norm
 			if add_neb_emission == 1:
-				bfit_spec_nebe_temp[:,int(count)] = spec_SED['flux_nebe']
+				bfit_spec_nebe_temp[:,int(count)] = spec_SED['flux_nebe']*norm
 			if duste_switch==1:
-				bfit_spec_duste_temp[:,int(count)] = spec_SED['flux_duste']
+				bfit_spec_duste_temp[:,int(count)] = spec_SED['flux_duste']*norm
 			if add_agn == 1:
-				bfit_spec_agn_temp[:,int(count)] = spec_SED['flux_agn']
+				bfit_spec_agn_temp[:,int(count)] = spec_SED['flux_agn']*norm
 
 		count = count + 1
 

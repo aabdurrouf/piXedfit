@@ -451,11 +451,11 @@ def plot_SED_specphoto(filters=None,obs_photo=None,obs_spec=None,bfit_photo=None
 	plt.plot(obs_spec['wave'], obs_spec['flux'], lw=lw, color='black', label='Observed spectrum', zorder=4)
 
 	if header_samplers['fitmethod'] == 'mcmc':
-		f1.fill_between(bfit_spec['wave'], bfit_spec['p16'], bfit_spec['p84'], color='pink', alpha=0.5, zorder=5)
-		plt.plot(bfit_spec['wave'], bfit_spec['p50'], lw=lw, color='red', zorder=6)
+		f1.fill_between(bfit_spec['wave'], bfit_spec['p16'], bfit_spec['p84'], color='pink', alpha=0.2, edgecolor='none', zorder=5)
+		plt.plot(bfit_spec['wave'], bfit_spec['p50'], lw=1, color='red', zorder=6)
 
 	elif header_samplers['fitmethod'] == 'rdsps':
-		plt.plot(bfit_spec['wave'], bfit_spec['flux'], lw=lw, color='red', zorder=5)
+		plt.plot(bfit_spec['wave'], bfit_spec['flux'], lw=1, color='red', zorder=5)
 
 	name_plot2 = 'sp_%s' % name_plot
 	plt.savefig(name_plot2)
@@ -528,14 +528,14 @@ def plot_SED_specphoto(filters=None,obs_photo=None,obs_spec=None,bfit_photo=None
 
 	if wunit==0 or wunit=='angstrom':
 		plt.plot(obs_spec['wave'], obs_spec_flux, lw=lw, color='black', zorder=4)
-		plt.plot(bfit_spec['wave'], bfit_spec_flux, lw=lw, color='red', zorder=5)
+		plt.plot(bfit_spec['wave'], bfit_spec_flux, lw=1, color='red', zorder=5)
 
 		plt.scatter(photo_cwave, obs_fluxes, marker='o', s=markersize, color='blue', zorder=6)
 		plt.scatter(photo_cwave, bfit_photo_flux, marker='o', s=0.7*markersize, color='gray', zorder=7)
 
 	elif wunit==1 or wunit=='micron':
 		plt.plot(obs_spec['wave']/1.0e+4, obs_spec_flux, lw=lw, color='black', zorder=4)
-		plt.plot(bfit_spec['wave']/1.0e+4, bfit_spec_flux, lw=lw, color='red', zorder=5)
+		plt.plot(bfit_spec['wave']/1.0e+4, bfit_spec_flux, lw=1, color='red', zorder=5)
 
 		plt.scatter(photo_cwave/1.0e+4, obs_fluxes, marker='o', s=markersize, color='blue', zorder=6)
 		plt.scatter(photo_cwave/1.0e+4, bfit_photo_flux, marker='o', s=0.7*markersize, color='gray', zorder=7)

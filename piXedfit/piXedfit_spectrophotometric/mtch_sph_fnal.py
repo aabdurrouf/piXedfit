@@ -58,7 +58,7 @@ max_spec_wave = max(spec_wave)
 if header['ifssurve'] == 'manga':
 	spec_sigma = 3.5
 elif header['ifssurve'] == 'califa':
-	spec_wave = 2.6
+	spec_sigma = 2.6
 
 # output name
 name_out_fits = config_data['name_out_fits']
@@ -117,8 +117,7 @@ npixs = len(rows)
 
 # data of pre-calculated model rest-frame spectra
 if config_data['models_spec']=='none':
-	#models_spec = dir_mod+"spec_dpl_c20_nduste_nagn_50k.hdf5"
-	models_spec = dir_mod+"s_dpl_cf20_nd_na_50k.hdf5"
+	models_spec = dir_mod+"s_cb_dpl_cf_nde_na_50k.hdf5"
 else:
 	models_spec = config_data['models_spec']
 
@@ -178,8 +177,7 @@ for pp in range(0,npixs):
 		extnc_spec = f[str_temp][:]
 
 		# redshifting
-		redsh_wave,redsh_spec = cosmo_redshifting(DL_Gpc=DL_Gpc,cosmo=cosmo,H0=H0,Om0=Om0,
-													z=gal_z,wave=wave0,spec=extnc_spec)
+		redsh_wave,redsh_spec = cosmo_redshifting(DL_Gpc=DL_Gpc,cosmo=cosmo,H0=H0,Om0=Om0,z=gal_z,wave=wave0,spec=extnc_spec)
 
 		# filtering
 		mod_flux = filtering_interp_filters(redsh_wave,redsh_spec,interp_filters_waves,interp_filters_trans)
@@ -193,8 +191,7 @@ for pp in range(0,npixs):
 		count = count + 1
 
 		sys.stdout.write('\r')
-		sys.stdout.write('rank %d: pixel %d of %d -> model %d of %d (%d%%)' % (rank,(pp+1),npixs,count,len(recvbuf_idx),
-																					count*100/len(recvbuf_idx)))
+		sys.stdout.write('rank %d: pixel %d of %d -> model %d of %d (%d%%)' % (rank,(pp+1),npixs,count,len(recvbuf_idx),count*100/len(recvbuf_idx)))
 		sys.stdout.flush()
 	#sys.stdout.write('\n')
 
@@ -248,7 +245,6 @@ if rank == 0:
 	map_bfit_mod_spec_flux_trans = np.transpose(map_bfit_mod_spec_flux, axes=(2,0,1))
 	map_spec_corr_factor_trans = np.transpose(map_spec_corr_factor, axes=(2,0,1))
 
-
 	# Store into FITS file 
 	hdul = fits.HDUList()
 	hdul.append(fits.ImageHDU(data=photo_flux, header=header, name='photo_flux'))
@@ -263,7 +259,6 @@ if rank == 0:
 	hdul.append(fits.ImageHDU(map_spec_corr_factor_trans, name='corr_factor'))
 	# write to fits file
 	hdul.writeto(name_out_fits, overwrite=True)
-
 
 f.close()
 

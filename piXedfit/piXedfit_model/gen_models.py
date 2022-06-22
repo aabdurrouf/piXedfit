@@ -1063,8 +1063,8 @@ def save_models_photo(filters=[],gal_z=None,imf_type=1,sfh_form=4,dust_law=1,add
 def save_models_rest_spec(imf_type=1,sfh_form=4,dust_law=1,duste_switch=0,add_neb_emission=1,add_agn=0,gas_logu=-2.0,
 	nmodels=100000,params_range={'logzsol':[-2.0,0.2],'log_tau':[-1.0,1.5],'log_age':[-3.0,1.14],'log_alpha':[-2.0,2.0],
 	'log_beta':[-2.0,2.0],'log_t0':[-1.0,1.14],'dust_index':[-2.2,0.4],'dust1':[0.0,4.0], 'dust2':[0.0,4.0],
-	'log_gamma':[-4.0, 0.0],'log_umin':[-1.0,1.39],'log_qpah':[-3.0,1.0],'log_fagn':[-5.0,0.48],
-	'log_tauagn':[0.7, 2.18]},nproc=10,name_out=None):
+	'log_gamma':[-4.0, 0.0],'log_umin':[-1.0,1.39],'log_qpah':[-3.0,1.0],'log_fagn':[-5.0,0.48],'log_tauagn':[0.7, 2.18]},
+	nproc=10,name_out=None):
 	"""Function for generating rest-frame model spectra.  
 
 	:param imf_type: (default: 1)

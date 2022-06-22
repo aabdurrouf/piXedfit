@@ -210,7 +210,7 @@ def match_imgifs_spatial(photo_fluxmap,ifs_data,ifs_survey='manga',spec_smoothin
 
 
 def match_imgifs_spectral(specphoto_file, models_spec=None, nproc=10, del_wave_nebem=10.0, cosmo=0, 
-					H0=70.0, Om0=0.3, name_out_fits=None):
+	H0=70.0, Om0=0.3, name_out_fits=None):
 
 	"""Function for correcting wavelength-dependent mismatch between the IFS spectra and the photometric SEDs (on pixel level) 
 	in the spectrophotometric data cube (produced with the function :func:`piXedfit.piXedfit_spectrophotometric.match_imgifs_spatial`). 
