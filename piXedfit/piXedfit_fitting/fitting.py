@@ -665,6 +665,8 @@ def SEDfit_from_binmap_specphoto(fits_binmap,binid_range=[],bin_ids=[],models_sp
 		if gal_z<=0.0:
 			gal_z = -99.0
 			free_z = 1
+		else:
+			free_z = 0
 	else:
 		free_z = 0
 
@@ -907,6 +909,9 @@ def SEDfit_from_binmap(fits_binmap,binid_range=[],bin_ids=[],models_spec=None,pa
 		str_temp = 'fil%d' % bb 
 		filters.append(header[str_temp])
 
+	# number of bins:
+	nbins = int(header['nbins'])
+
 	# file of filter list
 	name_filters_list = randname("filters_list",".dat")
 	write_filters_list(name_filters_list,filters)
@@ -929,6 +934,8 @@ def SEDfit_from_binmap(fits_binmap,binid_range=[],bin_ids=[],models_spec=None,pa
 		if gal_z<=0.0:
 			gal_z = -99.0
 			free_z = 1
+		else:
+			free_z = 0
 	else:
 		free_z = 0
 
@@ -1225,6 +1232,8 @@ def SEDfit_pixels_from_fluxmap(fits_fluxmap,x_range=[],y_range=[],models_spec=No
 		if gal_z<=0.0:
 			gal_z = -99.0
 			free_z = 1
+		else:
+			free_z = 0
 	else:
 		free_z = 0
 

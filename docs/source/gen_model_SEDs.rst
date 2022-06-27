@@ -3,10 +3,9 @@
 Generating model SEDs
 =====================
 
-**piXedfit** uses `FSPS <https://github.com/cconroy20/fsps>`_ for modeling SED of galaxy. With the Python bindings `Python-FSPS <https://dfm.io/python-fsps/current/>`_, generating model SED can be done on the fly for any task. However, some tasks require a generation of model spectra in a fast pace that is diffcult to achieve using the python package. These tasks include generation of model SEDs for reference in the spectral matching between the Imaging and IFS data (see :ref:`this page <spectral_matching>`), SED fitting with the random dense sampling of parameter space (RDSPS), and initial fitting (i.e., burning up) before running MCMC for fitting SED (note that the MCMC fitting always use on-the-fly generation of model SEDs).  
+piXedfit uses FSPS for modeling the SED of galaxies. With the Python bindings via Python-FSPS, generating model SEDs can be done on the fly in the SED fitting. However, some tasks require a generation of model spectra in a fast pace that is difficult to achieve via the real time calculations. These tasks include generation of model SEDs for reference in the spectral matching between the Imaging and IFS data, SED fitting with the random dense sampling of parameter space (RDSPS), and initial fitting (i.e., burning up) before running SED fitting with the MCMC method (note that the MCMC fitting uses on-the-fly generation of model SEDs).
 
-For the above reason, **piXedfit** provides an option of generating a set of model spectra (in a rest-frame) prior to the analyses. The models are stored in the HDF5 format. The model spectra can be generated using function :func:`piXedfit.piXedfit_model.save_models_rest_spec`. Please see the API reference for more detailed information about this function. In practice, user only need to generate this set of models once, then these models can be used for various further analyses on all galaxies. 
-
+For that reason, piXedfit provides an option of generating a set of model spectra (in a rest-frame) prior to the analyses. The models are stored in the HDF5 format. The model spectra can be generated using function :func:`piXedfit.piXedfit_model.save_models_rest_spec`. Please see the API reference for more detailed information about this function. In practice, user only need to generate this set of models once, then these models can be used for various further analyses to multiple galaxies.
 
 Generate random model spectra at a rest-frame
 ---------------------------------------------
