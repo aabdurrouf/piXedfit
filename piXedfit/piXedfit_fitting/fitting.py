@@ -1675,7 +1675,7 @@ def get_inferred_params_rdsps(list_name_sampler_fits=[], bin_excld_flag=[], perc
 
 
 def maps_parameters(fits_binmap=None, bin_ids=[], name_sampler_fits=[], fits_fluxmap=None, refband_SFR=None, refband_SM=None, 
-	refband_Mdust=None, perc_chi2=80.0, name_out_fits=None):
+	refband_Mdust=None, perc_chi2=90.0, name_out_fits=None):
 	"""Function that can be used for constructing maps of properties from the fitting results of spatial bins.
 
 	:param fits_binmap: (Mandatory, default=None)
@@ -1713,13 +1713,20 @@ def maps_parameters(fits_binmap=None, bin_ids=[], name_sampler_fits=[], fits_flu
 
 	# open the FITS file containing the pixel binning map
 	hdu = fits.open(fits_binmap)
-	pix_bin_flag = hdu['bin_map'].data
 	unit_bin = float(hdu[0].header['unit'])
-	nbins = int(hdu[0].header['nbins'])
+	if hdu[0].header['SPECPHOT'] == 0:
+		nbins = int(hdu[0].header['nbins'])
+		pix_bin_flag = hdu['bin_map'].data
+		bin_flux = hdu['bin_flux'].data*unit_bin
+		bin_flux_err = hdu['bin_fluxerr'].data*unit_bin
+
+	elif hdu[0].header['SPECPHOT'] == 1:
+		nbins = int(hdu[0].header['NBINSPH'])
+		pix_bin_flag = hdu['PHOTO_BIN_MAP'].data
+		bin_flux = hdu['BIN_PHOTO_FLUX'].data*unit_bin
+		bin_flux_err = hdu['BIN_PHOTO_FLUXERR'].data*unit_bin
 	gal_z = float(hdu[0].header['z'])
 	nbands = int(hdu[0].header['nfilters'])
-	bin_flux = hdu['bin_flux'].data*unit_bin
-	bin_flux_err = hdu['bin_fluxerr'].data*unit_bin
 	hdu.close()
 
 	dim_y = pix_bin_flag.shape[0]
@@ -1736,10 +1743,15 @@ def maps_parameters(fits_binmap=None, bin_ids=[], name_sampler_fits=[], fits_flu
 
 	# open FITS file containing multiband fluxes maps
 	hdu = fits.open(fits_fluxmap)
-	galaxy_region = hdu['galaxy_region'].data
 	unit_pix = float(hdu[0].header['unit'])
-	pix_flux = hdu['flux'].data*unit_pix
-	pix_flux_err = hdu['flux_err'].data*unit_pix
+	if hdu[0].header['SPECPHOT'] == 0:
+		galaxy_region = hdu['galaxy_region'].data
+		pix_flux = hdu['flux'].data*unit_pix
+		pix_flux_err = hdu['flux_err'].data*unit_pix
+	elif hdu[0].header['SPECPHOT'] == 1:
+		galaxy_region = hdu['PHOTO_REGION'].data
+		pix_flux = hdu['PHOTO_FLUX'].data*unit_pix
+		pix_flux_err = hdu['PHOTO_FLUXERR'].data*unit_pix
 	hdu.close()
 
 	# check the fitting method and whether the sampler chains are stored or not
