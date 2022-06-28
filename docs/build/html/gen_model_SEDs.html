@@ -188,8 +188,8 @@
             
   <div class="section" id="generating-model-seds">
 <span id="gen-models-seds"></span><h1>Generating model SEDs<a class="headerlink" href="#generating-model-seds" title="Permalink to this headline">¶</a></h1>
-<p><strong>piXedfit</strong> uses <a class="reference external" href="https://github.com/cconroy20/fsps">FSPS</a> for modeling SED of galaxy. With the Python bindings <a class="reference external" href="https://dfm.io/python-fsps/current/">Python-FSPS</a>, generating model SED can be done on the fly for any task. However, some tasks require a generation of model spectra in a fast pace that is diffcult to achieve using the python package. These tasks include generation of model SEDs for reference in the spectral matching between the Imaging and IFS data (see <a class="reference internal" href="image_ifs_match.html#id1"><span class="std std-ref">this page</span></a>), SED fitting with the random dense sampling of parameter space (RDSPS), and initial fitting (i.e., burning up) before running MCMC for fitting SED (note that the MCMC fitting always use on-the-fly generation of model SEDs).</p>
-<p>For the above reason, <strong>piXedfit</strong> provides an option of generating a set of model spectra (in a rest-frame) prior to the analyses. The models are stored in the HDF5 format. The model spectra can be generated using function <a class="reference internal" href="piXedfit_model.html#piXedfit.piXedfit_model.save_models_rest_spec" title="piXedfit.piXedfit_model.save_models_rest_spec"><code class="xref py py-func docutils literal notranslate"><span class="pre">piXedfit.piXedfit_model.save_models_rest_spec()</span></code></a>. Please see the API reference for more detailed information about this function. In practice, user only need to generate this set of models once, then these models can be used for various further analyses on all galaxies.</p>
+<p>piXedfit uses FSPS for modeling the SED of galaxies. With the Python bindings via Python-FSPS, generating model SEDs can be done on the fly in the SED fitting. However, some tasks require a generation of model spectra in a fast pace that is difficult to achieve via the real time calculations. These tasks include generation of model SEDs for reference in the spectral matching between the Imaging and IFS data, SED fitting with the random dense sampling of parameter space (RDSPS), and initial fitting (i.e., burning up) before running SED fitting with the MCMC method (note that the MCMC fitting uses on-the-fly generation of model SEDs).</p>
+<p>For that reason, piXedfit provides an option of generating a set of model spectra (in a rest-frame) prior to the analyses. The models are stored in the HDF5 format. The model spectra can be generated using function <a class="reference internal" href="piXedfit_model.html#piXedfit.piXedfit_model.save_models_rest_spec" title="piXedfit.piXedfit_model.save_models_rest_spec"><code class="xref py py-func docutils literal notranslate"><span class="pre">piXedfit.piXedfit_model.save_models_rest_spec()</span></code></a>. Please see the API reference for more detailed information about this function. In practice, user only need to generate this set of models once, then these models can be used for various further analyses to multiple galaxies.</p>
 <div class="section" id="generate-random-model-spectra-at-a-rest-frame">
 <h2>Generate random model spectra at a rest-frame<a class="headerlink" href="#generate-random-model-spectra-at-a-rest-frame" title="Permalink to this headline">¶</a></h2>
 <p>To generate random model spectra at a rest-frame, you can make a script like the following. You can adjust the modeling parameters depending on the kind of models you need in your analysis. The ranges of parameters can also be adjusted. Please see the API reference of this function <a class="reference internal" href="piXedfit_model.html#api-model"><span class="std std-ref">here</span></a>.</p>
@@ -198,12 +198,12 @@
 
 <span class="n">imf_type</span> <span class="o">=</span> <span class="mi">1</span>                    <span class="c1"># Chabrier (2003)</span>
 <span class="n">sfh_form</span> <span class="o">=</span> <span class="mi">4</span>                    <span class="c1"># double power law SFH form</span>
-<span class="n">dust_ext_law</span> <span class="o">=</span> <span class="mi">0</span>                <span class="c1"># Charlot &amp; Fall (2000) dust attenuation law</span>
+<span class="n">dust_law</span> <span class="o">=</span> <span class="mi">0</span>                    <span class="c1"># Charlot &amp; Fall (2000) dust attenuation law</span>
 <span class="n">duste_switch</span> <span class="o">=</span> <span class="mi">0</span>                <span class="c1"># turn off dust emission</span>
 <span class="n">add_neb_emission</span> <span class="o">=</span> <span class="mi">1</span>            <span class="c1"># turn on nebular emission</span>
 <span class="n">add_agn</span> <span class="o">=</span> <span class="mi">0</span>                     <span class="c1"># turn off AGN dusty torus emission</span>
 
-<span class="n">nmodels</span> <span class="o">=</span> <span class="mi">200000</span>                <span class="c1"># number of model spectra to be generated</span>
+<span class="n">nmodels</span> <span class="o">=</span> <span class="mi">100000</span>                <span class="c1"># number of model spectra to be generated</span>
 <span class="n">nproc</span> <span class="o">=</span> <span class="mi">20</span>                      <span class="c1"># number of processors to be used in the calculation</span>
 
 <span class="n">name_out</span> <span class="o">=</span> <span class="s1">&#39;model_rest_spec.hdf5&#39;</span>       <span class="c1"># name of the output HDF5 file</span>
@@ -231,7 +231,7 @@
 
 <span class="n">imf_type</span> <span class="o">=</span> <span class="mi">1</span>                    <span class="c1"># Chabrier (2003)</span>
 <span class="n">sfh_form</span> <span class="o">=</span> <span class="mi">4</span>                    <span class="c1"># double power law SFH form</span>
-<span class="n">dust_ext_law</span> <span class="o">=</span> <span class="mi">0</span>                <span class="c1"># Charlot &amp; Fall (2000) dust attenuation law</span>
+<span class="n">dust_law</span> <span class="o">=</span> <span class="mi">0</span>                    <span class="c1"># Charlot &amp; Fall (2000) dust attenuation law</span>
 <span class="n">duste_switch</span> <span class="o">=</span> <span class="mi">1</span>                <span class="c1"># turn on dust emission</span>
 <span class="n">add_neb_emission</span> <span class="o">=</span> <span class="mi">1</span>            <span class="c1"># turn on nebular emission</span>
 <span class="n">add_agn</span> <span class="o">=</span> <span class="mi">1</span>                     <span class="c1"># turn on AGN dusty torus emission</span>
@@ -242,7 +242,7 @@
 <span class="n">H0</span> <span class="o">=</span> <span class="mf">70.0</span>
 <span class="n">Om0</span> <span class="o">=</span> <span class="mf">0.3</span>
 
-<span class="n">nmodels</span> <span class="o">=</span> <span class="mi">200000</span>                <span class="c1"># number of model spectra to be generated</span>
+<span class="n">nmodels</span> <span class="o">=</span> <span class="mi">100000</span>                <span class="c1"># number of model spectra to be generated</span>
 <span class="n">nproc</span> <span class="o">=</span> <span class="mi">20</span>                      <span class="c1"># number of processors to be used in the calculation</span>
 
 <span class="n">gal_z</span> <span class="o">=</span> <span class="mf">0.01</span>

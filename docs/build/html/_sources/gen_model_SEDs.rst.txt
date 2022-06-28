@@ -3,10 +3,9 @@
 Generating model SEDs
 =====================
 
-**piXedfit** uses `FSPS <https://github.com/cconroy20/fsps>`_ for modeling SED of galaxy. With the Python bindings `Python-FSPS <https://dfm.io/python-fsps/current/>`_, generating model SED can be done on the fly for any task. However, some tasks require a generation of model spectra in a fast pace that is diffcult to achieve using the python package. These tasks include generation of model SEDs for reference in the spectral matching between the Imaging and IFS data (see :ref:`this page <spectral_matching>`), SED fitting with the random dense sampling of parameter space (RDSPS), and initial fitting (i.e., burning up) before running MCMC for fitting SED (note that the MCMC fitting always use on-the-fly generation of model SEDs).  
+piXedfit uses FSPS for modeling the SED of galaxies. With the Python bindings via Python-FSPS, generating model SEDs can be done on the fly in the SED fitting. However, some tasks require a generation of model spectra in a fast pace that is difficult to achieve via the real time calculations. These tasks include generation of model SEDs for reference in the spectral matching between the Imaging and IFS data, SED fitting with the random dense sampling of parameter space (RDSPS), and initial fitting (i.e., burning up) before running SED fitting with the MCMC method (note that the MCMC fitting uses on-the-fly generation of model SEDs).
 
-For the above reason, **piXedfit** provides an option of generating a set of model spectra (in a rest-frame) prior to the analyses. The models are stored in the HDF5 format. The model spectra can be generated using function :func:`piXedfit.piXedfit_model.save_models_rest_spec`. Please see the API reference for more detailed information about this function. In practice, user only need to generate this set of models once, then these models can be used for various further analyses on all galaxies. 
-
+For that reason, piXedfit provides an option of generating a set of model spectra (in a rest-frame) prior to the analyses. The models are stored in the HDF5 format. The model spectra can be generated using function :func:`piXedfit.piXedfit_model.save_models_rest_spec`. Please see the API reference for more detailed information about this function. In practice, user only need to generate this set of models once, then these models can be used for various further analyses to multiple galaxies.
 
 Generate random model spectra at a rest-frame
 ---------------------------------------------
@@ -19,12 +18,12 @@ To generate random model spectra at a rest-frame, you can make a script like the
 
 		imf_type = 1 			# Chabrier (2003)
 		sfh_form = 4 			# double power law SFH form
-		dust_ext_law = 0 		# Charlot & Fall (2000) dust attenuation law
+		dust_law = 0 			# Charlot & Fall (2000) dust attenuation law
 		duste_switch = 0 		# turn off dust emission
 		add_neb_emission = 1 		# turn on nebular emission
 		add_agn = 0 			# turn off AGN dusty torus emission
 
-		nmodels = 200000 		# number of model spectra to be generated
+		nmodels = 100000 		# number of model spectra to be generated
 		nproc = 20 			# number of processors to be used in the calculation 
 
 		name_out = 'model_rest_spec.hdf5'	# name of the output HDF5 file
@@ -55,7 +54,7 @@ To generate random model photometric SEDs at an observer-frame, you can make a s
 
 		imf_type = 1 			# Chabrier (2003)
 		sfh_form = 4 			# double power law SFH form
-		dust_ext_law = 0 		# Charlot & Fall (2000) dust attenuation law
+		dust_law = 0 			# Charlot & Fall (2000) dust attenuation law
 		duste_switch = 1 		# turn on dust emission
 		add_neb_emission = 1 		# turn on nebular emission
 		add_agn = 1 			# turn on AGN dusty torus emission
@@ -66,7 +65,7 @@ To generate random model photometric SEDs at an observer-frame, you can make a s
 		H0 = 70.0
 		Om0 = 0.3
 
-		nmodels = 200000 		# number of model spectra to be generated
+		nmodels = 100000 		# number of model spectra to be generated
 		nproc = 20 			# number of processors to be used in the calculation
 
 		gal_z = 0.01

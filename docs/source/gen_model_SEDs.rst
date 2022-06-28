@@ -18,12 +18,12 @@ To generate random model spectra at a rest-frame, you can make a script like the
 
 		imf_type = 1 			# Chabrier (2003)
 		sfh_form = 4 			# double power law SFH form
-		dust_ext_law = 0 		# Charlot & Fall (2000) dust attenuation law
+		dust_law = 0 			# Charlot & Fall (2000) dust attenuation law
 		duste_switch = 0 		# turn off dust emission
 		add_neb_emission = 1 		# turn on nebular emission
 		add_agn = 0 			# turn off AGN dusty torus emission
 
-		nmodels = 200000 		# number of model spectra to be generated
+		nmodels = 100000 		# number of model spectra to be generated
 		nproc = 20 			# number of processors to be used in the calculation 
 
 		name_out = 'model_rest_spec.hdf5'	# name of the output HDF5 file
@@ -54,7 +54,7 @@ To generate random model photometric SEDs at an observer-frame, you can make a s
 
 		imf_type = 1 			# Chabrier (2003)
 		sfh_form = 4 			# double power law SFH form
-		dust_ext_law = 0 		# Charlot & Fall (2000) dust attenuation law
+		dust_law = 0 			# Charlot & Fall (2000) dust attenuation law
 		duste_switch = 1 		# turn on dust emission
 		add_neb_emission = 1 		# turn on nebular emission
 		add_agn = 1 			# turn on AGN dusty torus emission
@@ -65,7 +65,7 @@ To generate random model photometric SEDs at an observer-frame, you can make a s
 		H0 = 70.0
 		Om0 = 0.3
 
-		nmodels = 200000 		# number of model spectra to be generated
+		nmodels = 100000 		# number of model spectra to be generated
 		nproc = 20 			# number of processors to be used in the calculation
 
 		gal_z = 0.01
