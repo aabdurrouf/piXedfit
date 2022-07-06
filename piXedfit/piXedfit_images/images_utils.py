@@ -3,6 +3,9 @@ from math import pi, pow, sqrt, cos, sin
 import sys, os
 from astropy.io import fits 
 from astroquery.sdss import SDSS
+from astroquery.mast import Observations
+from astroquery.esa.hubble import ESAHubble
+from astroquery.ipac.irsa import sha
 import urllib
 import pyvo
 import gzip, shutil, glob
@@ -14,7 +17,7 @@ warnings.filterwarnings('ignore')
 from ..utils.filtering import cwave_filters
 
 
-__all__ = ["sort_filters", "kpc_per_pixel", "k_lmbd_Fitz1986_LMC", "EBV_foreground_dust", "Sloan", "TwoMASS", "WISE","skybg_sdss", "get_gain_dark_variance", "var_img_sdss", "var_img_GALEX", "var_img_2MASS", "var_img_WISE", "var_img_from_unc_img",
+__all__ = ["sort_filters", "kpc_per_pixel", "k_lmbd_Fitz1986_LMC", "EBV_foreground_dust", "Sloan", "TwoMASS", "WISE", "Galex", "HST", "Spitzer","skybg_sdss", "get_gain_dark_variance", "var_img_sdss", "var_img_GALEX", "var_img_2MASS", "var_img_WISE", "var_img_from_unc_img",
 			"var_img_from_weight_img", "mask_region_bgmodel", "subtract_background", "get_psf_fwhm","get_largest_FWHM_PSF", "ellipse_fit", "draw_ellipse", "ellipse_sma", "crop_ellipse_galregion",
 			"crop_ellipse_galregion_fits", "crop_stars", "crop_stars_galregion_fits",  "crop_image_given_radec", "segm_sep", "crop_image_given_xy", "check_avail_kernel", "create_kernel_gaussian",
 			"raise_errors", "get_img_pixsizes", "in_kernels", "get_flux_or_sb", "crop_2D_data"]
@@ -273,6 +276,96 @@ def WISE(pos, size = 0.1, pix = 800):
 		with gzip.open(file, 'r') as f_in, open(file.replace(".gz", ""), 'wb') as f_out:
 			shutil.copyfileobj(f_in, f_out)  # unzipped gz files
 		os.remove(file)   # delete gz files  
+
+
+def Galex(pos, size = 0.1, unzip = True):
+	"""A tool to download allwise images from GALEX.
+
+	:param pos:
+		Target's coordinate, in the astropy.coordinates form.
+	:param size: (defaults to 0.1 [deg] )
+		Search cone size. Note that this size IS NOT image size.	
+	:param unzip: (defaults to True)
+		Whether to unzip the download file.
+	"""
+
+		# Full list
+	obs_table = Observations.query_region(pos,radius= size)
+	data_products_by_obs = Observations.get_product_list(obs_table[:])
+	# query list
+	data_products = data_products_by_obs[(data_products_by_obs['obs_collection'] == 'GALEX')]
+
+	# Preventing from repeating download
+	# Here we only download three datatypes: intensity map, sky background map and background subtracted image
+	a = data_products.to_pandas()
+	b = a[a.productFilename.str.contains('int.fits|skybg.fits|intbgsub.fits')]
+
+	# Start downloading
+	for _, row in b.iterrows():
+		Observations.download_file(row.dataURI)
+
+	if unzip:
+		for file in glob.glob("*.gz"):
+			with gzip.open(file, 'r') as f_in, open(file.replace(".gz", ""), 'wb') as f_out:
+				shutil.copyfileobj(f_in, f_out)  # unzipped gz files
+			os.remove(file)   # delete gz files  
+	else:
+		pass
+
+
+def HST(pos,size = 1, save = True, output_fmt = 'csv'):
+	"""A tool to download allwise images from Hubble Space Telescope.
+
+	:param pos:
+		Target's coordinate, in the astropy.coordinates form.
+	:param size: (defaults to 1 [arcmin] )
+		Search cone size. Note that this size IS NOT image size.
+	:param save: (defaults to True)
+		Whether to save searching result.
+	:param output_fmt: (defaults to 'csv')
+		Search result file extension, by default 'csv'
+        Other formats: 'csv', 'votable', 'xml'
+	"""
+
+	if output_fmt not in ['csv','votable','xml']:
+		raise TypeError("output format is not supported. Please use one of these: csv, votable, xml")
+
+	# Start Hubble service
+	esahubble = ESAHubble()
+	table = esahubble.cone_search_criteria(radius = size , coordinates = pos , save = save, output_format= output_fmt ,obs_collection= "HST", filename = f'Search_Result_Table.{output_fmt}')
+
+	# Select HST images
+	a = table.to_pandas()
+	b = a[(a.collection == 'HST') & (a.data_product_type == 'image')]
+	b.to_csv("Download_Table.csv")
+
+	# Start downloading
+	for obs_id in b.observation_id.unique():
+		esahubble.download_product(observation_id= obs_id, filename = f"data_for_{obs_id}.tar")
+
+def Spitzer(pos, size = 1/120):
+	"""A tool to download allwise images from Spitzer.
+
+	:param pos:
+		Target's coordinate, in the astropy.coordinates form.
+	:param size: (defaults to 1/120 [deg] )
+		Search cone size. Note that this size IS NOT image size.
+	"""
+
+	# Start searching
+	table = sha.query(coord = pos , size = size)
+	
+	# Filtering images
+	table[table['filetype'] == 'Image']
+	# Save filtered result
+	table.write('Download_detail.csv', format='csv', overwrite = True)
+
+	# Start downloading
+	for url in table[table['filetype'] == b' Image   ']['accessUrl'][:2]:
+		sha.save_file(url.strip())
+    
+
+
 
 def skybg_sdss(fits_image):
 	"""A function for reconstructing background image of an SDSS image.
