@@ -8,7 +8,6 @@ from astropy.io import fits
 from astropy.cosmology import *
 from scipy.stats import norm as normal
 from scipy.stats import t, gamma
-from scipy.interpolate import interp1d
 
 global PIXEDFIT_HOME
 PIXEDFIT_HOME = os.environ['PIXEDFIT_HOME']
@@ -62,25 +61,10 @@ def bayesian_sedfit_gauss():
 
 		# calculate chi-square and prob
 		chi2 = calc_chi2(obs_fluxes,obs_flux_err,norm_fluxes)
-		#lnprob0 = ln_gauss_prob(obs_fluxes,obs_flux_err,norm_fluxes)
 		lnlikeli = ln_gauss_prob(obs_fluxes,obs_flux_err,norm_fluxes)
 
-		# prior and get parameters
-		lnprior = 0
-		for pp in range(0,nparams):
-			str_temp = 'mod/par/%s' % params[pp]
-			if params_priors[params[pp]]['form'] == 'gaussian':
-				lnprior += np.log(normal.pdf(f[str_temp][idx_parmod_sel[0][int(ii)]],loc=params_priors[params[pp]]['loc'],scale=params_priors[params[pp]]['scale']))
-			elif params_priors[params[pp]]['form'] == 'studentt':
-				lnprior += np.log(t.pdf(f[str_temp][idx_parmod_sel[0][int(ii)]],params_priors[params[pp]]['df'],loc=params_priors[params[pp]]['loc'],scale=params_priors[params[pp]]['scale']))
-			elif params_priors[params[pp]]['form'] == 'gamma':
-				lnprior += np.log(gamma.pdf(f[str_temp][idx_parmod_sel[0][int(ii)]],params_priors[params[pp]]['a'],loc=params_priors[params[pp]]['loc'],scale=params_priors[params[pp]]['scale']))
-			elif params_priors[params[pp]]['form'] == 'arbitrary':
-				lnprior += np.log(fprior(f[str_temp][idx_parmod_sel[0][int(ii)]]))
-
 		mod_chi2_temp[int(count)] = chi2
-		#mod_prob_temp[int(count)] = lnprob0
-		mod_prob_temp[int(count)] = lnlikeli + lnprior
+		mod_prob_temp[int(count)] = lnlikeli
 		mod_fluxes_temp[:,int(count)] = fluxes   # before normalized
 
 		# get parameters
@@ -96,7 +80,6 @@ def bayesian_sedfit_gauss():
 		sys.stdout.write('\r')
 		sys.stdout.write('rank: %d  Calculation process: %d from %d  --->  %d%%' % (rank,count,len(recvbuf_idx),count*100/len(recvbuf_idx)))
 		sys.stdout.flush()
-	#sys.stdout.write('\n')
 
 	mod_params = np.zeros((nparams,nmodels))
 	mod_fluxes = np.zeros((nbands,nmodels))
@@ -155,25 +138,10 @@ def bayesian_sedfit_gauss():
 
 			# calculate chi-square and prob
 			chi2 = calc_chi2(obs_fluxes,modif_obs_flux_err,norm_fluxes)
-			#lnprob0 = ln_gauss_prob(obs_fluxes,modif_obs_flux_err,norm_fluxes)
 			lnlikeli = ln_gauss_prob(obs_fluxes,modif_obs_flux_err,norm_fluxes)
 
-			# prior and get parameters
-			lnprior = 0
-			for pp in range(0,nparams):
-				str_temp = 'mod/par/%s' % params[pp]
-				if params_priors[params[pp]]['form'] == 'gaussian':
-					lnprior += np.log(normal.pdf(f[str_temp][idx_parmod_sel[0][int(ii)]],loc=params_priors[params[pp]]['loc'],scale=params_priors[params[pp]]['scale']))
-				elif params_priors[params[pp]]['form'] == 'studentt':
-					lnprior += np.log(t.pdf(f[str_temp][idx_parmod_sel[0][int(ii)]],params_priors[params[pp]]['df'],loc=params_priors[params[pp]]['loc'],scale=params_priors[params[pp]]['scale']))
-				elif params_priors[params[pp]]['form'] == 'gamma':
-					lnprior += np.log(gamma.pdf(f[str_temp][idx_parmod_sel[0][int(ii)]],params_priors[params[pp]]['a'],loc=params_priors[params[pp]]['loc'],scale=params_priors[params[pp]]['scale']))
-				elif params_priors[params[pp]]['form'] == 'arbitrary':
-					lnprior += np.log(fprior(f[str_temp][idx_parmod_sel[0][int(ii)]]))
-
 			mod_chi2_temp[int(count)] = chi2
-			#mod_prob_temp[int(count)] = lnprob0
-			mod_prob_temp[int(count)] = lnlikeli + lnprior
+			mod_prob_temp[int(count)] = lnlikeli
 
 			# get parameters
 			for pp in range(0,nparams):
@@ -250,25 +218,10 @@ def bayesian_sedfit_student_t():
 		# calculate chi-square and prob.
 		chi2 = calc_chi2(obs_fluxes,obs_flux_err,norm_fluxes)
 		chi = (obs_fluxes-norm_fluxes)/obs_flux_err
-		#lnprob0 = ln_student_t_prob(dof,chi)
 		lnlikeli = ln_student_t_prob(dof,chi)
 
-		# prior and get parameters
-		lnprior = 0
-		for pp in range(0,nparams):
-			str_temp = 'mod/par/%s' % params[pp]
-			if params_priors[params[pp]]['form'] == 'gaussian':
-				lnprior += np.log(normal.pdf(f[str_temp][idx_parmod_sel[0][int(ii)]],loc=params_priors[params[pp]]['loc'],scale=params_priors[params[pp]]['scale']))
-			elif params_priors[params[pp]]['form'] == 'studentt':
-				lnprior += np.log(t.pdf(f[str_temp][idx_parmod_sel[0][int(ii)]],params_priors[params[pp]]['df'],loc=params_priors[params[pp]]['loc'],scale=params_priors[params[pp]]['scale']))
-			elif params_priors[params[pp]]['form'] == 'gamma':
-				lnprior += np.log(gamma.pdf(f[str_temp][idx_parmod_sel[0][int(ii)]],params_priors[params[pp]]['a'],loc=params_priors[params[pp]]['loc'],scale=params_priors[params[pp]]['scale']))
-			elif params_priors[params[pp]]['form'] == 'arbitrary':
-				lnprior += np.log(fprior(f[str_temp][idx_parmod_sel[0][int(ii)]]))
-
 		mod_chi2_temp[int(count)] = chi2
-		#mod_prob_temp[int(count)] = lnprob0
-		mod_prob_temp[int(count)] = lnlikeli + lnprior
+		mod_prob_temp[int(count)] = lnlikeli
 		mod_fluxes_temp[:,int(count)] = fluxes  # before normalized
 
 		# get parameters
@@ -284,7 +237,6 @@ def bayesian_sedfit_student_t():
 		sys.stdout.write('\r')
 		sys.stdout.write('rank: %d  Calculation process: %d from %d  --->  %d%%' % (rank,count,len(recvbuf_idx),count*100/len(recvbuf_idx)))
 		sys.stdout.flush()
-	#sys.stdout.write('\n')
 
 	mod_params = np.zeros((nparams,nmodels))
 	mod_fluxes = np.zeros((nbands,nmodels))
@@ -345,25 +297,10 @@ def bayesian_sedfit_student_t():
 			# calculate model's chi2 and prob.
 			chi2 = calc_chi2(obs_fluxes,modif_obs_flux_err,norm_fluxes)
 			chi = (obs_fluxes-norm_fluxes)/modif_obs_flux_err
-			#lnprob0 = ln_student_t_prob(dof,chi)
 			lnlikeli = ln_student_t_prob(dof,chi)
 
-			# prior and get parameters
-			lnprior = 0
-			for pp in range(0,nparams):
-				str_temp = 'mod/par/%s' % params[pp]
-				if params_priors[params[pp]]['form'] == 'gaussian':
-					lnprior += np.log(normal.pdf(f[str_temp][idx_parmod_sel[0][int(ii)]],loc=params_priors[params[pp]]['loc'],scale=params_priors[params[pp]]['scale']))
-				elif params_priors[params[pp]]['form'] == 'studentt':
-					lnprior += np.log(t.pdf(f[str_temp][idx_parmod_sel[0][int(ii)]],params_priors[params[pp]]['df'],loc=params_priors[params[pp]]['loc'],scale=params_priors[params[pp]]['scale']))
-				elif params_priors[params[pp]]['form'] == 'gamma':
-					lnprior += np.log(gamma.pdf(f[str_temp][idx_parmod_sel[0][int(ii)]],params_priors[params[pp]]['a'],loc=params_priors[params[pp]]['loc'],scale=params_priors[params[pp]]['scale']))
-				elif params_priors[params[pp]]['form'] == 'arbitrary':
-					lnprior += np.log(fprior(f[str_temp][idx_parmod_sel[0][int(ii)]]))
-
 			mod_chi2_temp[int(count)] = chi2
-			#mod_prob_temp[int(count)] = lnprob0
-			mod_prob_temp[int(count)] = lnlikeli + lnprior
+			mod_prob_temp[int(count)] = lnlikeli
 
 			# get parameters
 			for pp in range(0,nparams):
@@ -398,7 +335,7 @@ def bayesian_sedfit_student_t():
 
 
 def store_to_fits(sampler_params,mod_chi2,mod_prob,fits_name_out):
-	#==> best-fit model SED
+
 	idx, min_val = min(enumerate(mod_chi2), key=itemgetter(1))
 	bfit_chi2 = mod_chi2[idx]
 
@@ -419,6 +356,55 @@ def store_to_fits(sampler_params,mod_chi2,mod_prob,fits_name_out):
 	norm = model_leastnorm(obs_fluxes,obs_flux_err,fluxes)
 	mod_fluxes = norm*fluxes
 	redsh_spec = norm*redsh_spec
+
+	# get initial prediction for stellar mass
+	idx_sel = np.where((np.isnan(mod_prob)==False) & (np.isinf(mod_prob)==False))
+	array_lnprob = mod_prob[idx_sel[0]] - max(mod_prob[idx_sel[0]])  # normalize
+	array_prob = np.exp(array_lnprob)
+	array_prob = array_prob/np.sum(array_prob)						 # normalize
+	tot_prob = np.sum(array_prob)
+	array_val = sampler_params['log_mass'][idx_sel[0]]
+	mean_lmass = np.sum(array_val*array_prob)/tot_prob
+	mean_lmass2 = np.sum(np.square(array_val)*array_prob)/tot_prob
+	std_lmass = sqrt(abs(mean_lmass2 - (mean_lmass**2)))
+
+	# add more if parameters are joint with mass
+	if len(params_prior_jtmass)>0:
+		for pp in range(0,len(params_prior_jtmass)):
+			loc = np.interp(mean_lmass,params_priors[params_prior_jtmass[pp]]['lmass'],params_priors[params_prior_jtmass[pp]]['pval'])
+			scale = params_priors[params_prior_jtmass[pp]]['scale']
+			mod_prob += np.log(normal.pdf(sampler_params[params_prior_jtmass[pp]],loc=loc,scale=scale))
+
+	for pp in range(0,nparams):
+		if params_priors[params[pp]]['form'] == 'gaussian':
+			mod_prob += np.log(normal.pdf(sampler_params[params[pp]],loc=params_priors[params[pp]]['loc'],scale=params_priors[params[pp]]['scale']))
+		elif params_priors[params[pp]]['form'] == 'studentt':
+			mod_prob += np.log(t.pdf(sampler_params[params[pp]],params_priors[params[pp]]['df'],loc=params_priors[params[pp]]['loc'],scale=params_priors[params[pp]]['scale']))
+		elif params_priors[params[pp]]['form'] == 'gamma':
+			mod_prob += np.log(gamma.pdf(sampler_params[params[pp]],params_priors[params[pp]]['a'],loc=params_priors[params[pp]]['loc'],scale=params_priors[params[pp]]['scale']))
+		elif params_priors[params[pp]]['form'] == 'arbitrary':
+			mod_prob += np.log(np.interp(sampler_params[params[pp]],params_priors[params[pp]]['values'],params_priors[params[pp]]['prob']))
+
+	crit_chi2 = np.percentile(mod_chi2[np.logical_not(np.isnan(mod_chi2))], perc_chi2)
+	idx_sel = np.where((mod_chi2<=crit_chi2) & (np.isnan(mod_prob)==False) & (np.isinf(mod_prob)==False))
+
+	array_lnprob = mod_prob[idx_sel[0]] - max(mod_prob[idx_sel[0]])  # normalize
+	array_prob = np.exp(array_lnprob)
+	array_prob = array_prob/np.sum(array_prob)						 # normalize
+	tot_prob = np.sum(array_prob)
+
+	params_bfits = np.zeros((nparams,2))
+	for pp in range(0,nparams):
+		if params[pp] == 'log_mass':
+			params_bfits[pp][0] = mean_lmass
+			params_bfits[pp][1] = std_lmass
+		else:
+			array_val = sampler_params[params[pp]][idx_sel[0]]
+			mean_val = np.sum(array_val*array_prob)/tot_prob
+			mean_val2 = np.sum(np.square(array_val)*array_prob)/tot_prob
+			std_val = sqrt(abs(mean_val2 - (mean_val**2)))
+			params_bfits[pp][0] = mean_val
+			params_bfits[pp][1] = std_val
 
 	# sampler ids
 	nsamples = len(sampler_params[params[0]])
@@ -450,28 +436,10 @@ def store_to_fits(sampler_params,mod_chi2,mod_prob,fits_name_out):
 	hdr['H0'] = H0
 	hdr['Om0'] = Om0
 	hdr['nrows'] = nsamples
-	# chi-square
 	hdr['redcd_chi2'] = bfit_chi2/nbands
-
-	# parameters
-	col_count = 1
-	str_temp = 'col%d' % col_count
-	hdr[str_temp] = 'id'
+	hdr['perc_chi2'] = perc_chi2
 	for pp in range(0,nparams):
-		str_temp = 'param%d' % pp
-		hdr[str_temp] = params[pp]
-
-		col_count = col_count + 1
-		str_temp = 'col%d' % col_count
-		hdr[str_temp] = params[pp]
-
-	col_count = col_count + 1
-	str_temp = 'col%d' % col_count
-	hdr[str_temp] = 'chi2'
-	col_count = col_count + 1
-	str_temp = 'col%d' % col_count
-	hdr[str_temp] = 'lnprob'
-	hdr['ncols'] = col_count
+		hdr['param%d' % pp] = params[pp]
 	hdr['fitmethod'] = 'rdsps'
 	hdr['storesamp'] = 1
 	hdr['specphot'] = 0
@@ -491,13 +459,21 @@ def store_to_fits(sampler_params,mod_chi2,mod_prob,fits_name_out):
 	cols = fits.ColDefs(cols0)
 	hdu1 = fits.BinTableHDU.from_columns(cols, name='samplers')
 
+	#=> best-fitting parameters derived from RDSPS method
+	cols0 = []
+	for pp in range(0,nparams):
+		col = fits.Column(name=params[pp], format='D', array=np.array([params_bfits[pp][0],params_bfits[pp][1]]))
+		cols0.append(col)
+	cols = fits.ColDefs(cols0)
+	hdu2 = fits.BinTableHDU.from_columns(cols, name='fit_params')
+
 	#==> Parameters of model with minimum chi-square
 	cols0 = []
 	for pp in range(0,nparams):
 		col = fits.Column(name=params[pp], format='D', array=np.array([sampler_params[params[pp]][idx]]))
 		cols0.append(col)
 	cols = fits.ColDefs(cols0)
-	hdu2 = fits.BinTableHDU.from_columns(cols, name='minchi2_params')
+	hdu3 = fits.BinTableHDU.from_columns(cols, name='minchi2_params')
 
 	#==> observed photometric SED
 	cols0 = []
@@ -506,7 +482,7 @@ def store_to_fits(sampler_params,mod_chi2,mod_prob,fits_name_out):
 	col = fits.Column(name='flux_err', format='D', array=np.array(obs_flux_err))
 	cols0.append(col)
 	cols = fits.ColDefs(cols0)
-	hdu3 = fits.BinTableHDU.from_columns(cols, name='obs_photo')
+	hdu4 = fits.BinTableHDU.from_columns(cols, name='obs_photo')
 
 	#==> best-fit model photometry
 	photo_cwave = cwave_filters(filters)
@@ -516,7 +492,7 @@ def store_to_fits(sampler_params,mod_chi2,mod_prob,fits_name_out):
 	col = fits.Column(name='flux', format='D', array=np.array(mod_fluxes))
 	cols0.append(col)
 	cols = fits.ColDefs(cols0)
-	hdu4 = fits.BinTableHDU.from_columns(cols, name='bfit_photo')
+	hdu5 = fits.BinTableHDU.from_columns(cols, name='bfit_photo')
 
 	#==> best-fit model spectrum to the observed photometric SED
 	cols0 = []
@@ -525,9 +501,9 @@ def store_to_fits(sampler_params,mod_chi2,mod_prob,fits_name_out):
 	col = fits.Column(name='flux', format='D', array=np.array(redsh_spec))
 	cols0.append(col)
 	cols = fits.ColDefs(cols0)
-	hdu5 = fits.BinTableHDU.from_columns(cols, name='bfit_mod_spec')
+	hdu6 = fits.BinTableHDU.from_columns(cols, name='bfit_mod_spec')
 
-	hdul = fits.HDUList([primary_hdu, hdu1, hdu2, hdu3, hdu4, hdu5])
+	hdul = fits.HDUList([primary_hdu, hdu1, hdu2, hdu3, hdu4, hdu5, hdu6])
 	hdul.writeto(fits_name_out, overwrite=True)	
 
 
@@ -580,6 +556,9 @@ f.close()
 # add systematic error accommodating various factors, including modeling uncertainty, assume systematic error of 0.1
 sys_err_frac = 0.1
 bulk_obs_flux_err = np.sqrt(np.square(bulk_obs_flux_err) + np.square(sys_err_frac*bulk_obs_fluxes))
+
+global perc_chi2
+perc_chi2 = float(config_data['perc_chi2'])
 
 # names of output FITS files
 name_outs = str(sys.argv[4])
@@ -689,8 +668,9 @@ params_in_prior = []
 for pp in range(0,nparams_in_prior):
 	params_in_prior.append(config_data['pr_param%d' % pp])
 
-global params_priors
+global params_priors, params_prior_jtmass
 params_priors = {}
+params_prior_jtmass = []
 for pp in range(0,nparams):
 	params_priors[params[pp]] = {}
 	if params[pp] in params_in_prior:
@@ -707,9 +687,15 @@ for pp in range(0,nparams):
 			params_priors[params[pp]]['loc'] = float(config_data['pr_form_%s_gamma_loc' % params[pp]])
 			params_priors[params[pp]]['scale'] = float(config_data['pr_form_%s_gamma_scale' % params[pp]])
 		elif params_priors[params[pp]]['form'] == 'arbitrary':
-			name0 = config_data['pr_form_%s_arbit_name' % params[pp]]
-			data = np.loadtxt(temp_dir+name0)
-			fprior = interp1d(data[:,0],data[:,1])
+			data = np.loadtxt(temp_dir+config_data['pr_form_%s_arbit_name' % params[pp]])
+			params_priors[params[pp]]['values'] = data[:,0]
+			params_priors[params[pp]]['prob'] = data[:,1]
+		elif params_priors[params[pp]]['form'] == 'joint_with_mass':
+			data = np.loadtxt(temp_dir+config_data['pr_form_%s_jtmass_name' % params[pp]])
+			params_priors[params[pp]]['lmass'] = data[:,0]
+			params_priors[params[pp]]['pval'] = data[:,1]
+			params_priors[params[pp]]['scale'] = float(config_data['pr_form_%s_jtmass_scale' % params[pp]])
+			params_prior_jtmass.append(params[pp])
 	else:
 		params_priors[params[pp]]['form'] = 'uniform'
 

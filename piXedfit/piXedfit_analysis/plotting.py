@@ -662,12 +662,11 @@ def plot_SED(name_sampler_fits,logscale_x=True,logscale_y=True,xrange=None,yrang
 
 def plot_corner(name_sampler_fits, params=['log_sfr','log_mass','log_dustmass','log_fagn','log_fagn_bol','log_tauagn',
 	'log_qpah','log_umin','log_gamma','dust1','dust2','dust_index','log_mw_age','log_age','log_t0','log_alpha','log_beta',
-	'log_tau','logzsol','z'], label_params={'log_sfr':'log(SFR)','log_mass':'log($M_{*}$)',
-	'log_dustmass':'log($M_{dust}$)','log_fagn':'log($f_{AGN,*}$)','log_fagn_bol':'log($f_{AGN,bol}$)',
-	'log_tauagn':'log($\\tau_{AGN}$)','log_qpah':'log($Q_{PAH}$)','log_umin':'log($U_{min}$)','log_gamma':'log($\gamma_{e}$)',
-	'dust1':'$\hat \\tau_{1}$','dust2':'$\hat \\tau_{2}$', 'dust_index':'$n$', 'log_mw_age':'log($\mathrm{age}_{\mathrm{MW}}$)',
-	'log_age':'log($\mathrm{age}_{\mathrm{sys}}$)','log_t0':'log($t_{0}$)','log_alpha':'log($\\alpha$)', 
-	'log_beta':'log($\\beta$)','log_tau':'log($\\tau$)','logzsol':'log($Z/Z_{\odot}$)','z':'z'}, 
+	'log_tau','logzsol','z'], label_params={'log_sfr':'log(SFR)','log_mass':'log($M_{*}$)','log_dustmass':'log($M_{dust}$)',
+	'log_fagn':'log($f_{AGN,*}$)','log_fagn_bol':'log($f_{AGN,bol}$)','log_tauagn':'log($\\tau_{AGN}$)','log_qpah':'log($Q_{PAH}$)',
+	'log_umin':'log($U_{min}$)','log_gamma':'log($\gamma_{e}$)','dust1':'$\hat \\tau_{1}$','dust2':'$\hat \\tau_{2}$', 'dust_index':'$n$', 
+	'log_mw_age':'log($\mathrm{age}_{\mathrm{MW}}$)','log_age':'log($\mathrm{age}_{\mathrm{sys}}$)','log_t0':'log($t_{0}$)',
+	'log_alpha':'log($\\alpha$)', 'log_beta':'log($\\beta$)','log_tau':'log($\\tau$)','logzsol':'log($Z/Z_{\odot}$)','z':'z'}, 
 	params_ranges = {'log_sfr':[-99.0,-99.0],'log_mass':[-99.0,-99.0],'log_dustmass':[-99.0,-99.0],'log_fagn':[-5.0,0.48],
 	'log_fagn_bol':[-99.0,-99.0],'log_tauagn':[0.70,2.18],'log_qpah':[-1.0, 0.845],'log_umin':[-1.0, 1.176],'log_gamma':[-3.0,-0.824],
 	'dust1':[0.0,3.0],'dust2':[0.0, 3.0], 'dust_index':[-2.2,0.4],'log_mw_age':[-99.0,-99.0],'log_age': [-3.0, 1.14],
@@ -711,25 +710,24 @@ def plot_corner(name_sampler_fits, params=['log_sfr','log_mass','log_dustmass','
 
 	# open the input FITS file
 	hdu = fits.open(name_sampler_fits)
-	header_samplers = hdu[0].header
+	header_samplers = hdu[1].header
 	data_samplers = hdu[1].data
-	hdu.close()
-
-	if header_samplers['storesamp'] == 0:
+	if hdu[0].header['storesamp'] == 0:
 		print ("The input FITS file does not contain sampler chains!")
 		sys.exit()
+	hdu.close()
 
 	# number of parameters
 	nparams = len(params)
-	if nparams == len(def_params):                        # if default set is used 
-		nparams_fit = int(header_samplers['ncols']) - 1   # add SFR, mw_age, log_dustmass
+	if nparams == len(def_params):                          # if default set is used 
+		nparams_fit = int(header_samplers['TFIELDS']) - 1
 		params_new = []
 		label_params_new = {}
 		params_ranges_new = {}
 		for ii in range(0,nparams):
 			for jj in range(0,nparams_fit):
-				str_temp = 'col%d' % (jj+2)
-				if params[ii] == header_samplers[str_temp]:
+				str_temp = 'TTYPE%d' % (jj+2)
+				if params[ii] == header_samplers['TTYPE%d' % (jj+2)]:
 					params_new.append(params[ii])
 					label_params_new[params[ii]] = label_params[params[ii]]
 					params_ranges_new[params[ii]] = params_ranges[params[ii]]

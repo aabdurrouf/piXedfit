@@ -129,6 +129,9 @@ def calc_mw_age(sfh_form=4,tau=0,t0=0,alpha=0,beta=0,age=0,formed_mass=0,sfh_t=[
 
 	mod_mw_age = np.sum(sfh_mass*sfh_age)/np.sum(sfh_mass)
 
+	if np.isnan(mod_mw_age)==True or np.isinf(mod_mw_age)==True or mod_mw_age==0.0:
+		return age
+
 	return mod_mw_age
 
 

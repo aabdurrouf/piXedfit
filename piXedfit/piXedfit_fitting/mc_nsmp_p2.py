@@ -146,7 +146,6 @@ def store_to_fits(nsamples=None,sampler_params=None,sampler_log_sfr=None,sampler
 			hdr['igm_type'] = igm_type
 		for bb in range(0,nbands):
 			hdr['fil%d' % bb] = filters[bb]
-
 		if free_z == 0:
 			hdr['gal_z'] = gal_z
 			hdr['free_z'] = 0

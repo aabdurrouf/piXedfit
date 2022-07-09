@@ -673,8 +673,7 @@ def_params_val = {'log_mass':0.0,'z':0.001,'log_fagn':-3.0,'log_tauagn':1.0,'log
 				'dust1':0.5,'dust2':0.5,'dust_index':-0.7,'log_age':1.0,'log_alpha':0.1,'log_beta':0.1,'log_t0':0.4,'log_tau':0.4,'logzsol':0.0}
 
 global def_params_fsps, params_assoc_fsps, status_log
-def_params_fsps = ['logzsol', 'log_tau', 'log_age', 'dust_index', 'dust1', 'dust2', 'log_gamma', 
-					'log_umin',  'log_qpah','log_fagn', 'log_tauagn']
+def_params_fsps = ['logzsol', 'log_tau', 'log_age', 'dust_index', 'dust1', 'dust2', 'log_gamma', 'log_umin',  'log_qpah','log_fagn', 'log_tauagn']
 params_assoc_fsps = {'logzsol':"logzsol", 'log_tau':"tau", 'log_age':"tage", 
 					'dust_index':"dust_index", 'dust1':"dust1", 'dust2':"dust2",
 					'log_gamma':"duste_gamma", 'log_umin':"duste_umin", 

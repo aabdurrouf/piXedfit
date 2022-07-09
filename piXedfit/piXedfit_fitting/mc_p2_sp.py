@@ -236,23 +236,6 @@ def store_to_fits(nsamples=None,sampler_params=None,sampler_log_sfr=None,sampler
 			for pp in range(0,nfix_params):
 				hdr['fpar%d' % pp] = fix_params[pp]
 				hdr['fpar%d_val' % pp] = fix_params_val[pp]
-
-		col_count = 1
-		hdr['col%d' % col_count] = 'id'
-		for pp in range(0,nparams):
-			col_count = col_count + 1
-			hdr['col%d' % col_count] = params[pp]
-		col_count = col_count + 1
-		hdr['col%d' % col_count] = 'log_sfr'
-		col_count = col_count + 1
-		hdr['col%d' % col_count] = 'log_mw_age'
-		if duste_switch==1:
-			col_count = col_count + 1
-			hdr['col%d' % col_count] = 'log_dustmass'
-		if add_agn == 1:
-			col_count = col_count + 1
-			hdr['col%d' % col_count] = 'log_fagn_bol'
-		hdr['ncols'] = col_count
 		hdr['fitmethod'] = 'mcmc'
 		hdr['storesamp'] = 1
 		hdr['specphot'] = 1
@@ -711,14 +694,13 @@ temp_dir = PIXEDFIT_HOME+'/data/temp/'
 # default parameter set
 global def_params, def_params_val
 def_params = ['logzsol','log_tau','log_t0','log_alpha','log_beta','log_age','dust_index','dust1','dust2',
-				'log_gamma','log_umin', 'log_qpah', 'z', 'log_fagn','log_tauagn', 'log_mass']
+			'log_gamma','log_umin', 'log_qpah', 'z', 'log_fagn','log_tauagn', 'log_mass']
 
 def_params_val = {'log_mass':0.0,'z':0.001,'log_fagn':-3.0,'log_tauagn':1.0,'log_qpah':0.54,'log_umin':0.0,'log_gamma':-2.0,
 				'dust1':0.5,'dust2':0.5,'dust_index':-0.7,'log_age':1.0,'log_alpha':0.1,'log_beta':0.1,'log_t0':0.4,'log_tau':0.4,'logzsol':0.0}
 
 global def_params_fsps, params_assoc_fsps, status_log
-def_params_fsps = ['logzsol', 'log_tau', 'log_age', 'dust_index', 'dust1', 'dust2', 'log_gamma', 
-					'log_umin',  'log_qpah','log_fagn', 'log_tauagn']
+def_params_fsps = ['logzsol', 'log_tau', 'log_age', 'dust_index', 'dust1', 'dust2', 'log_gamma', 'log_umin',  'log_qpah','log_fagn', 'log_tauagn']
 params_assoc_fsps = {'logzsol':"logzsol", 'log_tau':"tau", 'log_age':"tage", 
 					'dust_index':"dust_index", 'dust1':"dust1", 'dust2':"dust2",
 					'log_gamma':"duste_gamma", 'log_umin':"duste_umin", 

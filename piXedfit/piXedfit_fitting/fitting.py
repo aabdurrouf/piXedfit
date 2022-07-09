@@ -12,9 +12,7 @@ PIXEDFIT_HOME = os.environ['PIXEDFIT_HOME']
 os.environ["OMP_NUM_THREADS"] = "1"
 
 __all__ = ["singleSEDfit", "singleSEDfit_specphoto", "SEDfit_from_binmap", "SEDfit_from_binmap_specphoto", 
-			"SEDfit_pixels_from_fluxmap", "inferred_params_mcmc_list", "inferred_params_rdsps_list",
-			"get_inferred_params_mcmc", "get_inferred_params_rdsps", "maps_parameters", "maps_parameters_fit_pixels", 
-			"get_params", "priors"]
+			"SEDfit_pixels_from_fluxmap", "maps_parameters", "maps_parameters_fit_pixels", "get_params", "priors"]
 
 CODE_dir = PIXEDFIT_HOME+'/piXedfit/piXedfit_fitting/'
 temp_dir = PIXEDFIT_HOME+'/data/temp/'
@@ -23,15 +21,15 @@ temp_dir = PIXEDFIT_HOME+'/data/temp/'
 class priors:
 	"""Functions for defining priors.
 	"""
-	def __init__(self, ranges={'z':[0.0,1.0],'logzsol':[-2.0,0.2],'log_tau':[-1.0,1.5],'log_age':[-3.0,1.14],
+	def __init__(self, ranges={'z':[0.0,1.0],'logzsol':[-2.0,0.2],'log_tau':[-1.0,1.5],'log_age':[-1.0,1.14],
 		'log_alpha':[-2.0,2.0],'log_beta':[-2.0,2.0],'log_t0':[-1.0,1.14],'dust_index':[-2.2,0.4],'dust1':[0.0,4.0], 
 		'dust2':[0.0,4.0],'log_gamma':[-4.0, 0.0],'log_umin':[-1.0,1.39],'log_qpah':[-3.0,1.0],'log_fagn':[-5.0,0.48],
-		'log_tauagn':[0.7, 2.18]}):
+		'log_tauagn':[0.7, 2.18],'log_mw_age':[-2.0,1.14],'log_mass':[4.0,12.0]}):
 
-		def_ranges={'z':[0.0,1.0],'logzsol':[-2.0,0.2],'log_tau':[-1.0,1.5],'log_age':[-3.0,1.14],'log_alpha':[-2.0,2.0],
+		def_ranges={'z':[0.0,1.0],'logzsol':[-2.0,0.2],'log_tau':[-1.0,1.5],'log_age':[-1.0,1.14],'log_alpha':[-2.0,2.0],
 			'log_beta':[-2.0,2.0],'log_t0':[-1.0,1.14],'dust_index':[-2.2,0.4],'dust1':[0.0,4.0],'dust2':[0.0,4.0],
 			'log_gamma':[-4.0, 0.0],'log_umin':[-1.0,1.39],'log_qpah':[-3.0,1.0],'log_fagn':[-5.0,0.48],
-			'log_tauagn':[0.7, 2.18]}
+			'log_tauagn':[0.7, 2.18],'log_mw_age':[-2.0,1.14],'log_mass':[4.0,12.0]}
 
 		# get keys in input params_range:
 		keys = list(ranges.keys())
@@ -126,6 +124,24 @@ class priors:
 		os.system('mv %s %s' % (namepr,temp_dir))
 		prior = [param, "arbitrary", namepr]
 		return prior
+
+	def joint_with_mass(self, param, log_mass, param_values, scale):
+		"""Function for assigning a joint prior between a parameter and log_mass
+
+		:param param:
+
+		:param log_mass:
+
+		:param param_values:
+
+		:param scale:
+		"""
+		namepr = randname("jprmass",".dat")
+		write_joint_prior(namepr,log_mass,param_values)
+		os.system('mv %s %s' % (namepr,temp_dir))
+		prior = [param, "joint_with_mass", namepr, scale]
+		return prior
+
 
 
 def singleSEDfit(obs_flux,obs_flux_err,filters,models_spec,params_ranges=None,params_priors=None,fit_method='mcmc',
@@ -1345,337 +1361,8 @@ def SEDfit_pixels_from_fluxmap(fits_fluxmap,x_range=[],y_range=[],models_spec=No
 			os.system("rm %s%s" % (temp_dir,flg_write[ii]))
 
 
-def inferred_params_mcmc_list(list_name_fits=[],name_out_fits=None):
-	"""Function for calculating inferred parameters (i.e., median posteriors) of fitting results.
-	The expected input is a list of FITS files contining the MCMC samplers which are output of :func:`singleSEDfit` or :func:`SEDfit_from_binmap` functions. 
-	The output of this function is a FITS file containing summary of inferred parameters.
-
-	:param list_name_fits: (Mandatory, default=[])
-		List of names of the input FITS files. The FITS files are output of fitting with MCMC method using :func:`singleSEDfit` or :func:`SEDfit_from_binmap` functions.
-		All the FITS files should have identical structure. In other word, they are results of fitting with the same set of free parameters.
-
-	:param name_out_fits: (optional, default: None)
-		Desired name for the output FITS file.
-	"""
-
-	nfiles = len(list_name_fits)
-
-	hdu = fits.open(list_name_fits[0])
-	header = hdu[0].header
-	nparams = int(header['nparams'])
-	free_z = header['free_z']
-	ncols = int(header['ncols'])
-
-	if nfiles>1:
-		for ii in range(0,nfiles):
-			hdu0 = fits.open(list_name_fits[ii])
-			header0 = hdu0[0].header
-			nparams0 = int(header0['nparams'])
-			free_z0 = header0['free_z']
-			if nparams!=nparams0 or free_z!=free_z0:
-				print ("Only set of fitting results with the same fitting parameters are allowed!")
-				sys.exit()
-			hdu0.close()
-
-	# get parameters
-	tfields = int(hdu[1].header['TFIELDS'])
-	params = []
-	for ii in range(1,tfields):
-		str_temp = 'TTYPE%d' % (ii+1)
-		params.append(hdu[1].header[str_temp])
-	nparams_new = len(params)
-	print("List of parameters:")
-	print (params)
-	hdu.close()
-
-	# define indexes
-	indexes = ["p16","p50","p84"]
-	nindexes = len(indexes)
-
-	# allocate memory:
-	arrays_fitres = {}
-	string_idx = []
-	for pp in range(0,nparams_new):
-		for ii in range(0,nindexes):
-			str_temp = "%s-%s" % (params[pp],indexes[ii])
-			arrays_fitres[str_temp] = np.zeros(nfiles)
-			string_idx.append(str_temp)
-	nstring_idx = len(string_idx)
-
-	# calcultions
-	for jj in range(0,nfiles):
-		hdu = fits.open(list_name_fits[jj])
-		data_samplers = hdu[1].data 
-		hdu.close()
-
-		idx_excld = np.where(data_samplers['log_sfr']<=-29.0)
-
-		for pp in range(0,nparams_new):
-			data_samp = np.delete(data_samplers[params[pp]], idx_excld[0])
-			for ii in range(0,nindexes):
-				str_temp = "%s-%s" % (params[pp],indexes[ii])
-
-				if indexes[ii] == 'p16':
-					arrays_fitres[str_temp][jj] = np.percentile(data_samp, 16)
-				elif indexes[ii] == 'p50':
-					arrays_fitres[str_temp][jj] = np.percentile(data_samp, 50)
-				elif indexes[ii] == 'p84':
-					arrays_fitres[str_temp][jj] = np.percentile(data_samp, 84)
-
-	# make output FITS file to store the results
-	hdr = fits.Header()
-	hdr['nfiles'] = nfiles
-	ids = np.zeros(nfiles)
-	for ii in range(0,nfiles):
-		str_temp = 'file%d' % ii
-		hdr[str_temp] = list_name_fits[ii]
-		ids[ii] = ii + 1
-	for pp in range(0,nparams_new):
-		str_temp = 'param%d' % pp
-		hdr[str_temp] = params[pp]
-	for ii in range(0,nindexes):
-		str_temp = 'index%d' % ii
-		hdr[str_temp] = indexes[ii]
-	primary_hdu = fits.PrimaryHDU(header=hdr)
-
-	cols0 = []
-	col = fits.Column(name='id', format='K', array=np.array(ids))
-	cols0.append(col)
-
-	for ii in range(0,nstring_idx):
-		col = fits.Column(name=string_idx[ii], format='D', array=np.array(arrays_fitres[string_idx[ii]]))
-		cols0.append(col)
-
-	cols = fits.ColDefs(cols0)
-	hdu = fits.BinTableHDU.from_columns(cols)
-	hdul = fits.HDUList([primary_hdu, hdu])
-
-	if name_out_fits == None:
-		name_out_fits = 'bestfit_parameters.fits'
-	hdul.writeto(name_out_fits, overwrite=True)
-
-	return name_out_fits
-
-
-def inferred_params_rdsps_list(list_name_fits=[], perc_chi2=10.0, name_out_fits=None):
-	"""Function for calculating inferred parameters (i.e., median posteriors) of fitting results obtained with RDSPS method.
-	The expected input is a list of FITS files contining the model properties which are output of :func:`singleSEDfit` or :func:`SEDfit_from_binmap` functions. 
-	The output of this function is a FITS file containing summary of inferred parameters.
-
-	:param list_name_fits: (Mandatory, default=[])
-		List of names of the input FITS files. The FITS files are output of fitting with RDSPS method using :func:`singleSEDfit` or :func:`SEDfit_from_binmap` functions.
-		All the FITS files should have identical structure. In other word, they are results of fitting with the same set of free parameters.
-
-	:param perc_chi2: (default: 10.0)
-		Lowest chi-square Percentage from the full model SEDs that are considered in the calculation of posterior-weighted averaging. 
-
-	:param name_out_fits: (default: None)
-		Desired name for the output FITS file.
-	"""
-	
-	nseds = len(list_name_fits)
-
-	# open one FITS file
-	hdu = fits.open(list_name_fits[0])
-	duste_stat = hdu[0].header['duste_stat']
-
-	# get parameters
-	tfields = int(hdu[1].header['TFIELDS'])
-	params = []
-	for ii in range(1,tfields-2):				## exclude 'chi2' and 'prob'
-		str_temp = 'TTYPE%d' % (ii+1)
-		params.append(hdu[1].header[str_temp])
-	nparams = len(params)
-	hdu.close()
-
-	# allocate memory
-	bfit_params = {}
-	bfit_params_err = {}
-	for pp in range(0,nparams):
-		bfit_params[params[pp]] = np.zeros(nseds)
-		bfit_params_err[params[pp]] = np.zeros(nseds)
-
-	# iteration
-	length_string = np.zeros(nseds)
-	for ii in range(0,nseds):
-		length_string[ii] = len(list_name_fits[ii])
-		hdu = fits.open(list_name_fits[ii])
-		data_samplers = hdu[1].data
-		hdu.close()
-
-		crit_chi2 = np.percentile(data_samplers['chi2'], perc_chi2)
-		idx_sel = np.where((data_samplers['chi2']<=crit_chi2) & (data_samplers['log_sfr']>-29.0) & (np.isnan(data_samplers['lnprob'])==False) & (np.isinf(data_samplers['lnprob'])==False))
-
-		array_lnprob = data_samplers['lnprob'][idx_sel[0]] - max(data_samplers['lnprob'][idx_sel[0]])  # normalize
-		array_prob = np.exp(array_lnprob)
-		array_prob = array_prob/np.sum(array_prob)						 # normalize
-		tot_prob = np.sum(array_prob)
-
-		for pp in range(0,nparams):
-			array_val = data_samplers[params[pp]][idx_sel[0]]
-
-			mean_val = np.sum(array_val*array_prob)/tot_prob
-			mean_val2 = np.sum(np.square(array_val)*array_prob)/tot_prob
-			std_val = sqrt(abs(mean_val2 - (mean_val**2)))
-
-			bfit_params[params[pp]][ii] = mean_val
-			bfit_params_err[params[pp]][ii] = std_val
-
-	# store into FITS file
-	hdr = fits.Header()
-	hdr['nparams'] = nparams
-	hdr['nseds'] = nseds
-	for pp in range(0,nparams):
-		str_temp = 'param%d' % pp
-		hdr[str_temp] = params[pp]
-	primary_hdu = fits.PrimaryHDU(header=hdr)
-	hdul = fits.HDUList()
-	hdul.append(primary_hdu)
-
-	id_seds = np.linspace(1, nseds, nseds)
-	cols0 = []
-	col = fits.Column(name='id', format='K', array=np.array(id_seds))
-	cols0.append(col)
-	str_temp = 'A%d' % max(length_string)
-	col = fits.Column(name='name', format=str_temp, array=np.array(list_name_fits))
-	cols0.append(col)
-	cols = fits.ColDefs(cols0)
-	hdul.append(fits.BinTableHDU.from_columns(cols, name='input_fits'))
-
-	cols0 = []
-	col = fits.Column(name='id', format='K', array=np.array(id_seds))
-	cols0.append(col)
-	for pp in range(0,nparams):
-		col = fits.Column(name=params[pp], format='D', array=np.array(bfit_params[params[pp]]))
-		cols0.append(col)
-	cols = fits.ColDefs(cols0)
-	hdul.append(fits.BinTableHDU.from_columns(cols, name='mean'))
-
-	cols0 = []
-	col = fits.Column(name='id', format='K', array=np.array(id_seds))
-	cols0.append(col)
-	for pp in range(0,nparams):
-		col = fits.Column(name=params[pp], format='D', array=np.array(bfit_params_err[params[pp]]))
-		cols0.append(col)
-	cols = fits.ColDefs(cols0)
-	hdul.append(fits.BinTableHDU.from_columns(cols, name='std'))
-
-	if name_out_fits == None:
-		name_out_fits = 'bfit_params.fits'
-	hdul.writeto(name_out_fits, overwrite=True)
-
-	return name_out_fits
-
-
-def get_inferred_params_mcmc(list_name_sampler_fits=[], bin_excld_flag=[]):
-	"""A function for calculating inferred parameters from the fitting results with MCMC method.
-	"""
-	nfiles = len(list_name_sampler_fits)
-
-	# get list of parameters
-	hdu = fits.open(list_name_sampler_fits[nfiles-1])
-	tfields = int(hdu[1].header['TFIELDS'])
-	params = []
-	for ii in range(1,tfields):
-		str_temp = 'TTYPE%d' % (ii+1)
-		params.append(hdu[1].header[str_temp])
-	nparams = len(params)
-	hdu.close()
-
-	indexes = ["p16","p50","p84"]
-	nindexes = len(indexes)
-
-	# allocate memory
-	bfit_param = {}
-	for pp in range(0,nparams):
-		bfit_param[params[pp]] = {}
-		for ii in range(0,nindexes):
-			bfit_param[params[pp]][indexes[ii]] = np.zeros(nfiles) - 99.0
-
-	# calculation
-	for ii in range(0,nfiles):
-		if bin_excld_flag[ii] != 1:
-			hdu = fits.open(list_name_sampler_fits[ii])
-			ncols = int(hdu[0].header['ncols'])
-			params0 = []
-			for jj in range(2,ncols+1):
-				str_temp = "col%d" % jj
-				params0.append(hdu[0].header[str_temp])
-			nparams0 = len(params0)
-			data_samplers = hdu[1].data 
-
-			idx_excld = np.where(data_samplers['log_sfr']<=-29.0)
-
-			# iteration
-			for pp in range(0,nparams0):
-				data_samp = np.delete(data_samplers[params0[pp]], idx_excld[0])
-				for kk in range(0,nindexes):
-					if indexes[kk] == 'p16':
-						bfit_param[params0[pp]][indexes[kk]][ii] = np.percentile(data_samp, 16)
-					elif indexes[kk] == 'p50':
-						bfit_param[params0[pp]][indexes[kk]][ii] = np.percentile(data_samp, 50)
-					elif indexes[kk] == 'p84':
-						bfit_param[params0[pp]][indexes[kk]][ii] = np.percentile(data_samp, 84)
-			hdu.close()
-
-	return bfit_param,params
-
-
-def get_inferred_params_rdsps(list_name_sampler_fits=[], bin_excld_flag=[], perc_chi2=10.0):
-	nfiles = len(list_name_sampler_fits)
-
-	# get parameters
-	hdu = fits.open(list_name_sampler_fits[0]) 
-	duste_stat = hdu[0].header['duste_stat']
-	params = []
-	for pp in range(0,int(hdu[0].header['nparams'])):
-		str_temp = 'param%d' % pp
-		params.append(hdu[0].header[str_temp])
-	hdu.close()
-	params.append('log_mass')
-	params.append('log_sfr')
-	params.append('log_mw_age')
-	if duste_stat == 'duste':
-		params.append('log_dustmass')
-	nparams = len(params)
-
-	indexes = ["mean", "mean_err"]
-
-	bfit_param = {}
-	for pp in range(0,nparams):
-		bfit_param[params[pp]] = {}
-		bfit_param[params[pp]]["mean"] = np.zeros(nfiles) - 99.0
-		bfit_param[params[pp]]["mean_err"] = np.zeros(nfiles) - 99.0
-
-	for ii in range(0,nfiles):
-		if bin_excld_flag[ii] != 1:
-			hdu = fits.open(list_name_sampler_fits[ii])
-			data_samplers = hdu[1].data
-			hdu.close()
-
-			crit_chi2 = np.percentile(data_samplers['chi2'], perc_chi2)
-			idx_sel = np.where((data_samplers['chi2']<=crit_chi2) & (data_samplers['log_sfr']>-29.0) & (np.isnan(data_samplers['lnprob'])==False) & (np.isinf(data_samplers['lnprob'])==False))
-
-			array_lnprob = data_samplers['lnprob'][idx_sel[0]] - max(data_samplers['lnprob'][idx_sel[0]])  # normalize
-			array_prob = np.exp(array_lnprob)
-			array_prob = array_prob/np.sum(array_prob)						 # normalize
-			tot_prob = np.sum(array_prob)
-
-			for pp in range(0,nparams):
-				array_val = data_samplers[params[pp]][idx_sel[0]]
-
-				mean_val = np.sum(array_val*array_prob)/tot_prob
-				mean_val2 = np.sum(np.square(array_val)*array_prob)/tot_prob
-				std_val = sqrt(abs(mean_val2 - (mean_val**2)))
-
-				bfit_param[params[pp]]["mean"][ii] = mean_val
-				bfit_param[params[pp]]["mean_err"][ii] = std_val
-
-	return bfit_param,params,indexes
-
-
 def maps_parameters(fits_binmap=None, bin_ids=[], name_sampler_fits=[], fits_fluxmap=None, refband_SFR=None, refband_SM=None, 
-	refband_Mdust=None, perc_chi2=90.0, name_out_fits=None):
+	refband_Mdust=None, name_out_fits=None):
 	"""Function that can be used for constructing maps of properties from the fitting results of spatial bins.
 
 	:param fits_binmap: (Mandatory, default=None)
@@ -1703,10 +1390,6 @@ def maps_parameters(fits_binmap=None, bin_ids=[], name_sampler_fits=[], fits_flu
 		Index of band/filter in the multiband set that is used for reference in dividing map of dust mass in bin space into map of dust mass in pixel space.
 		If None, the band with longest wavelength is selected.
 
-	:param perc_chi2: (optional, default=80.0)
-		A parameter that set the percentile cut of the random model SEDs. The cut is applied after the models are sorted based on their chi-square values. 
-		This parameter defines up to what percentile the models will be cut. This parameter is only used if the fitting results are obtained with the RDSPS method.  
-
 	:param name_out_fits: (optional, default: None)
 		Desired name for the output FITS file.   
 	"""
@@ -1716,21 +1399,20 @@ def maps_parameters(fits_binmap=None, bin_ids=[], name_sampler_fits=[], fits_flu
 	unit_bin = float(hdu[0].header['unit'])
 	if hdu[0].header['SPECPHOT'] == 0:
 		nbins = int(hdu[0].header['nbins'])
-		pix_bin_flag = hdu['bin_map'].data
+		binmap = hdu['bin_map'].data
 		bin_flux = hdu['bin_flux'].data*unit_bin
 		bin_flux_err = hdu['bin_fluxerr'].data*unit_bin
-
 	elif hdu[0].header['SPECPHOT'] == 1:
 		nbins = int(hdu[0].header['NBINSPH'])
-		pix_bin_flag = hdu['PHOTO_BIN_MAP'].data
+		binmap = hdu['PHOTO_BIN_MAP'].data
 		bin_flux = hdu['BIN_PHOTO_FLUX'].data*unit_bin
 		bin_flux_err = hdu['BIN_PHOTO_FLUXERR'].data*unit_bin
 	gal_z = float(hdu[0].header['z'])
 	nbands = int(hdu[0].header['nfilters'])
 	hdu.close()
 
-	dim_y = pix_bin_flag.shape[0]
-	dim_x = pix_bin_flag.shape[1]
+	dim_y = binmap.shape[0]
+	dim_x = binmap.shape[1]
 
 	# flag for excluded bins
 	name_sampler_fits1 = []
@@ -1754,122 +1436,125 @@ def maps_parameters(fits_binmap=None, bin_ids=[], name_sampler_fits=[], fits_flu
 		pix_flux_err = hdu['PHOTO_FLUXERR'].data*unit_pix
 	hdu.close()
 
-	# check the fitting method and whether the sampler chains are stored or not
-	hdu = fits.open(name_sampler_fits[0])
-	fit_method = hdu[0].header['fitmethod']
-	store_full_samplers = int(hdu[0].header['storesamp'])
-	hdu.close()
+	# number of files
+	nfiles = len(name_sampler_fits)
 
+	#=> get some information
+	hdu = fits.open(name_sampler_fits[nfiles-1])
+	fit_method = hdu[0].header['fitmethod']
+	# list of parameters
+	params = []
+	for pp in range(0,int(hdu[0].header['nparams'])):
+		params.append(hdu[0].header['param%d' % pp])
+	if fit_method == 'mcmc':
+		params.append('log_sfr')
+		params.append('log_mw_age')
+		if int(hdu[0].header['duste_stat'])==1:
+			params.append('log_dustmass')
+		if int(hdu[0].header['add_agn'])==1:
+			params.append('log_fagn_bol')
+	nparams = len(params)
+	# indices
 	if fit_method == 'rdsps':
 		indexes = ["mean", "mean_err"]
-		nindexes = len(indexes)
+	elif fit_method == 'mcmc':
+		indexes = ["p16","p50","p84"]
+	nindexes = len(indexes)
+	hdu.close()
 
-		#=> get the fitting results
-		if store_full_samplers == 1:
-			bfit_param,params,indexes = get_inferred_params_rdsps(list_name_sampler_fits=name_sampler_fits1, bin_excld_flag=bin_excld_flag, perc_chi2=perc_chi2)
+	# allocate memory
+	bfit_param = {}
+	for pp in range(0,nparams):
+		bfit_param[params[pp]] = {}
+		for ii in range(0,nindexes):
+			bfit_param[params[pp]][indexes[ii]] = np.zeros(nbins) - 99.0
 
-		elif store_full_samplers == 0:
-			nfiles = len(name_sampler_fits)
-
-			# get params
-			hdu = fits.open(name_sampler_fits[nfiles-1])
-			params = []
-			for ii in range(2,int(hdu[0].header['ncols']+1)):
-				str_temp = 'col%d' % ii
-				params.append(hdu[0].header[str_temp])
-			hdu.close()
-			nparams = len(params)
-
-			# allocate memory
-			bfit_param = {}
+	# get bfit_param in bin space
+	for ii in range(0,nbins):
+		if bin_excld_flag[ii] != 1:
+			hdu = fits.open(name_sampler_fits1[ii])
 			for pp in range(0,nparams):
-				bfit_param[params[pp]] = {}
-				for ii in range(0,nindexes):
-					bfit_param[params[pp]][indexes[ii]] = np.zeros(nbins) - 99.0
+				if fit_method == 'rdsps':
+					bfit_param[params[pp]]["mean"][ii] = hdu['fit_params'].data[params[pp]][0]
+					bfit_param[params[pp]]["mean_err"][ii] = hdu['fit_params'].data[params[pp]][1]
+				elif fit_method == 'mcmc':
+					bfit_param[params[pp]]["p16"][ii] = hdu['fit_params'].data[params[pp]][0]
+					bfit_param[params[pp]]["p50"][ii] = hdu['fit_params'].data[params[pp]][1]
+					bfit_param[params[pp]]["p84"][ii] = hdu['fit_params'].data[params[pp]][2]
+			hdu.close()
 
-			# get bfit_param
-			for ii in range(0,nbins):
-				if bin_excld_flag[ii] != 1:
-					hdu = fits.open(name_sampler_fits1[ii])
-					for pp in range(0,nparams):
-						bfit_param[params[pp]]["mean"][ii] = hdu[1].data[params[pp]][0]
-						bfit_param[params[pp]]["mean_err"][ii] = hdu[1].data[params[pp]][1]
-					hdu.close()
-
-		nparams = len(params)
-		#=> Store to FITS file
-		hdul = fits.HDUList()
-		hdr = fits.Header()
-		hdr['gal_z'] = gal_z
-		hdr['nbins'] = nbins
-		count_HDU = 2
-		# bin space
-		for pp in range(0,nparams):
+	#=> Store to FITS file
+	hdul = fits.HDUList()
+	hdr = fits.Header()
+	hdr['gal_z'] = gal_z
+	hdr['nbins'] = nbins
+	count_HDU = 2
+	# bin space
+	for pp in range(0,nparams):
+		for ii in range(0,nindexes):
+			idx_str = "bin-%s-%s" % (params[pp],indexes[ii])
+			hdr['HDU%d' % int(count_HDU)] = idx_str
+			count_HDU = count_HDU + 1
+	# pixel space
+	params_pix = []
+	for pp in range(0,nparams):
+		if params[pp] == 'log_sfr' or params[pp] == 'log_mass' or params[pp]=='log_dustmass':
+			params_pix.append(params[pp])
 			for ii in range(0,nindexes):
-				idx_str = "bin-%s-%s" % (params[pp],indexes[ii])
-				str_temp = 'HDU%d' % int(count_HDU)
-				hdr[str_temp] = idx_str
+				idx_str = "pix-%s-%s" % (params[pp],indexes[ii])
+				hdr['HDU%d' % int(count_HDU)] = idx_str
 				count_HDU = count_HDU + 1
-		# pixel space
-		params_pix = []
-		for pp in range(0,nparams):
-			if params[pp] == 'log_sfr' or params[pp] == 'log_mass' or params[pp]=='log_dustmass':
-				params_pix.append(params[pp])
-				for ii in range(0,nindexes):
-					idx_str = "pix-%s-%s" % (params[pp],indexes[ii])
-					str_temp = 'HDU%d' % int(count_HDU)
-					hdr[str_temp] = idx_str
-					count_HDU = count_HDU + 1
-		hdr['nHDU'] = count_HDU
-		primary_hdu = fits.PrimaryHDU(header=hdr)
-		hdul.append(primary_hdu)
+	hdr['nHDU'] = count_HDU
+	primary_hdu = fits.PrimaryHDU(header=hdr)
+	hdul.append(primary_hdu)
 
-		# get number of parameters to be distributed to pixel space
-		nparams_pix = len(params_pix)
+	# get number of parameters to be distributed to pixel space
+	nparams_pix = len(params_pix)
 
-		hdul.append(fits.ImageHDU(galaxy_region, name='galaxy_region'))
+	hdul.append(fits.ImageHDU(galaxy_region, name='galaxy_region'))
 
-		#maps in bin space
-		for pp in range(0,nparams):
-			for ii in range(0,nindexes):
-				idx_str = "bin-%s-%s" % (params[pp],indexes[ii])
-				map_prop = np.zeros((dim_y,dim_x))
-				for bb in range(0,nbins):
-					rows, cols = np.where(pix_bin_flag==bb+1)
-					map_prop[rows,cols] = bfit_param[params[pp]][indexes[ii]][bb]
-				hdul.append(fits.ImageHDU(map_prop, name=idx_str))
+	# maps in bin space
+	for pp in range(0,nparams):
+		for ii in range(0,nindexes):
+			idx_str = "bin-%s-%s" % (params[pp],indexes[ii])
+			map_prop = np.zeros((dim_y,dim_x))
+			for bb in range(0,nbins):
+				rows, cols = np.where(binmap==bb+1)
+				map_prop[rows,cols] = bfit_param[params[pp]][indexes[ii]][bb]
+			hdul.append(fits.ImageHDU(map_prop, name=idx_str))
 
-		# reference bands:
-		if refband_SFR == None:
-			refband_SFR = 0
-		if refband_SM == None:
-			refband_SM = nbands-1
-		if refband_Mdust == None:
-			refband_Mdust = nbands-1
+	# reference bands:
+	if refband_SFR == None:
+		refband_SFR = 0
+	if refband_SM == None:
+		refband_SM = nbands-1
+	if refband_Mdust == None:
+		refband_Mdust = nbands-1
 
-		refband_params_pix = {}
-		refband_params_pix['log_sfr'] = refband_SFR
-		refband_params_pix['log_mass'] = refband_SM
-		for pp in range(0,nparams_pix):
-			if params_pix[pp] == 'log_dustmass':
-				refband_params_pix['log_dustmass'] = refband_Mdust
+	refband_params_pix = {}
+	refband_params_pix['log_sfr'] = refband_SFR
+	refband_params_pix['log_mass'] = refband_SM
+	for pp in range(0,nparams_pix):
+		if params_pix[pp] == 'log_dustmass':
+			refband_params_pix['log_dustmass'] = refband_Mdust
 
-		# maps in pixel space
-		for pp in range(0,nparams_pix):
-			for ii in range(0,nindexes):
-				idx_str = "pix-%s-%s" % (params_pix[pp],indexes[ii])
-				map_prop = np.zeros((dim_y,dim_x))
+	# maps in pixel space
+	for pp in range(0,nparams_pix):
+		for ii in range(0,nindexes):
+			idx_str = "pix-%s-%s" % (params_pix[pp],indexes[ii])
+			map_prop = np.zeros((dim_y,dim_x))
 
+			if fit_method == 'rdsps':
 				if indexes[ii] == 'mean':
 					for bb in range(0,nbins):
-						rows, cols = np.where(pix_bin_flag==bb+1)
+						rows, cols = np.where(binmap==bb+1)
 						bin_val = np.power(10.0,bfit_param[params_pix[pp]][indexes[ii]][bb])
 						pix_val = bin_val*pix_flux[int(refband_params_pix[params_pix[pp]])][rows,cols]/bin_flux[int(refband_params_pix[params_pix[pp]])][rows,cols]
 						map_prop[rows,cols] = np.log10(pix_val)
 					hdul.append(fits.ImageHDU(map_prop, name=idx_str))
 				else:
 					for bb in range(0,nbins):
-						rows, cols = np.where(pix_bin_flag==bb+1)
+						rows, cols = np.where(binmap==bb+1)
 						bin_val = np.power(10.0,bfit_param[params_pix[pp]]["mean"][bb])
 						bin_valerr = np.power(10.0,bfit_param[params_pix[pp]][indexes[ii]][bb])
 						bin_f = bin_flux[int(refband_params_pix[params_pix[pp]])][rows,cols]
@@ -1879,128 +1564,23 @@ def maps_parameters(fits_binmap=None, bin_ids=[], name_sampler_fits=[], fits_flu
 						pix_val = bin_val*np.sqrt((bin_val*bin_val/bin_valerr/bin_valerr) + (bin_f*bin_f/bin_ferr/bin_ferr) + (pix_f*pix_f/pix_ferr/pix_ferr))
 						map_prop[rows,cols] = np.log10(pix_val)
 					hdul.append(fits.ImageHDU(map_prop, name=idx_str))
-					
-		if name_out_fits == None:
-			name_out_fits = "fitres_%s" % fits_binmap
-		hdul.writeto(name_out_fits, overwrite=True)
 
-	elif fit_method == 'mcmc':
-		indexes = ["p16","p50","p84"]
-		nindexes = len(indexes)
-
-		#=> get the fitting results
-		if store_full_samplers == 1:
-			bfit_param,params = get_inferred_params_mcmc(list_name_sampler_fits=name_sampler_fits1,bin_excld_flag=bin_excld_flag)
-
-		elif store_full_samplers == 0:
-			nfiles = len(name_sampler_fits)
-
-			# get params
-			hdu = fits.open(name_sampler_fits[nfiles-1])
-			params = []
-			for ii in range(2,int(hdu[0].header['ncols']+1)):
-				str_temp = 'col%d' % ii
-				params.append(hdu[0].header[str_temp])
-			hdu.close()
-			nparams = len(params)
-
-			# allocate memory
-			bfit_param = {}
-			for pp in range(0,nparams):
-				bfit_param[params[pp]] = {}
-				for ii in range(0,nindexes):
-					bfit_param[params[pp]][indexes[ii]] = np.zeros(nbins) - 99.0
-
-			# get bfit_param
-			for ii in range(0,nbins):
-				if bin_excld_flag[ii] != 1:
-					hdu = fits.open(name_sampler_fits1[ii])
-					for pp in range(0,nparams):
-						bfit_param[params[pp]]["p16"][ii] = hdu[1].data[params[pp]][0]
-						bfit_param[params[pp]]["p50"][ii] = hdu[1].data[params[pp]][1]
-						bfit_param[params[pp]]["p84"][ii] = hdu[1].data[params[pp]][2]
-					hdu.close()
-
-		nparams = len(params)
-		# Make FITS file:
-		hdul = fits.HDUList()
-		hdr = fits.Header()
-		hdr['gal_z'] = gal_z
-		hdr['nbins'] = nbins
-		count_HDU = 2
-		# bin space
-		for pp in range(0,nparams):
-			for ii in range(0,nindexes):
-				idx_str = "bin-%s-%s" % (params[pp],indexes[ii])
-				str_temp = 'HDU%d' % int(count_HDU)
-				hdr[str_temp] = idx_str
-				count_HDU = count_HDU + 1
-		# pixel space
-		params_pix = []
-		for pp in range(0,nparams):
-			if params[pp] == 'log_sfr' or params[pp] == 'log_mass' or params[pp]=='log_dustmass':
-				params_pix.append(params[pp])
-				for ii in range(0,nindexes):
-					idx_str = "pix-%s-%s" % (params[pp],indexes[ii])
-					str_temp = 'HDU%d' % int(count_HDU)
-					hdr[str_temp] = idx_str
-					count_HDU = count_HDU + 1
-		hdr['nHDU'] = count_HDU
-		primary_hdu = fits.PrimaryHDU(header=hdr)
-		hdul.append(primary_hdu)
-
-		# get number of parameters to be distributed to pixel space
-		nparams_pix = len(params_pix)
-
-		hdul.append(fits.ImageHDU(galaxy_region, name='galaxy_region'))
-
-		#maps in bin space
-		for pp in range(0,nparams):
-			for ii in range(0,nindexes):
-				idx_str = "bin-%s-%s" % (params[pp],indexes[ii])
-				map_prop = np.zeros((dim_y,dim_x))
+			elif fit_method == 'mcmc':
 				for bb in range(0,nbins):
-					rows, cols = np.where(pix_bin_flag==bb+1)
-					map_prop[rows,cols] = bfit_param[params[pp]][indexes[ii]][bb]
-				hdul.append(fits.ImageHDU(map_prop, name=idx_str))
-
-		# reference bands:
-		if refband_SFR == None:
-			refband_SFR = 0
-		if refband_SM == None:
-			refband_SM = nbands-1
-		if refband_Mdust == None:
-			refband_Mdust = nbands-1
-
-		refband_params_pix = {}
-		refband_params_pix['log_sfr'] = refband_SFR
-		refband_params_pix['log_mass'] = refband_SM
-		for pp in range(0,nparams_pix):
-			if params_pix[pp] == 'log_dustmass':
-				refband_params_pix['log_dustmass'] = refband_Mdust
-
-		# maps in pixel space
-		for pp in range(0,nparams_pix):
-			for ii in range(0,nindexes):
-				idx_str = "pix-%s-%s" % (params_pix[pp],indexes[ii])
-				map_prop = np.zeros((dim_y,dim_x))
-
-				for bb in range(0,nbins):
-					rows, cols = np.where(pix_bin_flag==bb+1)
+					rows, cols = np.where(binmap==bb+1)
 					bin_val = np.power(10.0,bfit_param[params_pix[pp]][indexes[ii]][bb])
 					pix_val = bin_val*pix_flux[int(refband_params_pix[params_pix[pp]])][rows,cols]/bin_flux[int(refband_params_pix[params_pix[pp]])][rows,cols]
 					map_prop[rows,cols] = np.log10(pix_val)
 				hdul.append(fits.ImageHDU(map_prop, name=idx_str))
 					
-		if name_out_fits == None:
-			name_out_fits = "fitres_%s" % fits_binmap
-		hdul.writeto(name_out_fits, overwrite=True)
-
+	if name_out_fits == None:
+		name_out_fits = "fitres_%s" % fits_binmap
+	hdul.writeto(name_out_fits, overwrite=True)
 
 	return name_out_fits
 
 
-def maps_parameters_fit_pixels(fits_fluxmap=None, pix_x=[], pix_y=[], name_sampler_fits=[], perc_chi2=80.0, name_out_fits=None):
+def maps_parameters_fit_pixels(fits_fluxmap=None, pix_x=[], pix_y=[], name_sampler_fits=[], name_out_fits=None):
 	"""Function for calculating maps of properties from the fitting results obtained with the MCMC method on pixel basis.
 
 	:param fits_fluxmap: 
@@ -2016,10 +1596,6 @@ def maps_parameters_fit_pixels(fits_fluxmap=None, pix_x=[], pix_y=[], name_sampl
 		List of names of the FITS files containing the fitting results. 
 		The three inputs of pix_x, pix_y, and name_sampler_fits should have the same number of elements.
 
-	:param perc_chi2: (optional, default=80.0)
-		A parameter that set the percentile cut of the random model SEDs. The cut is applied after the models are sorted based on their chi-square values. 
-		This parameter defines up to what percentile the models will be cut. This parameter is only used if the fitting results are obtained with the RDSPS method.  
-
 	:param name_out_fits: (optional, default: None)
 		Desired name for the output FITS file.   
 	"""
@@ -2027,96 +1603,62 @@ def maps_parameters_fit_pixels(fits_fluxmap=None, pix_x=[], pix_y=[], name_sampl
 	npixs = len(name_sampler_fits)
 
 	if len(pix_x)!=npixs or len(pix_y)!=npixs:
-		print ("pix_x and pix_y should have the same number of elements as that of name_sampler_fits!")
+		print ("pix_x and pix_y should have the same number of elements as name_sampler_fits!")
 		sys.exit()
 
 	# open FITS file containing maps of multiband fluxes
 	hdu = fits.open(fits_fluxmap)
 	galaxy_region = hdu['galaxy_region'].data
-
 	gal_z = float(hdu[0].header['z'])
 	hdu.close()
 
 	dim_y = galaxy_region.shape[0]
 	dim_x = galaxy_region.shape[1]
 
-	# check the fitting method and whether the sampler chains are stored or not
-	hdu = fits.open(name_sampler_fits[0])
+	#=> get some information
+	hdu = fits.open(name_sampler_fits[npixs-1])
 	fit_method = hdu[0].header['fitmethod']
-	store_full_samplers = int(hdu[0].header['storesamp'])
+	# list of parameters
+	params = []
+	for pp in range(0,int(hdu[0].header['nparams'])):
+		params.append(hdu[0].header['param%d' % pp])
+	if fit_method == 'mcmc':
+		params.append('log_sfr')
+		params.append('log_mw_age')
+		if int(hdu[0].header['duste_stat'])==1:
+			params.append('log_dustmass')
+		if int(hdu[0].header['add_agn'])==1:
+			params.append('log_fagn_bol')
+	nparams = len(params)
+	# indices
+	if fit_method == 'rdsps':
+		indexes = ["mean", "mean_err"]
+	elif fit_method == 'mcmc':
+		indexes = ["p16","p50","p84"]
+	nindexes = len(indexes)
 	hdu.close()
 
-	if fit_method=='rdsps':
-		indexes = ["mean", "mean_err"]
-		nindexes = len(indexes)
+	# allocate memory
+	bfit_param = {}
+	for pp in range(0,nparams):
+		bfit_param[params[pp]] = {}
+		for ii in range(0,nindexes):
+			bfit_param[params[pp]][indexes[ii]] = np.zeros(nbins) - 99.0
 
-		#=> get the fitting results
-		if store_full_samplers == 1:
-			bfit_param,params,indexes = get_inferred_params_rdsps(list_name_sampler_fits=name_sampler_fits, bin_excld_flag=bin_excld_flag, 
-																	perc_chi2=perc_chi2)
-
-		elif store_full_samplers == 0:
-			# get params
-			hdu = fits.open(name_sampler_fits[npixs-1])
-			params = []
-			for ii in range(2,int(hdu[0].header['ncols']+1)):
-				str_temp = 'col%d' % ii
-				params.append(hdu[0].header[str_temp])
-			hdu.close()
-			nparams = len(params)
-
-			# allocate memory
-			bfit_param = {}
-			for pp in range(0,nparams):
-				bfit_param[params[pp]] = {}
-				for ii in range(0,nindexes):
-					bfit_param[params[pp]][indexes[ii]] = np.zeros(npixs) - 99.0
-
-			# get bfit_param
-			for ii in range(0,npixs):
-				hdu = fits.open(name_sampler_fits[ii])
-				for pp in range(0,nparams):
-					bfit_param[params[pp]]["mean"][ii] = hdu[1].data[params[pp]][0]
-					bfit_param[params[pp]]["mean_err"][ii] = hdu[1].data[params[pp]][1]
-				hdu.close()
-
-	elif fit_method=='mcmc':
-		indexes = ["p16","p50","p84"]
-		nindexes = len(indexes)
-
-		#=> get the fitting results
-		if store_full_samplers == 1:
-			bin_excld_flag = np.zeros(npixs)
-			bfit_param,params = get_inferred_params_mcmc(list_name_sampler_fits=name_sampler_fits,bin_excld_flag=bin_excld_flag)
-
-		elif store_full_samplers == 0:
-			# get params
-			hdu = fits.open(name_sampler_fits[npixs-1])
-			params = []
-			for ii in range(2,int(hdu[0].header['ncols']+1)):
-				str_temp = 'col%d' % ii
-				params.append(hdu[0].header[str_temp])
-			hdu.close()
-			nparams = len(params)
-
-			# allocate memory
-			bfit_param = {}
-			for pp in range(0,nparams):
-				bfit_param[params[pp]] = {}
-				for ii in range(0,nindexes):
-					bfit_param[params[pp]][indexes[ii]] = np.zeros(npixs) - 99.0
-
-			# get bfit_param
-			for ii in range(0,npixs):
-				hdu = fits.open(name_sampler_fits[ii])
-				for pp in range(0,nparams):
-					bfit_param[params[pp]]["p16"][ii] = hdu[1].data[params[pp]][0]
-					bfit_param[params[pp]]["p50"][ii] = hdu[1].data[params[pp]][1]
-					bfit_param[params[pp]]["p84"][ii] = hdu[1].data[params[pp]][2]
-				hdu.close()
+	# get bfit_param
+	for ii in range(0,npixs):
+		hdu = fits.open(name_sampler_fits[ii])
+		for pp in range(0,nparams):
+			if fit_method == 'rdsps':
+				bfit_param[params[pp]]["mean"][ii] = hdu['fit_params'].data[params[pp]][0]
+				bfit_param[params[pp]]["mean_err"][ii] = hdu['fit_params'].data[params[pp]][1]
+			elif fit_method == 'mcmc':
+					bfit_param[params[pp]]["p16"][ii] = hdu['fit_params'].data[params[pp]][0]
+					bfit_param[params[pp]]["p50"][ii] = hdu['fit_params'].data[params[pp]][1]
+					bfit_param[params[pp]]["p84"][ii] = hdu['fit_params'].data[params[pp]][2]
+		hdu.close()
 
 	# store the maps to FITS file
-	nparams = len(params)
 	hdul = fits.HDUList()
 	hdr = fits.Header()
 	hdr['gal_z'] = gal_z
@@ -2125,24 +1667,22 @@ def maps_parameters_fit_pixels(fits_fluxmap=None, pix_x=[], pix_y=[], name_sampl
 	for pp in range(0,nparams):
 		for ii in range(0,nindexes):
 			idx_str = "pix-%s-%s" % (params[pp],indexes[ii])
-			str_temp = 'HDU%d' % int(count_HDU)
-			hdr[str_temp] = idx_str
+			hdr['HDU%d' % int(count_HDU)] = idx_str
 			count_HDU = count_HDU + 1
 	hdr['nHDU'] = count_HDU
 	primary_hdu = fits.PrimaryHDU(header=hdr)
 	hdul.append(primary_hdu)
 
+	# galaxy's region
 	hdul.append(fits.ImageHDU(galaxy_region, name='galaxy_region'))
 
 	# maps of properties
 	for pp in range(0,nparams):
 		for ii in range(0,nindexes):
-			idx_str = "bin-%s-%s" % (params[pp],indexes[ii])
+			idx_str = "pix-%s-%s" % (params[pp],indexes[ii])
 			map_prop = np.zeros((dim_y,dim_x)) - 99.0
 			for jj in range(0,npixs):
-				yy = int(pix_y[jj])
-				xx = int(pix_x[jj])
-				map_prop[yy][xx] = bfit_param[params[pp]][indexes[ii]][jj]
+				map_prop[int(pix_y[jj])][int(pix_x[jj])] = bfit_param[params[pp]][indexes[ii]][jj]
 			hdul.append(fits.ImageHDU(map_prop, name=idx_str))
 					
 	if name_out_fits == None:

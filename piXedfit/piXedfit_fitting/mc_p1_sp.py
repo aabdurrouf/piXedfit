@@ -42,7 +42,6 @@ def initfit_fz(gal_z,DL_Gpc):
 	wave = f['mod/spec/wave'][:]
 
 	# cut model spectrum to match range given by observed spectrum
-	#if free_z == 1:
 	redsh_mod_wave = (1.0+gal_z)*wave
 	idx_mod_wave = np.where((redsh_mod_wave>min_spec_wave-30) & (redsh_mod_wave<max_spec_wave+30))
 
@@ -107,19 +106,12 @@ def initfit_fz(gal_z,DL_Gpc):
 		chi2_spec = np.sum(np.square(chi_spec))
 
 		chi2 = chi2_photo + chi2_spec
-		# weighted reduced chi-square
-		#nspecs = len(chi_spec)
-		#chi2 = ((nspecs*chi2_photo) + (nbands*chi2_spec))/(nspecs+nbands)
-		#nspecs = len(chi_spec)
-		#if nspecs == 0:
-		#	nspecs = 1
-		#chi2 = (chi2_photo/nbands) + (chi2_spec/nspecs)
 
 		mod_chi2_temp[int(count)] = chi2
 		mod_chi2_photo_temp[int(count)] = chi2_photo
 		mod_redcd_chi2_spec_temp[int(count)] = chi2_spec/len(chi_spec)
-		mod_fluxes_temp[:,int(count)] = fluxes  # before normalized
-		mod_spec_flux_temp[:,int(count)] = conv_mod_spec_flux_clean/norm # before normalized
+		mod_fluxes_temp[:,int(count)] = fluxes  									# before normalized
+		mod_spec_flux_temp[:,int(count)] = conv_mod_spec_flux_clean/norm 			# before normalized
 
 		# get parameters
 		for pp in range(0,nparams):
@@ -224,7 +216,6 @@ def initfit_fz(gal_z,DL_Gpc):
 			chi2_spec = np.sum(np.square(chi_spec))
 
 			chi2 = chi2_photo + chi2_spec
-			#chi2 = (chi2_photo/nbands) + (chi2_spec/len(chi_spec))
 
 			mod_chi2_temp[int(count)] = chi2
 
@@ -329,13 +320,6 @@ def initfit_vz(gal_z,DL_Gpc,zz,nrands_z):
 		chi2_spec = np.sum(np.square(chi_spec))
 
 		chi2 = chi2_photo + chi2_spec
-		# weighted reduced chi-square
-		#nspecs = len(chi_spec)
-		#chi2 = ((nspecs*chi2_photo) + (nbands*chi2_spec))/(nspecs+nbands)
-		#nspecs = len(chi_spec)
-		#if nspecs == 0:
-		#	nspecs = 1
-		#chi2 = (chi2_photo/nbands) + (chi2_spec/nspecs)
 
 		mod_chi2_temp[int(count)] = chi2
 
@@ -354,7 +338,6 @@ def initfit_vz(gal_z,DL_Gpc,zz,nrands_z):
 		sys.stdout.write('\r')
 		sys.stdout.write('rank %d --> progress: z %d of %d (%d%%) and model %d of %d (%d%%)' % (rank,zz+1,nrands_z,(zz+1)*100/nrands_z,count,numDataPerRank,count*100/numDataPerRank))
 		sys.stdout.flush()
-	#sys.stdout.write('\n')
 
 	mod_params = np.zeros((nparams,nmodels))
 	mod_chi2 = np.zeros(nmodels)
@@ -383,7 +366,12 @@ def lnprior(theta):
 			elif params_priors[params[pp]]['form'] == 'gamma':
 				lnprior += np.log(gamma.pdf(theta[pp],params_priors[params[pp]]['a'],loc=params_priors[params[pp]]['loc'],scale=params_priors[params[pp]]['scale']))
 			elif params_priors[params[pp]]['form'] == 'arbitrary':
-				lnprior += np.log(fprior(theta[pp]))
+				lnprior += np.log(np.interp(theta[pp],params_priors[params[pp]]['values'],params_priors[params[pp]]['prob']))
+			elif params_priors[params[pp]]['form'] == 'joint_with_mass':
+				loc = np.interp(theta[nparams-1],params_priors[params[pp]]['lmass'],params_priors[params[pp]]['pval'])
+				scale = params_priors[params[pp]]['scale']
+				lnprior += np.log(normal.pdf(f[str_temp][idx_parmod_sel[0][int(ii)]],loc=loc,scale=scale))
+			
 		return lnprior
 	return -np.inf
 
@@ -413,7 +401,6 @@ def lnprob(theta):
 		redsh_wave,redsh_spec = cosmo_redshifting(cosmo=cosmo,H0=H0,Om0=Om0,z=params_val['z'],wave=rest_wave,spec=rest_flux)
 
 		# cut model spectrum to match range given by the observed spectrum
-		#if free_z == 1:
 		idx_mod_wave = np.where((redsh_wave>min_spec_wave-30) & (redsh_wave<max_spec_wave+30))
 
 		# IGM absorption:
@@ -429,9 +416,6 @@ def lnprob(theta):
 		fluxes = filtering_interp_filters(redsh_wave,redsh_spec,interp_filters_waves,interp_filters_trans)
 		norm = model_leastnorm(obs_fluxes,obs_flux_err,fluxes)
 		norm_fluxes = norm*fluxes
-
-		#chi_photo = (norm_fluxes-obs_fluxes)/obs_flux_err
-		#chi2_photo = np.sum(np.square(chi_photo))
 			
 		# cut and normalize model spectrum
 		# smoothing model spectrum to meet resolution of IFS
@@ -452,19 +436,6 @@ def lnprob(theta):
 			
 		chi_spec0 = (conv_mod_spec_flux_clean-spec_flux_clean)/spec_flux_err_clean
 		chi_spec,lower,upper = sigmaclip(chi_spec0, low=spec_chi_sigma_clip, high=spec_chi_sigma_clip)
-		#chi2_spec = np.sum(np.square(chi_spec))
-
-		# probability
-		#ln_prob_photo = -0.5*np.sum(np.log(2*pi*obs_flux_err*obs_flux_err)) - 0.5*np.sum(chi2_photo)
-
-		#idx1 = np.where((chi_spec0>=lower) & (chi_spec0<=upper))
-		#derr = spec_flux_err_clean[idx1[0]]
-		#ln_prob_spec = -0.5*np.sum(np.log(2*pi*derr*derr)) - 0.5*np.sum(chi2_spec)
-
-		#nspecs = len(chi_spec)
-		#if nspecs == 0:
-		#	nspecs = 1
-		#ln_likeli = (ln_prob_photo/nbands) + (ln_prob_spec/nspecs)
 
 		idx1 = np.where((chi_spec0>=lower) & (chi_spec0<=upper))
 		m_merge = conv_mod_spec_flux_clean[idx1[0]].tolist() + norm_fluxes.tolist()
@@ -491,8 +462,7 @@ def_params_val = {'log_mass':0.0,'z':0.001,'log_fagn':-3.0,'log_tauagn':1.0,'log
 				'log_tau':0.4,'logzsol':0.0}
 
 global def_params_fsps, params_assoc_fsps, status_log
-def_params_fsps = ['logzsol', 'log_tau', 'log_age', 'dust_index', 'dust1', 'dust2', 'log_gamma', 'log_umin', 
-				'log_qpah','log_fagn', 'log_tauagn']
+def_params_fsps = ['logzsol', 'log_tau', 'log_age', 'dust_index', 'dust1', 'dust2', 'log_gamma', 'log_umin', 'log_qpah','log_fagn', 'log_tauagn']
 params_assoc_fsps = {'logzsol':"logzsol", 'log_tau':"tau", 'log_age':"tage", 
 					'dust_index':"dust_index", 'dust1':"dust1", 'dust2':"dust2",
 					'log_gamma':"duste_gamma", 'log_umin':"duste_umin", 
@@ -717,9 +687,14 @@ for pp in range(0,nparams):
 			params_priors[params[pp]]['loc'] = float(config_data['pr_form_%s_gamma_loc' % params[pp]])
 			params_priors[params[pp]]['scale'] = float(config_data['pr_form_%s_gamma_scale' % params[pp]])
 		elif params_priors[params[pp]]['form'] == 'arbitrary':
-			name0 = config_data['pr_form_%s_arbit_name' % params[pp]]
-			data = np.loadtxt(temp_dir+name0)
-			fprior = interp1d(data[:,0],data[:,1])
+			data = np.loadtxt(temp_dir+config_data['pr_form_%s_arbit_name' % params[pp]])
+			params_priors[params[pp]]['values'] = data[:,0]
+			params_priors[params[pp]]['prob'] = data[:,1]
+		elif params_priors[params[pp]]['form'] == 'joint_with_mass':
+			data = np.loadtxt(temp_dir+config_data['pr_form_%s_jtmass_name' % params[pp]])
+			params_priors[params[pp]]['lmass'] = data[:,0]
+			params_priors[params[pp]]['pval'] = data[:,1]
+			params_priors[params[pp]]['scale'] = float(config_data['pr_form_%s_jtmass_scale' % params[pp]])
 	else:
 		params_priors[params[pp]]['form'] = 'uniform'
 
