@@ -372,48 +372,8 @@ Options are: (a) 1 or True and (b) 0 or False.</p></li>
 </dd></dl>
 
 <dl class="py function">
-<dt id="piXedfit.piXedfit_fitting.inferred_params_mcmc_list">
-<code class="sig-prename descclassname">piXedfit.piXedfit_fitting.</code><code class="sig-name descname">inferred_params_mcmc_list</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">list_name_fits</span><span class="o">=</span><span class="default_value">[]</span></em>, <em class="sig-param"><span class="n">name_out_fits</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#piXedfit.piXedfit_fitting.inferred_params_mcmc_list" title="Permalink to this definition">¶</a></dt>
-<dd><p>Function for calculating inferred parameters (i.e., median posteriors) of fitting results.
-The expected input is a list of FITS files contining the MCMC samplers which are output of <a class="reference internal" href="#piXedfit.piXedfit_fitting.singleSEDfit" title="piXedfit.piXedfit_fitting.singleSEDfit"><code class="xref py py-func docutils literal notranslate"><span class="pre">singleSEDfit()</span></code></a> or <a class="reference internal" href="#piXedfit.piXedfit_fitting.SEDfit_from_binmap" title="piXedfit.piXedfit_fitting.SEDfit_from_binmap"><code class="xref py py-func docutils literal notranslate"><span class="pre">SEDfit_from_binmap()</span></code></a> functions.
-The output of this function is a FITS file containing summary of inferred parameters.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>list_name_fits</strong> – (Mandatory, default=[])
-List of names of the input FITS files. The FITS files are output of fitting with MCMC method using <a class="reference internal" href="#piXedfit.piXedfit_fitting.singleSEDfit" title="piXedfit.piXedfit_fitting.singleSEDfit"><code class="xref py py-func docutils literal notranslate"><span class="pre">singleSEDfit()</span></code></a> or <a class="reference internal" href="#piXedfit.piXedfit_fitting.SEDfit_from_binmap" title="piXedfit.piXedfit_fitting.SEDfit_from_binmap"><code class="xref py py-func docutils literal notranslate"><span class="pre">SEDfit_from_binmap()</span></code></a> functions.
-All the FITS files should have identical structure. In other word, they are results of fitting with the same set of free parameters.</p></li>
-<li><p><strong>name_out_fits</strong> – (optional, default: None)
-Desired name for the output FITS file.</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt id="piXedfit.piXedfit_fitting.inferred_params_rdsps_list">
-<code class="sig-prename descclassname">piXedfit.piXedfit_fitting.</code><code class="sig-name descname">inferred_params_rdsps_list</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">list_name_fits</span><span class="o">=</span><span class="default_value">[]</span></em>, <em class="sig-param"><span class="n">perc_chi2</span><span class="o">=</span><span class="default_value">10.0</span></em>, <em class="sig-param"><span class="n">name_out_fits</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#piXedfit.piXedfit_fitting.inferred_params_rdsps_list" title="Permalink to this definition">¶</a></dt>
-<dd><p>Function for calculating inferred parameters (i.e., median posteriors) of fitting results obtained with RDSPS method.
-The expected input is a list of FITS files contining the model properties which are output of <a class="reference internal" href="#piXedfit.piXedfit_fitting.singleSEDfit" title="piXedfit.piXedfit_fitting.singleSEDfit"><code class="xref py py-func docutils literal notranslate"><span class="pre">singleSEDfit()</span></code></a> or <a class="reference internal" href="#piXedfit.piXedfit_fitting.SEDfit_from_binmap" title="piXedfit.piXedfit_fitting.SEDfit_from_binmap"><code class="xref py py-func docutils literal notranslate"><span class="pre">SEDfit_from_binmap()</span></code></a> functions.
-The output of this function is a FITS file containing summary of inferred parameters.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>list_name_fits</strong> – (Mandatory, default=[])
-List of names of the input FITS files. The FITS files are output of fitting with RDSPS method using <a class="reference internal" href="#piXedfit.piXedfit_fitting.singleSEDfit" title="piXedfit.piXedfit_fitting.singleSEDfit"><code class="xref py py-func docutils literal notranslate"><span class="pre">singleSEDfit()</span></code></a> or <a class="reference internal" href="#piXedfit.piXedfit_fitting.SEDfit_from_binmap" title="piXedfit.piXedfit_fitting.SEDfit_from_binmap"><code class="xref py py-func docutils literal notranslate"><span class="pre">SEDfit_from_binmap()</span></code></a> functions.
-All the FITS files should have identical structure. In other word, they are results of fitting with the same set of free parameters.</p></li>
-<li><p><strong>perc_chi2</strong> – (default: 10.0)
-Lowest chi-square Percentage from the full model SEDs that are considered in the calculation of posterior-weighted averaging.</p></li>
-<li><p><strong>name_out_fits</strong> – (default: None)
-Desired name for the output FITS file.</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
 <dt id="piXedfit.piXedfit_fitting.maps_parameters">
-<code class="sig-prename descclassname">piXedfit.piXedfit_fitting.</code><code class="sig-name descname">maps_parameters</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">fits_binmap</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">bin_ids</span><span class="o">=</span><span class="default_value">[]</span></em>, <em class="sig-param"><span class="n">name_sampler_fits</span><span class="o">=</span><span class="default_value">[]</span></em>, <em class="sig-param"><span class="n">fits_fluxmap</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">refband_SFR</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">refband_SM</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">refband_Mdust</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">perc_chi2</span><span class="o">=</span><span class="default_value">80.0</span></em>, <em class="sig-param"><span class="n">name_out_fits</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#piXedfit.piXedfit_fitting.maps_parameters" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">piXedfit.piXedfit_fitting.</code><code class="sig-name descname">maps_parameters</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">fits_binmap</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">bin_ids</span><span class="o">=</span><span class="default_value">[]</span></em>, <em class="sig-param"><span class="n">name_sampler_fits</span><span class="o">=</span><span class="default_value">[]</span></em>, <em class="sig-param"><span class="n">fits_fluxmap</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">refband_SFR</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">refband_SM</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">refband_Mdust</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">name_out_fits</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#piXedfit.piXedfit_fitting.maps_parameters" title="Permalink to this definition">¶</a></dt>
 <dd><p>Function that can be used for constructing maps of properties from the fitting results of spatial bins.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -434,9 +394,6 @@ If None, the band with longest wavelength is selected.</p></li>
 <li><p><strong>refband_Mdust</strong> – (default: None)
 Index of band/filter in the multiband set that is used for reference in dividing map of dust mass in bin space into map of dust mass in pixel space.
 If None, the band with longest wavelength is selected.</p></li>
-<li><p><strong>perc_chi2</strong> – (optional, default=80.0)
-A parameter that set the percentile cut of the random model SEDs. The cut is applied after the models are sorted based on their chi-square values.
-This parameter defines up to what percentile the models will be cut. This parameter is only used if the fitting results are obtained with the RDSPS method.</p></li>
 <li><p><strong>name_out_fits</strong> – (optional, default: None)
 Desired name for the output FITS file.</p></li>
 </ul>
@@ -446,7 +403,7 @@ Desired name for the output FITS file.</p></li>
 
 <dl class="py function">
 <dt id="piXedfit.piXedfit_fitting.maps_parameters_fit_pixels">
-<code class="sig-prename descclassname">piXedfit.piXedfit_fitting.</code><code class="sig-name descname">maps_parameters_fit_pixels</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">fits_fluxmap</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">pix_x</span><span class="o">=</span><span class="default_value">[]</span></em>, <em class="sig-param"><span class="n">pix_y</span><span class="o">=</span><span class="default_value">[]</span></em>, <em class="sig-param"><span class="n">name_sampler_fits</span><span class="o">=</span><span class="default_value">[]</span></em>, <em class="sig-param"><span class="n">perc_chi2</span><span class="o">=</span><span class="default_value">80.0</span></em>, <em class="sig-param"><span class="n">name_out_fits</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#piXedfit.piXedfit_fitting.maps_parameters_fit_pixels" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">piXedfit.piXedfit_fitting.</code><code class="sig-name descname">maps_parameters_fit_pixels</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">fits_fluxmap</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">pix_x</span><span class="o">=</span><span class="default_value">[]</span></em>, <em class="sig-param"><span class="n">pix_y</span><span class="o">=</span><span class="default_value">[]</span></em>, <em class="sig-param"><span class="n">name_sampler_fits</span><span class="o">=</span><span class="default_value">[]</span></em>, <em class="sig-param"><span class="n">name_out_fits</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#piXedfit.piXedfit_fitting.maps_parameters_fit_pixels" title="Permalink to this definition">¶</a></dt>
 <dd><p>Function for calculating maps of properties from the fitting results obtained with the MCMC method on pixel basis.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -456,9 +413,6 @@ Desired name for the output FITS file.</p></li>
 <li><p><strong>pix_y</strong> – y coordinates of pixels associated with the FITS files (fitting results) in name_sampler_fits input.</p></li>
 <li><p><strong>name_sampler_fits</strong> – List of names of the FITS files containing the fitting results.
 The three inputs of pix_x, pix_y, and name_sampler_fits should have the same number of elements.</p></li>
-<li><p><strong>perc_chi2</strong> – (optional, default=80.0)
-A parameter that set the percentile cut of the random model SEDs. The cut is applied after the models are sorted based on their chi-square values.
-This parameter defines up to what percentile the models will be cut. This parameter is only used if the fitting results are obtained with the RDSPS method.</p></li>
 <li><p><strong>name_out_fits</strong> – (optional, default: None)
 Desired name for the output FITS file.</p></li>
 </ul>
@@ -468,7 +422,7 @@ Desired name for the output FITS file.</p></li>
 
 <dl class="py class">
 <dt id="piXedfit.piXedfit_fitting.priors">
-<em class="property">class </em><code class="sig-prename descclassname">piXedfit.piXedfit_fitting.</code><code class="sig-name descname">priors</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">ranges</span><span class="o">=</span><span class="default_value">{'dust1': [0.0, 4.0], 'dust2': [0.0, 4.0], 'dust_index': [- 2.2, 0.4], 'log_age': [- 3.0, 1.14], 'log_alpha': [- 2.0, 2.0], 'log_beta': [- 2.0, 2.0], 'log_fagn': [- 5.0, 0.48], 'log_gamma': [- 4.0, 0.0], 'log_qpah': [- 3.0, 1.0], 'log_t0': [- 1.0, 1.14], 'log_tau': [- 1.0, 1.5], 'log_tauagn': [0.7, 2.18], 'log_umin': [- 1.0, 1.39], 'logzsol': [- 2.0, 0.2], 'z': [0.0, 1.0]}</span></em><span class="sig-paren">)</span><a class="headerlink" href="#piXedfit.piXedfit_fitting.priors" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">piXedfit.piXedfit_fitting.</code><code class="sig-name descname">priors</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">ranges</span><span class="o">=</span><span class="default_value">{'dust1': [0.0, 4.0], 'dust2': [0.0, 4.0], 'dust_index': [- 2.2, 0.4], 'log_age': [- 1.0, 1.14], 'log_alpha': [- 2.0, 2.0], 'log_beta': [- 2.0, 2.0], 'log_fagn': [- 5.0, 0.48], 'log_gamma': [- 4.0, 0.0], 'log_mass': [4.0, 12.0], 'log_mw_age': [- 2.0, 1.14], 'log_qpah': [- 3.0, 1.0], 'log_t0': [- 1.0, 1.14], 'log_tau': [- 1.0, 1.5], 'log_tauagn': [0.7, 2.18], 'log_umin': [- 1.0, 1.39], 'logzsol': [- 2.0, 0.2], 'z': [0.0, 1.0]}</span></em><span class="sig-paren">)</span><a class="headerlink" href="#piXedfit.piXedfit_fitting.priors" title="Permalink to this definition">¶</a></dt>
 <dd><p>Functions for defining priors.</p>
 <dl class="py method">
 <dt id="piXedfit.piXedfit_fitting.priors.arbitrary">
@@ -517,6 +471,22 @@ Desired name for the output FITS file.</p></li>
 </dd>
 <dt class="field-even">Returns prior</dt>
 <dd class="field-even"><p></p></dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="piXedfit.piXedfit_fitting.priors.joint_with_mass">
+<code class="sig-name descname">joint_with_mass</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">param</span></em>, <em class="sig-param"><span class="n">log_mass</span></em>, <em class="sig-param"><span class="n">param_values</span></em>, <em class="sig-param"><span class="n">scale</span></em><span class="sig-paren">)</span><a class="headerlink" href="#piXedfit.piXedfit_fitting.priors.joint_with_mass" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function for assigning a joint prior between a parameter and log_mass</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>param</strong> – </p></li>
+<li><p><strong>log_mass</strong> – </p></li>
+<li><p><strong>param_values</strong> – </p></li>
+<li><p><strong>scale</strong> – </p></li>
+</ul>
+</dd>
 </dl>
 </dd></dl>
 
