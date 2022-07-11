@@ -1,7 +1,6 @@
 import numpy as np
 from math import pow
 import sys, os
-import fsps
 from operator import itemgetter
 import matplotlib
 matplotlib.use('agg')

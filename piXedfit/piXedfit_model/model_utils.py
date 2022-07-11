@@ -1,7 +1,7 @@
 import numpy as np
 from math import pow, pi
 import sys, os
-import fsps
+#import fsps
 from operator import itemgetter
 from astropy.io import fits
 from scipy.interpolate import interp1d
@@ -587,6 +587,7 @@ def spec_given_SFH_ZH(lbt=[],SFH_sfr=[],ZH_logzsol=[],z=0.001,cosmo='flat_LCDM',
 	"""
 	
 	# calling FSPS:
+	import fsps
 	sp = fsps.StellarPopulation(zcontinuous=1, imf_type=imf)
 
 	sp.params['imf_type'] = imf
@@ -665,6 +666,7 @@ def spec_given_ages_mass_Z(grid_age=[],grid_mass=[],grid_logzsol=[],z=0.001,cosm
 	"""
 
 	# calling FSPS:
+	import fsps
 	sp = fsps.StellarPopulation(zcontinuous=1, imf_type=imf)
 
 	sp.params['imf_type'] = imf
@@ -901,6 +903,7 @@ def breakdown_CSP_into_SSP(sp=None,imf_type=1,logzsol=0.0,CSP_age=None,SFH_lbt=[
 	#### ====================================================== #####
 	# calling FSPS:
 	if sp == None:
+		import fsps
 		sp = fsps.StellarPopulation(zcontinuous=1, imf_type=imf_type)
 
 	# dust emission:
@@ -993,6 +996,7 @@ def breakdown_CSP_into_SSP_restframe(sp=None,imf_type=1,logzsol=0.0,CSP_age=None
 	#### ====================================================== #####
 	# calling FSPS:
 	if sp == None:
+		import fsps
 		sp = fsps.StellarPopulation(zcontinuous=1, imf_type=imf_type)
 
 	# dust emission switch:

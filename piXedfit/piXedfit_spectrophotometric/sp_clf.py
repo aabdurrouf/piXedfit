@@ -9,7 +9,6 @@ from photutils.psf.matching import resize_psf
 
 global PIXEDFIT_HOME
 PIXEDFIT_HOME = os.environ['PIXEDFIT_HOME']
-sys.path.insert(0, PIXEDFIT_HOME)
 
 #from piXedfit.piXedfit_images import k_lmbd_Fitz1986_LMC
 

@@ -2,7 +2,7 @@ import numpy as np
 import math
 import sys, os
 import random
-import fsps
+#import fsps
 import operator
 from astropy.io import fits
 from scipy.interpolate import interp1d
@@ -89,6 +89,7 @@ def generate_modelSED_propspecphoto(sp=None,imf_type=1,duste_switch=1,add_neb_em
 	beta = math.pow(10.0,params_val['log_beta'])
 
 	if sp == None:
+		import fsps
 		sp = fsps.StellarPopulation(zcontinuous=1, imf_type=imf_type)
 
 	sp.params['imf_type'] = imf_type
@@ -319,6 +320,7 @@ def generate_modelSED_spec(sp=None,imf_type=1,duste_switch=1,add_neb_emission=1,
 	beta = math.pow(10.0,params_val['log_beta'])
 
 	if sp == None:
+		import fsps 
 		sp = fsps.StellarPopulation(zcontinuous=1, imf_type=imf_type)
 
 	sp.params['imf_type'] = imf_type
@@ -480,6 +482,7 @@ def generate_modelSED_photo(sp=None,imf_type=1,duste_switch=0,add_neb_emission=1
 
 	# Initialize FSPS
 	if sp == None:
+		import fsps
 		sp = fsps.StellarPopulation(zcontinuous=1, imf_type=imf_type)
 
 	sp.params['imf_type'] = imf_type

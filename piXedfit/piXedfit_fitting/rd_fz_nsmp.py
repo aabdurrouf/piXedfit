@@ -11,7 +11,6 @@ from scipy.stats import t, gamma
 
 global PIXEDFIT_HOME
 PIXEDFIT_HOME = os.environ['PIXEDFIT_HOME']
-sys.path.insert(0, PIXEDFIT_HOME)
 
 from piXedfit.utils.posteriors import model_leastnorm, calc_chi2, ln_gauss_prob, ln_student_t_prob, calc_modchi2_leastnorm
 from piXedfit.utils.filtering import interp_filters_curves, filtering_interp_filters, cwave_filters

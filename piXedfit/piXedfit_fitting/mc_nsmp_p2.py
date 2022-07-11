@@ -1,7 +1,6 @@
 import numpy as np
 import sys, os
 import fsps
-import emcee
 import h5py
 from math import log10
 from mpi4py import MPI
@@ -9,8 +8,6 @@ from astropy.io import fits
 
 global PIXEDFIT_HOME
 PIXEDFIT_HOME = os.environ['PIXEDFIT_HOME']
-sys.path.insert(0, PIXEDFIT_HOME)
-
 
 from piXedfit.piXedfit_model import calc_mw_age, get_dust_mass_mainSFH_fit, get_dust_mass_fagnbol_mainSFH_fit, get_dust_mass_othSFH_fit
 from piXedfit.piXedfit_model import get_sfr_dust_mass_othSFH_fit, get_sfr_dust_mass_fagnbol_othSFH_fit, construct_SFH
