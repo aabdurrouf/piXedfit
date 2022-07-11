@@ -6,21 +6,27 @@ from random import randint
 from astropy.io import fits
 from .fitutils import *
 
-global PIXEDFIT_HOME
-PIXEDFIT_HOME = os.environ['PIXEDFIT_HOME']
+#global PIXEDFIT_HOME
+#PIXEDFIT_HOME = os.environ['PIXEDFIT_HOME']
 
 os.environ["OMP_NUM_THREADS"] = "1"
 
 __all__ = ["singleSEDfit", "singleSEDfit_specphoto", "SEDfit_from_binmap", "SEDfit_from_binmap_specphoto", 
 			"SEDfit_pixels_from_fluxmap", "maps_parameters", "maps_parameters_fit_pixels", "get_params", "priors"]
 
-CODE_dir = PIXEDFIT_HOME+'/piXedfit/piXedfit_fitting/'
-temp_dir = PIXEDFIT_HOME+'/data/temp/'
+#PIXEDFIT_HOME = os.environ['PIXEDFIT_HOME']
+#CODE_dir = PIXEDFIT_HOME+'/piXedfit/piXedfit_fitting/'
+#temp_dir = PIXEDFIT_HOME+'/data/temp/'
 
 
 class priors:
 	"""Functions for defining priors.
 	"""
+
+	PIXEDFIT_HOME = os.environ['PIXEDFIT_HOME']
+	CODE_dir = PIXEDFIT_HOME+'/piXedfit/piXedfit_fitting/'
+	temp_dir = PIXEDFIT_HOME+'/data/temp/'
+
 	def __init__(self, ranges={'z':[0.0,1.0],'logzsol':[-2.0,0.2],'log_tau':[-1.0,1.5],'log_age':[-1.0,1.14],
 		'log_alpha':[-2.0,2.0],'log_beta':[-2.0,2.0],'log_t0':[-1.0,1.14],'dust_index':[-2.2,0.4],'dust1':[0.0,4.0], 
 		'dust2':[0.0,4.0],'log_gamma':[-4.0, 0.0],'log_umin':[-1.0,1.39],'log_qpah':[-3.0,1.0],'log_fagn':[-5.0,0.48],
@@ -229,6 +235,10 @@ def singleSEDfit(obs_flux,obs_flux_err,filters,models_spec,params_ranges=None,pa
 		Name of output FITS file. This parameter is optional. 
 	"""
 
+	PIXEDFIT_HOME = os.environ['PIXEDFIT_HOME']
+	CODE_dir = PIXEDFIT_HOME+'/piXedfit/piXedfit_fitting/'
+	temp_dir = PIXEDFIT_HOME+'/data/temp/'
+
 	# get number of filters:
 	nbands = len(filters)
 
@@ -431,6 +441,10 @@ def singleSEDfit_specphoto(obs_flux,obs_flux_err,filters,spec_wave,spec_flux,spe
 		Name of output FITS file. This parameter is optional. 
 	"""
 
+	PIXEDFIT_HOME = os.environ['PIXEDFIT_HOME']
+	CODE_dir = PIXEDFIT_HOME+'/piXedfit/piXedfit_fitting/'
+	temp_dir = PIXEDFIT_HOME+'/data/temp/'
+
 	# get number of filters:
 	nbands = len(filters)
 
@@ -619,6 +633,10 @@ def SEDfit_from_binmap_specphoto(fits_binmap,binid_range=[],bin_ids=[],models_sp
 		Names of output FITS files. This parameter is optional. If not empty, it must be in a list format with number of elements is the same as the number of bins to be fit. 
 		Example: name_out_fits = ['bin1.fits', 'bin2.fits', ..., 'binN.fits'].
 	"""
+
+	PIXEDFIT_HOME = os.environ['PIXEDFIT_HOME']
+	CODE_dir = PIXEDFIT_HOME+'/piXedfit/piXedfit_fitting/'
+	temp_dir = PIXEDFIT_HOME+'/data/temp/'
 
 	# open the input FITS file
 	hdu = fits.open(fits_binmap)
@@ -906,6 +924,10 @@ def SEDfit_from_binmap(fits_binmap,binid_range=[],bin_ids=[],models_spec=None,pa
 		Names of output FITS files. This parameter is optional. If not empty, it must be in a list format with number of elements is the same as the number of bins to be fit. 
 		Example: name_out_fits = ['bin1.fits', 'bin2.fits', ..., 'binN.fits'].
 	"""
+
+	PIXEDFIT_HOME = os.environ['PIXEDFIT_HOME']
+	CODE_dir = PIXEDFIT_HOME+'/piXedfit/piXedfit_fitting/'
+	temp_dir = PIXEDFIT_HOME+'/data/temp/'
 
 	# open pixel binning maps
 	hdu = fits.open(fits_binmap)
@@ -1199,6 +1221,10 @@ def SEDfit_pixels_from_fluxmap(fits_fluxmap,x_range=[],y_range=[],models_spec=No
 		Flag indicating whether full sampler models will be stored into the output FITS file or not. 
 		Options are: (a) 1 or True and (b) 0 or False.
 	"""
+
+	PIXEDFIT_HOME = os.environ['PIXEDFIT_HOME']
+	CODE_dir = PIXEDFIT_HOME+'/piXedfit/piXedfit_fitting/'
+	temp_dir = PIXEDFIT_HOME+'/data/temp/'
 
 	# open the input FITS file
 	hdu = fits.open(fits_fluxmap)
