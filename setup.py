@@ -14,7 +14,7 @@ except ImportError:
     setup
 
 #githash = subprocess.check_output(["git", "log", "--format=%h"], universal_newlines=True).split('\n')[0]
-vers = "0.1"
+vers = "0.1.3"
 #githash = ""
 #with open('prospect/_version.py', "w") as f:
 #    f.write('__version__ = "{}"\n'.format(vers))
@@ -33,7 +33,8 @@ setup(
                  "License :: OSI Approved :: MIT License",
                  "Natural Language :: English",
                  "Topic :: Scientific/Engineering :: Astronomy"],
-    packages=["piXedfit.piXedfit_analysis",
+    packages=["piXedfit",
+              "piXedfit.piXedfit_analysis",
               "piXedfit.piXedfit_bin",
               "piXedfit.piXedfit_fitting",
               "piXedfit.piXedfit_images",
@@ -47,7 +48,7 @@ setup(
     long_description_content_type="text/markdown",
     package_data={"": ["README.md", "LICENSE"]},
     #scripts=glob.glob("scripts/*.py"),
-    #include_package_data=True,
+    include_package_data=True,
     install_requires=["numpy", "h5py", "scipy", "astropy", "photutils", "matplotlib", "reproject", 
-                      "mpi4py", "sep", "emcee", "schwimmbad", "astroquery"],
+                      "sep", "emcee", "schwimmbad", "astroquery"],
 )
