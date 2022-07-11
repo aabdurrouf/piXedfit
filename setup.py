@@ -14,7 +14,7 @@ except ImportError:
     setup
 
 #githash = subprocess.check_output(["git", "log", "--format=%h"], universal_newlines=True).split('\n')[0]
-vers = "0.1.3"
+vers = "0.1.1"
 #githash = ""
 #with open('prospect/_version.py', "w") as f:
 #    f.write('__version__ = "{}"\n'.format(vers))
