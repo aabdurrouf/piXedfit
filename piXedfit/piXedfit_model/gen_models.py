@@ -16,8 +16,11 @@ from .model_utils import *
 with np.errstate(divide='ignore'):
     np.float64(1.0) / 0.0
 
-global PIXEDFIT_HOME
-PIXEDFIT_HOME = os.environ['PIXEDFIT_HOME']
+try: 
+	global PIXEDFIT_HOME
+	PIXEDFIT_HOME = os.environ['PIXEDFIT_HOME']
+except:
+	print ("PIXEDFIT_HOME should be included in your PATH!")
 
 
 __all__ = ["generate_modelSED_propspecphoto", "generate_modelSED_spec", "generate_modelSED_photo", "generate_modelSED_specphoto", 
