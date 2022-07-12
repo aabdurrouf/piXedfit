@@ -11,8 +11,14 @@ from photutils.psf.matching import resize_psf
 from ..utils.filtering import cwave_filters
 from .images_utils import *  
 
-global PIXEDFIT_HOME
-PIXEDFIT_HOME = os.environ['PIXEDFIT_HOME']
+#global PIXEDFIT_HOME
+#PIXEDFIT_HOME = os.environ['PIXEDFIT_HOME']
+
+try:
+	global PIXEDFIT_HOME
+	PIXEDFIT_HOME = os.environ['PIXEDFIT_HOME']
+except:
+	print ("PIXEDFIT_HOME should be included in your PATH!")
 
 
 __all__ = ["images_processing"]

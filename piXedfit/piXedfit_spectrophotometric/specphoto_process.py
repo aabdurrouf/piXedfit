@@ -10,8 +10,16 @@ from photutils.psf.matching import resize_psf
 from ..piXedfit_images.images_utils import get_largest_FWHM_PSF, k_lmbd_Fitz1986_LMC
 
 
-global PIXEDFIT_HOME
-PIXEDFIT_HOME = os.environ['PIXEDFIT_HOME']
+#global PIXEDFIT_HOME
+#PIXEDFIT_HOME = os.environ['PIXEDFIT_HOME']
+
+try:
+	global PIXEDFIT_HOME
+	PIXEDFIT_HOME = os.environ['PIXEDFIT_HOME']
+	CODE_dir = PIXEDFIT_HOME+'/piXedfit/piXedfit_spectrophotometric/'
+	temp_dir = PIXEDFIT_HOME+'/data/temp/'
+except:
+	print ("PIXEDFIT_HOME should be included in your PATH!")
 
 
 __all__ = ["match_imgifs_spatial", "match_imgifs_spectral"]
@@ -40,9 +48,6 @@ def specphoto_califagalexsdss2masswise(photo_fluxmap, califa_file, spec_smoothin
 	:param name_out_fits:
 		Name of output FITS file.
 	"""
-
-	CODE_dir = PIXEDFIT_HOME+'/piXedfit/piXedfit_spectrophotometric/'
-	temp_dir = PIXEDFIT_HOME+'/data/temp/'
 
 	# make configuration file
 	name_config = "config_file%d.dat" % (random.randint(0,10000))
@@ -119,9 +124,6 @@ def specphoto_mangagalexsdss2masswise(photo_fluxmap, manga_file, spec_smoothing=
 	:param name_out_fits:
 		Name of output FITS file.
 	"""
-
-	CODE_dir = PIXEDFIT_HOME+'/piXedfit/piXedfit_spectrophotometric/'
-	temp_dir = PIXEDFIT_HOME+'/data/temp/'
 
 	# make configuration file
 	name_config = "config_file%d.dat" % (random.randint(0,10000))
@@ -249,9 +251,6 @@ def match_imgifs_spectral(specphoto_file, models_spec=None, nproc=10, del_wave_n
 
 	"""
 
-	dir_file = PIXEDFIT_HOME+'/data/temp/'
-	CODE_dir = PIXEDFIT_HOME+'/piXedfit/piXedfit_spectrophotometric/'
-
 	# make configuration file
 	name_config = "config_file%d.dat" % (random.randint(0,10000))
 	file_out = open(name_config,"w")
@@ -288,7 +287,7 @@ def match_imgifs_spectral(specphoto_file, models_spec=None, nproc=10, del_wave_n
 	file_out.write("name_out_fits %s\n" % name_out_fits)
 	file_out.close()
 
-	os.system('mv %s %s' % (name_config,dir_file))
+	os.system('mv %s %s' % (name_config,temp_dir))
 	os.system("mpirun -n %d python %s./mtch_sph_fnal.py %s" % (nproc,CODE_dir,name_config))
 
 	return name_out_fits

@@ -6,16 +6,19 @@ from astropy.io import fits
 #global PIXEDFIT_HOME
 #PIXEDFIT_HOME = os.environ['PIXEDFIT_HOME']
 
+try:
+	global PIXEDFIT_HOME
+	PIXEDFIT_HOME = os.environ['PIXEDFIT_HOME']
+	dir_file = PIXEDFIT_HOME+'/data/filters/'
+except:
+	print ("PIXEDFIT_HOME should be included in your PATH!")
+
 __all__ = ["list_filters", "add_filter", "remove_filter", "change_filter_name", "get_filter_curve", 
 			"cwave_filters", "filtering", "interp_filters_curves", "filtering_interp_filters"]
 
 #dir_file = PIXEDFIT_HOME+'/data/filters/'
 
 def convert_fits_to_hdf5():
-
-	PIXEDFIT_HOME = os.environ['PIXEDFIT_HOME']
-	dir_file = PIXEDFIT_HOME+'/data/filters/'
-
 	# open file
 	hdu = fits.open(dir_file+"filters.fits")
 	header = hdu[0].header
@@ -66,9 +69,6 @@ def list_filters():
 		List of filters curves available
 	"""
 
-	PIXEDFIT_HOME = os.environ['PIXEDFIT_HOME']
-	dir_file = PIXEDFIT_HOME+'/data/filters/'
-
 	global filters 
 	filters = []
 	with h5py.File(dir_file+'filters_w.hdf5', 'r') as f:
@@ -86,9 +86,6 @@ def list_filters_noprint():
 	:returns filters:
 		List of filters curves available
 	"""
-
-	PIXEDFIT_HOME = os.environ['PIXEDFIT_HOME']
-	dir_file = PIXEDFIT_HOME+'/data/filters/'
 
 	global filters 
 	filters = []
@@ -111,9 +108,6 @@ def add_filter(filter_name,filter_wave,filter_transmission,filter_cwave):
 		The central wavelength or effective wavelength of the filter
 	"""
 
-	PIXEDFIT_HOME = os.environ['PIXEDFIT_HOME']
-	dir_file = PIXEDFIT_HOME+'/data/filters/'
-
 	f = h5py.File(dir_file+'filters_w.hdf5', 'a')
 	dset = f.create_dataset(filter_name, data=np.array(filter_wave), compression="gzip")
 	str_temp = 'cw_%s' % filter_name
@@ -133,9 +127,6 @@ def remove_filter(filter_name):
 	:param filter_name:
 		The filter name.
 	"""
-
-	PIXEDFIT_HOME = os.environ['PIXEDFIT_HOME']
-	dir_file = PIXEDFIT_HOME+'/data/filters/'
 
 	# get list of filters
 	filters = list_filters_noprint()
@@ -183,9 +174,6 @@ def change_filter_name(old_filter_name, new_filter_name):
 	:param new_filter_name:
 		New filter name.
 	"""
-
-	PIXEDFIT_HOME = os.environ['PIXEDFIT_HOME']
-	dir_file = PIXEDFIT_HOME+'/data/filters/'
 
 	# get list of filters
 	filters = list_filters_noprint()
@@ -243,9 +231,6 @@ def get_filter_curve(filter_name):
 		Array of transmission values 
 	"""
 
-	PIXEDFIT_HOME = os.environ['PIXEDFIT_HOME']
-	dir_file = PIXEDFIT_HOME+'/data/filters/'
-
 	f = h5py.File(dir_file+'filters_w.hdf5', 'r')
 	wave = f[filter_name][:]
 	f.close()
@@ -266,9 +251,6 @@ def cwave_filters(filters):
 	:returns cwaves:
 		A list of central wavelengths of the filters
 	"""
-
-	PIXEDFIT_HOME = os.environ['PIXEDFIT_HOME']
-	dir_file = PIXEDFIT_HOME+'/data/filters/'
 
 	f = h5py.File(dir_file+'filters_w.hdf5', 'r')
 	nbands = len(filters)
@@ -302,9 +284,6 @@ def filtering(wave,spec,filters):
 		Array of photometric fluxes
 	"""
 
-	PIXEDFIT_HOME = os.environ['PIXEDFIT_HOME']
-	dir_file = PIXEDFIT_HOME+'/data/filters/'
-
 	w = h5py.File(dir_file+'filters_w.hdf5', 'r')
 	t = h5py.File(dir_file+'filters_t.hdf5', 'r')
 
@@ -334,9 +313,6 @@ def filtering(wave,spec,filters):
 
 
 def interp_filters_curves(filters):
-
-	PIXEDFIT_HOME = os.environ['PIXEDFIT_HOME']
-	dir_file = PIXEDFIT_HOME+'/data/filters/'
 
 	w = h5py.File(dir_file+'filters_w.hdf5', 'r')
 	t = h5py.File(dir_file+'filters_t.hdf5', 'r')
