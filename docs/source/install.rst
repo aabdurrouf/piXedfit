@@ -10,8 +10,8 @@ Dependencies
 * `emcee <https://emcee.readthedocs.io/en/stable/>`_ for SED fitting with MCMC method. 
 
 
-Installing piXedfit for the first time
---------------------------------------
+Installing piXedfit
+-------------------
 
 * cd to a desired installation directory and clone **piXedfit**.
 
@@ -34,7 +34,7 @@ Installing piXedfit for the first time
 
 	vi ~/.bashrc
 
-   Add the above line and then do
+Add the above line and then do
 
 .. code-block:: shell
 
@@ -46,7 +46,7 @@ Installing piXedfit for the first time
 
 	vi ~/.bash_profile
 
-	Add the line and then do
+Add the line and then do
 
 .. code-block:: shell
 
