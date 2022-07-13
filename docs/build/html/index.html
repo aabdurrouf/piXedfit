@@ -1,7 +1,7 @@
 
 
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" >
+<html class="writer-html4" lang="en" >
 <head>
   <meta charset="utf-8">
   
@@ -26,11 +26,10 @@
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
-        <script src="_static/jquery.js"></script>
-        <script src="_static/underscore.js"></script>
-        <script src="_static/doctools.js"></script>
-        <script src="_static/language_data.js"></script>
-        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     
     <script type="text/javascript" src="_static/js/theme.js"></script>
 
@@ -189,7 +188,6 @@ handle all tasks in the analysis of spatially resolved SEDs of a galaxy, includi
 broad-band imaging data with IFS data, pixel binning, SED fitting, and producing visualization plots for the SED fitting results.
 <strong>piXedfit</strong> is a versatile tool that has been equipped with the multiprocessing module (namely message passing interface or MPI) for
 efficient analysis of the datasets of a large number of galaxies. Detailed description on <strong>piXedfit</strong> and its performance is presented in <a class="reference external" href="https://ui.adsabs.harvard.edu/abs/2021arXiv210109717A/abstract">Abdurro’uf et al. (2021)</a>.</p>
-<p>While this website is still under construction, people interested in knowing how <strong>piXedfit</strong> works can see some demonstrations in folder <em>examples</em> on the <a class="reference external" href="https://github.com/aabdurrouf/piXedfit">GitHub page</a> or some animations here: <a class="reference external" href="https://github.com/aabdurrouf/piXedfit/blob/main/docs/source/demos_img_pros.rst">images processing</a>, <a class="reference external" href="https://github.com/aabdurrouf/piXedfit/blob/main/docs/source/demos_pixel_binning.rst">pixel binning</a> and <a class="reference external" href="https://github.com/aabdurrouf/piXedfit/blob/main/docs/source/demos_sed_fitting.rst">SED fitting</a>.</p>
 <img alt="_images/3Dcube_specphoto.png" src="_images/3Dcube_specphoto.png" />
 <img alt="_images/demo_pixedfit_ngc309_new_edit.svg" src="_images/demo_pixedfit_ngc309_new_edit.svg" /><a class="reference internal image-reference" href="_images/plot_maps_props_new.svg"><img alt="_images/plot_maps_props_new.svg" src="_images/plot_maps_props_new.svg" width="600" /></a>
 <div class="section" id="features">
@@ -197,31 +195,31 @@ efficient analysis of the datasets of a large number of galaxies. Detailed descr
 <p><strong>piXedfit</strong> has 6 modules that can work independent with each other. For instance, it is possible to use the SED fitting module for fitting any observed SED (either integrated
 of spaially resolved SED) without the need of using the images processing and pixel binning modules. The 6 modules and their capabilities are the following:</p>
 <ul>
-<li><p><strong>piXedfit_images: image processing</strong></p>
+<li><p class="first"><strong>piXedfit_images: image processing</strong></p>
 <p>This module can be used for spatial-matching (in resolution and spatial sampling) of multiband imaging data ranging from far-ultraviolet (FUV) to far-infrared (FIR)
 (obtained from both the ground-based and spaced-based telescopes) and extract pixel-wise photometric SEDs within the galaxy’s region of interest.</p>
 </li>
-<li><p><strong>piXedfit_spectrophotometric: spatial-matching of imaging data and the IFS data</strong></p>
+<li><p class="first"><strong>piXedfit_spectrophotometric: spatial-matching of imaging data and the IFS data</strong></p>
 <p>This module can be used for spatial-matching (in spatial resolution and sampling) of a multiband imaging data
 (that have been processed by the <code class="xref py py-mod docutils literal notranslate"><span class="pre">piXedfit_images</span></code>) with an IFS data cube and extract pixel-wise
 spectrophotometric SEDs within the galaxy’s region of interest. For the current version of <strong>piXedfit</strong>, only the IFS data from
 the <a class="reference external" href="https://califa.caha.es/">CALIFA</a> and <a class="reference external" href="https://www.sdss.org/surveys/manga/">MaNGA</a> can be analyzed by this module.</p>
 </li>
-<li><p><strong>piXedfit_bin: pixel binning</strong></p>
+<li><p class="first"><strong>piXedfit_bin: pixel binning</strong></p>
 <p>This module is capable of performing pixel binning, which is a process of combining neighboring pixels to achieve certain set of S/N thresholds.
 The pixel binning scheme takes into account of the similarity of SED shape among the pixels. This way
 important spatial information from pixel scale can still be preserved, while increasing the S/N of the spatially resolved SEDs.
 The S/N threshold can be set to every band in the multiband imaging data, not only to a particular band.</p>
 </li>
-<li><p><strong>piXedfit_model: generating model SEDs</strong></p>
+<li><p class="first"><strong>piXedfit_model: generating model SEDs</strong></p>
 <p>This module can generate model SEDs of galaxies given some parameters. The SED modeling uses the <a class="reference external" href="https://github.com/cconroy20/fsps">FSPS</a> SPS model
 with the <a class="reference external" href="http://dfm.io/python-fsps/current/">Python-FSPS</a> as the interface to the Python environment. The SED modeling incorporates four main components in the galaxy’s SED: stellar emission, nebular emission, dust emission, and the AGN dusty torus emission.</p>
 </li>
-<li><p><strong>piXedfit_fitting: performing SED fitting</strong></p>
+<li><p class="first"><strong>piXedfit_fitting: performing SED fitting</strong></p>
 <p>This module is capable of performing SED fitting to input SED, including both spatially resolved SED and integrated SED of galaxies. The input can be
 in the form of photometric SED or spetrophotometric SED (i.e., combination of photometry and spectroscopy).</p>
 </li>
-<li><p><strong>piXedfit_analysis: producing visualization plots for the SED fiting results</strong></p>
+<li><p class="first"><strong>piXedfit_analysis: producing visualization plots for the SED fiting results</strong></p>
 <p>This module can make three plots for visualization of the fitting results: corner plot (i.e., plot showing 1D and 2D joint posteriors of the parameters space), SED plot, and SFH plot.</p>
 </li>
 </ul>
@@ -293,11 +291,7 @@ in the form of photometric SED or spetrophotometric SED (i.e., combination of ph
 <p class="caption"><span class="caption-text">Demonstrations</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="demos_pixel_binning.html">Pixel binning</a></li>
-<li class="toctree-l1"><a class="reference internal" href="demos_sed_fitting.html">SED fitting</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="demos_sed_fitting.html#the-mcmc-process">The MCMC process</a></li>
-<li class="toctree-l2"><a class="reference internal" href="demos_sed_fitting.html#the-effect-of-wavelength-coverage">The effect of wavelength coverage</a></li>
-</ul>
-</li>
+<li class="toctree-l1"><a class="reference internal" href="demos_sed_fitting.html">SED fitting</a></li>
 </ul>
 </div>
 <div class="toctree-wrapper compound">
@@ -317,11 +311,11 @@ in the form of photometric SED or spetrophotometric SED (i.e., combination of ph
 <h2>Reference<a class="headerlink" href="#reference" title="Permalink to this headline">¶</a></h2>
 <p>A list of a few projects <strong>piXedfit</strong> is benefited from:</p>
 <ul class="simple">
-<li><p><a class="reference external" href="https://www.astropy.org/">Astropy</a></p></li>
-<li><p><a class="reference external" href="https://photutils.readthedocs.io/en/stable/">Photutils</a></p></li>
-<li><p><a class="reference external" href="https://ui.adsabs.harvard.edu/abs/2011PASP..123.1218A/abstract">Aniano et al. (2011)</a> who provides convolution <a class="reference external" href="https://www.astro.princeton.edu/~ganiano/Kernels.html">kernels</a> for the PSF matching</p></li>
-<li><p><a class="reference external" href="https://github.com/cconroy20/fsps">FSPS</a> and <a class="reference external" href="http://dfm.io/python-fsps/current/">Python-FSPS</a> stellar population synthesis model</p></li>
-<li><p><a class="reference external" href="https://emcee.readthedocs.io/en/stable/">emcee</a> package for the Markov Chain Monte Carlo (MCMC) Ensemble sampler</p></li>
+<li><a class="reference external" href="https://www.astropy.org/">Astropy</a></li>
+<li><a class="reference external" href="https://photutils.readthedocs.io/en/stable/">Photutils</a></li>
+<li><a class="reference external" href="https://ui.adsabs.harvard.edu/abs/2011PASP..123.1218A/abstract">Aniano et al. (2011)</a> who provides convolution <a class="reference external" href="https://www.astro.princeton.edu/~ganiano/Kernels.html">kernels</a> for the PSF matching</li>
+<li><a class="reference external" href="https://github.com/cconroy20/fsps">FSPS</a> and <a class="reference external" href="http://dfm.io/python-fsps/current/">Python-FSPS</a> stellar population synthesis model</li>
+<li><a class="reference external" href="https://emcee.readthedocs.io/en/stable/">emcee</a> package for the Markov Chain Monte Carlo (MCMC) Ensemble sampler</li>
 </ul>
 </div>
 </div>

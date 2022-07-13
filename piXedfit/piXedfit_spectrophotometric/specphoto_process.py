@@ -9,10 +9,6 @@ from reproject import reproject_exact
 from photutils.psf.matching import resize_psf
 from ..piXedfit_images.images_utils import get_largest_FWHM_PSF, k_lmbd_Fitz1986_LMC
 
-
-#global PIXEDFIT_HOME
-#PIXEDFIT_HOME = os.environ['PIXEDFIT_HOME']
-
 try:
 	global PIXEDFIT_HOME
 	PIXEDFIT_HOME = os.environ['PIXEDFIT_HOME']

@@ -17,33 +17,33 @@ def redchi2_two_seds(sed1_f=[], sed1_ferr=[], sed2_f=[], sed2_ferr=[]):
 	return red_chi2
 
 
-def pixel_binning(fits_fluxmap, ref_band=None, Dmin_bin=2.0, SNR=[], redc_chi2_limit=4.0, del_r=2.0, name_out_fits=None):
-	"""Function for performing pixel binning, a proses of combining neighboring pixels to increase signal-to-noise ratios of the 
-	spatially resolved SEDs.  
+def pixel_binning(fits_fluxmap, ref_band=None, Dmin_bin=4.0, SNR=None, redc_chi2_limit=4.0, del_r=2.0, name_out_fits=None):
+	"""Function for pixel binning, a proses of combining neighboring pixels to optimize the signal-to-noise ratios of the spatially resolved SEDs. 
+	Input of this function is a data cube obtained from the image processing or spectrophotometric processing.  
 
 	:param fits_fluxmap:
-		Input FITS file containing either photometric or spectrophotometric data cube.
+		Input FITS file containing the photometric or spectrophotometric data cube. The photometric data cube is obtained from the image processing with the :func:`images_processing` function, 
+		while the spectrophotmetric data cube is the output of function :func:`match_imgifs_spectral`.
 
 	:param ref_band: 
-		Index of a band/filter that will be used as a reference in finding the brightest pixels. 
-		The central pixel of a bin is the brightest pixel in this reference band.
-		If ref_band=None, the ref_band is taken to be the middle band in the list of filters considered for the pixel binning.
+		Index of the reference band (filter) for sorting pixels based on the brightness. The central pixel of a bin is the brightest pixel in this reference band.
+		If ref_band=None, the ref_band is chosen to be around the middle of the wavelength covered by the observed SEDs.
 
-	:param Dmin_bin: (default: 2.0 pixels)
+	:param Dmin_bin:
 		Minimum diameter of a bin in unit of pixel.
 
-	:param SNR: (default: [])
-		An array/list of S/N ratio thresholds in multiple bands. The length of this array should be the same as the number of bands in the fits_fluxmap. 
-		S/N threshold can vary across the filters. If input SNR is empty, S/N of 5 is applied to all the filters. 
+	:param SNR:
+		S/N thresholds in all bands. The length of this array should be the same as the number of bands in the fits_fluxmap. 
+		S/N threshold can vary across the filters. If SNR is None, the S/N is set as 5.0 to all the filters. 
 
-	:param redc_chi2_limit: (default: 4.0)
-		A maximum of reduced chi-square for two SEDs are considered to have a similar shape. 
+	:param redc_chi2_limit:
+		A maximum reduced chi-square value for a pair of two SEDs to be considered as having a similar shape. 
 
-	:param del_r: (optional, default: 2 pixel)
-		Increment of circular radius in the binning process.
+	:param del_r:
+		Increment of circular radius (in unit of pixel) adopted in the pixel binning process.
 
-	:param name_out_fits: (defult: None)
-		Desired name for the output FITS file.
+	:param name_out_fits: 
+		Desired name for the output FITS file. If None, a default name is adopted.
 	"""
 
 	hdu = fits.open(fits_fluxmap)
@@ -114,20 +114,20 @@ def pixel_binning(fits_fluxmap, ref_band=None, Dmin_bin=2.0, SNR=[], redc_chi2_l
 	map_flux_err_corr_trans = np.transpose(map_flux_err_corr, axes=(1,2,0))
 
 	# get reference band for pixel brightness
-	if ref_band == None:
+	if ref_band is None:
 		ref_band = int((nbands-1)/2)
 	else:
 		ref_band = int(ref_band)
 
-	if len(SNR)==0:
-		SN_threshold = np.zeros(nbands)+5.0
+	if SNR is None:
+		SN_threshold = np.zeros(nbands) + 5.0
 	elif len(SNR) != nbands:
-		print ("Number of elements in SNR should be the same as the number of filters in the fits_fluxmap!")
+		print ("Number of elements in SNR should be the same as the number of filters in the fits_fluxmap, which is %d!" % nbands)
 		sys.exit()
 	else:
 		SN_threshold = np.asarray(SNR)
 		idx0 = np.where(SNR==0)
-		SN_threshold[idx0[0]] = -1.0e+10 
+		SN_threshold[idx0[0]] = -1.0e+10
 
 	dim_y = gal_region.shape[0]
 	dim_x = gal_region.shape[1]
@@ -430,7 +430,7 @@ def pixel_binning(fits_fluxmap, ref_band=None, Dmin_bin=2.0, SNR=[], redc_chi2_l
 		hdul.append(fits.ImageHDU(map_bin_spec_flux_err_trans, name='bin_spec_fluxerr'))
 
 
-	if name_out_fits == None:
+	if name_out_fits is None:
 		name_out_fits = "pixbin_%s" % fits_fluxmap
 
 	hdul.writeto(name_out_fits, overwrite=True)
@@ -439,35 +439,34 @@ def pixel_binning(fits_fluxmap, ref_band=None, Dmin_bin=2.0, SNR=[], redc_chi2_l
 
 
 
-def pixel_binning_images(images, var_images, ref_band=None, Dmin_bin=2.0, SNR=[], redc_chi2_limit=4.0, del_r=2.0, name_out_fits=None):
-	"""Function for performing pixel binning to multiband images.  
+def pixel_binning_images(images, var_images, ref_band=None, Dmin_bin=2.0, SNR=None, redc_chi2_limit=4.0, del_r=2.0, name_out_fits=None):
+	"""Function for pixel binning on multiband image.  
 
 	:param images:
-		Input images. This input should be in a list format.
+		Input science images. This input should be in a list format, such as images=['image1.fits', 'image2.fits', 'image3.fits']
 
 	:param var_images:
-		Variance images. This input should be in a list format.
+		Variance images in a list format. The number of variance images should be the same as that of the input science images.
 
 	:param ref_band: 
-		Index of a band/filter that will be used as a reference in finding the brightest pixels. 
-		The central pixel of a bin is the brightest pixel in this reference band.
-		If ref_band=None, the ref_band is taken to be the middle band in the list of filters considered for the pixel binning.
+		Index of the reference band (filter) for sorting pixels based on the brightness. The central pixel of a bin is the brightest pixel in this reference band.
+		If ref_band=None, the ref_band is chosen to be around the middle of the wavelength covered by the observed SEDs.
 
-	:param Dmin_bin: (default: 2.0 pixels)
+	:param Dmin_bin:
 		Minimum diameter of a bin in unit of pixel.
 
-	:param SNR: (default: [])
-		An array/list of S/N ratio thresholds in multiple bands. The length of this array should be the same as the number of bands in the fits_fluxmap. 
-		S/N threshold can vary across the filters. If input SNR is empty, S/N of 5 is applied to all the filters. 
+	:param SNR:
+		S/N thresholds in all bands. The length of this array should be the same as the number of bands in the fits_fluxmap. 
+		S/N threshold can vary across the filters. If SNR is None, the S/N is set as 5.0 to all the filters. 
 
-	:param redc_chi2_limit: (default: 4.0)
-		A maximum of reduced chi-square for two SEDs are considered to have a similar shape. 
+	:param redc_chi2_limit:
+		A maximum reduced chi-square value for a pair of two SEDs to be considered as having a similar shape. 
 
-	:param del_r: (optional, default: 2 pixel)
-		Increment of circular radius in the binning process.
+	:param del_r:
+		Increment of circular radius (in unit of pixel) adopted in the pixel binning process.
 
-	:param name_out_fits: (defult: None)
-		Desired name for the output FITS file.
+	:param name_out_fits: 
+		Desired name for the output FITS file. If None, a default name is adopted.
 	"""
 
 	nbands = len(images)
@@ -537,7 +536,7 @@ def pixel_binning_images(images, var_images, ref_band=None, Dmin_bin=2.0, SNR=[]
 	map_flux_err_corr_trans = np.transpose(map_flux_err_corr, axes=(1,2,0))
 
 	# reference band for measuring pixel brightness
-	if ref_band == None:
+	if ref_band is None:
 		if nbands == 1:
 			ref_band = 0
 		else:
@@ -545,14 +544,15 @@ def pixel_binning_images(images, var_images, ref_band=None, Dmin_bin=2.0, SNR=[]
 	else:
 		ref_band = int(ref_band)
 
-	# S/N
-	if len(SNR)==0:
-		SN_threshold = np.zeros(nbands)+5.0
+	if SNR is None:
+		SN_threshold = np.zeros(nbands) + 5.0
 	elif len(SNR) != nbands:
-		print ("Number of elements in SNR should be the same as the number of filters in the fits_fluxmap!")
+		print ("Number of elements in SNR should be the same as the number of filters in the fits_fluxmap, which is %d!" % nbands)
 		sys.exit()
 	else:
 		SN_threshold = np.asarray(SNR)
+		idx0 = np.where(SNR==0)
+		SN_threshold[idx0[0]] = -1.0e+10
 
 	pixbin_map = np.zeros((dim_y,dim_x))
 	map_bin_flux = np.zeros((dim_y,dim_x,nbands))
@@ -763,7 +763,7 @@ def pixel_binning_images(images, var_images, ref_band=None, Dmin_bin=2.0, SNR=[]
 	hdul.append(fits.ImageHDU(map_bin_flux_err_trans, name='bin_fluxerr'))
 
 
-	if name_out_fits == None:
+	if name_out_fits is None:
 		name_out_fits = "pixbin.fits"
 
 	hdul.writeto(name_out_fits, overwrite=True)

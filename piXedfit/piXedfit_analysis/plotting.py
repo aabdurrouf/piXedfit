@@ -547,68 +547,67 @@ def plot_SED_specphoto(filters=None,obs_photo=None,obs_spec=None,bfit_photo=None
 def plot_SED(name_sampler_fits,logscale_x=True,logscale_y=True,xrange=None,yrange=None,wunit='micron',funit='erg/s/cm2/A', 
 	decompose=1,xticks=None,photo_color='red',residual_range=[-1.0,1.0],fontsize_tick=18,fontsize_label=25,show_legend=True, 
 	loc_legend=4, fontsize_legend=18, markersize=100, lw=2.0, name_plot=None):
-	"""Function for plotting best-fit model SED from a fitting result. 
+	"""Function for plotting best-fit (i.e., median posterior) model SED from a result of SED fitting. 
 
 	:param name_sampler_fits:
-		Name of input FITS file containing sampler chains from the MCMC fitting. This FITS file must be output of :func:`singleSEDfit` or :func:`SEDfit_from_binmap` functions.
+		Name of input FITS file containing result of an SED fitting. 
 
-	:param logscale_x: (optional, default: True)
-		Flag stating whether the x-axis is plotted in logarithmic scale (value: True) or not (value: False).
+	:param logscale_x: 
+		Choice for plotting x-axis in logarithmic (True) or linear scale (False).
 
-	:param logscale_y: (optional, default: True)
-		Flag stating whether the y-axis is plotted in logarithmic scale (value: True) or not (value: False).
+	:param logscale_y: 
+		Choice for plotting y-axis in logarithmic (True) or linear scale (False).
 
-	:param xrange: (optional, default: None)
+	:param xrange: 
 		Range in x-axis. The accepted format is: [xmin,xmax]. If xrange=None, the range will be defined based on 
-		the wavelength range covered by the observed photometric SED.
+		the wavelength range of the observed SED.
 
-	:param yrange: (optional, default: None)
+	:param yrange: 
 		Range in y-axis. The accepted format is: [ymin,ymax]. If yrange=None, the range will be defined based on
-		the fluxes range covered by the observed photometric SED.  
+		the fluxes range of the observed SED.  
 	
-	:param wunit: (default: 'micron')
-		Wavelength unit. Options are: (1)0 or 'angstrom' for Angstrom unit and (2)1 or 'micron' for micron unit.
+	:param wunit: 
+		Wavelength unit. Options are: 0 or 'angstrom' for Angstrom unit and 1 or 'micron' for micron unit.
 
-	:param funit: (default: 'erg/s/cm2/A')
-		Flux unit. Options are: (1)0 or 'erg/s/cm2/A', (2)1 or 'erg/s/cm2', and (3)2 or 'Jy'.
+	:param funit: 
+		Flux unit. Options are: 0 or 'erg/s/cm2/A', 1 or 'erg/s/cm2', and 2 or 'Jy'.
 
-	:param decompose: (default: 1)
-		Flag stating whether the best-fit model SED is broken-down into its components (value: 1 or True) or not (value: 0 or False).
+	:param decompose: 
+		Choice for showing best-fit (i.e., median posterior) model SED broken down into its components (1 or True) or just its total (0 or False).
 	
-	:param xticks: (optional, default: None)
-		List of ticks values in x-axis. If None, the default from matplotlib is used. If xticks is not None, the accepted input is in list format  
-		xticks = []. The unit should be the same as the input wunit.
+	:param xticks: 
+		xticks in list format.
 
-	:param photo_color: (optional, default: 'blue')
-		Color of photometric fluxes points (in string). The accepted input is the same as that available in matplotlib.
+	:param photo_color: 
+		Color of photometric fluxes data points. The accepted colors are those available in the matplotlib.
 
-	:param residual_range: (default: [-1.0,1.0])
+	:param residual_range: 
 		Residuals between observed SED and the median posterior model SED. 
-		The residual in each band is defined as (f_D - f_M)/f_D, where f_D is flux in observed SED and f_M is flux in model SED.
+		The residual is defined as (D - M)/D, where D represents observed SED, while M is model SED.
 
-	:param fontsize_tick: (optional, default: 20)
-		Fontsize for the tick. Only relevant if xticks is not None. 
+	:param fontsize_tick: 
+		Fontsize for the ticks. 
 	
-	:param fontsize_label: (optional, default: 25)
-		Fontsize for the x- and y-axis labels. 
+	:param fontsize_label: 
+		Fontsize for the labels in the x and y axes. 
 
-	:param show_legend: (optional, default: True)
-		Flag whether to show legend or not.
+	:param show_legend: 
+		Option for showing a legend.
 
-	:param loc_legend: (optional, default: 2)
+	:param loc_legend: 
 		Location of the legend.
 
-	:param fontsize_legend: (optional, default: 18)
-		Fontsize for the legend.
+	:param fontsize_legend: 
+		Fontsize of the legend.
 
-	:param markersize: (optional, default: 100)
-		Size of the maarkers associated with the observed and model SEDs.
+	:param markersize: 
+		Size for the markers of the observed and model SEDs.
 
 	:param lw: (optional, default: 1)
-		Line width of the model SEDs.
+		Line width for the best-fit (i.e., median posterior) model SED.
 	
-	:param name_plot: (optional, default: None)
-		Name of the output plot. This is optional parameter.
+	:param name_plot: 
+		Desired name for the output plot. This is optional. If None, a default name will be used. 
 	"""
 
 	hdu = fits.open(name_sampler_fits)
@@ -672,35 +671,35 @@ def plot_corner(name_sampler_fits, params=['log_sfr','log_mass','log_dustmass','
 	'log_t0': [-2.0, 1.14],'log_alpha':[-2.5,2.5],'log_beta':[-2.5,2.5],'log_tau': [-2.5, 1.5], 'logzsol': [-2.0, 0.5], 
 	'z': [-99.0, -99.0]}, nbins=12, fontsize_label=20, fontsize_tick=14, name_plot=None):
 	
-	"""Function for producing corner plot that shows 1D and joint 2D posterior probability distributions from the fitting results with MCMC method.
+	"""Function for producing corner plot that shows 1D and joint 2D posterior probability distributions from a fitting result with the MCMC method.
 	
 	:param name_sampler_fits:
-		Name of the input FITS file containing sampler chains from the MCMC fitting. 
-		This FITS file must be output of :func:`singleSEDfit` or :func:`SEDfit_from_binmap` functions.
+		Name of input FITS file containing result of an SED fitting.
 
-	:param params: (optional)
-		List of parameters that want to be included in the corner plot. This is optional parameter.
+	:param params: 
+		List of parameters to be shown in the corner plot. This is optional. 
+		If default input is used, all the parameters incolved in the SED fitting will be shown in the corner plot.
 
-	:param label_params: (optional)
-		Labels for the parameters in a dictionary format.
+	:param label_params: 
+		Labels for the parameters. The accepted format is a python dictionary.
 
-	:param params_ranges: (optional)
-		Ranges for the parameters to be shown in the plot.
+	:param params_ranges: 
+		Desired ranges for the parameters.
 
-	:param nbins: (default: 12)
-		Number of bins to be made in a parameter space when examining the posterior probability function.
+	:param nbins: 
+		Number of binning in the parameter space when calculating the joint posteriors.
 
-	:param fontsize_label: (optional, default: 20)
-		Fontsize for the x- and y-axis labels.
+	:param fontsize_label:
+		Fontsize of labels in the x and y axes.
 
-	:param fontsize_tick: (optional, default: 14)
-		Fontsize for the tick. Only relevant if xticks is not None. 
+	:param fontsize_tick:
+		Fontsize for the ticks.
 
 	:param name_plot: (optional, default: None)
 		Desired name for the output plot. 
 
 	:returns name_plot:
-		Output plot.
+		Desired name for the output plot. This is optional. If None, a default name will be used.
 	"""
 
 	def_params=['log_sfr','log_mass','log_dustmass','log_fagn','log_fagn_bol','log_tauagn','log_qpah','log_umin',
@@ -763,76 +762,46 @@ def plot_corner(name_sampler_fits, params=['log_sfr','log_mass','log_dustmass','
 	return name_plot
 
 
-def plot_sfh_mcmc(name_sampler_fits, nchains=200, del_t=0.05, plot_true=0, true_params = {'log_tau': -99.0, 'log_age': -99.0, 
-	'log_t0': -99.0, 'log_alpha':-99.0, 'log_beta':-99.0, 'log_mass': -99.0}, true_SFH_lbt=[], true_SFH_sfr=[],lbacktime_max=None, 
-	yrange=None, loc_legend=2, fontsize_tick=18, fontsize_label=25, fontsize_legend=26, logscale_x=False, logscale_y=False, name_plot=None):
-	"""Function for producing SFH plot from fitting result obtained with the MCMC method.
+def plot_sfh_mcmc(name_sampler_fits, nchains=200, del_t=0.05, lbacktime_max=None, yrange=None, loc_legend=2, fontsize_tick=18, 
+	fontsize_label=25, fontsize_legend=26, logscale_x=False, logscale_y=False, name_plot=None):
+	"""Function for producing SFH plot from a fitting result with the MCMC method. This is only applicable for fitting result 
+	that stores the full sampler chains, which is when we set store_full_samplers=1 in the SED fitting functions. 
 
 	:param name_sampler_fits:
-		Name of the input FITS file containing sampler chains from the MCMC fitting. 
-		This FITS file must be output of :func:`singleSEDfit` or :func:`SEDfit_from_binmap` functions.
+		Name of input FITS file containing result of an SED fitting.
 
-	:param nchains: (default: 200)
-		Number of randomly-chosen sampler chains to be used for calculating the inferred SFH.
+	:param nchains:
+		Number of randomly chosen sampler chains (from the full samplers stored in the FITS file) to be used for calculating the inferred SFH.
 
-	:param del_t: (default: 0.05)
-		Increment in the look-back time (in Gyr) to be used in sampling the SFH.
+	:param del_t:
+		Width of the look back time binning in unit of Gyr for sampling the star formation history (SFH).
 
-	:param plot_true: (default: 0)
-		A flag stating whether to plot (value:1) the true SFH or not (value:0).
-
-	:param true_params: (optional)
-		True values of the true parameters if available and the true SFH is intended to be shown. Only relevant if plot_true=1.
-		This should be in dictionary format as shown in the default set.
-
-	:param true_SFH_lbt: (default: [])
-		1D array of the true (arbitrary) SFH -the time look-back time component. In case the true SFH is not represented by parametric form.
-
-	:param true_SFH_sfr: (default: [])
-		1D arrays of the true (arbitrary) SFH -the SFR component. In case the true SFH is not represented by parametric form.
-
-	:param lbacktime_max: (optional, default: None)
+	:param lbacktime_max: 
 		Maximum look-back time in the SFH plot. If None, the maximum look-back time is defined from the age of universe at the redshift of the galaxy.
 
-	:param yrange: (optional, default: None)
+	:param yrange: 
 		Range in the y-axis.
 
-	:param loc_legend: (optional, default: 2)
-		Where to locate the legend. This is the same numbering as in the `matplotlib`.
+	:param loc_legend: 
+		Where to locate the legend. This is the same as in the `matplotlib`.
 
-	:param fontsize_tick: (optional, default: 18)
-		Fontsize for the tick. Only relevant if xticks is not None. 
+	:param fontsize_tick: 
+		Fontsize for the ticks.
 	
-	:param fontsize_label: (optional, default: 25)
-		Fontsize for the x- and y-axis labels. 
+	:param fontsize_label: 
+		Fontsize of the labels in the x and y axes. 
 
-	:param fontsize_legend: (optional, default: 26)
-		Fontsize for the legend.
+	:param fontsize_legend: 
+		Fontsize of the legend.
 
-	:param logscale_x: (optional, default: True)
-		Flag stating whether the x-axis is plotted in logarithmic scale (value: True) or not (value: False).
+	:param logscale_x: 
+		Choice for plotting x-axis in logarithmic (True) or linear scale (False).
 
-	:param logscale_y: (optional, default: True)
-		Flag stating whether the y-axis is plotted in logarithmic scale (value: True) or not (value: False).
-
-	:param name_plot:
-		Desired name for the output plot.
-
+	:param logscale_y: 
+		Choice for plotting y-axis in logarithmic (True) or linear scale (False).
 
 	:returns name_plot:
-		Name of the output plot.
-
-	:returns grid_lbt:
-		Look-back time grids in the SFH.
-
-	:returns grid_sfr_p16:
-		16th percentile of the SFH.
-
-	:returns grid_sfr_p50:
-		Median of the SFH.
-
-	:returns grid_sfr_p84:
-		84th percentile of the SFH.
+		Desired name for the output plot. This is optional. If None, a default name will be used.
 	"""
 	
 	hdu = fits.open(name_sampler_fits)
@@ -968,33 +937,6 @@ def plot_sfh_mcmc(name_sampler_fits, nchains=200, del_t=0.05, plot_true=0, true_
 	if yrange != None:
 		plt.ylim(yrange[0],yrange[1])
 
-	# plot true sfh if required:
-	if plot_true==1 or plot_true==True:
-		if len(true_SFH_lbt) == 0:
-			true_tau = pow(10.0,true_params['log_tau'])
-			true_age = pow(10.0,true_params['log_age'])
-			true_mass = pow(10.0,true_params['log_mass'])
-			true_t0 = 0
-			true_alpha = 0
-			true_beta = 0
-			if sfh_form==2 or sfh_form==3:
-				true_t0 = pow(10.0,true_params['log_t0'])
-			if sfh_form==4:
-				true_alpha = pow(10.0,true_params['log_alpha'])
-				true_beta = pow(10.0,true_params['log_beta'])
-
-			t,SFR_t = construct_SFH(sfh_form=sfh_form,t0=true_t0,tau=true_tau,alpha=true_alpha,
-														beta=true_beta,age=true_age,formed_mass=true_mass)
-
-			t_back = np.abs(t-true_age)
-		else:
-			t_back = true_SFH_lbt
-			SFR_t = true_SFH_sfr
-
-		plt.plot(t_back,SFR_t,lw=4,color='red',zorder=11, label='true')
-
-		plt.legend(fontsize=int(fontsize_legend), loc=loc_legend)
-
 	plt.subplots_adjust(left=0.15, right=0.95, bottom=0.15, top=0.95)
 
 	if name_plot==None:
@@ -1003,5 +945,5 @@ def plot_sfh_mcmc(name_sampler_fits, nchains=200, del_t=0.05, plot_true=0, true_
 	
 	plt.savefig(name_plot)
 
-	return name_plot,grid_lbt,grid_sfr_p16,grid_sfr_p50,grid_sfr_p84
+	return name_plot, grid_lbt, grid_sfr_p16, grid_sfr_p50, grid_sfr_p84
 

@@ -9,9 +9,11 @@ warnings.filterwarnings('ignore')
 from ..utils.filtering import cwave_filters
 
 
-__all__ = ["sort_filters", "kpc_per_pixel", "k_lmbd_Fitz1986_LMC", "EBV_foreground_dust", "skybg_sdss", "get_gain_dark_variance", "var_img_sdss", "var_img_GALEX", "var_img_2MASS", "var_img_WISE", "var_img_from_unc_img",
-			"var_img_from_weight_img", "mask_region_bgmodel", "subtract_background", "get_psf_fwhm","get_largest_FWHM_PSF", "ellipse_fit", "draw_ellipse", "ellipse_sma", "crop_ellipse_galregion",
-			"crop_ellipse_galregion_fits", "crop_stars", "crop_stars_galregion_fits",  "crop_image_given_radec", "segm_sep", "crop_image_given_xy", "check_avail_kernel", "create_kernel_gaussian",
+__all__ = ["sort_filters", "kpc_per_pixel", "k_lmbd_Fitz1986_LMC", "EBV_foreground_dust", "skybg_sdss", "get_gain_dark_variance", 
+			"var_img_sdss", "var_img_GALEX", "var_img_2MASS", "var_img_WISE", "var_img_from_unc_img","var_img_from_weight_img", 
+			"mask_region_bgmodel", "subtract_background", "get_psf_fwhm","get_largest_FWHM_PSF", "ellipse_fit", "draw_ellipse", 
+			"ellipse_sma", "crop_ellipse_galregion","crop_ellipse_galregion_fits", "crop_stars", "crop_stars_galregion_fits",  
+			"crop_image_given_radec", "segm_sep", "crop_image_given_xy", "check_avail_kernel", "create_kernel_gaussian",
 			"raise_errors", "get_img_pixsizes", "in_kernels", "get_flux_or_sb", "crop_2D_data"]
 
 
@@ -950,7 +952,7 @@ def get_img_pixsizes(img_pixsizes,filters,sci_img,flux_or_sb,flag_psfmatch,flag_
 
 	img_pixsizes1 = {}
 
-	if bool(img_pixsizes)==True:
+	if img_pixsizes is not None:
 		for bb in range(0,len(filters)):
 			if filters[bb] in img_pixsizes:
 				img_pixsizes1[filters[bb]] = img_pixsizes[filters[bb]]
@@ -972,19 +974,19 @@ def get_img_pixsizes(img_pixsizes,filters,sci_img,flux_or_sb,flag_psfmatch,flag_
 def raise_errors(filters, kernels, flag_psfmatch, img_unit, img_scale):
 	unknown = unknown_images(filters)
 	if len(unknown)>0:
-		if bool(kernels)==False and flag_psfmatch==0:
+		if kernels is None and flag_psfmatch==0:
 			print ("PSF matching kernels for the following filters are not available by default. In this case, input kernels should be supplied!")
 			print (unknown)
 			sys.exit()
 
-		if bool(img_unit)==False or bool(img_scale)==False:
-			print ("Unit of the following imaging data are not recognized. In this case, input img_unit and img_scale should be provided!")
+		if img_unit is None or img_scale is None:
+			print ("Unit of the pixel values of the following imaging data are not recognized. In this case, input img_unit and img_scale should be provided!")
 			print (unknown)
 			sys.exit()
 
 def in_kernels(kernels,sorted_filters):
 	kernels1 = {}
-	if bool(kernels) == False:
+	if kernels is None:
 		for ii in range(0,len(sorted_filters)):
 			kernels1[sorted_filters[ii]] = None
 	else:
@@ -1040,7 +1042,6 @@ def get_flux_or_sb(filters,img_unit):
 				sys.exit()
 
 	return flux_or_sb
-
 
 
 def create_kernel_gaussian(psf_fwhm_init=None, psf_fwhm_final=None, alpha_cosbell=1.5, pixsize_PSF_target=0.25, size=[101,101]):

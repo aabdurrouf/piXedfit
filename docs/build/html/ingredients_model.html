@@ -1,7 +1,7 @@
 
 
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" >
+<html class="writer-html4" lang="en" >
 <head>
   <meta charset="utf-8">
   
@@ -26,11 +26,10 @@
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
-        <script src="_static/jquery.js"></script>
-        <script src="_static/underscore.js"></script>
-        <script src="_static/doctools.js"></script>
-        <script src="_static/language_data.js"></script>
-        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     
     <script type="text/javascript" src="_static/js/theme.js"></script>
 
@@ -86,6 +85,7 @@
               <p class="caption"><span class="caption-text">User guide</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="manage_filters.html">Managing filters</a></li>
 <li class="toctree-l1"><a class="reference internal" href="list_imaging_data.html">List of imaging data</a></li>
 <li class="toctree-l1"><a class="reference internal" href="list_kernels_psf.html">Convolution kernels and PSFs</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">SED modeling</a><ul>
@@ -97,11 +97,11 @@
 </li>
 <li class="toctree-l1"><a class="reference internal" href="gen_model_SEDs.html">Generating model SEDs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="image_pros.html">Image processing</a></li>
-<li class="toctree-l1"><a class="reference internal" href="image_ifs_match.html">Spatial and Spectral Matching of imaging+IFS data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="image_ifs_match.html">Spatial and Spectral Matching of imaging and IFS data</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pixel_binning.html">Pixel binning</a></li>
-<li class="toctree-l1"><a class="reference internal" href="fit_res_SEDs.html">Fitting spatially resolved SED</a></li>
-<li class="toctree-l1"><a class="reference internal" href="fit_ing_SEDs.html">Fitting integrated SED</a></li>
-<li class="toctree-l1"><a class="reference internal" href="plot_fitres.html">Analyze fitting results</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fit_ing_SEDs.html">Fitting individual SED</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fit_res_SEDs.html">Fitting spatially resolved SEDs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_fitres.html">Analyzing fitting results</a></li>
 <li class="toctree-l1"><a class="reference internal" href="get_maps_prop.html">Get maps of spatially resolved properties</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Tutorials</span></p>
@@ -200,23 +200,23 @@
 <h2>Choices for the SFH<a class="headerlink" href="#choices-for-the-sfh" title="Permalink to this headline">¶</a></h2>
 <p><strong>piXedfit</strong> adopts the parametric star formation history (SFH) approach, which assumes a functional form for the SFH when generating the model SED of a Composite Stellar Population (CSP). In <code class="xref py py-mod docutils literal notranslate"><span class="pre">piXedfit_model</span></code>, there are 5 choices of SFH available:</p>
 <ul>
-<li><p><strong>Tau model</strong></p>
+<li><p class="first"><strong>Tau model</strong></p>
 <p><span class="math notranslate nohighlight">\(SFR(t) \propto e^{-t/\tau}\)</span></p>
 <p>The <span class="math notranslate nohighlight">\(\tau\)</span> represents the timescale for the declining of the star formation.</p>
 </li>
-<li><p><strong>Delayed tau</strong></p>
+<li><p class="first"><strong>Delayed tau</strong></p>
 <p><span class="math notranslate nohighlight">\(SFR(t) \propto t e^{-t/\tau}\)</span></p>
 <p>The <span class="math notranslate nohighlight">\(\tau\)</span> is a parameter that controls the duration of the star formation.</p>
 </li>
-<li><p><strong>Log-normal</strong></p>
+<li><p class="first"><strong>Log-normal</strong></p>
 <p><span class="math notranslate nohighlight">\(SFR(t) \propto \frac{1}{t} \exp \left( -\frac{(\ln(t)-T_{0})^{2}}{2\tau^{2}} \right)\)</span></p>
 <p>The free parameters <span class="math notranslate nohighlight">\(T_{0}\)</span> controls the peak location, while <span class="math notranslate nohighlight">\(\tau\)</span> controls the duration of the star formation.</p>
 </li>
-<li><p><strong>Gaussian</strong></p>
+<li><p class="first"><strong>Gaussian</strong></p>
 <p><span class="math notranslate nohighlight">\(SFR(t) \propto \exp \left( -\frac{(t-T_{0})^{2}}{2\tau^{2}} \right)\)</span></p>
 <p>The <span class="math notranslate nohighlight">\(T_{0}\)</span> represents the time when star formation reaches the peak, while the <span class="math notranslate nohighlight">\(\tau\)</span> controls the duration of the star formation.</p>
 </li>
-<li><p><strong>Double power law</strong></p>
+<li><p class="first"><strong>Double power law</strong></p>
 <p><span class="math notranslate nohighlight">\(SFR(t) \propto \left[ \left(\frac{t}{\tau} \right)^{\alpha} + \left(\frac{t}{\tau} \right)^{-\beta} \right]^{-1}\)</span></p>
 <p>The <span class="math notranslate nohighlight">\(\alpha\)</span> and <span class="math notranslate nohighlight">\(\beta\)</span> are the falling slope, and the rising slope, respectively. The <span class="math notranslate nohighlight">\(\tau\)</span> parameter controls the peak time.</p>
 </li>

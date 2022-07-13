@@ -11,9 +11,6 @@ from photutils.psf.matching import resize_psf
 from ..utils.filtering import cwave_filters
 from .images_utils import *  
 
-#global PIXEDFIT_HOME
-#PIXEDFIT_HOME = os.environ['PIXEDFIT_HOME']
-
 try:
 	global PIXEDFIT_HOME
 	PIXEDFIT_HOME = os.environ['PIXEDFIT_HOME']
@@ -25,28 +22,33 @@ __all__ = ["images_processing"]
 
 
 class images_processing:
-	"""A Python class for processing of multiband imaging data. The processing basically includes PSF-matching to homogenize the spatial (angular) resolution of the multiband imaging data 
-	and spatial-resampling and reprojection to homogenize the pixel size and spatil reprojection of the mulltiband imaging data. A list of imaging data sets that can be handle using this class in the current version of piXedfit 
-	can be seen at :ref:`List of imaging data <list-imagingdata>`.  
+	"""A Python class for processing multiband imaging data and producing a data cube containing maps of multiband fluxes that are matched in spatial resolution and sampling. 
+	The image processing basically includes the PSF matching to homogenize the spatial resolution of the multiband imaging data and spatial resampling and reprojection 
+	to homogenize the spatial sampling (i.e., pixel size) and spatil reprojection of the mulltiband imaging data. 
+	A list of imaging data sets that can be handled automatically by this class in the current version of piXedfit can be seen at :ref:`List of imaging data <list-imagingdata>`.
+	However, one need to download convolution kernels from `this link <https://drive.google.com/drive/folders/1pTRASNKLuckkY8_sl8WYeZ62COvcBtGn?usp=sharing>`_ and 
+	put those inside data/kernels/ within the piXedfit directory ($PIXEDFIT_HOME/data/kernels). These kernels are not included in the piXedfit repository because of the large file sizes.
+	This class can also handle other imaging data. For this, one need to provide kernels for PSF matching. 
+	These kernel images should have the same pixel size as the corresponding input images.      
 
 	:param filters:
-		List of photometric filters names in string format. The accepted naming for the filters can be seen using :func:`list_filters` function in the :mod:`utils.filtering` module. 
-		It is not mandatory to give the filters names in the wavelength order (from shortest to longest).
+		List of photometric filters names. To check the filters currently available and manage them (e.g., adding new ones) please see `this page <https://pixedfit.readthedocs.io/en/latest/manage_filters.html>`_.  
+		For this input, it is not mandatory to make the input filters in a wavelength order.
 
 	:param sci_img:
-		Dictionary containing names of the science images. 
+		Dictionary containing names of the science images. An example of input: sci_img={'sdss_u':'img1.fits', 'sdss_g':'img2.fits'} 
 
 	:param var_img:
-		Dictionary containing names of the variance images.
+		Dictionary containing names of the variance images. It has a similar format to sci_img.
 
 	:param gal_ra:
-		Coordinate Right Ascension (RA) of the target galaxy.
+		Right Ascension (RA) coordinate of the target galaxy.
 
 	:param gal_dec:
-		Coordinate Declination (DEC) of the target galaxy.
+		Declination (DEC) coordinate of the target galaxy.
 
 	:param img_unit: (optional)
-		Unit of pixel value in the multiband images. The input format is python dictionary. 
+		Unit of pixel value in the multiband images. The acceptable format of this input is a python dictionary, similar to that of sci_img. This input is optional.
 		This input will only be considered (and required) if the input images are not among the default list of recognized imaging data 
 		in piXedfit (i.e. GALEX, SDSS, 2MASS, WISE, Spitzer, and Herschel).  
 		The allowed units are: (1)"erg/s/cm2/A", (2) "Jy", and (3) "MJy/sr".
@@ -54,43 +56,42 @@ class images_processing:
 	:param img_scale: (optional)
 		Scale of the pixel value with respect to the unit in img_unit. For instance, if image is in unit of MJy, 
 		the img_unit can be set to be "Jy" and img_scale is set to be 1e+6. This input is only relevant if the input images are not among the default list of recognized images 
-		in piXedfit. The format of this input should be in python dictionary.  
+		in piXedfit. The format of this input should be in python dictionary, similar to sci_img.
 
-	:param flag_psfmatch:
+	:param img_pixsizes: (optional)
+		Pixel sizes (in arcsecond) of the input imaging data. This input should be in dictionary format, similar to sci_img. 
+		If not provided, pixel size will be calculated based on the WCS information in the header of the FITS file.  
+
+	:param flag_psfmatch: (optional)
 		Flag stating whether the multiband imaging data have been PSF-matched or not. The options are: (1) 0 means hasn't been PSF-matched, and (2)1 means has been PSF-matched.
 
-	:param flag_reproject:
+	:param flag_reproject: (optional)
 		Flag stating whether the multiband imaging data have been spatially-resampled and matched in the projection. The options are: (1)0 means not yet, and (2)1 means has been carried out. 
 
-	:param flag_crop:
+	:param flag_crop: (optional)
 		Flag stating whether the multiband imaging data have been cropped around the target galaxy. The options are: (1)0 means not yet, and (2)1 means has been cropped. 
 		If flag_crop=0, cropping will be done according to the input stamp_size. If flag_crop=1, cropping will not be done. 
 
-	:param img_pixsizes: (optional)
-		Pixel sizes (in arcsecond) of the input imaging data. This input should be in dictionary format. 
-		If not provided, pixel size will be calculated based on the WCS information in the header of the FITS file.
-
 	:param kernels: (optional)
 		Dictionary containing names of FITS files for the kernels to be used for the PSF matching process. 
-		If None, internal convolution kernels in **piXedfit** will be used, given that the imaging data is recognized by piXedfit. 
+		If None, internal convolution kernels in piXedfit will be used, given that the imaging data is recognized by piXedfit. 
 		Otherwise, input kernels should be supplied.  
-		If external kerenels avaiable, the input should be in dictionary format like the input sci_img, 
+		If external kerenels are avaiable, the kernel images should have the same pixel size as the corresponding input images and 
+		the this input should be in a dictionary format, which is similar to the input sci_img, 
 		but the number of element should be Nb-1, where Nb is the number of photometric bands.   
 
 	:param gal_z:
-		Galaxy's redshift. This is not used in any calculation during the image processing and calculating fluxes maps
-		But only intended to be saved in the heder of the produced FITS file. 
+		Galaxy's redshift. This information will not be used in the image processing and only intended to be saved in the heder of a produced FITS file. 
 
-	:param stamp_size: (default: [101,101])
+	:param stamp_size:
 		Desired size for the reduced maps of multiband fluxes. This is a list data type with 2 elements. Accepted struture is: [dim_y,dim_x]. Only relevant if flag_crop=0. 
-	
-	:param remove_files: (default: True)
-		If True, the unnecessary image files produced during the image processing will be removed. This can save disk space. 
-		If False, those files will not be removed.   
+		
+	:param remove_files:
+		If True, the unnecessary image files produced during the image processing will be removed. This can save disk space. If False, those files will not be removed.   
 	"""
 
-	def __init__(self,filters=[],sci_img={},var_img={},gal_ra=None,gal_dec=None,img_unit={},img_scale={},flag_psfmatch=0,
-				flag_reproject=0,flag_crop=0, img_pixsizes={}, kernels={}, gal_z=None, stamp_size=[101,101],remove_files=True):
+	def __init__(self, filters, sci_img, var_img, gal_ra, gal_dec, img_unit=None, img_scale=None, img_pixsizes=None, 
+		flag_psfmatch=0, flag_reproject=0, flag_crop=0, kernels=None, gal_z=None, stamp_size=[101,101], remove_files=True):
 
 		raise_errors(filters, kernels, flag_psfmatch, img_unit, img_scale)
 
@@ -119,8 +120,7 @@ class images_processing:
 		self.kernels = kernels
 
 	def reduced_stamps(self):
-		"""Function within the Class that runs the image processing that includes PSF matching, 
-		spatial resampling and reprojection, and cropping around the target galaxy.
+		"""Run the image processing that includes PSF matching, spatial resampling and reprojection, and cropping around the target galaxy.
 
 		:returns output_stamps:
 			Dictionary containing name of postage stamps of reduced multiband images. 
@@ -179,19 +179,19 @@ class images_processing:
 			print ("[PSF matching to %s]" % filters[idfil_psfmatch])
 
 			##==> (b) Get Kernels:
-			# All the kernels should be brought to 0.25"/pixel sampling:
 			status_kernel_resize = 1
 			kernel_data = {}
 			for bb in range(0,nbands):
 				if bb != idfil_psfmatch:
-					if kernels[filters[bb]] != None:
+					if kernels[filters[bb]] is not None:
+						# assuming the kernel image has the same pixel size as the corresponding input image
 						hdu = fits.open(kernels[filters[bb]])
 						kernel_data[filters[bb]] = hdu[0].data/hdu[0].data.sum()
 						hdu.close()
 
 						status_kernel_resize = 0				
 
-					elif kernels[filters[bb]] == None:
+					elif kernels[filters[bb]] is None:
 						status_kernel = check_avail_kernel(filter_init=filters[bb], filter_final=filters[idfil_psfmatch])
 
 						if status_kernel == 1:
@@ -201,7 +201,7 @@ class images_processing:
 							kernel_data[filters[bb]] = hdu[0].data/hdu[0].data.sum()
 							hdu.close()
 
-							status_kernel_resize = 1			# the kernels are in pix-size=0.25", so need to be adjusted with the pix-size of image 
+							status_kernel_resize = 1   # the kernels are has a pixel size of 0.25", so need to be adjusted with the pixel size of the input science image 
 
 						elif status_kernel == 0:
 							print ("Kernel for PSF matching %s--%s is not available by default, so the input kernels is required for this!")
@@ -255,7 +255,10 @@ class images_processing:
 					temp_file_names.append(name_out)
 
 					# resize/resampling kernel image to match the sampling of the image
-					kernel_resize0 = resize_psf(kernel_data[filters[bb]], 0.250, img_pixsizes[filters[bb]], order=3)
+					if status_kernel_resize == 1:
+						kernel_resize0 = resize_psf(kernel_data[filters[bb]], 0.250, img_pixsizes[filters[bb]], order=3)
+					elif status_kernel_resize == 0:
+						kernel_resize0 = kernel_data[filters[bb]]
 
 					# crop kernel to reduce memory usage: roughly match the size of the cropped image that will be convolved with the kernel
 					name_temp = "crop_%s" % sci_img_name[filters[bb]]
@@ -469,21 +472,19 @@ class images_processing:
 		"""Get segmentation maps of a galaxy in multiple bands using the SEP (a Python version of the SExtractor). 
 
 		:param output_stamps:
-			output_stamps output from the :func:`reduced_stamps` method.
+			Stamp images output of image processing using the :func:`reduced_stamps`.
 
-		:param thresh: (float, optional, default: 1.5)
-			Detection threshold for the sources detection. If variance image is supplied, the threshold value for a given pixel is 
-			interpreted as a multiplicative factor of the uncertainty (i.e. square root of the variance) on that pixel. 
-			If var=None, the threshold is taken to be 2.5 percentile of the pixel values in the image.
+		:param thresh:
+			Detection threshold for the source detection and segmentation.
 
-		:param minarea: (float, optional, default: 5)
-			Minimum number of pixels (above threshold) required for a detected object. 
+		:param minarea: 
+			Minimum number of pixels (above threshold) required for an object to be detected. 
 
-		:param deblend_nthresh: (optional, default: 32)
-			The same as deblend_nthresh parameter in the SEP.
+		:param deblend_nthresh:
+			Number of deblending sub-thresholds. Default is 32.
 
-		:param deblend_cont: (float, optional, default: 0.005)
-			The same as deblend_cont parameter in the SEP.
+		:param deblend_cont:
+			Minimum contrast ratio used for object deblending. Default is 0.005. To entirely disable deblending, set to 1.0.
 
 		:returns segm_maps:
 			Output segmentation maps.
@@ -544,36 +545,36 @@ class images_processing:
 		return segm_maps
 
 
-	def galaxy_region(self, segm_maps=[], use_ellipse=False, x_cent=None,
-	 					y_cent=None, ell=0, pa=45.0, radius_sma=30.0):
+	def galaxy_region(self, segm_maps=None, use_ellipse=False, x_cent=None, y_cent=None, ell=0, pa=45.0, radius_sma=30.0):
 		"""Define galaxy's region of interest for further analysis.
 
-		:param segm_maps: (list of string, optional, default: [])
-			Input segmentation maps in a list format. If the galaxy's region is to be defined based 
-			on segmentation maps obtained with SEP, this input argument is required.
+		:param segm_maps: 
+			Input segmentation maps, which are output of the :func:`segmentation_sep`.
+			This input argument is required if the galaxy's region is to be defined based 
+			on the segmentation maps obtained with SEP.
 
-		:param use_ellipse: (boolean, optional, default: False)
+		:param use_ellipse: 
 			Alternative of defining galaxy's region using elliptical aperture centered at the target galaxy.
 			Set use_ellipse=True if you want to use this option.
 
-		:param x_cent: (float, optional, default: None)
+		:param x_cent: 
 			x coordinate of the ellipse center. If x_cent=None, the ellipse center is assumed 
 			to be the same as the image center. 
 
-		:param y_cent: (float, optional, default: None)
+		:param y_cent: 
 			y coordinate of the ellipse center. If y_cent=None, the ellipse center is assumed 
 			to be the same as the image center.
 
-		:param ell: (float, optional, default: 0.0)
+		:param ell: 
 			Ellipticity of the elliptical aperture.
 
-		:param pa: (float, optional, default: 45.0)
+		:param pa: 
 			Position angle of the elliptical aperture.
 
-		:param radius_sma: (float, optional, default: 30.0)
+		:param radius_sma: 
 			Radal distance along the semi-major axis of the elliptical aperture. This radius is in pixel unit.
 
-		:returns gal_region: (2D array)
+		:returns gal_region: 
 			Output galaxy's region of interest.
 		"""
 		stamp_size = self.stamp_size
@@ -582,7 +583,6 @@ class images_processing:
 		dim_x = int(stamp_size[1])
 
 		gal_region = np.zeros((dim_y,dim_x))
-
 
 		if use_ellipse==False or use_ellipse==0:
 			if len(segm_maps)>0:
@@ -596,9 +596,9 @@ class images_processing:
 
 		elif use_ellipse==True or use_ellipse==1:
 			# use elliptical aperture
-			if y_cent == None:
+			if y_cent is None:
 				y_cent = (dim_y-1)/2
-			if x_cent == None:
+			if x_cent is None:
 				x_cent = (dim_x-1)/2
 
 			x = np.linspace(0,dim_x-1,dim_x)
@@ -620,31 +620,34 @@ class images_processing:
 
 
 	def flux_map(self, output_stamps, gal_region, Gal_EBV=None, scale_unit=1.0e-17, 
-		mag_zp_2mass=[], unit_spire='Jy_per_beam', name_out_fits=None):
-		"""Function for calculating maps of multiband fluxes
+		mag_zp_2mass=None, unit_spire='Jy_per_beam', name_out_fits=None):
+		"""Function for calculating maps of multiband fluxes from the stamp images produced by the :func:`reduced_stamps`.
 
 		:param output_stamps:
 			Dictionary containing reduced multiband images produced by the :func:`reduced_stamps` function.
 
 		:param gal_region:
-			2D array containing the galaxy's region of interest. The vlues should be 0 for masked region and 1 for the galaxy's region of interest.
-			It can be taken from the output of the :func:`galaxy_region` function. But, user can also defined its own.
+			A 2D array containing the galaxy's region of interest. It is preferably the output of the :func:`gal_region`, but one can also 
+			make this input region. The 2D array should has the same size as that of the output stamps and the pixel value is 1 for 
+			the galaxy's region and 0 otherwise.
 
-		:param Gal_EBV: (float, optional, default:None)
-			The E(B-V) dust attenuation due to the foreground Galactic dust. This is optional parameter.
+		:param Gal_EBV:
+			The E(B-V) dust attenuation due to the foreground Galactic dust. This is optional parameter. 
+			If None, this value will be retrive from the IRSA data server through the `astroquery <https://astroquery.readthedocs.io/en/latest/>`_ package.  
 
-		:param scale_unit: (float, optional, defult: 1.0e-17)
+		:param scale_unit:
 			Normalized unit for the fluxes in the output fits file. The unit is flux density in erg/s/cm^2/Ang.
 
-		:param mag_zp_2mass: (float array_like, optional, default: [])
-			Magnitude zero-points of 2MASS images. Sshoud be in 1D array with three elements: [magzp-j,magzp-h,magzp-k]. This is optional parameter.
-			If not given (i.e. [] or empty), the values will be taken from the FITS header information.
+		:param mag_zp_2mass:
+			Magnitude zero-points of 2MASS images. Shoud be in 1D array with three elements: [magzp-j,magzp-h,magzp-k]. This is optional parameter.
+			If not given (i.e. None), the values will be taken from the header of the FITS files.
 
-		:param unit_spire: (string, optional, default: 'Jy_per_beam')
-			Unit of SPIRE images, in case Herschel/SPIRE image is included in the analysis. Options are: ['Jy_per_beam', 'MJy_per_sr', 'Jy_per_pixel']  
+		:param unit_spire:
+			Unit of SPIRE images, in case Herschel/SPIRE image is included in the analysis. Therefore, this input is only relevant if Herschel/SPIRE image is among the images that are analyzed. 
+			Options are: ['Jy_per_beam', 'MJy_per_sr', 'Jy_per_pixel']  
 
-		:param name_out_fits: (string, optional, default: None)
-			Desired name for the output FITS file. If None, a generic name will be used.
+		:param name_out_fits:
+			Desired name for the output FITS file. If None, a default name will be adopted.
 		"""
 
 		from operator import itemgetter
@@ -693,7 +696,7 @@ class images_processing:
 			eff_wave[filters[bb]] = photo_wave[bb]
 
 		# calculate Alambda for Galactic dust extinction correction
-		if Gal_EBV == None:
+		if Gal_EBV is None:
 			Gal_EBV = EBV_foreground_dust(gal_ra, gal_dec)
 
 		Alambda = {}
@@ -900,15 +903,15 @@ class images_processing:
 		hdul = fits.HDUList()
 		hdr = fits.Header()
 		hdr['nfilters'] = nbands
-		if gal_ra != None:
+		if gal_ra is not None:
 			hdr['RA'] = gal_ra
 
-		if gal_dec != None:
+		if gal_dec is not None:
 			hdr['DEC'] = gal_dec
 
-		if gal_z != None:
+		if gal_z is not None:
 			hdr['z'] = gal_z
-		elif gal_z == None:
+		elif gal_z is None:
 			hdr['z'] = 0
 
 		hdr['unit'] = scale_unit
@@ -934,7 +937,7 @@ class images_processing:
 		hdul.append(fits.ImageHDU(gal_region, name='galaxy_region'))
 		hdul.append(fits.ImageHDU(data=stamp_img, header=stamp_hdr, name='stamp_image'))
 		
-		if name_out_fits == None:
+		if name_out_fits is None:
 			name_out_fits = 'fluxmap.fits'
 		hdul.writeto(name_out_fits, overwrite=True)
 

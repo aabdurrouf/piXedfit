@@ -1,7 +1,7 @@
 
 
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" >
+<html class="writer-html4" lang="en" >
 <head>
   <meta charset="utf-8">
   
@@ -26,11 +26,10 @@
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
-        <script src="_static/jquery.js"></script>
-        <script src="_static/underscore.js"></script>
-        <script src="_static/doctools.js"></script>
-        <script src="_static/language_data.js"></script>
-        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     
     <script type="text/javascript" src="_static/js/theme.js"></script>
 
@@ -98,7 +97,7 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="pixel_binning.html">Pixel binning</a></li>
-<li class="toctree-l1"><a class="reference internal" href="fit_ing_SEDs.html">SED fitting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fit_ing_SEDs.html">Fitting individual SED</a></li>
 <li class="toctree-l1"><a class="reference internal" href="fit_res_SEDs.html">Fitting spatially resolved SEDs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="plot_fitres.html">Analyzing fitting results</a></li>
 <li class="toctree-l1"><a class="reference internal" href="get_maps_prop.html">Get maps of spatially resolved properties</a></li>
@@ -198,9 +197,9 @@
 <p>Here we use photometric data cube (<code class="docutils literal notranslate"><span class="pre">fluxmap_ngc309.fits</span></code>) produced in the <a class="reference internal" href="image_pros.html#img-processing"><span class="std std-ref">image processing</span></a> and IFS data from CALIFA (<code class="docutils literal notranslate"><span class="pre">NGC0309.COMB.rscube.fits.gz</span></code>), which is downloaded from
 the <a class="reference external" href="https://califa.caha.es/?q=content/califa-3rd-data-release">CALIFA website</a>. The spatial matching can be performed using <a class="reference internal" href="piXedfit_spectrophotometric.html#piXedfit.piXedfit_spectrophotometric.match_imgifs_spatial" title="piXedfit.piXedfit_spectrophotometric.match_imgifs_spatial"><code class="xref py py-func docutils literal notranslate"><span class="pre">piXedfit.piXedfit_spectrophotometric.match_imgifs_spatial()</span></code></a>. This process will produce spectrophotometric data cube <code class="docutils literal notranslate"><span class="pre">specphoto_fluxmap_ngc309.fits</span></code>.</p>
 <blockquote>
-<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">from</span> <span class="nn">astropy.io</span> <span class="kn">import</span> <span class="n">fits</span>
-<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="kn">as</span> <span class="nn">plt</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
 
 <span class="c1"># call the function</span>
 <span class="kn">from</span> <span class="nn">piXedfit.piXedfit_spectrophotometric</span> <span class="kn">import</span> <span class="n">match_imgifs_spatial</span>

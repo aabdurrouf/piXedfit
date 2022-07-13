@@ -1,7 +1,7 @@
 
 
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" >
+<html class="writer-html4" lang="en" >
 <head>
   <meta charset="utf-8">
   
@@ -26,11 +26,10 @@
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
-        <script src="_static/jquery.js"></script>
-        <script src="_static/underscore.js"></script>
-        <script src="_static/doctools.js"></script>
-        <script src="_static/language_data.js"></script>
-        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     
     <script type="text/javascript" src="_static/js/theme.js"></script>
 
@@ -38,7 +37,7 @@
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="SED fitting" href="demos_sed_fitting.html" />
-    <link rel="prev" title="Obtain maps of spatially resolved properties" href="get_maps_prop.html" /> 
+    <link rel="prev" title="Tutorials" href="tutorials.html" /> 
 </head>
 
 <body class="wy-body-for-nav">
@@ -86,23 +85,27 @@
               <p class="caption"><span class="caption-text">User guide</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="manage_filters.html">Managing filters</a></li>
 <li class="toctree-l1"><a class="reference internal" href="list_imaging_data.html">List of imaging data</a></li>
-<li class="toctree-l1"><a class="reference internal" href="list_kernels_psf.html">Available convolution kernels and PSFs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="list_kernels_psf.html">Convolution kernels and PSFs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="ingredients_model.html">SED modeling</a></li>
-<li class="toctree-l1"><a class="reference internal" href="image_pros.html">Image processing</a></li>
-<li class="toctree-l1"><a class="reference internal" href="image_ifs_match.html">Matching imaging data with IFS data</a></li>
-<li class="toctree-l1"><a class="reference internal" href="pixel_binning.html">Pixel binning</a></li>
 <li class="toctree-l1"><a class="reference internal" href="gen_model_SEDs.html">Generating model SEDs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="fit_res_SEDs.html">Fitting spatially resolved SED</a></li>
-<li class="toctree-l1"><a class="reference internal" href="fit_ing_SEDs.html">Fitting integrated SED</a></li>
-<li class="toctree-l1"><a class="reference internal" href="plot_fitres.html">Analyze fitting results</a></li>
-<li class="toctree-l1"><a class="reference internal" href="get_maps_prop.html">Obtain maps of spatially resolved properties</a></li>
+<li class="toctree-l1"><a class="reference internal" href="image_pros.html">Image processing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="image_ifs_match.html">Spatial and Spectral Matching of imaging and IFS data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pixel_binning.html">Pixel binning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fit_ing_SEDs.html">Fitting individual SED</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fit_res_SEDs.html">Fitting spatially resolved SEDs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plot_fitres.html">Analyzing fitting results</a></li>
+<li class="toctree-l1"><a class="reference internal" href="get_maps_prop.html">Get maps of spatially resolved properties</a></li>
 </ul>
-<p class="caption"><span class="caption-text">Demonstrations and tutorials</span></p>
+<p class="caption"><span class="caption-text">Tutorials</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="tutorials.html">Tutorials</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Demonstrations</span></p>
 <ul class="current">
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Pixel binning</a></li>
 <li class="toctree-l1"><a class="reference internal" href="demos_sed_fitting.html">SED fitting</a></li>
-<li class="toctree-l1"><a class="reference internal" href="tutorials.html">Tutorials</a></li>
 </ul>
 <p class="caption"><span class="caption-text">API reference</span></p>
 <ul>
@@ -180,15 +183,7 @@
             
   <div class="section" id="pixel-binning">
 <h1>Pixel binning<a class="headerlink" href="#pixel-binning" title="Permalink to this headline">¶</a></h1>
-<p>The animation below shows demonstration of how our new pixel binning scheme works. The pixel binning is done using the <code class="xref py py-mod docutils literal notranslate"><span class="pre">piXedfit_bin</span></code> module. Basically, the pixel binning starts from a brightest pixel (in a reference band, that is selected by the user) then surrounding pixels (within a certain dimeter) that have SEDs with similar shape as the SED of the brightest pixel are binned together. If the resulted S/N in each band is still lower than a given S/N threshold, then the bin’s size is grown gradually with increment radius of 2 pixels until the S/N thresholds in all bands are achieved.</p>
-<p>In the animation below, a pixel binning process of the M51 and M81 galaxies are demonstrated. We use panchromatic imaging data in 23 bands ranging from GALEX/FUV to Herschel/SPIRE350. Before the pixel binning, the multiband images are processed (i.e., spatially-matched in resolution and sampling) using the <code class="xref py py-mod docutils literal notranslate"><span class="pre">piXedfit_images</span></code> module. In the left panel, SDSS/<span class="math notranslate nohighlight">\(r\)</span> image is shown, which is the reference band in this pixel binning process. The middle panel shows the binning map that is being constructed. The right panel shows SEDs of pixels (in colors) that are belong to a bin and the total SED of a bin (in black color).</p>
-<div class="figure align-default">
-<a class="reference internal image-reference" href="_images/animation_pixbin_M51.gif"><img alt="_images/animation_pixbin_M51.gif" src="_images/animation_pixbin_M51.gif" style="width: 800px;" /></a>
-</div>
-<div class="figure align-default">
-<a class="reference internal image-reference" href="_images/animation_pixbin_M81.gif"><img alt="_images/animation_pixbin_M81.gif" src="_images/animation_pixbin_M81.gif" style="width: 800px;" /></a>
-</div>
-<p>If the animation above doesn’t run, please see the animation <a class="reference external" href="https://github.com/aabdurrouf/piXedfit/blob/main/docs/source/demos_pixel_binning.rst">here</a>.</p>
+<p>Please see the pixel binning animation <a class="reference external" href="https://github.com/aabdurrouf/demos/blob/main/piXedfit_bin/demos_pixel_binning.rst">here</a>.</p>
 </div>
 
 
@@ -202,7 +197,7 @@
         <a href="demos_sed_fitting.html" class="btn btn-neutral float-right" title="SED fitting" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="get_maps_prop.html" class="btn btn-neutral float-left" title="Obtain maps of spatially resolved properties" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="tutorials.html" class="btn btn-neutral float-left" title="Tutorials" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   
