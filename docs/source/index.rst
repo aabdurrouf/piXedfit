@@ -1,11 +1,6 @@
 piXedfit
 ========
-**piXedfit**, pixelized spectral energy distribution (SED) fitting, is a Python package that provides a *self-contained* set of tools for analyzing spatially resolved properties of galaxies using 
-imaging data or a combination of imaging data and integral field spectroscopy (IFS) data. **piXedfit** has six modules which can 
-handle all tasks in the analysis of spatially resolved SEDs of a galaxy, including images processing, a spatial-matching between reduced 
-broad-band imaging data with IFS data, pixel binning, SED fitting, and producing visualization plots for the SED fitting results. 
-**piXedfit** is a versatile tool that has been equipped with the multiprocessing module (namely message passing interface or MPI) for 
-efficient analysis of the datasets of a large number of galaxies. Detailed description on **piXedfit** and its performance is presented in `Abdurro'uf et al. (2021) <https://ui.adsabs.harvard.edu/abs/2021arXiv210109717A/abstract>`_.  
+**piXefit** provides a compehensive set of tools for analyzing spatially resolved spectral energy distributions (SEDs) of galaxies and dissecting the spatially resolved properties of the stellar populations and dust in the galaxies. First, it can produce a pixel-matched 3D data cube from an input of a set of mutliband imaging data alone or in combination with an integral field spectroscopy (IFS) data. When IFS data is provided, it can produce a 3D spectrophotometric data cube in which spectra and photometric SEDs are combined on pixel level. Second, it has a unique pixel binning feature that can optimize the S/N ratio of SEDs on spatially resolved scales while retaining the spatial and spectral variations of the SEDs by accounting the similarity of SED shape of pixels in the binning process. This can be expected to reduce biases introduced by the binning process that combines pixels regardless of the variations in their SED shapes. Finally, piXedfit also provides a stand-alone SED fitting capability. It has two options of fitting methods: MCMC and random dense sampling of parameter space (RDSPS). Most of the modules in piXedfit have implemented MPI for parallel computation. A detailed description of piXedfit is presented in `Abdurro'uf et al. (2021) <https://ui.adsabs.harvard.edu/abs/2021arXiv210109717A/abstract>`_. Some examples of practical usages and tutorials can be found at `examples <https://github.com/aabdurrouf/piXedfit/tree/main/examples>`_. 
 
 .. image:: 3Dcube_specphoto.png
 .. image:: demo_pixedfit_ngc309_new_edit.svg
@@ -14,42 +9,14 @@ efficient analysis of the datasets of a large number of galaxies. Detailed descr
 
 Features
 --------
-**piXedfit** has 6 modules that can work independent with each other. For instance, it is possible to use the SED fitting module for fitting any observed SED (either integrated 
-of spaially resolved SED) without the need of using the images processing and pixel binning modules. The 6 modules and their capabilities are the following:
+**piXedfit** has six modules that work independently with each other. For instance, it is possible to use the SED fitting module for fitting either global (integrated) or spatially resolved SEDs of galaxies. Those modules include:
 
-*  **piXedfit_images: image processing**
-   
-   This module can be used for spatial-matching (in resolution and spatial sampling) of multiband imaging data ranging from far-ultraviolet (FUV) to far-infrared (FIR) 
-   (obtained from both the ground-based and spaced-based telescopes) and extract pixel-wise photometric SEDs within the galaxy's region of interest.
-
-*  **piXedfit_spectrophotometric: spatial-matching of imaging data and the IFS data**
-
-   This module can be used for spatial-matching (in spatial resolution and sampling) of a multiband imaging data 
-   (that have been processed by the :mod:`piXedfit_images`) with an IFS data cube and extract pixel-wise 
-   spectrophotometric SEDs within the galaxy's region of interest. For the current version of **piXedfit**, only the IFS data from 
-   the `CALIFA <https://califa.caha.es/>`_ and `MaNGA <https://www.sdss.org/surveys/manga/>`_ can be analyzed by this module.   
-
-*  **piXedfit_bin: pixel binning**
-
-   This module is capable of performing pixel binning, which is a process of combining neighboring pixels to achieve certain set of S/N thresholds.
-   The pixel binning scheme takes into account of the similarity of SED shape among the pixels. This way 
-   important spatial information from pixel scale can still be preserved, while increasing the S/N of the spatially resolved SEDs. 
-   The S/N threshold can be set to every band in the multiband imaging data, not only to a particular band.   
-
-*  **piXedfit_model: generating model SEDs**
-
-   This module can generate model SEDs of galaxies given some parameters. The SED modeling uses the `FSPS <https://github.com/cconroy20/fsps>`_ SPS model 
-   with the `Python-FSPS <http://dfm.io/python-fsps/current/>`_ as the interface to the Python environment. The SED modeling incorporates four main components in the galaxy's SED: stellar emission, nebular emission, dust emission, and the AGN dusty torus emission.      
-
-*  **piXedfit_fitting: performing SED fitting**
-
-   This module is capable of performing SED fitting to input SED, including both spatially resolved SED and integrated SED of galaxies. The input can be 
-   in the form of photometric SED or spetrophotometric SED (i.e., combination of photometry and spectroscopy).
-
-*  **piXedfit_analysis: producing visualization plots for the SED fiting results**
-
-   This module can make three plots for visualization of the fitting results: corner plot (i.e., plot showing 1D and 2D joint posteriors of the parameters space), SED plot, and SFH plot.
-
+*  **piXedfit_images**: image processing.
+*  **piXedfit_spectrophotometric**: spatial and spectral matching between multiband imaging data and IFS data.   
+*  **piXedfit_bin**: pixel binning to optimize S/N of SEDs on spatially resolved scales.  
+*  **piXedfit_model**: generating model SEDs.     
+*  **piXedfit_fitting**: SED fitting on spatially resolved scales or global (integrated) scales.
+*  **piXedfit_analysis**: Analysis of SED fitting result, including visualization plots and retrieving best-fitting parameters.
 
 .. toctree::
    :maxdepth: 2
@@ -97,6 +64,9 @@ of spaially resolved SED) without the need of using the images processing and pi
    piXedfit_analysis
    utils
 
+Citation
+--------
+If you use this code for your research, please reference [Abdurro'uf et al. (2021)](https://ui.adsabs.harvard.edu/abs/2021ApJS..254...15A/abstract).
 
 
 Reference
