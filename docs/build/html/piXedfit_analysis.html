@@ -1,7 +1,7 @@
 
 
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" >
+<html class="writer-html4" lang="en" >
 <head>
   <meta charset="utf-8">
   
@@ -26,11 +26,10 @@
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
-        <script src="_static/jquery.js"></script>
-        <script src="_static/underscore.js"></script>
-        <script src="_static/doctools.js"></script>
-        <script src="_static/language_data.js"></script>
-        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     
     <script type="text/javascript" src="_static/js/theme.js"></script>
 
@@ -184,147 +183,105 @@
             
   <div class="section" id="module-piXedfit.piXedfit_analysis">
 <span id="pixedfit-analysis"></span><h1>piXedfit_analysis<a class="headerlink" href="#module-piXedfit.piXedfit_analysis" title="Permalink to this headline">¶</a></h1>
-<dl class="py function">
+<dl class="function">
 <dt id="piXedfit.piXedfit_analysis.plot_SED">
-<code class="sig-prename descclassname">piXedfit.piXedfit_analysis.</code><code class="sig-name descname">plot_SED</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">name_sampler_fits</span></em>, <em class="sig-param"><span class="n">logscale_x</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">logscale_y</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">xrange</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">yrange</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">wunit</span><span class="o">=</span><span class="default_value">'micron'</span></em>, <em class="sig-param"><span class="n">funit</span><span class="o">=</span><span class="default_value">'erg/s/cm2/A'</span></em>, <em class="sig-param"><span class="n">decompose</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">xticks</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">photo_color</span><span class="o">=</span><span class="default_value">'red'</span></em>, <em class="sig-param"><span class="n">residual_range</span><span class="o">=</span><span class="default_value">[- 1.0, 1.0]</span></em>, <em class="sig-param"><span class="n">fontsize_tick</span><span class="o">=</span><span class="default_value">18</span></em>, <em class="sig-param"><span class="n">fontsize_label</span><span class="o">=</span><span class="default_value">25</span></em>, <em class="sig-param"><span class="n">show_legend</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">loc_legend</span><span class="o">=</span><span class="default_value">4</span></em>, <em class="sig-param"><span class="n">fontsize_legend</span><span class="o">=</span><span class="default_value">18</span></em>, <em class="sig-param"><span class="n">markersize</span><span class="o">=</span><span class="default_value">100</span></em>, <em class="sig-param"><span class="n">lw</span><span class="o">=</span><span class="default_value">2.0</span></em>, <em class="sig-param"><span class="n">name_plot</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#piXedfit.piXedfit_analysis.plot_SED" title="Permalink to this definition">¶</a></dt>
-<dd><p>Function for plotting best-fit model SED from a fitting result.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>name_sampler_fits</strong> – Name of input FITS file containing sampler chains from the MCMC fitting. This FITS file must be output of <code class="xref py py-func docutils literal notranslate"><span class="pre">singleSEDfit()</span></code> or <code class="xref py py-func docutils literal notranslate"><span class="pre">SEDfit_from_binmap()</span></code> functions.</p></li>
-<li><p><strong>logscale_x</strong> – (optional, default: True)
-Flag stating whether the x-axis is plotted in logarithmic scale (value: True) or not (value: False).</p></li>
-<li><p><strong>logscale_y</strong> – (optional, default: True)
-Flag stating whether the y-axis is plotted in logarithmic scale (value: True) or not (value: False).</p></li>
-<li><p><strong>xrange</strong> – (optional, default: None)
-Range in x-axis. The accepted format is: [xmin,xmax]. If xrange=None, the range will be defined based on
-the wavelength range covered by the observed photometric SED.</p></li>
-<li><p><strong>yrange</strong> – (optional, default: None)
-Range in y-axis. The accepted format is: [ymin,ymax]. If yrange=None, the range will be defined based on
-the fluxes range covered by the observed photometric SED.</p></li>
-<li><p><strong>wunit</strong> – (default: ‘micron’)
-Wavelength unit. Options are: (1)0 or ‘angstrom’ for Angstrom unit and (2)1 or ‘micron’ for micron unit.</p></li>
-<li><p><strong>funit</strong> – (default: ‘erg/s/cm2/A’)
-Flux unit. Options are: (1)0 or ‘erg/s/cm2/A’, (2)1 or ‘erg/s/cm2’, and (3)2 or ‘Jy’.</p></li>
-<li><p><strong>decompose</strong> – (default: 1)
-Flag stating whether the best-fit model SED is broken-down into its components (value: 1 or True) or not (value: 0 or False).</p></li>
-<li><p><strong>xticks</strong> – (optional, default: None)
-List of ticks values in x-axis. If None, the default from matplotlib is used. If xticks is not None, the accepted input is in list format
-xticks = []. The unit should be the same as the input wunit.</p></li>
-<li><p><strong>photo_color</strong> – (optional, default: ‘blue’)
-Color of photometric fluxes points (in string). The accepted input is the same as that available in matplotlib.</p></li>
-<li><p><strong>residual_range</strong> – (default: [-1.0,1.0])
-Residuals between observed SED and the median posterior model SED.
-The residual in each band is defined as (f_D - f_M)/f_D, where f_D is flux in observed SED and f_M is flux in model SED.</p></li>
-<li><p><strong>fontsize_tick</strong> – (optional, default: 20)
-Fontsize for the tick. Only relevant if xticks is not None.</p></li>
-<li><p><strong>fontsize_label</strong> – (optional, default: 25)
-Fontsize for the x- and y-axis labels.</p></li>
-<li><p><strong>show_legend</strong> – (optional, default: True)
-Flag whether to show legend or not.</p></li>
-<li><p><strong>loc_legend</strong> – (optional, default: 2)
-Location of the legend.</p></li>
-<li><p><strong>fontsize_legend</strong> – (optional, default: 18)
-Fontsize for the legend.</p></li>
-<li><p><strong>markersize</strong> – (optional, default: 100)
-Size of the maarkers associated with the observed and model SEDs.</p></li>
-<li><p><strong>lw</strong> – (optional, default: 1)
-Line width of the model SEDs.</p></li>
-<li><p><strong>name_plot</strong> – (optional, default: None)
-Name of the output plot. This is optional parameter.</p></li>
+<code class="descclassname">piXedfit.piXedfit_analysis.</code><code class="descname">plot_SED</code><span class="sig-paren">(</span><em>name_sampler_fits, logscale_x=True, logscale_y=True, xrange=None, yrange=None, wunit='micron', funit='erg/s/cm2/A', decompose=1, xticks=None, photo_color='red', residual_range=[-1.0, 1.0], fontsize_tick=18, fontsize_label=25, show_legend=True, loc_legend=4, fontsize_legend=18, markersize=100, lw=2.0, name_plot=None</em><span class="sig-paren">)</span><a class="headerlink" href="#piXedfit.piXedfit_analysis.plot_SED" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function for plotting best-fit (i.e., median posterior) model SED from a result of SED fitting.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>name_sampler_fits</strong> – Name of input FITS file containing result of an SED fitting.</li>
+<li><strong>logscale_x</strong> – Choice for plotting x-axis in logarithmic (True) or linear scale (False).</li>
+<li><strong>logscale_y</strong> – Choice for plotting y-axis in logarithmic (True) or linear scale (False).</li>
+<li><strong>xrange</strong> – Range in x-axis. The accepted format is: [xmin,xmax]. If xrange=None, the range will be defined based on
+the wavelength range of the observed SED.</li>
+<li><strong>yrange</strong> – Range in y-axis. The accepted format is: [ymin,ymax]. If yrange=None, the range will be defined based on
+the fluxes range of the observed SED.</li>
+<li><strong>wunit</strong> – Wavelength unit. Options are: 0 or ‘angstrom’ for Angstrom unit and 1 or ‘micron’ for micron unit.</li>
+<li><strong>funit</strong> – Flux unit. Options are: 0 or ‘erg/s/cm2/A’, 1 or ‘erg/s/cm2’, and 2 or ‘Jy’.</li>
+<li><strong>decompose</strong> – Choice for showing best-fit (i.e., median posterior) model SED broken down into its components (1 or True) or just its total (0 or False).</li>
+<li><strong>xticks</strong> – xticks in list format.</li>
+<li><strong>photo_color</strong> – Color of photometric fluxes data points. The accepted colors are those available in the matplotlib.</li>
+<li><strong>residual_range</strong> – Residuals between observed SED and the median posterior model SED.
+The residual is defined as (D - M)/D, where D represents observed SED, while M is model SED.</li>
+<li><strong>fontsize_tick</strong> – Fontsize for the ticks.</li>
+<li><strong>fontsize_label</strong> – Fontsize for the labels in the x and y axes.</li>
+<li><strong>show_legend</strong> – Option for showing a legend.</li>
+<li><strong>loc_legend</strong> – Location of the legend.</li>
+<li><strong>fontsize_legend</strong> – Fontsize of the legend.</li>
+<li><strong>markersize</strong> – Size for the markers of the observed and model SEDs.</li>
+<li><strong>lw</strong> – (optional, default: 1)
+Line width for the best-fit (i.e., median posterior) model SED.</li>
+<li><strong>name_plot</strong> – Desired name for the output plot. This is optional. If None, a default name will be used.</li>
 </ul>
-</dd>
-</dl>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
-<dl class="py function">
+<dl class="function">
 <dt id="piXedfit.piXedfit_analysis.plot_corner">
-<code class="sig-prename descclassname">piXedfit.piXedfit_analysis.</code><code class="sig-name descname">plot_corner</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">name_sampler_fits</span></em>, <em class="sig-param"><span class="n">params</span><span class="o">=</span><span class="default_value">['log_sfr', 'log_mass', 'log_dustmass', 'log_fagn', 'log_fagn_bol', 'log_tauagn', 'log_qpah', 'log_umin', 'log_gamma', 'dust1', 'dust2', 'dust_index', 'log_mw_age', 'log_age', 'log_t0', 'log_alpha', 'log_beta', 'log_tau', 'logzsol', 'z']</span></em>, <em class="sig-param"><span class="n">label_params</span><span class="o">=</span><span class="default_value">{'dust1': '$\\hat \\tau_{1}$', 'dust2': '$\\hat \\tau_{2}$', 'dust_index': '$n$', 'log_age': 'log($\\mathrm{age}_{\\mathrm{sys}}$)', 'log_alpha': 'log($\\alpha$)', 'log_beta': 'log($\\beta$)', 'log_dustmass': 'log($M_{dust}$)', 'log_fagn': 'log($f_{AGN,*}$)', 'log_fagn_bol': 'log($f_{AGN,bol}$)', 'log_gamma': 'log($\\gamma_{e}$)', 'log_mass': 'log($M_{*}$)', 'log_mw_age': 'log($\\mathrm{age}_{\\mathrm{MW}}$)', 'log_qpah': 'log($Q_{PAH}$)', 'log_sfr': 'log(SFR)', 'log_t0': 'log($t_{0}$)', 'log_tau': 'log($\\tau$)', 'log_tauagn': 'log($\\tau_{AGN}$)', 'log_umin': 'log($U_{min}$)', 'logzsol': 'log($Z/Z_{\\odot}$)', 'z': 'z'}</span></em>, <em class="sig-param"><span class="n">params_ranges</span><span class="o">=</span><span class="default_value">{'dust1': [0.0, 3.0], 'dust2': [0.0, 3.0], 'dust_index': [- 2.2, 0.4], 'log_age': [- 3.0, 1.14], 'log_alpha': [- 2.5, 2.5], 'log_beta': [- 2.5, 2.5], 'log_dustmass': [- 99.0, - 99.0], 'log_fagn': [- 5.0, 0.48], 'log_fagn_bol': [- 99.0, - 99.0], 'log_gamma': [- 3.0, - 0.824], 'log_mass': [- 99.0, - 99.0], 'log_mw_age': [- 99.0, - 99.0], 'log_qpah': [- 1.0, 0.845], 'log_sfr': [- 99.0, - 99.0], 'log_t0': [- 2.0, 1.14], 'log_tau': [- 2.5, 1.5], 'log_tauagn': [0.7, 2.18], 'log_umin': [- 1.0, 1.176], 'logzsol': [- 2.0, 0.5], 'z': [- 99.0, - 99.0]}</span></em>, <em class="sig-param"><span class="n">nbins</span><span class="o">=</span><span class="default_value">12</span></em>, <em class="sig-param"><span class="n">fontsize_label</span><span class="o">=</span><span class="default_value">20</span></em>, <em class="sig-param"><span class="n">fontsize_tick</span><span class="o">=</span><span class="default_value">14</span></em>, <em class="sig-param"><span class="n">name_plot</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#piXedfit.piXedfit_analysis.plot_corner" title="Permalink to this definition">¶</a></dt>
-<dd><p>Function for producing corner plot that shows 1D and joint 2D posterior probability distributions from the fitting results with MCMC method.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>name_sampler_fits</strong> – Name of the input FITS file containing sampler chains from the MCMC fitting.
-This FITS file must be output of <code class="xref py py-func docutils literal notranslate"><span class="pre">singleSEDfit()</span></code> or <code class="xref py py-func docutils literal notranslate"><span class="pre">SEDfit_from_binmap()</span></code> functions.</p></li>
-<li><p><strong>params</strong> – (optional)
-List of parameters that want to be included in the corner plot. This is optional parameter.</p></li>
-<li><p><strong>label_params</strong> – (optional)
-Labels for the parameters in a dictionary format.</p></li>
-<li><p><strong>params_ranges</strong> – (optional)
-Ranges for the parameters to be shown in the plot.</p></li>
-<li><p><strong>nbins</strong> – (default: 12)
-Number of bins to be made in a parameter space when examining the posterior probability function.</p></li>
-<li><p><strong>fontsize_label</strong> – (optional, default: 20)
-Fontsize for the x- and y-axis labels.</p></li>
-<li><p><strong>fontsize_tick</strong> – (optional, default: 14)
-Fontsize for the tick. Only relevant if xticks is not None.</p></li>
-<li><p><strong>name_plot</strong> – (optional, default: None)
-Desired name for the output plot.</p></li>
+<code class="descclassname">piXedfit.piXedfit_analysis.</code><code class="descname">plot_corner</code><span class="sig-paren">(</span><em>name_sampler_fits, params=['log_sfr', 'log_mass', 'log_dustmass', 'log_fagn', 'log_fagn_bol', 'log_tauagn', 'log_qpah', 'log_umin', 'log_gamma', 'dust1', 'dust2', 'dust_index', 'log_mw_age', 'log_age', 'log_t0', 'log_alpha', 'log_beta', 'log_tau', 'logzsol', 'z'], label_params={'dust1': '$\\hat \\tau_{1}$', 'dust2': '$\\hat \\tau_{2}$', 'dust_index': '$n$', 'log_age': 'log($\\mathrm{age}_{\\mathrm{sys}}$)', 'log_alpha': 'log($\\alpha$)', 'log_beta': 'log($\\beta$)', 'log_dustmass': 'log($M_{dust}$)', 'log_fagn': 'log($f_{AGN,*}$)', 'log_fagn_bol': 'log($f_{AGN,bol}$)', 'log_gamma': 'log($\\gamma_{e}$)', 'log_mass': 'log($M_{*}$)', 'log_mw_age': 'log($\\mathrm{age}_{\\mathrm{MW}}$)', 'log_qpah': 'log($Q_{PAH}$)', 'log_sfr': 'log(SFR)', 'log_t0': 'log($t_{0}$)', 'log_tau': 'log($\\tau$)', 'log_tauagn': 'log($\\tau_{AGN}$)', 'log_umin': 'log($U_{min}$)', 'logzsol': 'log($Z/Z_{\\odot}$)', 'z': 'z'}, params_ranges={'dust1': [0.0, 3.0], 'dust2': [0.0, 3.0], 'dust_index': [-2.2, 0.4], 'log_age': [-3.0, 1.14], 'log_alpha': [-2.5, 2.5], 'log_beta': [-2.5, 2.5], 'log_dustmass': [-99.0, -99.0], 'log_fagn': [-5.0, 0.48], 'log_fagn_bol': [-99.0, -99.0], 'log_gamma': [-3.0, -0.824], 'log_mass': [-99.0, -99.0], 'log_mw_age': [-99.0, -99.0], 'log_qpah': [-1.0, 0.845], 'log_sfr': [-99.0, -99.0], 'log_t0': [-2.0, 1.14], 'log_tau': [-2.5, 1.5], 'log_tauagn': [0.7, 2.18], 'log_umin': [-1.0, 1.176], 'logzsol': [-2.0, 0.5], 'z': [-99.0, -99.0]}, nbins=12, fontsize_label=20, fontsize_tick=14, name_plot=None</em><span class="sig-paren">)</span><a class="headerlink" href="#piXedfit.piXedfit_analysis.plot_corner" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function for producing corner plot that shows 1D and joint 2D posterior probability distributions from a fitting result with the MCMC method.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>name_sampler_fits</strong> – Name of input FITS file containing result of an SED fitting.</li>
+<li><strong>params</strong> – List of parameters to be shown in the corner plot. This is optional.
+If default input is used, all the parameters incolved in the SED fitting will be shown in the corner plot.</li>
+<li><strong>label_params</strong> – Labels for the parameters. The accepted format is a python dictionary.</li>
+<li><strong>params_ranges</strong> – Desired ranges for the parameters.</li>
+<li><strong>nbins</strong> – Number of binning in the parameter space when calculating the joint posteriors.</li>
+<li><strong>fontsize_label</strong> – Fontsize of labels in the x and y axes.</li>
+<li><strong>fontsize_tick</strong> – Fontsize for the ticks.</li>
+<li><strong>name_plot</strong> – (optional, default: None)
+Desired name for the output plot.</li>
 </ul>
-</dd>
-<dt class="field-even">Returns name_plot</dt>
-<dd class="field-even"><p>Output plot.</p>
-</dd>
-</dl>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">Returns name_plot:</th></tr>
+<tr class="field-even field"><td>&#160;</td><td class="field-body"><p class="first last">Desired name for the output plot. This is optional. If None, a default name will be used.</p>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
-<dl class="py function">
+<dl class="function">
 <dt id="piXedfit.piXedfit_analysis.plot_sfh_mcmc">
-<code class="sig-prename descclassname">piXedfit.piXedfit_analysis.</code><code class="sig-name descname">plot_sfh_mcmc</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">name_sampler_fits</span></em>, <em class="sig-param"><span class="n">nchains</span><span class="o">=</span><span class="default_value">200</span></em>, <em class="sig-param"><span class="n">del_t</span><span class="o">=</span><span class="default_value">0.05</span></em>, <em class="sig-param"><span class="n">plot_true</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">true_params</span><span class="o">=</span><span class="default_value">{'log_age': - 99.0, 'log_alpha': - 99.0, 'log_beta': - 99.0, 'log_mass': - 99.0, 'log_t0': - 99.0, 'log_tau': - 99.0}</span></em>, <em class="sig-param"><span class="n">true_SFH_lbt</span><span class="o">=</span><span class="default_value">[]</span></em>, <em class="sig-param"><span class="n">true_SFH_sfr</span><span class="o">=</span><span class="default_value">[]</span></em>, <em class="sig-param"><span class="n">lbacktime_max</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">yrange</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">loc_legend</span><span class="o">=</span><span class="default_value">2</span></em>, <em class="sig-param"><span class="n">fontsize_tick</span><span class="o">=</span><span class="default_value">18</span></em>, <em class="sig-param"><span class="n">fontsize_label</span><span class="o">=</span><span class="default_value">25</span></em>, <em class="sig-param"><span class="n">fontsize_legend</span><span class="o">=</span><span class="default_value">26</span></em>, <em class="sig-param"><span class="n">logscale_x</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">logscale_y</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">name_plot</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#piXedfit.piXedfit_analysis.plot_sfh_mcmc" title="Permalink to this definition">¶</a></dt>
-<dd><p>Function for producing SFH plot from fitting result obtained with the MCMC method.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>name_sampler_fits</strong> – Name of the input FITS file containing sampler chains from the MCMC fitting.
-This FITS file must be output of <code class="xref py py-func docutils literal notranslate"><span class="pre">singleSEDfit()</span></code> or <code class="xref py py-func docutils literal notranslate"><span class="pre">SEDfit_from_binmap()</span></code> functions.</p></li>
-<li><p><strong>nchains</strong> – (default: 200)
-Number of randomly-chosen sampler chains to be used for calculating the inferred SFH.</p></li>
-<li><p><strong>del_t</strong> – (default: 0.05)
-Increment in the look-back time (in Gyr) to be used in sampling the SFH.</p></li>
-<li><p><strong>plot_true</strong> – (default: 0)
-A flag stating whether to plot (value:1) the true SFH or not (value:0).</p></li>
-<li><p><strong>true_params</strong> – (optional)
-True values of the true parameters if available and the true SFH is intended to be shown. Only relevant if plot_true=1.
-This should be in dictionary format as shown in the default set.</p></li>
-<li><p><strong>true_SFH_lbt</strong> – (default: [])
-1D array of the true (arbitrary) SFH -the time look-back time component. In case the true SFH is not represented by parametric form.</p></li>
-<li><p><strong>true_SFH_sfr</strong> – (default: [])
-1D arrays of the true (arbitrary) SFH -the SFR component. In case the true SFH is not represented by parametric form.</p></li>
-<li><p><strong>lbacktime_max</strong> – (optional, default: None)
-Maximum look-back time in the SFH plot. If None, the maximum look-back time is defined from the age of universe at the redshift of the galaxy.</p></li>
-<li><p><strong>yrange</strong> – (optional, default: None)
-Range in the y-axis.</p></li>
-<li><p><strong>loc_legend</strong> – (optional, default: 2)
-Where to locate the legend. This is the same numbering as in the <cite>matplotlib</cite>.</p></li>
-<li><p><strong>fontsize_tick</strong> – (optional, default: 18)
-Fontsize for the tick. Only relevant if xticks is not None.</p></li>
-<li><p><strong>fontsize_label</strong> – (optional, default: 25)
-Fontsize for the x- and y-axis labels.</p></li>
-<li><p><strong>fontsize_legend</strong> – (optional, default: 26)
-Fontsize for the legend.</p></li>
-<li><p><strong>logscale_x</strong> – (optional, default: True)
-Flag stating whether the x-axis is plotted in logarithmic scale (value: True) or not (value: False).</p></li>
-<li><p><strong>logscale_y</strong> – (optional, default: True)
-Flag stating whether the y-axis is plotted in logarithmic scale (value: True) or not (value: False).</p></li>
-<li><p><strong>name_plot</strong> – Desired name for the output plot.</p></li>
+<code class="descclassname">piXedfit.piXedfit_analysis.</code><code class="descname">plot_sfh_mcmc</code><span class="sig-paren">(</span><em>name_sampler_fits</em>, <em>nchains=200</em>, <em>del_t=0.05</em>, <em>lbacktime_max=None</em>, <em>yrange=None</em>, <em>loc_legend=2</em>, <em>fontsize_tick=18</em>, <em>fontsize_label=25</em>, <em>fontsize_legend=26</em>, <em>logscale_x=False</em>, <em>logscale_y=False</em>, <em>name_plot=None</em><span class="sig-paren">)</span><a class="headerlink" href="#piXedfit.piXedfit_analysis.plot_sfh_mcmc" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function for producing SFH plot from a fitting result with the MCMC method. This is only applicable for fitting result
+that stores the full sampler chains, which is when we set store_full_samplers=1 in the SED fitting functions.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>name_sampler_fits</strong> – Name of input FITS file containing result of an SED fitting.</li>
+<li><strong>nchains</strong> – Number of randomly chosen sampler chains (from the full samplers stored in the FITS file) to be used for calculating the inferred SFH.</li>
+<li><strong>del_t</strong> – Width of the look back time binning in unit of Gyr for sampling the star formation history (SFH).</li>
+<li><strong>lbacktime_max</strong> – Maximum look-back time in the SFH plot. If None, the maximum look-back time is defined from the age of universe at the redshift of the galaxy.</li>
+<li><strong>yrange</strong> – Range in the y-axis.</li>
+<li><strong>loc_legend</strong> – Where to locate the legend. This is the same as in the <cite>matplotlib</cite>.</li>
+<li><strong>fontsize_tick</strong> – Fontsize for the ticks.</li>
+<li><strong>fontsize_label</strong> – Fontsize of the labels in the x and y axes.</li>
+<li><strong>fontsize_legend</strong> – Fontsize of the legend.</li>
+<li><strong>logscale_x</strong> – Choice for plotting x-axis in logarithmic (True) or linear scale (False).</li>
+<li><strong>logscale_y</strong> – Choice for plotting y-axis in logarithmic (True) or linear scale (False).</li>
 </ul>
-</dd>
-<dt class="field-even">Returns name_plot</dt>
-<dd class="field-even"><p>Name of the output plot.</p>
-</dd>
-<dt class="field-odd">Returns grid_lbt</dt>
-<dd class="field-odd"><p>Look-back time grids in the SFH.</p>
-</dd>
-<dt class="field-even">Returns grid_sfr_p16</dt>
-<dd class="field-even"><p>16th percentile of the SFH.</p>
-</dd>
-<dt class="field-odd">Returns grid_sfr_p50</dt>
-<dd class="field-odd"><p>Median of the SFH.</p>
-</dd>
-<dt class="field-even">Returns grid_sfr_p84</dt>
-<dd class="field-even"><p>84th percentile of the SFH.</p>
-</dd>
-</dl>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">Returns name_plot:</th></tr>
+<tr class="field-even field"><td>&#160;</td><td class="field-body"><p class="first last">Desired name for the output plot. This is optional. If None, a default name will be used.</p>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 </div>

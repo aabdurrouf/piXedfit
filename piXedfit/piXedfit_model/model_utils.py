@@ -1,7 +1,7 @@
 import numpy as np
 from math import pow, pi
 import sys, os
-import fsps
+#import fsps
 from operator import itemgetter
 from astropy.io import fits
 from scipy.interpolate import interp1d
@@ -128,6 +128,9 @@ def calc_mw_age(sfh_form=4,tau=0,t0=0,alpha=0,beta=0,age=0,formed_mass=0,sfh_t=[
 		sys.exit()
 
 	mod_mw_age = np.sum(sfh_mass*sfh_age)/np.sum(sfh_mass)
+
+	if np.isnan(mod_mw_age)==True or np.isinf(mod_mw_age)==True or mod_mw_age==0.0:
+		return age
 
 	return mod_mw_age
 
@@ -584,6 +587,7 @@ def spec_given_SFH_ZH(lbt=[],SFH_sfr=[],ZH_logzsol=[],z=0.001,cosmo='flat_LCDM',
 	"""
 	
 	# calling FSPS:
+	import fsps
 	sp = fsps.StellarPopulation(zcontinuous=1, imf_type=imf)
 
 	sp.params['imf_type'] = imf
@@ -662,6 +666,7 @@ def spec_given_ages_mass_Z(grid_age=[],grid_mass=[],grid_logzsol=[],z=0.001,cosm
 	"""
 
 	# calling FSPS:
+	import fsps
 	sp = fsps.StellarPopulation(zcontinuous=1, imf_type=imf)
 
 	sp.params['imf_type'] = imf
@@ -898,6 +903,7 @@ def breakdown_CSP_into_SSP(sp=None,imf_type=1,logzsol=0.0,CSP_age=None,SFH_lbt=[
 	#### ====================================================== #####
 	# calling FSPS:
 	if sp == None:
+		import fsps
 		sp = fsps.StellarPopulation(zcontinuous=1, imf_type=imf_type)
 
 	# dust emission:
@@ -990,6 +996,7 @@ def breakdown_CSP_into_SSP_restframe(sp=None,imf_type=1,logzsol=0.0,CSP_age=None
 	#### ====================================================== #####
 	# calling FSPS:
 	if sp == None:
+		import fsps
 		sp = fsps.StellarPopulation(zcontinuous=1, imf_type=imf_type)
 
 	# dust emission switch:

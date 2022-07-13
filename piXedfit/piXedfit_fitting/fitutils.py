@@ -41,6 +41,12 @@ def write_arbitprior(name,values,prob):
 		file_out.write("%e %e\n" % (values[ii],prob[ii]))
 	file_out.close()
 
+def write_joint_prior(name,values1,values2):
+	file_out = open(name,"w")
+	for ii in range(0,len(values1)):
+		file_out.write("%e %e\n" % (values1[ii],values2[ii]))
+	file_out.close()
+
 def write_conf_file(name,params_ranges,priors_coll,nwalkers,nsteps,nsteps_cut,nproc,cosmo,
 	H0,Om0,fit_method,likelihood,dof,models_spec,gal_z,nrands_z,add_igm_absorption,igm_type,
 	perc_chi2,initfit_nmodels_mcmc,spec_sigma=None,poly_order=None,del_wave_nebem=None,
@@ -147,7 +153,9 @@ def write_conf_file(name,params_ranges,priors_coll,nwalkers,nsteps,nsteps_cut,np
 		elif form == 'arbitrary':
 			file_out.write("pr_form_%s_arbit_name %s\n" % (param,priors[2]))
 			flg_write.append(priors[2])
-
+		elif form == 'joint_with_mass':
+			file_out.write("pr_form_%s_jtmass_name %s\n" % (param,priors[2]))
+			file_out.write("pr_form_%s_jtmass_scale %s\n" % (param,priors[3]))
 	file_out.close()
 
 	return flg_write

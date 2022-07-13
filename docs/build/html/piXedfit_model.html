@@ -1,7 +1,7 @@
 
 
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" >
+<html class="writer-html4" lang="en" >
 <head>
   <meta charset="utf-8">
   
@@ -26,11 +26,10 @@
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
-        <script src="_static/jquery.js"></script>
-        <script src="_static/underscore.js"></script>
-        <script src="_static/doctools.js"></script>
-        <script src="_static/language_data.js"></script>
-        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     
     <script type="text/javascript" src="_static/js/theme.js"></script>
 
@@ -184,181 +183,201 @@
             
   <div class="section" id="module-piXedfit.piXedfit_model">
 <span id="pixedfit-model"></span><span id="api-model"></span><h1>piXedfit_model<a class="headerlink" href="#module-piXedfit.piXedfit_model" title="Permalink to this headline">¶</a></h1>
-<dl class="py function">
-<dt id="piXedfit.piXedfit_model.generate_modelSED_photo">
-<code class="sig-prename descclassname">piXedfit.piXedfit_model.</code><code class="sig-name descname">generate_modelSED_photo</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">sp</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">imf_type</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">duste_switch</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">add_neb_emission</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">dust_law</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">sfh_form</span><span class="o">=</span><span class="default_value">4</span></em>, <em class="sig-param"><span class="n">add_agn</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">filters</span><span class="o">=</span><span class="default_value">[]</span></em>, <em class="sig-param"><span class="n">add_igm_absorption</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">igm_type</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">cosmo</span><span class="o">=</span><span class="default_value">'flat_LCDM'</span></em>, <em class="sig-param"><span class="n">H0</span><span class="o">=</span><span class="default_value">70.0</span></em>, <em class="sig-param"><span class="n">Om0</span><span class="o">=</span><span class="default_value">0.3</span></em>, <em class="sig-param"><span class="n">gas_logu</span><span class="o">=</span><span class="default_value">- 2.0</span></em>, <em class="sig-param"><span class="n">params_val</span><span class="o">=</span><span class="default_value">{'dust1': 0.5, 'dust2': 0.5, 'dust_index': - 0.7, 'log_age': 1.0, 'log_alpha': 0.1, 'log_beta': 0.1, 'log_fagn': - 3.0, 'log_gamma': - 2.0, 'log_mass': 0.0, 'log_qpah': 0.54, 'log_t0': 0.4, 'log_tau': 0.4, 'log_tauagn': 1.0, 'log_umin': 0.0, 'logzsol': 0.0, 'z': 0.001}</span></em><span class="sig-paren">)</span><a class="headerlink" href="#piXedfit.piXedfit_model.generate_modelSED_photo" title="Permalink to this definition">¶</a></dt>
-<dd><p>Function for generating a model photometric SED given some parameters.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>sp</strong> – (optional, default: None)
-Initialization of FSPS, such as <cite>sp=fsps.StellarPopulation()</cite>.</p></li>
-<li><p><strong>imf_type</strong> – (default: 1)
-Choice for the IMF. Choices are: (1)0 for Salpeter(1955), (2)1 for Chabrier(2003), and (3)2 for Kroupa(2001).</p></li>
-<li><p><strong>duste_switch</strong> – (default: 0)
-Choice for turning on (value: 1) or off (value: 0) the dust emission modeling.</p></li>
-<li><p><strong>add_neb_emission</strong> – (default: 1)
-Choice for turning on (1) or off (0) the nebular emission modeling.</p></li>
-<li><p><strong>dust_law</strong> – (default: 1)
-Choice for the dust attenuation law. Options are: (a) 0 for Charlot &amp; Fall (2000), (b) 1 for Calzetti et al. (2000).</p></li>
-<li><p><strong>sfh_form</strong> – (default: 4)
-Choice for the parametric SFH model. Options are: (a) 0 for exponentially declining or tau model, (b) 1 for delayed tau model, (c) 2 for log normal model, (d) 3 for Gaussian form, (e) 4 for double power-law model.</p></li>
-<li><p><strong>add_agn</strong> – (default: 0)
-Choice for turning on (value: 1) or off (value: 0) the AGN dusty torus modeling.</p></li>
-<li><p><strong>filters</strong> – List of the photometric filters. This is mandatory parameter, in other word it should not empty. The accepted naming for the filters can be seen using <code class="xref py py-func docutils literal notranslate"><span class="pre">list_filters()</span></code> function in the <code class="xref py py-mod docutils literal notranslate"><span class="pre">utils.filtering</span></code> module.</p></li>
-<li><p><strong>add_igm_absorption</strong> – (default: 0)
-Choice for turning on (value: 1) or off (value: 0) the IGM absorption modeling.</p></li>
-<li><p><strong>igm_type</strong> – (default: 0)
-Choice for the IGM absorption model. Options are: (a) 0 for Madau (1995), and (b) 1 for Inoue+(2014).</p></li>
-<li><p><strong>cosmo</strong> – (default: ‘flat_LCDM’)
-Choices for the cosmology. Options are: (1)’flat_LCDM’ or 0, (2)’WMAP5’ or 1, (3)’WMAP7’ or 2, (4)’WMAP9’ or 3, (5)’Planck13’ or 4, (6)’Planck15’ or 5.
-These options are similar to the choices available in the <a class="reference external" href="https://docs.astropy.org/en/stable/cosmology/#built-in-cosmologies">Astropy Cosmology</a> package.</p></li>
-<li><p><strong>H0</strong> – (default: 70.0)
-The Hubble constant at z=0. Only relevant when cosmo=’flat_LCDM’ is chosen.</p></li>
-<li><p><strong>Om0</strong> – (default: 0.3)
-The Omega matter at z=0.0. Only relevant when cosmo=’flat_LCDM’ is chosen.</p></li>
-<li><p><strong>gas_logu</strong> – (default: -2.0)
-Gas ionization parameter in logarithmic scale.</p></li>
-<li><p><strong>param_val</strong> – Dictionary of the input values of the parameters. Should folllow the structure given in the default set. Available free parameters are the same as those tabulated in Table 1 of <a class="reference external" href="https://ui.adsabs.harvard.edu/abs/2021arXiv210109717A/abstract">Abdurro’uf et al. (2021)</a>.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns photo_SED</dt>
-<dd class="field-even"><p>Arrays containing output model photometric SED. It consists of photo_SED[‘wave’] which is the central wavelengths of the photometric filters and photo_SED[‘flux’] which is the photometric fluxes.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt id="piXedfit.piXedfit_model.generate_modelSED_spec">
-<code class="sig-prename descclassname">piXedfit.piXedfit_model.</code><code class="sig-name descname">generate_modelSED_spec</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">sp</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">imf_type</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">duste_switch</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">add_neb_emission</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">dust_law</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">sfh_form</span><span class="o">=</span><span class="default_value">4</span></em>, <em class="sig-param"><span class="n">add_agn</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">add_igm_absorption</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">igm_type</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">cosmo</span><span class="o">=</span><span class="default_value">'flat_LCDM'</span></em>, <em class="sig-param"><span class="n">H0</span><span class="o">=</span><span class="default_value">70.0</span></em>, <em class="sig-param"><span class="n">Om0</span><span class="o">=</span><span class="default_value">0.3</span></em>, <em class="sig-param"><span class="n">gas_logu</span><span class="o">=</span><span class="default_value">- 2.0</span></em>, <em class="sig-param"><span class="n">params_val</span><span class="o">=</span><span class="default_value">{'dust1': 0.5, 'dust2': 0.5, 'dust_index': - 0.7, 'log_age': 1.0, 'log_alpha': 0.1, 'log_beta': 0.1, 'log_fagn': - 3.0, 'log_gamma': - 2.0, 'log_mass': 0.0, 'log_qpah': 0.54, 'log_t0': 0.4, 'log_tau': 0.4, 'log_tauagn': 1.0, 'log_umin': 0.0, 'logzsol': 0.0, 'z': 0.001}</span></em><span class="sig-paren">)</span><a class="headerlink" href="#piXedfit.piXedfit_model.generate_modelSED_spec" title="Permalink to this definition">¶</a></dt>
-<dd><p>Function for generating a model spectroscopic SED given some parameters.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>sp</strong> – (optional, default: None)
-Initialization of FSPS, such as <cite>sp=fsps.StellarPopulation()</cite>.</p></li>
-<li><p><strong>imf_type</strong> – (default: 1)
-Choice for the IMF. Choices are: (1)0 for Salpeter(1955), (2)1 for Chabrier(2003), and (3)2 for Kroupa(2001).</p></li>
-<li><p><strong>duste_switch</strong> – (default: 0)
-Choice for turning on (value: 1) or off (value: 0) the dust emission modeling.</p></li>
-<li><p><strong>add_neb_emission</strong> – (default: 1)
-Choice for turning on (1) or off (0) the nebular emission modeling.</p></li>
-<li><p><strong>dust_law</strong> – (default: 1)
-Choice for the dust attenuation law. Options are: (a) 0 for Charlot &amp; Fall (2000), (b) 1 for Calzetti et al. (2000).</p></li>
-<li><p><strong>sfh_form</strong> – (default: 4)
-Choice for the parametric SFH model. Options are: (a) 0 for exponentially declining or tau model, (b) 1 for delayed tau model, (c) 2 for log normal model, (d) 3 for Gaussian form, (e) 4 for double power-law model.</p></li>
-<li><p><strong>add_agn</strong> – (default: 0)
-Choice for turning on (value: 1) or off (value: 0) the AGN dusty torus modeling.</p></li>
-<li><p><strong>add_igm_absorption</strong> – (default: 0)
-Choice for turning on (value: 1) or off (value: 0) the IGM absorption modeling.</p></li>
-<li><p><strong>igm_type</strong> – (default: 0)
-Choice for the IGM absorption model. Options are: (a) 0 for Madau (1995), and (b) 1 for Inoue+(2014).</p></li>
-<li><p><strong>cosmo</strong> – <p>(default: ‘flat_LCDM’)
-Choices for the cosmology. Options are: (1)’flat_LCDM’ or 0, (2)’WMAP5’ or 1, (3)’WMAP7’ or 2, (4)’WMAP9’ or 3, (5)’Planck13’ or 4, (6)’Planck15’ or 5.
-These options are similar to the choices available in the <a class="reference external" href="https://docs.astropy.org/en/stable/cosmology/#built-in-cosmologies">Astropy Cosmology</a> package.</p>
-</p></li>
-<li><p><strong>H0</strong> – (default: 70.0)
-The Hubble constant at z=0. Only relevant when cosmo=’flat_LCDM’ is chosen.</p></li>
-<li><p><strong>Om0</strong> – (default: 0.3)
-The Omega matter at z=0.0. Only relevant when cosmo=’flat_LCDM’ is chosen.</p></li>
-<li><p><strong>gas_logu</strong> – (default: -2.0)
-Gas ionization parameter in logarithmic scale.</p></li>
-<li><p><strong>param_val</strong> – <p>Dictionary of the input values of the parameters. Should folllow the structure given in the default set. Available free parameters are the same as those tabulated in Table 1 of <a class="reference external" href="https://ui.adsabs.harvard.edu/abs/2021arXiv210109717A/abstract">Abdurro’uf et al. (2021)</a>.</p>
-</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns spec_SED</dt>
-<dd class="field-even"><p>Arrays containing output model spectrum. It consists of spec_SED[‘wave’] which is the wavelengths grid and spec_SED[‘flux’] which is the fluxes or the spectrum.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
+<dl class="function">
 <dt id="piXedfit.piXedfit_model.save_models_photo">
-<code class="sig-prename descclassname">piXedfit.piXedfit_model.</code><code class="sig-name descname">save_models_photo</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">filters</span><span class="o">=</span><span class="default_value">[]</span></em>, <em class="sig-param"><span class="n">gal_z</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">imf_type</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">sfh_form</span><span class="o">=</span><span class="default_value">4</span></em>, <em class="sig-param"><span class="n">dust_law</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">add_igm_absorption</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">igm_type</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">duste_switch</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">add_neb_emission</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">add_agn</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">gas_logu</span><span class="o">=</span><span class="default_value">- 2.0</span></em>, <em class="sig-param"><span class="n">nmodels</span><span class="o">=</span><span class="default_value">100000</span></em>, <em class="sig-param"><span class="n">params_range</span><span class="o">=</span><span class="default_value">{'dust1': [0.0, 4.0], 'dust2': [0.0, 4.0], 'dust_index': [- 2.2, 0.4], 'log_age': [- 3.0, 1.14], 'log_alpha': [- 2.0, 2.0], 'log_beta': [- 2.0, 2.0], 'log_fagn': [- 5.0, 0.48], 'log_gamma': [- 4.0, 0.0], 'log_qpah': [- 3.0, 1.0], 'log_t0': [- 1.0, 1.14], 'log_tau': [- 1.0, 1.5], 'log_tauagn': [0.7, 2.18], 'log_umin': [- 1.0, 1.39], 'logzsol': [- 2.0, 0.2]}</span></em>, <em class="sig-param"><span class="n">nproc</span><span class="o">=</span><span class="default_value">10</span></em>, <em class="sig-param"><span class="n">cosmo</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">H0</span><span class="o">=</span><span class="default_value">70.0</span></em>, <em class="sig-param"><span class="n">Om0</span><span class="o">=</span><span class="default_value">0.3</span></em>, <em class="sig-param"><span class="n">name_out_fits</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#piXedfit.piXedfit_model.save_models_photo" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">piXedfit.piXedfit_model.</code><code class="descname">save_models_photo</code><span class="sig-paren">(</span><em>filters=[], gal_z=None, imf_type=1, sfh_form=4, dust_law=1, add_igm_absorption=0, igm_type=0, duste_switch=0, add_neb_emission=1, add_agn=0, gas_logu=-2.0, nmodels=100000, params_range={'dust1': [0.0, 4.0], 'dust2': [0.0, 4.0], 'dust_index': [-2.2, 0.4], 'log_age': [-3.0, 1.14], 'log_alpha': [-2.0, 2.0], 'log_beta': [-2.0, 2.0], 'log_fagn': [-5.0, 0.48], 'log_gamma': [-4.0, 0.0], 'log_qpah': [-3.0, 1.0], 'log_t0': [-1.0, 1.14], 'log_tau': [-1.0, 1.5], 'log_tauagn': [0.7, 2.18], 'log_umin': [-1.0, 1.39], 'logzsol': [-2.0, 0.2]}, nproc=10, cosmo=0, H0=70.0, Om0=0.3, name_out_fits=None</em><span class="sig-paren">)</span><a class="headerlink" href="#piXedfit.piXedfit_model.save_models_photo" title="Permalink to this definition">¶</a></dt>
 <dd><p>Function for generating pre-calculated model SEDs and store them into a FITS file. This is supposed to be created one for one redshift (i.e, one galaxy or a group of galaxies with similar redshift).
 This FITS file can be used in fitting all the spatial bins in the galaxy (or a group of galaxies with similar redshift).</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>filters</strong> – (default: [])
-Set of photometric filters. The accepted naming for the filters can be seen using <code class="xref py py-func docutils literal notranslate"><span class="pre">list_filters()</span></code> function in the <code class="xref py py-mod docutils literal notranslate"><span class="pre">utils.filtering</span></code> module.</p></li>
-<li><p><strong>gal_z</strong> – Galaxy’s redshift. This parameter is mandatory.</p></li>
-<li><p><strong>imf_type</strong> – (default: 1)
-Choice for the IMF. Options are: (1)0 for Salpeter(1955), (2)1 for Chabrier(2003), and (3)2 for Kroupa(2001).</p></li>
-<li><p><strong>sfh_form</strong> – (default: 4)
-Choice for the parametric SFH model. Options are: (a) 0 for exponentially declining or tau model, (b) 1 for delayed tau model, (c) 2 for log normal model, (d) 3 for Gaussian form, (e) 4 for double power-law model.</p></li>
-<li><p><strong>dust_law</strong> – (default: 1)
-Choice for the dust attenuation law. Options are: (a) 0 for Charlot &amp; Fall (2000), (b) 1 for Calzetti et al. (2000).</p></li>
-<li><p><strong>add_igm_absorption</strong> – (default: 0)
-Switch for the IGM absorption. Options are: (1)0 means turn off, and (2)1 means turn on.</p></li>
-<li><p><strong>igm_type</strong> – (default: 0)
-Choice for the IGM absorption model. Options are: (a) 0 for Madau (1995), and (b) 1 for Inoue+(2014).</p></li>
-<li><p><strong>duste_switch</strong> – (default: 0)
-Switch for the dust emission modeling. Options are: (1)0 means turn off, and (2)1 means turn on.</p></li>
-<li><p><strong>add_neb_emission</strong> – (default: 1)
-Switch for the nebular emission modeling. Options are: (1)0 means turn off, and (2)1 means turn on.</p></li>
-<li><p><strong>add_agn</strong> – (default: 0)
-Switch for the AGN dusty torus emission modeling. Options are: (1)0 means turn off, and (2)1 means turn on.</p></li>
-<li><p><strong>gas_logu</strong> – (default: -2.0)
-Gas ionization parameter in log scale.</p></li>
-<li><p><strong>nmodels</strong> – (default: 100000)
-Number of model SEDs to be generated.</p></li>
-<li><p><strong>params_range</strong> – Ranges of parameters. The format of this input argument is python dictionary.</p></li>
-<li><p><strong>nproc</strong> – (default: 10)
-Number of processors (cores) to be used in the calculation.</p></li>
-<li><p><strong>cosmo</strong> – <p>(default: 0)
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>filters</strong> – (default: [])
+Set of photometric filters. The accepted naming for the filters can be seen using <code class="xref py py-func docutils literal notranslate"><span class="pre">list_filters()</span></code> function in the <code class="xref py py-mod docutils literal notranslate"><span class="pre">utils.filtering</span></code> module.</li>
+<li><strong>gal_z</strong> – Galaxy’s redshift. This parameter is mandatory.</li>
+<li><strong>imf_type</strong> – (default: 1)
+Choice for the IMF. Options are: (1)0 for Salpeter(1955), (2)1 for Chabrier(2003), and (3)2 for Kroupa(2001).</li>
+<li><strong>sfh_form</strong> – (default: 4)
+Choice for the parametric SFH model. Options are: (a) 0 for exponentially declining or tau model, (b) 1 for delayed tau model, (c) 2 for log normal model, (d) 3 for Gaussian form, (e) 4 for double power-law model.</li>
+<li><strong>dust_law</strong> – (default: 1)
+Choice for the dust attenuation law. Options are: (a) 0 for Charlot &amp; Fall (2000), (b) 1 for Calzetti et al. (2000).</li>
+<li><strong>add_igm_absorption</strong> – (default: 0)
+Switch for the IGM absorption. Options are: (1)0 means turn off, and (2)1 means turn on.</li>
+<li><strong>igm_type</strong> – (default: 0)
+Choice for the IGM absorption model. Options are: (a) 0 for Madau (1995), and (b) 1 for Inoue+(2014).</li>
+<li><strong>duste_switch</strong> – (default: 0)
+Switch for the dust emission modeling. Options are: (1)0 means turn off, and (2)1 means turn on.</li>
+<li><strong>add_neb_emission</strong> – (default: 1)
+Switch for the nebular emission modeling. Options are: (1)0 means turn off, and (2)1 means turn on.</li>
+<li><strong>add_agn</strong> – (default: 0)
+Switch for the AGN dusty torus emission modeling. Options are: (1)0 means turn off, and (2)1 means turn on.</li>
+<li><strong>gas_logu</strong> – (default: -2.0)
+Gas ionization parameter in log scale.</li>
+<li><strong>nmodels</strong> – (default: 100000)
+Number of model SEDs to be generated.</li>
+<li><strong>params_range</strong> – Ranges of parameters. The format of this input argument is python dictionary.</li>
+<li><strong>nproc</strong> – (default: 10)
+Number of processors (cores) to be used in the calculation.</li>
+<li><strong>cosmo</strong> – (default: 0)
 Choices for the cosmology. Options are: (1)’flat_LCDM’ or 0, (2)’WMAP5’ or 1, (3)’WMAP7’ or 2, (4)’WMAP9’ or 3, (5)’Planck13’ or 4, (6)’Planck15’ or 5.
-These options are similar to the choices available in the <a class="reference external" href="https://docs.astropy.org/en/stable/cosmology/#built-in-cosmologies">Astropy Cosmology</a> package.</p>
-</p></li>
-<li><p><strong>H0</strong> – (default: 70.0)
-The Hubble constant at z=0. Only relevant when cosmo=’flat_LCDM’ is chosen.</p></li>
-<li><p><strong>Om0</strong> – (default: 0.3)
-The Omega matter at z=0.0. Only relevant when cosmo=’flat_LCDM’ is chosen.</p></li>
-<li><p><strong>name_out_fits</strong> – (optional, default:None)
-Desired name for the output FITS file.</p></li>
+These options are similar to the choices available in the <a class="reference external" href="https://docs.astropy.org/en/stable/cosmology/#built-in-cosmologies">Astropy Cosmology</a> package.</li>
+<li><strong>H0</strong> – (default: 70.0)
+The Hubble constant at z=0. Only relevant when cosmo=’flat_LCDM’ is chosen.</li>
+<li><strong>Om0</strong> – (default: 0.3)
+The Omega matter at z=0.0. Only relevant when cosmo=’flat_LCDM’ is chosen.</li>
+<li><strong>name_out_fits</strong> – (optional, default:None)
+Desired name for the output FITS file.</li>
 </ul>
-</dd>
-<dt class="field-even">Returns name_out_fits</dt>
-<dd class="field-even"><p>Output FITS file.</p>
-</dd>
-</dl>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">Returns name_out_fits:</th></tr>
+<tr class="field-even field"><td>&#160;</td><td class="field-body"><p class="first last">Output FITS file.</p>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
-<dl class="py function">
+<dl class="function">
 <dt id="piXedfit.piXedfit_model.save_models_rest_spec">
-<code class="sig-prename descclassname">piXedfit.piXedfit_model.</code><code class="sig-name descname">save_models_rest_spec</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">imf_type</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">sfh_form</span><span class="o">=</span><span class="default_value">4</span></em>, <em class="sig-param"><span class="n">dust_law</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">duste_switch</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">add_neb_emission</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">add_agn</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">gas_logu</span><span class="o">=</span><span class="default_value">- 2.0</span></em>, <em class="sig-param"><span class="n">nmodels</span><span class="o">=</span><span class="default_value">100000</span></em>, <em class="sig-param"><span class="n">params_range</span><span class="o">=</span><span class="default_value">{'dust1': [0.0, 4.0], 'dust2': [0.0, 4.0], 'dust_index': [- 2.2, 0.4], 'log_age': [- 3.0, 1.14], 'log_alpha': [- 2.0, 2.0], 'log_beta': [- 2.0, 2.0], 'log_fagn': [- 5.0, 0.48], 'log_gamma': [- 4.0, 0.0], 'log_qpah': [- 3.0, 1.0], 'log_t0': [- 1.0, 1.14], 'log_tau': [- 1.0, 1.5], 'log_tauagn': [0.7, 2.18], 'log_umin': [- 1.0, 1.39], 'logzsol': [- 2.0, 0.2]}</span></em>, <em class="sig-param"><span class="n">nproc</span><span class="o">=</span><span class="default_value">10</span></em>, <em class="sig-param"><span class="n">name_out</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#piXedfit.piXedfit_model.save_models_rest_spec" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">piXedfit.piXedfit_model.</code><code class="descname">save_models_rest_spec</code><span class="sig-paren">(</span><em>imf_type=1, sfh_form=4, dust_law=1, duste_switch=0, add_neb_emission=1, add_agn=0, gas_logu=-2.0, nmodels=100000, params_range={'dust1': [0.0, 4.0], 'dust2': [0.0, 4.0], 'dust_index': [-2.2, 0.4], 'log_age': [-1.0, 1.14], 'log_alpha': [-2.0, 2.0], 'log_beta': [-2.0, 2.0], 'log_fagn': [-5.0, 0.48], 'log_gamma': [-4.0, 0.0], 'log_qpah': [-3.0, 1.0], 'log_t0': [-1.0, 1.14], 'log_tau': [-1.0, 1.5], 'log_tauagn': [0.7, 2.18], 'log_umin': [-1.0, 1.39], 'logzsol': [-2.0, 0.2]}, nproc=10, name_out=None</em><span class="sig-paren">)</span><a class="headerlink" href="#piXedfit.piXedfit_model.save_models_rest_spec" title="Permalink to this definition">¶</a></dt>
 <dd><p>Function for generating rest-frame model spectra.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>imf_type</strong> – (default: 1)
-Choice for the IMF. Options are: (1)0 for Salpeter(1955), (2)1 for Chabrier(2003), and (3)2 for Kroupa(2001).</p></li>
-<li><p><strong>sfh_form</strong> – (default: 4)
-Choice for the parametric SFH model. Options are: (a) 0 for exponentially declining or tau model, (b) 1 for delayed tau model, (c) 2 for log normal model, (d) 3 for Gaussian form, (e) 4 for double power-law model.</p></li>
-<li><p><strong>dust_law</strong> – (default: 1)
-Choice for the dust attenuation law. Options are: (a) 0 for Charlot &amp; Fall (2000), (b) 1 for Calzetti et al. (2000).</p></li>
-<li><p><strong>duste_switch</strong> – (default: 0)
-Switch for the dust emission modeling. Options are: (1)0 means turn off, and (2)1 means turn on.</p></li>
-<li><p><strong>add_neb_emission</strong> – (default: 1)
-Switch for the nebular emission modeling. Options are: (1)0 means turn off, and (2)1 means turn on.</p></li>
-<li><p><strong>add_agn</strong> – (default: 0)
-Switch for the AGN dusty torus emission modeling. Options are: (1)0 means turn off, and (2)1 means turn on.</p></li>
-<li><p><strong>gas_logu</strong> – (default: -2.0)
-Gas ionization parameter in log scale.</p></li>
-<li><p><strong>nmodels</strong> – (default: 100000)
-Number of model SEDs to be generated.</p></li>
-<li><p><strong>params_range</strong> – Ranges of parameters. The format of this input argument is python dictionary.</p></li>
-<li><p><strong>nproc</strong> – (default: 10)
-Number of processors (cores) to be used in the calculation.</p></li>
-<li><p><strong>name_out</strong> – (optional, default:None)
-Desired name for the output FITS file.</p></li>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>imf_type</strong> – (default: 1)
+Choice for the IMF. Options are: (1)0 for Salpeter(1955), (2)1 for Chabrier(2003), and (3)2 for Kroupa(2001).</li>
+<li><strong>sfh_form</strong> – (default: 4)
+Choice for the parametric SFH model. Options are: (a) 0 for exponentially declining or tau model, (b) 1 for delayed tau model, (c) 2 for log normal model, (d) 3 for Gaussian form, (e) 4 for double power-law model.</li>
+<li><strong>dust_law</strong> – (default: 1)
+Choice for the dust attenuation law. Options are: (a) 0 for Charlot &amp; Fall (2000), (b) 1 for Calzetti et al. (2000).</li>
+<li><strong>duste_switch</strong> – (default: 0)
+Switch for the dust emission modeling. Options are: (1)0 means turn off, and (2)1 means turn on.</li>
+<li><strong>add_neb_emission</strong> – (default: 1)
+Switch for the nebular emission modeling. Options are: (1)0 means turn off, and (2)1 means turn on.</li>
+<li><strong>add_agn</strong> – (default: 0)
+Switch for the AGN dusty torus emission modeling. Options are: (1)0 means turn off, and (2)1 means turn on.</li>
+<li><strong>gas_logu</strong> – (default: -2.0)
+Gas ionization parameter in log scale.</li>
+<li><strong>nmodels</strong> – (default: 100000)
+Number of model SEDs to be generated.</li>
+<li><strong>params_range</strong> – Ranges of parameters. The format of this input argument is python dictionary.</li>
+<li><strong>nproc</strong> – (default: 10)
+Number of processors (cores) to be used in the calculation.</li>
+<li><strong>name_out</strong> – (optional, default:None)
+Desired name for the output FITS file.</li>
 </ul>
-</dd>
-<dt class="field-even">Returns name_out</dt>
-<dd class="field-even"><p>Output FITS file.</p>
-</dd>
-</dl>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">Returns name_out:</th></tr>
+<tr class="field-even field"><td>&#160;</td><td class="field-body"><p class="first last">Output FITS file.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="piXedfit.piXedfit_model.generate_modelSED_spec">
+<code class="descclassname">piXedfit.piXedfit_model.</code><code class="descname">generate_modelSED_spec</code><span class="sig-paren">(</span><em>sp=None</em>, <em>imf_type=1</em>, <em>duste_switch=1</em>, <em>add_neb_emission=1</em>, <em>dust_law=1</em>, <em>sfh_form=4</em>, <em>add_agn=0</em>, <em>add_igm_absorption=0</em>, <em>igm_type=0</em>, <em>cosmo='flat_LCDM'</em>, <em>H0=70.0</em>, <em>Om0=0.3</em>, <em>gas_logu=-2.0</em>, <em>params_val={'dust1': 0.5</em>, <em>'dust2': 0.5</em>, <em>'dust_index': -0.7</em>, <em>'log_age': 1.0</em>, <em>'log_alpha': 0.1</em>, <em>'log_beta': 0.1</em>, <em>'log_fagn': -3.0</em>, <em>'log_gamma': -2.0</em>, <em>'log_mass': 0.0</em>, <em>'log_qpah': 0.54</em>, <em>'log_t0': 0.4</em>, <em>'log_tau': 0.4</em>, <em>'log_tauagn': 1.0</em>, <em>'log_umin': 0.0</em>, <em>'logzsol': 0.0</em>, <em>'z': 0.001}</em><span class="sig-paren">)</span><a class="headerlink" href="#piXedfit.piXedfit_model.generate_modelSED_spec" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function for generating a model spectroscopic SED given some parameters.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>sp</strong> – (optional, default: None)
+Initialization of FSPS, such as <cite>sp=fsps.StellarPopulation()</cite>.</li>
+<li><strong>imf_type</strong> – (default: 1)
+Choice for the IMF. Choices are: (1)0 for Salpeter(1955), (2)1 for Chabrier(2003), and (3)2 for Kroupa(2001).</li>
+<li><strong>duste_switch</strong> – (default: 0)
+Choice for turning on (value: 1) or off (value: 0) the dust emission modeling.</li>
+<li><strong>add_neb_emission</strong> – (default: 1)
+Choice for turning on (1) or off (0) the nebular emission modeling.</li>
+<li><strong>dust_law</strong> – (default: 1)
+Choice for the dust attenuation law. Options are: (a) 0 for Charlot &amp; Fall (2000), (b) 1 for Calzetti et al. (2000).</li>
+<li><strong>sfh_form</strong> – (default: 4)
+Choice for the parametric SFH model. Options are: (a) 0 for exponentially declining or tau model, (b) 1 for delayed tau model, (c) 2 for log normal model, (d) 3 for Gaussian form, (e) 4 for double power-law model.</li>
+<li><strong>add_agn</strong> – (default: 0)
+Choice for turning on (value: 1) or off (value: 0) the AGN dusty torus modeling.</li>
+<li><strong>add_igm_absorption</strong> – (default: 0)
+Choice for turning on (value: 1) or off (value: 0) the IGM absorption modeling.</li>
+<li><strong>igm_type</strong> – (default: 0)
+Choice for the IGM absorption model. Options are: (a) 0 for Madau (1995), and (b) 1 for Inoue+(2014).</li>
+<li><strong>cosmo</strong> – <p>(default: ‘flat_LCDM’)
+Choices for the cosmology. Options are: (1)’flat_LCDM’ or 0, (2)’WMAP5’ or 1, (3)’WMAP7’ or 2, (4)’WMAP9’ or 3, (5)’Planck13’ or 4, (6)’Planck15’ or 5.
+These options are similar to the choices available in the <a class="reference external" href="https://docs.astropy.org/en/stable/cosmology/#built-in-cosmologies">Astropy Cosmology</a> package.</p>
+</li>
+<li><strong>H0</strong> – (default: 70.0)
+The Hubble constant at z=0. Only relevant when cosmo=’flat_LCDM’ is chosen.</li>
+<li><strong>Om0</strong> – (default: 0.3)
+The Omega matter at z=0.0. Only relevant when cosmo=’flat_LCDM’ is chosen.</li>
+<li><strong>gas_logu</strong> – (default: -2.0)
+Gas ionization parameter in logarithmic scale.</li>
+<li><strong>param_val</strong> – Dictionary of the input values of the parameters. Should folllow the structure given in the default set. Available free parameters are the same as those tabulated in Table 1 of <a class="reference external" href="https://ui.adsabs.harvard.edu/abs/2021arXiv210109717A/abstract">Abdurro’uf et al. (2021)</a>.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">Returns spec_SED:</th></tr>
+<tr class="field-even field"><td>&#160;</td><td class="field-body"><p class="first last">Arrays containing output model spectrum. It consists of spec_SED[‘wave’] which is the wavelengths grid and spec_SED[‘flux’] which is the fluxes or the spectrum.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="piXedfit.piXedfit_model.generate_modelSED_photo">
+<code class="descclassname">piXedfit.piXedfit_model.</code><code class="descname">generate_modelSED_photo</code><span class="sig-paren">(</span><em>sp=None</em>, <em>imf_type=1</em>, <em>duste_switch=0</em>, <em>add_neb_emission=1</em>, <em>dust_law=1</em>, <em>sfh_form=4</em>, <em>add_agn=0</em>, <em>filters=[]</em>, <em>add_igm_absorption=0</em>, <em>igm_type=0</em>, <em>cosmo='flat_LCDM'</em>, <em>H0=70.0</em>, <em>Om0=0.3</em>, <em>gas_logu=-2.0</em>, <em>params_val={'dust1': 0.5</em>, <em>'dust2': 0.5</em>, <em>'dust_index': -0.7</em>, <em>'log_age': 1.0</em>, <em>'log_alpha': 0.1</em>, <em>'log_beta': 0.1</em>, <em>'log_fagn': -3.0</em>, <em>'log_gamma': -2.0</em>, <em>'log_mass': 0.0</em>, <em>'log_qpah': 0.54</em>, <em>'log_t0': 0.4</em>, <em>'log_tau': 0.4</em>, <em>'log_tauagn': 1.0</em>, <em>'log_umin': 0.0</em>, <em>'logzsol': 0.0</em>, <em>'z': 0.001}</em><span class="sig-paren">)</span><a class="headerlink" href="#piXedfit.piXedfit_model.generate_modelSED_photo" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function for generating a model photometric SED given some parameters.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>sp</strong> – (optional, default: None)
+Initialization of FSPS, such as <cite>sp=fsps.StellarPopulation()</cite>.</li>
+<li><strong>imf_type</strong> – (default: 1)
+Choice for the IMF. Choices are: (1)0 for Salpeter(1955), (2)1 for Chabrier(2003), and (3)2 for Kroupa(2001).</li>
+<li><strong>duste_switch</strong> – (default: 0)
+Choice for turning on (value: 1) or off (value: 0) the dust emission modeling.</li>
+<li><strong>add_neb_emission</strong> – (default: 1)
+Choice for turning on (1) or off (0) the nebular emission modeling.</li>
+<li><strong>dust_law</strong> – (default: 1)
+Choice for the dust attenuation law. Options are: (a) 0 for Charlot &amp; Fall (2000), (b) 1 for Calzetti et al. (2000).</li>
+<li><strong>sfh_form</strong> – (default: 4)
+Choice for the parametric SFH model. Options are: (a) 0 for exponentially declining or tau model, (b) 1 for delayed tau model, (c) 2 for log normal model, (d) 3 for Gaussian form, (e) 4 for double power-law model.</li>
+<li><strong>add_agn</strong> – (default: 0)
+Choice for turning on (value: 1) or off (value: 0) the AGN dusty torus modeling.</li>
+<li><strong>filters</strong> – List of the photometric filters. This is mandatory parameter, in other word it should not empty. The accepted naming for the filters can be seen using <code class="xref py py-func docutils literal notranslate"><span class="pre">list_filters()</span></code> function in the <code class="xref py py-mod docutils literal notranslate"><span class="pre">utils.filtering</span></code> module.</li>
+<li><strong>add_igm_absorption</strong> – (default: 0)
+Choice for turning on (value: 1) or off (value: 0) the IGM absorption modeling.</li>
+<li><strong>igm_type</strong> – (default: 0)
+Choice for the IGM absorption model. Options are: (a) 0 for Madau (1995), and (b) 1 for Inoue+(2014).</li>
+<li><strong>cosmo</strong> – <p>(default: ‘flat_LCDM’)
+Choices for the cosmology. Options are: (1)’flat_LCDM’ or 0, (2)’WMAP5’ or 1, (3)’WMAP7’ or 2, (4)’WMAP9’ or 3, (5)’Planck13’ or 4, (6)’Planck15’ or 5.
+These options are similar to the choices available in the <a class="reference external" href="https://docs.astropy.org/en/stable/cosmology/#built-in-cosmologies">Astropy Cosmology</a> package.</p>
+</li>
+<li><strong>H0</strong> – (default: 70.0)
+The Hubble constant at z=0. Only relevant when cosmo=’flat_LCDM’ is chosen.</li>
+<li><strong>Om0</strong> – (default: 0.3)
+The Omega matter at z=0.0. Only relevant when cosmo=’flat_LCDM’ is chosen.</li>
+<li><strong>gas_logu</strong> – (default: -2.0)
+Gas ionization parameter in logarithmic scale.</li>
+<li><strong>param_val</strong> – <p>Dictionary of the input values of the parameters. Should folllow the structure given in the default set. Available free parameters are the same as those tabulated in Table 1 of <a class="reference external" href="https://ui.adsabs.harvard.edu/abs/2021arXiv210109717A/abstract">Abdurro’uf et al. (2021)</a>.</p>
+</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">Returns photo_SED:</th></tr>
+<tr class="field-even field"><td>&#160;</td><td class="field-body"><p class="first last">Arrays containing output model photometric SED. It consists of photo_SED[‘wave’] which is the central wavelengths of the photometric filters and photo_SED[‘flux’] which is the photometric fluxes.</p>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 </div>

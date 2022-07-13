@@ -9,9 +9,13 @@ from reproject import reproject_exact
 from photutils.psf.matching import resize_psf
 from ..piXedfit_images.images_utils import get_largest_FWHM_PSF, k_lmbd_Fitz1986_LMC
 
-
-global PIXEDFIT_HOME
-PIXEDFIT_HOME = os.environ['PIXEDFIT_HOME']
+try:
+	global PIXEDFIT_HOME
+	PIXEDFIT_HOME = os.environ['PIXEDFIT_HOME']
+	CODE_dir = PIXEDFIT_HOME+'/piXedfit/piXedfit_spectrophotometric/'
+	temp_dir = PIXEDFIT_HOME+'/data/temp/'
+except:
+	print ("PIXEDFIT_HOME should be included in your PATH!")
 
 
 __all__ = ["match_imgifs_spatial", "match_imgifs_spectral"]
@@ -19,7 +23,7 @@ __all__ = ["match_imgifs_spatial", "match_imgifs_spectral"]
 
 def specphoto_califagalexsdss2masswise(photo_fluxmap, califa_file, spec_smoothing=False, kernel_sigma=2.6, 
 	nproc=10, name_out_fits=None):
-	"""Function for matching (spatially on pixel scales) between IFS data cube from CALIFA and the multiwavelength imaging 
+	"""Function for matching spatially (on pixel level) between IFS data cube from CALIFA and the multiwavelength imaging 
 	data (12 bands from GALEX, SDSS, 2MASS, and WISE). 
 
 	:param photo_fluxmap:
@@ -40,9 +44,6 @@ def specphoto_califagalexsdss2masswise(photo_fluxmap, califa_file, spec_smoothin
 	:param name_out_fits:
 		Name of output FITS file.
 	"""
-
-	CODE_dir = PIXEDFIT_HOME+'/piXedfit/piXedfit_spectrophotometric/'
-	temp_dir = PIXEDFIT_HOME+'/data/temp/'
 
 	# make configuration file
 	name_config = "config_file%d.dat" % (random.randint(0,10000))
@@ -120,9 +121,6 @@ def specphoto_mangagalexsdss2masswise(photo_fluxmap, manga_file, spec_smoothing=
 		Name of output FITS file.
 	"""
 
-	CODE_dir = PIXEDFIT_HOME+'/piXedfit/piXedfit_spectrophotometric/'
-	temp_dir = PIXEDFIT_HOME+'/data/temp/'
-
 	# make configuration file
 	name_config = "config_file%d.dat" % (random.randint(0,10000))
 	file_out = open(name_config,"w")
@@ -173,29 +171,29 @@ def specphoto_mangagalexsdss2masswise(photo_fluxmap, manga_file, spec_smoothing=
 def match_imgifs_spatial(photo_fluxmap,ifs_data,ifs_survey='manga',spec_smoothing=False,kernel_sigma=3.5,
 	nproc=10, name_out_fits=None):
 	
-	"""Function for matching (spatially, pixel-by-pixel) between an IFS data cube and a post-processed multiwavelength imaging 
-	data.  
+	"""Function for matching spatially (on pixel level) between IFS data cube and a post-processed multiwavelength imaging 
+	data cube. The current version of piXedfit only can process IFS data from CALIFA and MaNGA surveys.  
 
 	:param photo_fluxmap:
-		Input 3D data cube of photometry. This should have the same format as the output of :func:`piXedfit.piXedfit_images.images_processing.flux_map`.
+		Input 3D data cube of photometry. This data cube is an output of function :func:`flux_map` in the :class:`images_processing` class.
 
 	:param ifs_data:
 		Integral Field Spectroscopy (IFS) data cube.
 
-	:param ifs_survey: (default: 'manga')
-		The survey from which the IFS data is taken. Options are: 'manga' and 'califa'. 
+	:param ifs_survey:
+		The survey from which the IFS data cube is taken. Options are: 'manga' and 'califa'. 
 
-	:param spec_smoothing: (default: False)
+	:param spec_smoothing:
 		If True, spectrum of each pixel will be smoothed by convolving it with a Gaussian kernel with a standard deviation given by the input kernel_sigma. 
 
-	:param kernel_sigma: (default: 3.5)
+	:param kernel_sigma:
 		Standard deviation of the kernel to be convolved with the spectrum of each pixel.
 
-	:param nproc: (default: 10)
+	:param nproc:
 		Number of cores to be used for the calculation.
 
 	:param name_out_fits:
-		Name of output FITS file.
+		Desired name for the output FITS file.
 	"""
 
 	if ifs_survey=='manga':
@@ -213,18 +211,18 @@ def match_imgifs_spectral(specphoto_file, models_spec=None, nproc=10, del_wave_n
 	H0=70.0, Om0=0.3, name_out_fits=None):
 
 	"""Function for correcting wavelength-dependent mismatch between the IFS spectra and the photometric SEDs (on pixel level) 
-	in the spectrophotometric data cube (produced with the function :func:`piXedfit.piXedfit_spectrophotometric.match_imgifs_spatial`). 
+	in the spectrophotometric data cube that is produced using the function :func:`piXedfit.piXedfit_spectrophotometric.match_imgifs_spatial`. 
 	
 	:param specphoto_file:
-		Input spectrophotometric data cube.
+		Input spectrophotometric data cube that is produced using :func:`piXedfit.piXedfit_spectrophotometric.match_imgifs_spatial`.
 
 	:param models_spec:
-		Set of model spectra at rest-frame produced using :func:`piXedfit.piXedfit_model.save_models_rest_spec`. The file is in a HDF5 format. 
+		Set of model spectra at rest-frame produced using :func:`piXedfit.piXedfit_model.save_models_rest_spec`. The file is in the HDF5 format. 
 		For more information on how to produce this set of models, please see the description :ref:`here <gen_models_seds>`.
 		This set of models only need to be produced once and then it can be used for all galaxies in a sample. 
-		If models_spec is set as None, a default file is then called from piXedfit/data/mod. 
-		However, this file is not available in that directory at first piXedfit is installed, but user need to download it 
-		from this `link <https://drive.google.com/drive/folders/1YjZGg97dPT8S95NJmO5tiFH9jWhbxuVy?usp=sharing>`_ and put it on that 
+		If models_spec=None, a default file is then called from piXedfit/data/mod ($PIXEDFIT_HOME/data/mod). 
+		However, this file is not available in that directory at first piXedfit is installed, instead user need to download it 
+		from `this link <https://drive.google.com/drive/folders/1YjZGg97dPT8S95NJmO5tiFH9jWhbxuVy?usp=sharing>`_ and put it on that 
 		directory in the local machine.   
 
 	:param nproc:
@@ -234,23 +232,19 @@ def match_imgifs_spectral(specphoto_file, models_spec=None, nproc=10, del_wave_n
 		The range (+/-) around all emission lines in the model spectra that will be removed in producing spectral continuum, 
 		which will be used as reference for correcting the wavelength-dependent mismatch between the IFS spectra and photometric SEDs.    
 
-	:param cosmo: (default: 0)
+	:param cosmo:
 		Choices for the cosmology. Options are: (a)'flat_LCDM' or 0, (b)'WMAP5' or 1, (c)'WMAP7' or 2, (d)'WMAP9' or 3, (e)'Planck13' or 4, (f)'Planck15' or 5.
 		These options are the same to that available in the `Astropy Cosmology <https://docs.astropy.org/en/stable/cosmology/#built-in-cosmologies>`_ package.
 
-	:param H0: (default: 70.0)
+	:param H0:
 		The Hubble constant at z=0. Only relevant when cosmo='flat_LCDM' is chosen.
 
-	:param Om0: (default: 0.3)
+	:param Om0:
 		The Omega matter at z=0.0. Only relevant when cosmo='flat_LCDM' is chosen.
 
 	:param name_out_fits:
-		Desired name for the output FITS file. If None, a generic name will be produced.
-
+		Desired name for the output FITS file. If None, a generic name will be used.
 	"""
-
-	dir_file = PIXEDFIT_HOME+'/data/temp/'
-	CODE_dir = PIXEDFIT_HOME+'/piXedfit/piXedfit_spectrophotometric/'
 
 	# make configuration file
 	name_config = "config_file%d.dat" % (random.randint(0,10000))
@@ -288,7 +282,7 @@ def match_imgifs_spectral(specphoto_file, models_spec=None, nproc=10, del_wave_n
 	file_out.write("name_out_fits %s\n" % name_out_fits)
 	file_out.close()
 
-	os.system('mv %s %s' % (name_config,dir_file))
+	os.system('mv %s %s' % (name_config,temp_dir))
 	os.system("mpirun -n %d python %s./mtch_sph_fnal.py %s" % (nproc,CODE_dir,name_config))
 
 	return name_out_fits

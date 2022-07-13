@@ -1,7 +1,7 @@
 
 
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" >
+<html class="writer-html4" lang="en" >
 <head>
   <meta charset="utf-8">
   
@@ -26,11 +26,10 @@
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
-        <script src="_static/jquery.js"></script>
-        <script src="_static/underscore.js"></script>
-        <script src="_static/doctools.js"></script>
-        <script src="_static/language_data.js"></script>
-        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     
     <script type="text/javascript" src="_static/js/theme.js"></script>
 
@@ -192,35 +191,36 @@
 <div class="section" id="dependencies">
 <h2>Dependencies<a class="headerlink" href="#dependencies" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
-<li><p><strong>piXedfit</strong> works with Python3</p></li>
-<li><p><a class="reference external" href="https://numpy.org/">NumPy</a>, <a class="reference external" href="https://www.scipy.org/">SciPy</a>, <a class="reference external" href="https://docs.astropy.org/en/stable/">astropy</a>, <a class="reference external" href="https://matplotlib.org/">matplotlib</a></p></li>
-<li><p><a class="reference external" href="https://github.com/cconroy20/fsps">FSPS</a>, <a class="reference external" href="https://dfm.io/python-fsps/current/">Python-FSPS</a>, <a class="reference external" href="https://mpi4py.readthedocs.io/en/stable/index.html#">mpi4py</a>, <a class="reference external" href="https://docs.h5py.org/en/stable/index.html">h5py</a></p></li>
-<li><p><a class="reference external" href="https://photutils.readthedocs.io/en/stable/">photutils</a> and <a class="reference external" href="https://reproject.readthedocs.io/en/stable/">reproject</a> if you want to use <code class="xref py py-mod docutils literal notranslate"><span class="pre">piXedfit_images</span></code> OR <code class="xref py py-mod docutils literal notranslate"><span class="pre">piXedfit_spectrophotometric</span></code> modules for doing images processing OR spatial matching (i.e., combining) between multiband imaging data and integral field spectroscopic (IFS) data</p></li>
-<li><p><a class="reference external" href="https://sep.readthedocs.io/en/v1.0.x/index.html">SEP</a> if you want to use sources extraction and segmentation features of SExtractor for defining galaxy’s region of interest in the image processing.</p></li>
-<li><p><a class="reference external" href="https://emcee.readthedocs.io/en/stable/">emcee</a> and <a class="reference external" href="https://github.com/adrn/schwimmbad">schwimmbad</a> if you want to use MCMC method for SED fitting with the <code class="xref py py-mod docutils literal notranslate"><span class="pre">piXefit_fitting</span></code> module</p></li>
-<li><p><a class="reference external" href="https://astroquery.readthedocs.io/en/latest/">Astroquery</a>.</p></li>
+<li><strong>piXedfit</strong> works with Python3</li>
+<li><a class="reference external" href="https://numpy.org/">NumPy</a>, <a class="reference external" href="https://www.scipy.org/">SciPy</a>, <a class="reference external" href="https://docs.astropy.org/en/stable/">astropy</a>, <a class="reference external" href="https://matplotlib.org/">matplotlib</a></li>
+<li><a class="reference external" href="https://github.com/cconroy20/fsps">FSPS</a>, <a class="reference external" href="https://dfm.io/python-fsps/current/">Python-FSPS</a>, <a class="reference external" href="https://mpi4py.readthedocs.io/en/stable/index.html#">mpi4py</a>, <a class="reference external" href="https://docs.h5py.org/en/stable/index.html">h5py</a></li>
+<li><a class="reference external" href="https://photutils.readthedocs.io/en/stable/">photutils</a> and <a class="reference external" href="https://reproject.readthedocs.io/en/stable/">reproject</a> if you want to use <code class="xref py py-mod docutils literal notranslate"><span class="pre">piXedfit_images</span></code> OR <code class="xref py py-mod docutils literal notranslate"><span class="pre">piXedfit_spectrophotometric</span></code> modules for doing images processing OR spatial matching (i.e., combining) between multiband imaging data and integral field spectroscopic (IFS) data</li>
+<li><a class="reference external" href="https://sep.readthedocs.io/en/v1.0.x/index.html">SEP</a> if you want to use sources extraction and segmentation features of SExtractor for defining galaxy’s region of interest in the image processing.</li>
+<li><a class="reference external" href="https://emcee.readthedocs.io/en/stable/">emcee</a> and <a class="reference external" href="https://github.com/adrn/schwimmbad">schwimmbad</a> if you want to use MCMC method for SED fitting with the <code class="xref py py-mod docutils literal notranslate"><span class="pre">piXefit_fitting</span></code> module</li>
+<li><a class="reference external" href="https://astroquery.readthedocs.io/en/latest/">Astroquery</a>.</li>
 </ul>
 </div>
 <div class="section" id="how-to-use-the-current-version-of-pixedfit">
 <h2>How to use the current version of piXedfit<a class="headerlink" href="#how-to-use-the-current-version-of-pixedfit" title="Permalink to this headline">¶</a></h2>
 <p>Currently <strong>piXedfit</strong> is still under active development (and proprietary). We haven’t integrated <strong>piXedfit</strong> into <a class="reference external" href="https://pypi.org/project/pip/">pip</a> or <a class="reference external" href="https://docs.conda.io/en/latest/">conda</a> and shared it to public. Currently, to use <strong>piXedfit</strong>, you can do the following steps:</p>
 <ul>
-<li><p>Download <strong>piXedfit</strong> and put it into your desired directory. Inside <strong>piXedfit</strong> directory, do <cite>pwd</cite> command and suppose what you get is PATH_TO_PIXEDFIT</p></li>
-<li><p>Add the following text to <cite>.bashrc</cite> in your home directory (change PATH_TO_PIXEDFIT with what you get from <cite>pwd</cite> command above).</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">export</span> <span class="n">PIXEDFIT_HOME</span><span class="o">=</span><span class="s2">&quot;PATH_TO_PIXEDFIT&quot;</span>
+<li><p class="first">Download <strong>piXedfit</strong> and put it into your desired directory. Inside <strong>piXedfit</strong> directory, do <cite>pwd</cite> command and suppose what you get is PATH_TO_PIXEDFIT</p>
+</li>
+<li><p class="first">Add the following text to <cite>.bashrc</cite> in your home directory (change PATH_TO_PIXEDFIT with what you get from <cite>pwd</cite> command above).</p>
+<div class="code highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">export</span> <span class="n">PIXEDFIT_HOME</span><span class="o">=</span><span class="s2">&quot;PATH_TO_PIXEDFIT&quot;</span>
 </pre></div>
 </div>
 <p>However, often time, even after adding the above text to <cite>.bashrc</cite>, <strong>piXedfit</strong> environment still can’t be tracked and causes we can’t import <strong>piXedfit</strong> in our script. To solve this, we can type the following command every time we open a new terminal and execute a script that import <strong>piXedfit</strong> in it.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">export</span> <span class="n">PIXEDFIT_HOME</span><span class="o">=</span><span class="s2">&quot;PATH_TO_PIXEDFIT&quot;</span>
+<div class="code highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">export</span> <span class="n">PIXEDFIT_HOME</span><span class="o">=</span><span class="s2">&quot;PATH_TO_PIXEDFIT&quot;</span>
 </pre></div>
 </div>
 <p>This problem also present for the usage of FSPS package. To solve it, we can also do</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">export</span> <span class="n">SPS_HOME</span><span class="o">=</span><span class="s2">&quot;$HOME/fsps&quot;</span>
+<div class="code highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">export</span> <span class="n">SPS_HOME</span><span class="o">=</span><span class="s2">&quot;$HOME/fsps&quot;</span>
 </pre></div>
 </div>
 <p>(if FSPS is installed in $HOME directory, otherwise change it with the path to FSPS directory).</p>
 </li>
-<li><p>In every script that import <strong>piXedfit</strong>, please put the following lines of text in the beginning of the script</p>
+<li><p class="first">In every script that import <strong>piXedfit</strong>, please put the following lines of text in the beginning of the script</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">os</span><span class="o">,</span> <span class="nn">sys</span>
 
 <span class="k">global</span> <span class="n">PIXEDFIT_HOME</span>

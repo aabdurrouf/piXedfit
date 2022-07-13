@@ -11,11 +11,9 @@ from schwimmbad import MPIPool
 from astropy.cosmology import *
 from scipy.stats import norm as normal
 from scipy.stats import t, gamma
-from scipy.interpolate import interp1d
 
 global PIXEDFIT_HOME
 PIXEDFIT_HOME = os.environ['PIXEDFIT_HOME']
-sys.path.insert(0, PIXEDFIT_HOME)
 
 from piXedfit.utils.filtering import interp_filters_curves, filtering_interp_filters 
 from piXedfit.utils.posteriors import calc_modchi2_leastnorm, model_leastnorm, ln_gauss_prob, calc_chi2
@@ -250,7 +248,12 @@ def lnprior(theta):
 			elif params_priors[params[pp]]['form'] == 'gamma':
 				lnprior += np.log(gamma.pdf(theta[pp],params_priors[params[pp]]['a'],loc=params_priors[params[pp]]['loc'],scale=params_priors[params[pp]]['scale']))
 			elif params_priors[params[pp]]['form'] == 'arbitrary':
-				lnprior += np.log(fprior(theta[pp]))
+				lnprior += np.log(np.interp(theta[pp],params_priors[params[pp]]['values'],params_priors[params[pp]]['prob']))
+			elif params_priors[params[pp]]['form'] == 'joint_with_mass':
+				loc = np.interp(theta[nparams-1],params_priors[params[pp]]['lmass'],params_priors[params[pp]]['pval'])
+				scale = params_priors[params[pp]]['scale']
+				lnprior += np.log(normal.pdf(f[str_temp][idx_parmod_sel[0][int(ii)]],loc=loc,scale=scale))
+
 		return lnprior
 	return -np.inf
 
@@ -488,9 +491,14 @@ for pp in range(0,nparams):
 			params_priors[params[pp]]['loc'] = float(config_data['pr_form_%s_gamma_loc' % params[pp]])
 			params_priors[params[pp]]['scale'] = float(config_data['pr_form_%s_gamma_scale' % params[pp]])
 		elif params_priors[params[pp]]['form'] == 'arbitrary':
-			name0 = config_data['pr_form_%s_arbit_name' % params[pp]]
-			data = np.loadtxt(temp_dir+name0)
-			fprior = interp1d(data[:,0],data[:,1])
+			data = np.loadtxt(temp_dir+config_data['pr_form_%s_arbit_name' % params[pp]])
+			params_priors[params[pp]]['values'] = data[:,0]
+			params_priors[params[pp]]['prob'] = data[:,1]
+		elif params_priors[params[pp]]['form'] == 'joint_with_mass':
+			data = np.loadtxt(temp_dir+config_data['pr_form_%s_jtmass_name' % params[pp]])
+			params_priors[params[pp]]['lmass'] = data[:,0]
+			params_priors[params[pp]]['pval'] = data[:,1]
+			params_priors[params[pp]]['scale'] = float(config_data['pr_form_%s_jtmass_scale' % params[pp]])
 	else:
 		params_priors[params[pp]]['form'] = 'uniform'
 

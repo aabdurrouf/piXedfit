@@ -1,7 +1,7 @@
 
 
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" >
+<html class="writer-html4" lang="en" >
 <head>
   <meta charset="utf-8">
   
@@ -26,11 +26,10 @@
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
-        <script src="_static/jquery.js"></script>
-        <script src="_static/underscore.js"></script>
-        <script src="_static/doctools.js"></script>
-        <script src="_static/language_data.js"></script>
-        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     
     <script type="text/javascript" src="_static/js/theme.js"></script>
 
@@ -184,60 +183,57 @@
             
   <div class="section" id="module-piXedfit.piXedfit_bin">
 <span id="pixedfit-bin"></span><span id="module-bin"></span><h1>piXedfit_bin<a class="headerlink" href="#module-piXedfit.piXedfit_bin" title="Permalink to this headline">¶</a></h1>
-<dl class="py function">
+<dl class="function">
 <dt id="piXedfit.piXedfit_bin.pixel_binning">
-<code class="sig-prename descclassname">piXedfit.piXedfit_bin.</code><code class="sig-name descname">pixel_binning</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">fits_fluxmap</span></em>, <em class="sig-param"><span class="n">ref_band</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">Dmin_bin</span><span class="o">=</span><span class="default_value">2.0</span></em>, <em class="sig-param"><span class="n">SNR</span><span class="o">=</span><span class="default_value">[]</span></em>, <em class="sig-param"><span class="n">redc_chi2_limit</span><span class="o">=</span><span class="default_value">4.0</span></em>, <em class="sig-param"><span class="n">del_r</span><span class="o">=</span><span class="default_value">2.0</span></em>, <em class="sig-param"><span class="n">name_out_fits</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#piXedfit.piXedfit_bin.pixel_binning" title="Permalink to this definition">¶</a></dt>
-<dd><p>Function for performing pixel binning, a proses of combining neighboring pixels to increase signal-to-noise ratios of the
-spatially resolved SEDs.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>fits_fluxmap</strong> – Input FITS file containing either photometric or spectrophotometric data cube.</p></li>
-<li><p><strong>ref_band</strong> – Index of a band/filter that will be used as a reference in finding the brightest pixels.
-The central pixel of a bin is the brightest pixel in this reference band.
-If ref_band=None, the ref_band is taken to be the middle band in the list of filters considered for the pixel binning.</p></li>
-<li><p><strong>Dmin_bin</strong> – (default: 2.0 pixels)
-Minimum diameter of a bin in unit of pixel.</p></li>
-<li><p><strong>SNR</strong> – (default: [])
-An array/list of S/N ratio thresholds in multiple bands. The length of this array should be the same as the number of bands in the fits_fluxmap.
-S/N threshold can vary across the filters. If input SNR is empty, S/N of 5 is applied to all the filters.</p></li>
-<li><p><strong>redc_chi2_limit</strong> – (default: 4.0)
-A maximum of reduced chi-square for two SEDs are considered to have a similar shape.</p></li>
-<li><p><strong>del_r</strong> – (optional, default: 2 pixel)
-Increment of circular radius in the binning process.</p></li>
-<li><p><strong>name_out_fits</strong> – (defult: None)
-Desired name for the output FITS file.</p></li>
+<code class="descclassname">piXedfit.piXedfit_bin.</code><code class="descname">pixel_binning</code><span class="sig-paren">(</span><em>fits_fluxmap</em>, <em>ref_band=None</em>, <em>Dmin_bin=4.0</em>, <em>SNR=None</em>, <em>redc_chi2_limit=4.0</em>, <em>del_r=2.0</em>, <em>name_out_fits=None</em><span class="sig-paren">)</span><a class="headerlink" href="#piXedfit.piXedfit_bin.pixel_binning" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function for pixel binning, a proses of combining neighboring pixels to optimize the signal-to-noise ratios of the spatially resolved SEDs.
+Input of this function is a data cube obtained from the image processing or spectrophotometric processing.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>fits_fluxmap</strong> – Input FITS file containing the photometric or spectrophotometric data cube. The photometric data cube is obtained from the image processing with the <code class="xref py py-func docutils literal notranslate"><span class="pre">images_processing()</span></code> function,
+while the spectrophotmetric data cube is the output of function <code class="xref py py-func docutils literal notranslate"><span class="pre">match_imgifs_spectral()</span></code>.</li>
+<li><strong>ref_band</strong> – Index of the reference band (filter) for sorting pixels based on the brightness. The central pixel of a bin is the brightest pixel in this reference band.
+If ref_band=None, the ref_band is chosen to be around the middle of the wavelength covered by the observed SEDs.</li>
+<li><strong>Dmin_bin</strong> – Minimum diameter of a bin in unit of pixel.</li>
+<li><strong>SNR</strong> – S/N thresholds in all bands. The length of this array should be the same as the number of bands in the fits_fluxmap.
+S/N threshold can vary across the filters. If SNR is None, the S/N is set as 5.0 to all the filters.</li>
+<li><strong>redc_chi2_limit</strong> – A maximum reduced chi-square value for a pair of two SEDs to be considered as having a similar shape.</li>
+<li><strong>del_r</strong> – Increment of circular radius (in unit of pixel) adopted in the pixel binning process.</li>
+<li><strong>name_out_fits</strong> – Desired name for the output FITS file. If None, a default name is adopted.</li>
 </ul>
-</dd>
-</dl>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
-<dl class="py function">
+<dl class="function">
 <dt id="piXedfit.piXedfit_bin.pixel_binning_images">
-<code class="sig-prename descclassname">piXedfit.piXedfit_bin.</code><code class="sig-name descname">pixel_binning_images</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">images</span></em>, <em class="sig-param"><span class="n">var_images</span></em>, <em class="sig-param"><span class="n">ref_band</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">Dmin_bin</span><span class="o">=</span><span class="default_value">2.0</span></em>, <em class="sig-param"><span class="n">SNR</span><span class="o">=</span><span class="default_value">[]</span></em>, <em class="sig-param"><span class="n">redc_chi2_limit</span><span class="o">=</span><span class="default_value">4.0</span></em>, <em class="sig-param"><span class="n">del_r</span><span class="o">=</span><span class="default_value">2.0</span></em>, <em class="sig-param"><span class="n">name_out_fits</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#piXedfit.piXedfit_bin.pixel_binning_images" title="Permalink to this definition">¶</a></dt>
-<dd><p>Function for performing pixel binning to multiband images.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>images</strong> – Input images. This input should be in a list format.</p></li>
-<li><p><strong>var_images</strong> – Variance images. This input should be in a list format.</p></li>
-<li><p><strong>ref_band</strong> – Index of a band/filter that will be used as a reference in finding the brightest pixels.
-The central pixel of a bin is the brightest pixel in this reference band.
-If ref_band=None, the ref_band is taken to be the middle band in the list of filters considered for the pixel binning.</p></li>
-<li><p><strong>Dmin_bin</strong> – (default: 2.0 pixels)
-Minimum diameter of a bin in unit of pixel.</p></li>
-<li><p><strong>SNR</strong> – (default: [])
-An array/list of S/N ratio thresholds in multiple bands. The length of this array should be the same as the number of bands in the fits_fluxmap.
-S/N threshold can vary across the filters. If input SNR is empty, S/N of 5 is applied to all the filters.</p></li>
-<li><p><strong>redc_chi2_limit</strong> – (default: 4.0)
-A maximum of reduced chi-square for two SEDs are considered to have a similar shape.</p></li>
-<li><p><strong>del_r</strong> – (optional, default: 2 pixel)
-Increment of circular radius in the binning process.</p></li>
-<li><p><strong>name_out_fits</strong> – (defult: None)
-Desired name for the output FITS file.</p></li>
+<code class="descclassname">piXedfit.piXedfit_bin.</code><code class="descname">pixel_binning_images</code><span class="sig-paren">(</span><em>images</em>, <em>var_images</em>, <em>ref_band=None</em>, <em>Dmin_bin=2.0</em>, <em>SNR=None</em>, <em>redc_chi2_limit=4.0</em>, <em>del_r=2.0</em>, <em>name_out_fits=None</em><span class="sig-paren">)</span><a class="headerlink" href="#piXedfit.piXedfit_bin.pixel_binning_images" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function for pixel binning on multiband image.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>images</strong> – Input science images. This input should be in a list format, such as images=[‘image1.fits’, ‘image2.fits’, ‘image3.fits’]</li>
+<li><strong>var_images</strong> – Variance images in a list format. The number of variance images should be the same as that of the input science images.</li>
+<li><strong>ref_band</strong> – Index of the reference band (filter) for sorting pixels based on the brightness. The central pixel of a bin is the brightest pixel in this reference band.
+If ref_band=None, the ref_band is chosen to be around the middle of the wavelength covered by the observed SEDs.</li>
+<li><strong>Dmin_bin</strong> – Minimum diameter of a bin in unit of pixel.</li>
+<li><strong>SNR</strong> – S/N thresholds in all bands. The length of this array should be the same as the number of bands in the fits_fluxmap.
+S/N threshold can vary across the filters. If SNR is None, the S/N is set as 5.0 to all the filters.</li>
+<li><strong>redc_chi2_limit</strong> – A maximum reduced chi-square value for a pair of two SEDs to be considered as having a similar shape.</li>
+<li><strong>del_r</strong> – Increment of circular radius (in unit of pixel) adopted in the pixel binning process.</li>
+<li><strong>name_out_fits</strong> – Desired name for the output FITS file. If None, a default name is adopted.</li>
 </ul>
-</dd>
-</dl>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 </div>

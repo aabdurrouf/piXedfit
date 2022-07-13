@@ -2,7 +2,7 @@ import numpy as np
 import math
 import sys, os
 import random
-import fsps
+#import fsps
 import operator
 from astropy.io import fits
 from scipy.interpolate import interp1d
@@ -16,8 +16,11 @@ from .model_utils import *
 with np.errstate(divide='ignore'):
     np.float64(1.0) / 0.0
 
-global PIXEDFIT_HOME
-PIXEDFIT_HOME = os.environ['PIXEDFIT_HOME']
+try: 
+	global PIXEDFIT_HOME
+	PIXEDFIT_HOME = os.environ['PIXEDFIT_HOME']
+except:
+	print ("PIXEDFIT_HOME should be included in your PATH!")
 
 
 __all__ = ["generate_modelSED_propspecphoto", "generate_modelSED_spec", "generate_modelSED_photo", "generate_modelSED_specphoto", 
@@ -89,6 +92,7 @@ def generate_modelSED_propspecphoto(sp=None,imf_type=1,duste_switch=1,add_neb_em
 	beta = math.pow(10.0,params_val['log_beta'])
 
 	if sp == None:
+		import fsps
 		sp = fsps.StellarPopulation(zcontinuous=1, imf_type=imf_type)
 
 	sp.params['imf_type'] = imf_type
@@ -260,54 +264,55 @@ def generate_modelSED_spec(sp=None,imf_type=1,duste_switch=1,add_neb_emission=1,
 	add_agn=0,add_igm_absorption=0,igm_type=0,cosmo='flat_LCDM',H0=70.0,Om0=0.3,gas_logu=-2.0,params_val={'log_mass':0.0,
 	'z':0.001,'log_fagn':-3.0,'log_tauagn':1.0,'log_qpah':0.54,'log_umin':0.0,'log_gamma':-2.0,'dust1':0.5,'dust2':0.5,
 	'dust_index':-0.7,'log_age':1.0,'log_alpha':0.1,'log_beta':0.1,'log_t0':0.4,'log_tau':0.4,'logzsol':0.0}):
-
-	"""Function for generating a model spectroscopic SED given some parameters.
+	"""Function for generating a model spectrum given some parameters.
 
 	:param sp: (optional, default: None)
-		Initialization of FSPS, such as `sp=fsps.StellarPopulation()`.
+		Initialization of FSPS, such as `sp=fsps.StellarPopulation()`. This is intended for rapid generation of model spectra from FSPS.
+		However, this input is optional. If sp=None, FSPS will be called everytime this function is called.
 
-	:param imf_type: (default: 1)
-		Choice for the IMF. Choices are: (1)0 for Salpeter(1955), (2)1 for Chabrier(2003), and (3)2 for Kroupa(2001).
+	:param imf_type:
+		Choice for the IMF. Choices are: 0 for Salpeter(1955), 1 for Chabrier(2003), and 2 for Kroupa(2001).
 
-	:param duste_switch: (default: 0)
-		Choice for turning on (value: 1) or off (value: 0) the dust emission modeling.
+	:param duste_switch:
+		Choice for switching on (value: 1) or off (value: 0) the dust emission modeling.
 
-	:param add_neb_emission: (default: 1)
-		Choice for turning on (1) or off (0) the nebular emission modeling.
+	:param add_neb_emission:
+		Choice for switching on (value: 1) or off (value: 0) the nebular emission modeling.
 
-	:param dust_law: (default: 1)
-		Choice for the dust attenuation law. Options are: (a) 0 for Charlot & Fall (2000), (b) 1 for Calzetti et al. (2000).
+	:param dust_law:
+		Choice for the dust attenuation law. Options are: 0 for Charlot & Fall (2000) and 1 for Calzetti et al. (2000).
 
-	:param sfh_form: (default: 4)
-		Choice for the parametric SFH model. Options are: (a) 0 for exponentially declining or tau model, (b) 1 for delayed tau model, (c) 2 for log normal model, (d) 3 for Gaussian form, (e) 4 for double power-law model.
+	:param sfh_form:
+		Choice for the parametric SFH model. Options are: 0 for exponentially declining or tau model, 1 for delayed tau model, 2 for log normal model, 3 for Gaussian form, and 4 for double power-law model.
 
-	:param add_agn: (default: 0)
+	:param add_agn:
 		Choice for turning on (value: 1) or off (value: 0) the AGN dusty torus modeling.
 
-	:param add_igm_absorption: (default: 0)
+	:param add_igm_absorption: 
 		Choice for turning on (value: 1) or off (value: 0) the IGM absorption modeling.
 
-	:param igm_type: (default: 0)
-		Choice for the IGM absorption model. Options are: (a) 0 for Madau (1995), and (b) 1 for Inoue+(2014).
+	:param igm_type:
+		Choice for the IGM absorption model. Options are: 0 for Madau (1995) and 1 for Inoue+(2014).
 
-	:param cosmo: (default: 'flat_LCDM')
+	:param cosmo: 
 		Choices for the cosmology. Options are: (1)'flat_LCDM' or 0, (2)'WMAP5' or 1, (3)'WMAP7' or 2, (4)'WMAP9' or 3, (5)'Planck13' or 4, (6)'Planck15' or 5.
 		These options are similar to the choices available in the `Astropy Cosmology <https://docs.astropy.org/en/stable/cosmology/#built-in-cosmologies>`_ package.
 
-	:param H0: (default: 70.0)
+	:param H0:
 		The Hubble constant at z=0. Only relevant when cosmo='flat_LCDM' is chosen.
 
-	:param Om0: (default: 0.3)
+	:param Om0:
 		The Omega matter at z=0.0. Only relevant when cosmo='flat_LCDM' is chosen.
 
-	:param gas_logu: (default: -2.0)
+	:param gas_logu:
 		Gas ionization parameter in logarithmic scale.
 
 	:param param_val:
-		Dictionary of the input values of the parameters. Should folllow the structure given in the default set. Available free parameters are the same as those tabulated in Table 1 of `Abdurro'uf et al. (2021) <https://ui.adsabs.harvard.edu/abs/2021arXiv210109717A/abstract>`_.
+		Dictionary of the input values of the parameters. Should folllow the structure given in the default set. 
+		Summary of the parameters are tabulated in Table 1 of `Abdurro'uf et al. (2021) <https://ui.adsabs.harvard.edu/abs/2021arXiv210109717A/abstract>`_.
 
 	:returns spec_SED:
-		Arrays containing output model spectrum. It consists of spec_SED['wave'] which is the wavelengths grid and spec_SED['flux'] which is the fluxes or the spectrum. 
+		Array containing output model spectrum. It consists of spec_SED['wave'], which is the wavelengths grids, and spec_SED['flux'], which is the fluxes or the spectrum. 
 	"""
 	
 	# input parameters:
@@ -319,6 +324,7 @@ def generate_modelSED_spec(sp=None,imf_type=1,duste_switch=1,add_neb_emission=1,
 	beta = math.pow(10.0,params_val['log_beta'])
 
 	if sp == None:
+		import fsps 
 		sp = fsps.StellarPopulation(zcontinuous=1, imf_type=imf_type)
 
 	sp.params['imf_type'] = imf_type
@@ -414,60 +420,63 @@ def generate_modelSED_spec(sp=None,imf_type=1,duste_switch=1,add_neb_emission=1,
 	return spec_SED
 
 
-def generate_modelSED_photo(sp=None,imf_type=1,duste_switch=0,add_neb_emission=1,dust_law=1,sfh_form=4,
-	add_agn=0,filters=[],add_igm_absorption=0,igm_type=0,cosmo='flat_LCDM',H0=70.0,Om0=0.3,gas_logu=-2.0,params_val={'log_mass':0.0,
+def generate_modelSED_photo(filters,sp=None,imf_type=1,duste_switch=0,add_neb_emission=1,dust_law=1,sfh_form=4,
+	add_agn=0,add_igm_absorption=0,igm_type=0,cosmo='flat_LCDM',H0=70.0,Om0=0.3,gas_logu=-2.0,params_val={'log_mass':0.0,
 	'z':0.001,'log_fagn':-3.0,'log_tauagn':1.0,'log_qpah':0.54,'log_umin':0.0,'log_gamma':-2.0,'dust1':0.5,'dust2':0.5,
 	'dust_index':-0.7,'log_age':1.0,'log_alpha':0.1,'log_beta':0.1,'log_t0':0.4,'log_tau':0.4,'logzsol':0.0}):
 	"""Function for generating a model photometric SED given some parameters.
 
+	:param filters: 
+		List of photometric filters. The list of filters recognized by piXedfit can be accessed using :func:`piXedfit.utils.filtering.list_filters`. 
+		Please see `this page <https://pixedfit.readthedocs.io/en/latest/manage_filters.html>`_ for information on managing filters that include listing available filters, adding, and removing filters. 
+
 	:param sp: (optional, default: None)
-		Initialization of FSPS, such as `sp=fsps.StellarPopulation()`.
+		Initialization of FSPS, such as `sp=fsps.StellarPopulation()`. This is intended for rapid generation of model spectra from FSPS.
+		However, this input is optional. If sp=None, FSPS will be called everytime this function is called.
 
-	:param imf_type: (default: 1)
-		Choice for the IMF. Choices are: (1)0 for Salpeter(1955), (2)1 for Chabrier(2003), and (3)2 for Kroupa(2001).
+	:param imf_type:
+		Choice for the IMF. Choices are: 0 for Salpeter(1955), 1 for Chabrier(2003), and 2 for Kroupa(2001).
 
-	:param duste_switch: (default: 0)
-		Choice for turning on (value: 1) or off (value: 0) the dust emission modeling.
+	:param duste_switch:
+		Choice for switching on (value: 1) or off (value: 0) the dust emission modeling.
 
-	:param add_neb_emission: (default: 1)
-		Choice for turning on (1) or off (0) the nebular emission modeling.
+	:param add_neb_emission:
+		Choice for switching on (value: 1) or off (value: 0) the nebular emission modeling.
 
-	:param dust_law: (default: 1)
-		Choice for the dust attenuation law. Options are: (a) 0 for Charlot & Fall (2000), (b) 1 for Calzetti et al. (2000).
+	:param dust_law:
+		Choice for the dust attenuation law. Options are: 0 for Charlot & Fall (2000) and 1 for Calzetti et al. (2000).
 
-	:param sfh_form: (default: 4)
-		Choice for the parametric SFH model. Options are: (a) 0 for exponentially declining or tau model, (b) 1 for delayed tau model, (c) 2 for log normal model, (d) 3 for Gaussian form, (e) 4 for double power-law model.
+	:param sfh_form:
+		Choice for the parametric SFH model. Options are: 0 for exponentially declining or tau model, 1 for delayed tau model, 2 for log normal model, 3 for Gaussian form, and 4 for double power-law model.
 
-	:param add_agn: (default: 0)
+	:param add_agn:
 		Choice for turning on (value: 1) or off (value: 0) the AGN dusty torus modeling.
 
-	:param filters:
-		List of the photometric filters. This is mandatory parameter, in other word it should not empty. The accepted naming for the filters can be seen using :func:`list_filters` function in the :mod:`utils.filtering` module.
-
-	:param add_igm_absorption: (default: 0)
+	:param add_igm_absorption: 
 		Choice for turning on (value: 1) or off (value: 0) the IGM absorption modeling.
 
-	:param igm_type: (default: 0)
-		Choice for the IGM absorption model. Options are: (a) 0 for Madau (1995), and (b) 1 for Inoue+(2014).
+	:param igm_type:
+		Choice for the IGM absorption model. Options are: 0 for Madau (1995) and 1 for Inoue+(2014).
 
-	:param cosmo: (default: 'flat_LCDM')
+	:param cosmo: 
 		Choices for the cosmology. Options are: (1)'flat_LCDM' or 0, (2)'WMAP5' or 1, (3)'WMAP7' or 2, (4)'WMAP9' or 3, (5)'Planck13' or 4, (6)'Planck15' or 5.
 		These options are similar to the choices available in the `Astropy Cosmology <https://docs.astropy.org/en/stable/cosmology/#built-in-cosmologies>`_ package.
 
-	:param H0: (default: 70.0)
+	:param H0:
 		The Hubble constant at z=0. Only relevant when cosmo='flat_LCDM' is chosen.
 
-	:param Om0: (default: 0.3)
+	:param Om0:
 		The Omega matter at z=0.0. Only relevant when cosmo='flat_LCDM' is chosen.
 
-	:param gas_logu: (default: -2.0)
+	:param gas_logu:
 		Gas ionization parameter in logarithmic scale.
 
 	:param param_val:
-		Dictionary of the input values of the parameters. Should folllow the structure given in the default set. Available free parameters are the same as those tabulated in Table 1 of `Abdurro'uf et al. (2021) <https://ui.adsabs.harvard.edu/abs/2021arXiv210109717A/abstract>`_.
+		Dictionary of the input values of the parameters. Should folllow the structure given in the default set. 
+		Summary of the parameters are tabulated in Table 1 of `Abdurro'uf et al. (2021) <https://ui.adsabs.harvard.edu/abs/2021arXiv210109717A/abstract>`_.
 
 	:returns photo_SED:
-		Arrays containing output model photometric SED. It consists of photo_SED['wave'] which is the central wavelengths of the photometric filters and photo_SED['flux'] which is the photometric fluxes. 
+		Output model photometric SED. It consists of photo_SED['wave'], which is the central wavelengths of the photometric filters, and photo_SED['flux'], which is the photometric fluxes. 
 	"""
 
 	# Input parameters
@@ -480,6 +489,7 @@ def generate_modelSED_photo(sp=None,imf_type=1,duste_switch=0,add_neb_emission=1
 
 	# Initialize FSPS
 	if sp == None:
+		import fsps
 		sp = fsps.StellarPopulation(zcontinuous=1, imf_type=imf_type)
 
 	sp.params['imf_type'] = imf_type
@@ -582,6 +592,7 @@ def generate_modelSED_photo(sp=None,imf_type=1,duste_switch=0,add_neb_emission=1
 	photo_SED['flux'] = photo_SED_flux
 
 	return photo_SED
+
 
 def generate_modelSED_specphoto(sp=None,imf_type=1,duste_switch=1,add_neb_emission=1,dust_law=1,sfh_form=4,
 	add_agn=0,filters=['galex_fuv','galex_nuv','sdss_u','sdss_g','sdss_r','sdss_i','sdss_z'],add_igm_absorption=0,igm_type=0,
@@ -885,79 +896,77 @@ def generate_modelSED_specphoto_decompose(sp=None, imf=1, duste_switch=1,add_neb
 	return spec_SED,photo_SED
 
 
-def save_models_photo(filters=[],gal_z=None,imf_type=1,sfh_form=4,dust_law=1,add_igm_absorption=0,igm_type=0,duste_switch=0,
-	add_neb_emission=1,add_agn=0,gas_logu=-2.0,nmodels=100000, params_range ={'logzsol':[-2.0,0.2],'log_tau':[-1.0,1.5],
-	'log_age':[-3.0,1.14],'log_alpha':[-2.0,2.0],'log_beta':[-2.0,2.0],'log_t0':[-1.0,1.14],'dust_index':[-2.2,0.4],'dust1':[0.0,4.0], 
+def save_models_photo(filters,gal_z,imf_type=1,sfh_form=4,dust_law=1,add_igm_absorption=0,igm_type=0,duste_switch=0,
+	add_neb_emission=1,add_agn=0,gas_logu=-2.0,nmodels=100000,params_range ={'logzsol':[-2.0,0.2],'log_tau':[-1.0,1.5],
+	'log_age':[-2.0,1.14],'log_alpha':[-2.0,2.0],'log_beta':[-2.0,2.0],'log_t0':[-1.0,1.14],'dust_index':[-2.2,0.4],'dust1':[0.0,4.0], 
 	'dust2':[0.0,4.0],'log_gamma':[-4.0, 0.0],'log_umin':[-1.0,1.39],'log_qpah':[-3.0,1.0],'log_fagn':[-5.0,0.48],'log_tauagn':[0.7, 2.18]},
 	nproc=10,cosmo=0,H0=70.0,Om0=0.3,name_out_fits=None):
-	"""Function for generating pre-calculated model SEDs and store them into a FITS file. This is supposed to be created one for one redshift (i.e, one galaxy or a group of galaxies with similar redshift). 
-	This FITS file can be used in fitting all the spatial bins in the galaxy (or a group of galaxies with similar redshift).  
+	"""Function for generating a set of photometric model SEDs and store them into a FITS file.
+	The values of the parameters are randomly generated and for each parameter, the random values are uniformly distributed.  
 
-	:param filters: (default: [])
-		Set of photometric filters. The accepted naming for the filters can be seen using :func:`list_filters` function in the :mod:`utils.filtering` module.
+	:param filters: 
+		List of photometric filters. The list of filters recognized by piXedfit can be accessed using :func:`piXedfit.utils.filtering.list_filters`. 
+		Please see `this page <https://pixedfit.readthedocs.io/en/latest/manage_filters.html>`_ for information on managing filters that include listing available filters, adding, and removing filters. 
 
 	:param gal_z:
-		Galaxy's redshift. This parameter is mandatory.
+		Galaxy's redshift.
+	
+	:param imf_type:
+		Choice for the IMF. Choices are: 0 for Salpeter(1955), 1 for Chabrier(2003), and 2 for Kroupa(2001).
 
-	:param imf_type: (default: 1)
-		Choice for the IMF. Options are: (1)0 for Salpeter(1955), (2)1 for Chabrier(2003), and (3)2 for Kroupa(2001).
+	:param sfh_form:
+		Choice for the parametric SFH model. Options are: 0 for exponentially declining or tau model, 1 for delayed tau model, 2 for log normal model, 3 for Gaussian form, and 4 for double power-law model.
 
-	:param sfh_form: (default: 4)
-		Choice for the parametric SFH model. Options are: (a) 0 for exponentially declining or tau model, (b) 1 for delayed tau model, (c) 2 for log normal model, (d) 3 for Gaussian form, (e) 4 for double power-law model.
+	:param dust_law:
+		Choice for the dust attenuation law. Options are: 0 for Charlot & Fall (2000) and 1 for Calzetti et al. (2000).
 
-	:param dust_law: (default: 1)
-		Choice for the dust attenuation law. Options are: (a) 0 for Charlot & Fall (2000), (b) 1 for Calzetti et al. (2000).
+	:param add_igm_absorption: 
+		Choice for turning on (value: 1) or off (value: 0) the IGM absorption modeling.
 
-	:param add_igm_absorption: (default: 0)
-		Switch for the IGM absorption. Options are: (1)0 means turn off, and (2)1 means turn on.
+	:param igm_type:
+		Choice for the IGM absorption model. Options are: 0 for Madau (1995) and 1 for Inoue+(2014).
 
-	:param igm_type: (default: 0)
-		Choice for the IGM absorption model. Options are: (a) 0 for Madau (1995), and (b) 1 for Inoue+(2014).
+	:param duste_switch:
+		Choice for switching on (value: 1) or off (value: 0) the dust emission modeling.
 
-	:param duste_switch: (default: 0)
-		Switch for the dust emission modeling. Options are: (1)0 means turn off, and (2)1 means turn on.
+	:param add_neb_emission:
+		Choice for switching on (value: 1) or off (value: 0) the nebular emission modeling.
 
-	:param add_neb_emission: (default: 1)
-		Switch for the nebular emission modeling. Options are: (1)0 means turn off, and (2)1 means turn on.
+	:param add_agn:
+		Choice for turning on (value: 1) or off (value: 0) the AGN dusty torus modeling.
 
-	:param add_agn: (default: 0)
-		Switch for the AGN dusty torus emission modeling. Options are: (1)0 means turn off, and (2)1 means turn on.
+	:param gas_logu:
+		Gas ionization parameter in logarithmic scale.
 
-	:param gas_logu: (default: -2.0)
-		Gas ionization parameter in log scale.
-
-	:param nmodels: (default: 100000)
+	:param nmodels:
 		Number of model SEDs to be generated.
 
 	:param params_range:
-		Ranges of parameters. The format of this input argument is python dictionary.
+		Ranges of parameters in a dictionary format. Summary of the parameters are tabulated in Table 1 of `Abdurro'uf et al. (2021) <https://ui.adsabs.harvard.edu/abs/2021arXiv210109717A/abstract>`_.
 
-	:param nproc: (default: 10)
-		Number of processors (cores) to be used in the calculation.
+	:param nproc:
+		Number of cores to be used in the calculations.
 
-	:param cosmo: (default: 0)
+	:param cosmo: 
 		Choices for the cosmology. Options are: (1)'flat_LCDM' or 0, (2)'WMAP5' or 1, (3)'WMAP7' or 2, (4)'WMAP9' or 3, (5)'Planck13' or 4, (6)'Planck15' or 5.
 		These options are similar to the choices available in the `Astropy Cosmology <https://docs.astropy.org/en/stable/cosmology/#built-in-cosmologies>`_ package.
 
-	:param H0: (default: 70.0)
+	:param H0:
 		The Hubble constant at z=0. Only relevant when cosmo='flat_LCDM' is chosen.
 
-	:param Om0: (default: 0.3)
+	:param Om0:
 		The Omega matter at z=0.0. Only relevant when cosmo='flat_LCDM' is chosen.
 
-	:param name_out_fits: (optional, default:None)
-		Desired name for the output FITS file.
-
 	:returns name_out_fits:
-		Output FITS file.
+		Desired name for the output FITS file. if None, a default name will be used.
 	"""
 
 	dir_file = PIXEDFIT_HOME+'/data/temp/'
 	CODE_dir = PIXEDFIT_HOME+'/piXedfit/piXedfit_model/'
 
 	def_params_range ={'logzsol':[-2.0,0.2],'log_tau':[-1.0,1.5],'log_age':[-3.0,1.14],'log_alpha':[-2.0,2.0],
-			'log_beta':[-2.0,2.0],'log_t0':[-1.0,1.14],'dust_index':[-2.2,0.4],'dust1':[0.0,4.0], 'dust2':[0.0,4.0],
-			'log_gamma':[-4.0, 0.0],'log_umin':[-1.0,1.39],'log_qpah':[-3.0,1.0],'log_fagn':[-5.0,0.48],'log_tauagn':[0.7, 2.18]}
+		'log_beta':[-2.0,2.0],'log_t0':[-1.0,1.14],'dust_index':[-2.2,0.4],'dust1':[0.0,4.0], 'dust2':[0.0,4.0],
+		'log_gamma':[-4.0, 0.0],'log_umin':[-1.0,1.39],'log_qpah':[-3.0,1.0],'log_fagn':[-5.0,0.48],'log_tauagn':[0.7, 2.18]}
 
 	# get keys in input params_range:
 	keys = list(params_range.keys())
@@ -1061,53 +1070,50 @@ def save_models_photo(filters=[],gal_z=None,imf_type=1,sfh_form=4,dust_law=1,add
 
 
 def save_models_rest_spec(imf_type=1,sfh_form=4,dust_law=1,duste_switch=0,add_neb_emission=1,add_agn=0,gas_logu=-2.0,
-	nmodels=100000,params_range={'logzsol':[-2.0,0.2],'log_tau':[-1.0,1.5],'log_age':[-3.0,1.14],'log_alpha':[-2.0,2.0],
+	nmodels=100000,params_range={'logzsol':[-2.0,0.2],'log_tau':[-1.0,1.5],'log_age':[-2.0,1.14],'log_alpha':[-2.0,2.0],
 	'log_beta':[-2.0,2.0],'log_t0':[-1.0,1.14],'dust_index':[-2.2,0.4],'dust1':[0.0,4.0], 'dust2':[0.0,4.0],
 	'log_gamma':[-4.0, 0.0],'log_umin':[-1.0,1.39],'log_qpah':[-3.0,1.0],'log_fagn':[-5.0,0.48],'log_tauagn':[0.7, 2.18]},
 	nproc=10,name_out=None):
-	"""Function for generating rest-frame model spectra.  
+	"""Function for generating a set of model spectra at rest-frame. The values of the parameters are randomly generated and for each parameter, the random values are uniformly distributed.
 
-	:param imf_type: (default: 1)
-		Choice for the IMF. Options are: (1)0 for Salpeter(1955), (2)1 for Chabrier(2003), and (3)2 for Kroupa(2001).
+	:param imf_type:
+		Choice for the IMF. Choices are: 0 for Salpeter(1955), 1 for Chabrier(2003), and 2 for Kroupa(2001).
 
-	:param sfh_form: (default: 4)
-		Choice for the parametric SFH model. Options are: (a) 0 for exponentially declining or tau model, (b) 1 for delayed tau model, (c) 2 for log normal model, (d) 3 for Gaussian form, (e) 4 for double power-law model.
+	:param sfh_form:
+		Choice for the parametric SFH model. Options are: 0 for exponentially declining or tau model, 1 for delayed tau model, 2 for log normal model, 3 for Gaussian form, and 4 for double power-law model.
 
-	:param dust_law: (default: 1)
-		Choice for the dust attenuation law. Options are: (a) 0 for Charlot & Fall (2000), (b) 1 for Calzetti et al. (2000).
+	:param dust_law:
+		Choice for the dust attenuation law. Options are: 0 for Charlot & Fall (2000) and 1 for Calzetti et al. (2000).
 
-	:param duste_switch: (default: 0)
-		Switch for the dust emission modeling. Options are: (1)0 means turn off, and (2)1 means turn on.
+	:param duste_switch:
+		Choice for switching on (value: 1) or off (value: 0) the dust emission modeling.
 
-	:param add_neb_emission: (default: 1)
-		Switch for the nebular emission modeling. Options are: (1)0 means turn off, and (2)1 means turn on.
+	:param add_neb_emission:
+		Choice for switching on (value: 1) or off (value: 0) the nebular emission modeling.
 
-	:param add_agn: (default: 0)
-		Switch for the AGN dusty torus emission modeling. Options are: (1)0 means turn off, and (2)1 means turn on.
+	:param add_agn:
+		Choice for turning on (value: 1) or off (value: 0) the AGN dusty torus modeling.
 
-	:param gas_logu: (default: -2.0)
-		Gas ionization parameter in log scale.
+	:param gas_logu:
+		Gas ionization parameter in logarithmic scale.
 
-	:param nmodels: (default: 100000)
+	:param nmodels:
 		Number of model SEDs to be generated.
 
-	:param params_range:
-		Ranges of parameters. The format of this input argument is python dictionary.
+ 	:param params_range:
+		Ranges of parameters in a dictionary format. Summary of the parameters are tabulated in Table 1 of `Abdurro'uf et al. (2021) <https://ui.adsabs.harvard.edu/abs/2021arXiv210109717A/abstract>`_.
 
-	:param nproc: (default: 10)
-		Number of processors (cores) to be used in the calculation.
-
-	:param name_out: (optional, default:None)
-		Desired name for the output FITS file.
+	:param nproc:
+		Number of cores to be used in the calculations.
 
 	:returns name_out:
-		Output FITS file.
+		Desired name for the output HDF5 file.
 	"""
 
 	dir_file = PIXEDFIT_HOME+'/data/temp/'
 	CODE_dir = PIXEDFIT_HOME+'/piXedfit/piXedfit_model/'
 
-	def_params_range ={'logzsol':[-2.0,0.2],'log_tau':[-1.0,1.5],'log_age':[-3.0,1.14],'log_alpha':[-2.0,2.0],
+	def_params_range ={'logzsol':[-2.0,0.2],'log_tau':[-1.0,1.5],'log_age':[-1.0,1.14],'log_alpha':[-2.0,2.0],
 			'log_beta':[-2.0,2.0],'log_t0':[-1.0,1.14],'dust_index':[-2.2,0.4],'dust1':[0.0,4.0], 'dust2':[0.0,4.0],
 			'log_gamma':[-4.0, 0.0],'log_umin':[-1.0,1.39],'log_qpah':[-3.0,1.0],'log_fagn':[-5.0,0.48],'log_tauagn':[0.7, 2.18]}
 
@@ -1161,7 +1167,7 @@ def save_models_rest_spec(imf_type=1,sfh_form=4,dust_law=1,duste_switch=0,add_ne
 
 	# output files name:
 	if name_out == None:
-		name_out = "random_modelSEDs.hdf5"
+		name_out = "random_model_spectra.hdf5"
 	file_out.write("name_out %s\n" % name_out)  
 	file_out.close()
 

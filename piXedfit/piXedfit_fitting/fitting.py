@@ -6,32 +6,41 @@ from random import randint
 from astropy.io import fits
 from .fitutils import *
 
-global PIXEDFIT_HOME
-PIXEDFIT_HOME = os.environ['PIXEDFIT_HOME']
+try:
+	global PIXEDFIT_HOME
+	PIXEDFIT_HOME = os.environ['PIXEDFIT_HOME']
+	CODE_dir = PIXEDFIT_HOME+'/piXedfit/piXedfit_fitting/'
+	temp_dir = PIXEDFIT_HOME+'/data/temp/'
+except:
+	print ("PIXEDFIT_HOME should be included in your PATH!")
 
 os.environ["OMP_NUM_THREADS"] = "1"
 
 __all__ = ["singleSEDfit", "singleSEDfit_specphoto", "SEDfit_from_binmap", "SEDfit_from_binmap_specphoto", 
-			"SEDfit_pixels_from_fluxmap", "inferred_params_mcmc_list", "inferred_params_rdsps_list",
-			"get_inferred_params_mcmc", "get_inferred_params_rdsps", "maps_parameters", "maps_parameters_fit_pixels", 
-			"get_params", "priors"]
-
-CODE_dir = PIXEDFIT_HOME+'/piXedfit/piXedfit_fitting/'
-temp_dir = PIXEDFIT_HOME+'/data/temp/'
+			"SEDfit_pixels_from_fluxmap", "maps_parameters", "maps_parameters_fit_pixels", "get_params", "priors"]
 
 
 class priors:
-	"""Functions for defining priors.
+	"""Functions for defining priors to be used in the Bayesian SED fitting process. First, one need to define ranges for the parameters using :func:`params_ranges`, 
+	then define shape of the prior distribution function of each parameter. The available analytic forms for the prior are uniform, Gaussian, Student's t, and gamma functions.
+	User can also choose an arbitrary one, using :func:`arbitrary`. It is also possible to define a joint prior between a given parameter and stellar mass. This joint prior 
+	can be adopted from a known scaling relation, such as stellar mass vs metallicity relation. Note that it is not required to define range of all parameters to be involved in SED fitting. 
+	If range is not inputted, the default one will be used. It is also not required to define prior shape of all parameters. If not inputted, a uniform prior will be used. 
+	Due to the defined ranges, the analytical form is truncated at the edges defined by the range.  
+	
+	:param ranges: 
+		The ranges of the parameters.
 	"""
-	def __init__(self, ranges={'z':[0.0,1.0],'logzsol':[-2.0,0.2],'log_tau':[-1.0,1.5],'log_age':[-3.0,1.14],
+
+	def __init__(self, ranges={'z':[0.0,1.0],'logzsol':[-2.0,0.2],'log_tau':[-1.0,1.5],'log_age':[-1.0,1.14],
 		'log_alpha':[-2.0,2.0],'log_beta':[-2.0,2.0],'log_t0':[-1.0,1.14],'dust_index':[-2.2,0.4],'dust1':[0.0,4.0], 
 		'dust2':[0.0,4.0],'log_gamma':[-4.0, 0.0],'log_umin':[-1.0,1.39],'log_qpah':[-3.0,1.0],'log_fagn':[-5.0,0.48],
-		'log_tauagn':[0.7, 2.18]}):
+		'log_tauagn':[0.7, 2.18],'log_mw_age':[-2.0,1.14],'log_mass':[4.0,12.0]}):
 
-		def_ranges={'z':[0.0,1.0],'logzsol':[-2.0,0.2],'log_tau':[-1.0,1.5],'log_age':[-3.0,1.14],'log_alpha':[-2.0,2.0],
+		def_ranges={'z':[0.0,1.0],'logzsol':[-2.0,0.2],'log_tau':[-1.0,1.5],'log_age':[-1.0,1.14],'log_alpha':[-2.0,2.0],
 			'log_beta':[-2.0,2.0],'log_t0':[-1.0,1.14],'dust_index':[-2.2,0.4],'dust1':[0.0,4.0],'dust2':[0.0,4.0],
 			'log_gamma':[-4.0, 0.0],'log_umin':[-1.0,1.39],'log_qpah':[-3.0,1.0],'log_fagn':[-5.0,0.48],
-			'log_tauagn':[0.7, 2.18]}
+			'log_tauagn':[0.7, 2.18],'log_mw_age':[-2.0,1.14],'log_mass':[4.0,12.0]}
 
 		# get keys in input params_range:
 		keys = list(ranges.keys())
@@ -48,6 +57,7 @@ class priors:
 		"""Function for defining ranges of the parameters.
 
 		:returns params_ranges:
+			Ranges of the parameters to be inputted into a SED fitting function.
 		"""
 		return self.ranges
 
@@ -55,41 +65,49 @@ class priors:
 		"""Function for assigning uniform prior to a parameter.
 
 		:param param:
-			The parameter that will be assigned the prior.
+			The parameter that will be assigned the uniform prior.
 
 		:returns prior:
+			Output prior.
 		"""
 		prior = [param, "uniform"]
 		return prior 
 
 	def gaussian(self, param, loc, scale):
-		"""Function for assigning gaussian prior to a parameter.
+		"""Function for assigning Gaussian prior to a parameter.
 
 		:param param:
-			The parameter that will be assigned the prior.
+			The parameter that will be assigned the Gaussian prior.
 
 		:param loc:
+			Peak location of the Gaussian prior.
 
 		:param scale:
+			Width or standard deviation of the Gaussian prior.
 
 		:returns prior:
+			Output prior.
 		"""
 		prior = [param, "gaussian", loc, scale]
 		return prior
 
 	def studentt(self, param, df, loc, scale):
-		"""Function for assigning Student's t prior to a parameter.
+		"""Function for assigning a prior in the form of Student's t distribution.
 
 		:param param:
-			The parameter that will be assigned the prior.
+			The parameter that will be assigned the Student's t prior.
 
 		:param df:
+			The degree of freedom.
 
 		:param loc:
+			Peak location.
 
 		:param scale:
+			Width of the distribution.
 
 		:returns prior:
+			Output prior.
 		"""
 		prior = [param, "studentt", df, loc, scale]
 		return prior
@@ -98,15 +116,19 @@ class priors:
 		"""Function for assigning a prior in the form of Gamma function to a parameter.
 
 		:param param:
-			The parameter that will be assigned the prior.
+			The parameter that will be assigned the Gamma prior.
 
 		:param a:
+			A shape parameter in the gamma function.
 
 		:param loc:
+			Peak location.
 
 		:param scale:
+			Width of the distribution.
 
 		:returns prior:
+			Output prior.
 		"""
 		prior = [param, "gamma", a, loc, scale]
 		return prior
@@ -115,10 +137,16 @@ class priors:
 		"""Function for assigning an arbitrary prior.
 
 		:param param:
+			The parameter to be assigned with the arbitrary prior.
 
 		:param values:
+			Array of values.
 
 		:param prob:
+			Array of probability associated with the values.
+
+		:returns prior:
+			Output prior.
 
 		"""
 		namepr = randname("arbtprior",".dat")
@@ -127,90 +155,114 @@ class priors:
 		prior = [param, "arbitrary", namepr]
 		return prior
 
+	def joint_with_mass(self, param, log_mass, param_values, scale):
+		"""Function for assigning a joint prior between a given parameter and stellar mass (log_mass).
+
+		:param param:
+			The parameter that will share a joint prior with the stellar mass.
+
+		:param log_mass:
+			Array of stellar mass values.
+
+		:param param_values:
+			Array of the parameter values. In this case, the parameter that shares a joint prior with the stellar mass. 
+
+		:param scale:
+			Array of width or standard deviations of the param_value.
+
+		:returns prior:
+			Output prior. 
+		"""
+		namepr = randname("jprmass",".dat")
+		write_joint_prior(namepr,log_mass,param_values)
+		os.system('mv %s %s' % (namepr,temp_dir))
+		prior = [param, "joint_with_mass", namepr, scale]
+		return prior
+
+
 
 def singleSEDfit(obs_flux,obs_flux_err,filters,models_spec,params_ranges=None,params_priors=None,fit_method='mcmc',
 	gal_z=None,nrands_z=10,add_igm_absorption=0, igm_type=0,likelihood='gauss',dof=2.0,nwalkers=100,nsteps=600,nsteps_cut=50,
 	nproc=10,initfit_nmodels_mcmc=30000,perc_chi2=90.0,cosmo=0,H0=70.0,Om0=0.3,store_full_samplers=1,name_out_fits=None):
-	"""Function for performing fitting to a single photometric SED.
+	"""Function for performing SED fitting to a single photometric SED.
 
-	:param obs_flux: (1D array; float)
-		Input fluxes in multiple bands. The number of elements of the array should be the sama as that of obs_flux_err and filters.
+	:param obs_flux: 
+		Input fluxes in multiple bands. The format is 1D array with a number of elements of the array should be the sama as that of obs_flux_err and filters.
+		The fluxes should be in the unit of erg/s/cm^2/Angstrom.
+	
+	:param obs_flux_err:
+		Input flux uncertainties in multiple bands. The flux uncertainties should be in the unit of erg/s/cm^2/Angstrom.
 
-	:param obs_flux_err: (1D array; float)
-		Input flux uncertainties in multiple bands. 
-
-	:param filters: (list; string)
-		List of photometric filters. The list of filters recognized by piXedfit can be accesses using :func:`piXedfit.utils.filtering.list_filters`.
+	:param filters:
+		List of photometric filters. The list of filters recognized by piXedfit can be accesses using :func:`piXedfit.utils.filtering.list_filters`. 
+		Please see `this page <https://pixedfit.readthedocs.io/en/latest/manage_filters.html>`_ for information on managing filters that include listing available filters, adding, and removing filters. 
 
 	:param models_spec:
-		Model spectral templates in the rest-frame generated prior to the fitting using :func:`piXedfit.piXedfit_model.save_models_rest_spec`. 
-		This set of models will be used in the main fitting step if fit_method='rdsps' or initial fitting if fit_method='mcmc'. 
+		Model spectral templates in the rest-frame generated prior to the SED fitting process using the function :func:`piXedfit.piXedfit_model.save_models_rest_spec`. 
+		This set of model spectra will be used in the main fitting step if fit_method='rdsps' or initial fitting if fit_method='mcmc'. 
 
 	:param params_ranges:
+		Ranges of the parameter defined (i.e., outputted) using the :func:`params_ranges` in the :class:`priors` class.
 
 	:param params_priors:
+		Forms of adopted priros. The acceptable format is a list, such as params_priors=[prior1, prior2, prior3] where prior1, prior2, and prior3 are output of functions in the :class:`priors` class.
 	
-	:param fit_method: (default: 'mcmc')
-		Method in SED fitting. Options are: (a)'mcmc' for Markov Chain Monte Carlo, and (b)'rdsps' for Random Dense Sampling of Parameter Space.
+	:param fit_method:
+		Choice of method for the SED fitting. Options are: (a)'mcmc' for Markov Chain Monte Carlo, and (b)'rdsps' for Random Dense Sampling of Parameter Space.
 
 	:param gal_z: 
-		Redshift of the galaxy. If gal_z=None, then redshift is set to be a free parameter in the fitting.  
-		
-	:param params_range:
-		Ranges of parameters. The format of this input argument is python dictionary. 
-		The range for redshift ('z') only relevant if gal_z=None (i.e., redshift becomes free parameter). 
+		Redshift of the galaxy. If gal_z=None, redshift will be a free parameter in the fitting.  
 
-	:param nrands_z: (default: 10)
+	:param nrands_z:
 		Number of random redshifts to be generated (within the chosen range as set in the params_range) in the main fitting if fit_method='rdsps' or initial fitting if fit_method='mcmc'.
-		This is only relevant if gal_z=None (i.e., photometric redshift is activated).
+		This is only relevant if gal_z=None (i.e., photometric redshift will be activated).
 
-	:param add_igm_absorption: (default: 0)
-		Switch for the IGM absorption. Options are: (a)0 for switch off, and (b)1 for switch on.
+	:param add_igm_absorption:
+		Switch for the IGM absorption. Options are: 0 for switch off and 1 for switch on.
 
-	:param igm_type: (default: 0)
-		Choice for the IGM absorption model. Options are: (a) 0 for Madau (1995), and (b) 1 for Inoue+(2014).
+	:param igm_type: 
+		Choice for the IGM absorption model. Options are: 0 for Madau (1995) and 1 for Inoue+(2014).
 	
-	:param likelihood: (default: 'gauss')
-		Choice of likelihood function for the RDSPS method. Only relevant if the fit_method='rdsps'. Options are: (1)'gauss', and (2) 'student_t'.
+	:param likelihood: 
+		Choice of likelihood function for the RDSPS method. Only relevant if the fit_method='rdsps'. Options are: 'gauss' for the Gaussian form and 'student_t' for the student's t form.
 
-	:param dof: (default: 2.0)
-		Degree of freedom (nu) in the Student's likelihood function. Only relevant if the fit_method='rdsps' and likelihood='student_t'.
+	:param dof: 
+		Degree of freedom (nu) in the Student's t likelihood function. Only relevant if the fit_method='rdsps' and likelihood='student_t'.
 
-	:param nwalkers: (default: 100)
-		Number of walkers to be set in the MCMC process. This parameter is only applicable if fit_method='mcmc'.
+	:param nwalkers: 
+		Number of walkers in the MCMC process. This parameter is only applicable if fit_method='mcmc'.
 
-	:param nsteps: (default: 600)
+	:param nsteps: 
 		Number of steps for each walker in the MCMC process. Only relevant if fit_method='mcmc'.
 
-	:param nsteps_cut: (default: 50)
-		Number of first steps of each walkers that will be cut when constructing the final sampler chains. Only relevant if fit_method='mcmc'.
+	:param nsteps_cut: 
+		Number of first steps of each walkers that will be cut when collecting the final sampler chains. Only relevant if fit_method='mcmc' and store_full_samplers=1.
 
-	:param nproc: (default: 10)
+	:param nproc: 
 		Number of processors (cores) to be used in the calculation.
 
-	:param initfit_nmodels_mcmc: (default: 30000)
-		Number of models to be used for initial fitting in the MCMC method.  
+	:param initfit_nmodels_mcmc: 
+		Number of models to be used in the initial fitting in the MCMC method. Only relevant if fit_method='mcmc'.  
 
-	:param perc_chi2: (default: 90.0)
-		Lowest chi-square Percentage from the full model SEDs that are considered in the calculation of posterior-weighted averaging. 
-		This parameter is only relevant for the RDSPS fitting method and it is not applicable for the MCMC method.
+	:param perc_chi2:
+		A percentile in the set of models sorted based on the chi-square values that will be considered in the calculation of the best-fit parameters (i.e., posterior-weighted averages) in the RDSPS fitting. 
+		This parameter is only relevant if fit_method='rdsps'.
 
-	:param cosmo: (default: 0)
-		Choices for the cosmology. Options are: (1)'flat_LCDM' or 0, (2)'WMAP5' or 1, (3)'WMAP7' or 2, (4)'WMAP9' or 3, (5)'Planck13' or 4, (6)'Planck15' or 5.
+	:param cosmo: 
+		Choices for the cosmology. Options are: (a)'flat_LCDM' or 0, (b)'WMAP5' or 1, (c)'WMAP7' or 2, (d)'WMAP9' or 3, (e)'Planck13' or 4, (f)'Planck15' or 5.
 		These options are similar to the choices available in the `Astropy Cosmology <https://docs.astropy.org/en/stable/cosmology/#built-in-cosmologies>`_ package.
 
-	:param H0: (default: 70.0)
+	:param H0: 
 		The Hubble constant at z=0. Only relevant when cosmo='flat_LCDM' is chosen.
 
-	:param Om0: (default: 0.3)
+	:param Om0: 
 		The Omega matter at z=0.0. Only relevant when cosmo='flat_LCDM' is chosen.
 
-	:param store_full_samplers: (default: 1 or True)
-		Flag indicating whether full sampler models will be stored into the output FITS file or not. 
-		Options are: (a) 1 or True and (b) 0 or False.
+	:param store_full_samplers:
+		Flag indicating whether full sampler models will be stored into the output FITS file or not. Options are: 1 or True for storing the full samplers and 0 or False otherwise.
 
-	:param name_out_fits: (optional, default: None)
-		Name of output FITS file. This parameter is optional. 
+	:param name_out_fits:
+		Name of the output FITS file. This parameter is optional. If None, a default name will be adopted.
 	"""
 
 	# get number of filters:
@@ -226,14 +278,14 @@ def singleSEDfit(obs_flux,obs_flux_err,filters,models_spec,params_ranges=None,pa
 	elif fit_method=='rdsps' or fit_method=='RDSPS':
 		nproc_new = nproc
 
-	if params_ranges==None:
+	if params_ranges is None:
 		pr = priors()
 		params_ranges = pr.params_ranges()
 
-	if params_priors==None:
+	if params_priors is None:
 		params_priors = []
 
-	if gal_z==None or gal_z<=0.0:
+	if gal_z is None or gal_z<=0.0:
 		gal_z = -99.0
 		free_z = 1
 	else:
@@ -252,7 +304,7 @@ def singleSEDfit(obs_flux,obs_flux_err,filters,models_spec,params_ranges=None,pa
 	os.system('mv %s %s' % (name_SED_txt,temp_dir))
 
 	# output files name:
-	if name_out_fits == None:
+	if name_out_fits is None:
 		if fit_method=='mcmc' or fit_method=='MCMC':
 			name_out_fits = randname("mcmc_fit",".fits")
 		elif fit_method=='rdsps' or fit_method=='RDSPS':
@@ -315,104 +367,107 @@ def singleSEDfit_specphoto(obs_flux,obs_flux_err,filters,spec_wave,spec_flux,spe
 	params_priors=None,fit_method='mcmc',gal_z=None,nrands_z=10,add_igm_absorption=0,igm_type=0,spec_sigma=2.6,poly_order=8, 
 	likelihood='gauss',dof=2.0,nwalkers=100,nsteps=600,nsteps_cut=50,nproc=10,initfit_nmodels_mcmc=30000,perc_chi2=90.0, 
 	spec_chi_sigma_clip=3.0,cosmo=0,H0=70.0,Om0=0.3,del_wave_nebem=10.0,store_full_samplers=1,name_out_fits=None):
-	"""Function for performing SED fitting to a single photometric SED.
+	"""Function for performing SED fitting to a single spectrophotometric SED.
 
-	:param obs_flux: (1D array; float)
-		Input fluxes in multiple bands. The number of elements of the array should be the sama as that of obs_flux_err and filters.
+	:param obs_flux: 
+		Input fluxes in multiple bands. The format is 1D array with a number of elements of the array should be the sama as that of obs_flux_err and filters.
+		The fluxes should be in the unit of erg/s/cm^2/Angstrom.
 
-	:param obs_flux_err: (1D array; float)
-		Input flux uncertainties in multiple bands. 
+	:param obs_flux_err:
+		Input flux uncertainties in multiple bands. The flux uncertainties should be in the unit of erg/s/cm^2/Angstrom.
 
-	:param filters: (list; string)
-		List of photometric filters. The list of filters recognized by piXedfit can be accesses using :func:`piXedfit.utils.filtering.list_filters`.
+	:param filters: 
+		List of photometric filters. The list of filters recognized by piXedfit can be accesses using :func:`piXedfit.utils.filtering.list_filters`. 
+		Please see `this page <https://pixedfit.readthedocs.io/en/latest/manage_filters.html>`_ for information on managing filters that include listing available filters, adding, and removing filters. 
 
-	:param spec_wave: (1D array; float)
-		Wavelength grids of the input spectrum.
+	:param spec_wave:
+		1D array of wavelength of the input spectrum.
 	
-	:param spec_flux: (1D array; float)
-		Flux grids of the input spectrum.
+	:param spec_flux: 
+		Flux grids of the input spectrum. The fluxes should be in the unit of erg/s/cm^2/Angstrom.
 
-	:param spec_flux_err: (1D array; float)
-		Flux uncertainties of the input spectrum.
+	:param spec_flux_err: 
+		Flux uncertainties of the input spectrum. The flux uncertainties should be in the unit of erg/s/cm^2/Angstrom.
 
 	:param models_spec:
-		Model spectral templates in the rest-frame generated prior to the fitting using :func:`piXedfit.piXedfit_model.save_models_rest_spec`. 
-		This set of models will be used in the main fitting step if fit_method='rdsps' or initial fitting if fit_method='mcmc'. 
+		Model spectral templates in the rest-frame generated prior to the SED fitting process using the function :func:`piXedfit.piXedfit_model.save_models_rest_spec`. 
+		This set of model spectra will be used in the main fitting step if fit_method='rdsps' or initial fitting if fit_method='mcmc'. 
 
 	:param params_ranges:
+		Ranges of the parameter defined (i.e., outputted) using the :func:`params_ranges` in the :class:`priors` class.
 
 	:param params_priors:
+		Forms of adopted priros. The acceptable format is a list, such as params_priors=[prior1, prior2, prior3] where prior1, prior2, and prior3 are output of functions in the :class:`priors` class.
 
-	:param fit_method: (default: 'mcmc')
-		Method in SED fitting. Options are: (a)'mcmc' for Markov Chain Monte Carlo, and (b)'rdsps' for Random Dense Sampling of Parameter Space.
+	:param fit_method:
+		Choice of method for the SED fitting. Options are: (a)'mcmc' for Markov Chain Monte Carlo, and (b)'rdsps' for Random Dense Sampling of Parameter Space.
 
-	:param gal_z: (float)
-		Redshift of the galaxy. If gal_z=None, then redshift is set to be a free parameter in the fitting.
+	:param gal_z: 
+		Redshift of the galaxy. If gal_z=None, redshift will be a free parameter in the fitting. 
 
-	:param spec_sigma: (default:2.6; float)
-		Spectral resolution in Angstrom of the input spectrum.
+	:param spec_sigma: 
+		Spectral resolution (in Angstrom) of the input spectrum.
 
-	:param poly_order: (default:8.0; integer)
-		Degree of the legendre polynomial function. 
+	:param poly_order: 
+		The degree of the legendre polynomial function to be used for correcting the shape (normalization) of the model spectra.  
 
-	:param params_range: (Dictionary)
-		Ranges of parameters. The format of this input argument is python dictionary. 
-		The range for redshift ('z') only relevant if gal_z=None (i.e., redshift becomes free parameter). 
+	:param nrands_z:
+		Number of random redshifts to be generated (within the chosen range as set in the params_range) in the main fitting if fit_method='rdsps' or initial fitting if fit_method='mcmc'.
+		This is only relevant if gal_z=None (i.e., photometric redshift will be activated).
 
-	:param nrands_z: (default: 10; integer)
-		Number of random redshift to be generated in the main fitting if fit_method='rdsps' or initial fitting if fit_method='mcmc'.
+	:param add_igm_absorption:
+		Switch for the IGM absorption. Options are: 0 for switch off and 1 for switch on.
 
-	:param add_igm_absorption: (default: 0)
-		Switch for the IGM absorption. Options are: (1)0 means turn off, and (2)1 means turn on.
-
-	:param igm_type: (default: 0)
-		Choice for the IGM absorption model. Options are: (a) 0 for Madau (1995), and (b) 1 for Inoue+(2014).
+	:param igm_type: 
+		Choice for the IGM absorption model. Options are: 0 for Madau (1995) and 1 for Inoue+(2014).
 	
-	:param likelihood: (default: 'gauss')
-		Choice of likelihood function for the RDSPS method. Only relevant if the fit_method='rdsps'. Options are: (1)'gauss', and (2) 'student_t'.
+	:param likelihood: 
+		Choice of likelihood function for the RDSPS method. Only relevant if the fit_method='rdsps'. Options are: 'gauss' for the Gaussian form and 'student_t' for the student's t form.
 
-	:param dof: (default: 2.0; float)
-		Degree of freedom (nu) in the Student's likelihood function. Only relevant if the fit_method='rdsps' and likelihood='student_t'.
+	:param dof: 
+		Degree of freedom (nu) in the Student's t likelihood function. Only relevant if the fit_method='rdsps' and likelihood='student_t'.
 
-	:param nwalkers: (default: 100; integer)
-		Number of walkers to be set in the MCMC process. This parameter is only applicable if fit_method='mcmc'.
+	:param nwalkers: 
+		Number of walkers in the MCMC process. This parameter is only applicable if fit_method='mcmc'.
 
-	:param nsteps: (default: 600; integer)
+	:param nsteps: 
 		Number of steps for each walker in the MCMC process. Only relevant if fit_method='mcmc'.
 
-	:param nsteps_cut: (default: 50; integer)
-		Number of first steps of each walkers that will be cut when constructing the final sampler chains. Only relevant if fit_method='mcmc'.
+	:param nsteps_cut: 
+		Number of first steps of each walkers that will be cut when collecting the final sampler chains. Only relevant if fit_method='mcmc' and store_full_samplers=1.
 
-	:param nproc: (default: 10; integer)
+	:param nproc: 
 		Number of processors (cores) to be used in the calculation.
 
-	:param initfit_nmodels_mcmc: (default: 30000; integer)
-		Number of models to be used for initial fitting in the MCMC method. 
+	:param initfit_nmodels_mcmc: 
+		Number of models to be used in the initial fitting in the MCMC method. Only relevant if fit_method='mcmc'.  
 
-	:param perc_chi2: (default: 90.0; float)
-		Lowest chi-square Percentage from the full model SEDs that are considered in the calculation of posterior-weighted averaging. 
-		This parameter is only relevant for the RDSPS fitting method and it is not applicable for the MCMC method.
+	:param perc_chi2:
+		A percentile in the set of models sorted based on the chi-square values that will be considered in the calculation of the best-fit parameters (i.e., posterior-weighted averages) in the RDSPS fitting. 
+		This parameter is only relevant if fit_method='rdsps'.
 	
-	:param spec_chi_sigma_clip: (default: 3.0; float)
+	:param spec_chi_sigma_clip: 
+		Standard deviation (sigma) to be adopted in the sigma clipping to the spectrum data points that are regarded as outliers before 
+		calculating chi-square in the SED fitting process. The sigma clipping is carried out based on the distribution of chi values (sum((D-M)/Derr)). 
 
-	:param cosmo: (default: 0)
-		Choices for the cosmology. Options are: (1)'flat_LCDM' or 0, (2)'WMAP5' or 1, (3)'WMAP7' or 2, (4)'WMAP9' or 3, (5)'Planck13' or 4, (6)'Planck15' or 5.
+	:param cosmo: 
+		Choices for the cosmology. Options are: (a)'flat_LCDM' or 0, (b)'WMAP5' or 1, (c)'WMAP7' or 2, (d)'WMAP9' or 3, (e)'Planck13' or 4, (f)'Planck15' or 5.
 		These options are similar to the choices available in the `Astropy Cosmology <https://docs.astropy.org/en/stable/cosmology/#built-in-cosmologies>`_ package.
 
-	:param H0: (default: 70.0; float)
+	:param H0: 
 		The Hubble constant at z=0. Only relevant when cosmo='flat_LCDM' is chosen.
 
-	:param Om0: (default: 0.3; float)
+	:param Om0: 
 		The Omega matter at z=0.0. Only relevant when cosmo='flat_LCDM' is chosen.
 
-	:param del_wave_nebem: (default: 10; float)
+	:param del_wave_nebem:
+		This parameter defines the Wavelength region (+/- del_wave_nebem) around the emission lines that will be excluded in the fitting of spectral continuum between the model spectrum and the observed one.  
 
-	:param store_full_samplers: (default: 1 or True)
-		Flag indicating whether full sampler models will be stored into the output FITS file or not. 
-		Options are: (a) 1 or True and (b) 0 or False.
+	:param store_full_samplers:
+		Flag indicating whether full sampler models will be stored into the output FITS file or not. Options are: 1 or True for storing the full samplers and 0 or False otherwise.
 
-	:param name_out_fits: (optional, default: None; string)
-		Name of output FITS file. This parameter is optional. 
+	:param name_out_fits:
+		Name of the output FITS file. This parameter is optional. If None, a default name will be adopted.
 	"""
 
 	# get number of filters:
@@ -428,14 +483,14 @@ def singleSEDfit_specphoto(obs_flux,obs_flux_err,filters,spec_wave,spec_flux,spe
 	elif fit_method=='rdsps' or fit_method=='RDSPS':
 		nproc_new = nproc
 
-	if params_ranges==None:
+	if params_ranges is None:
 		pr = priors()
 		params_ranges = pr.params_ranges()
 
-	if params_priors==None:
+	if params_priors is None:
 		params_priors = []
 
-	if gal_z==None or gal_z<=0.0:
+	if gal_z is None or gal_z<=0.0:
 		gal_z = -99.0
 		free_z = 1
 	else:
@@ -455,7 +510,7 @@ def singleSEDfit_specphoto(obs_flux,obs_flux_err,filters,spec_wave,spec_flux,spe
 	os.system('mv %s %s' % (inputSED_file,temp_dir))
 
 	# output files name:
-	if name_out_fits == None:
+	if name_out_fits is None:
 		if fit_method=='mcmc' or fit_method=='MCMC':
 			name_out_fits = randname("mcmc_fit",".fits")
 		elif fit_method=='rdsps' or fit_method=='RDSPS':
@@ -514,94 +569,105 @@ def singleSEDfit_specphoto(obs_flux,obs_flux_err,filters,spec_wave,spec_flux,spe
 	return name_out_fits
 
 
-def SEDfit_from_binmap_specphoto(fits_binmap,binid_range=[],bin_ids=[],models_spec=None,params_ranges=None,params_priors=None,
+def SEDfit_from_binmap_specphoto(fits_binmap,binid_range=None,bin_ids=None,models_spec=None,params_ranges=None,params_priors=None,
 	fit_method='mcmc',gal_z=None,nrands_z=10,add_igm_absorption=0,igm_type=0,spec_sigma=2.6,poly_order=8,likelihood='gauss',
 	dof=3.0,nwalkers=100,nsteps=600,nsteps_cut=50,nproc=10,initfit_nmodels_mcmc=30000,perc_chi2=90.0,spec_chi_sigma_clip=3.0, 
-	cosmo=0,H0=70.0,Om0=0.3,del_wave_nebem=10.0,store_full_samplers=1,name_out_fits=[]):
-	"""A function for performing SED fitting to set of spatially resolved SEDs from the reduced data cube that is produced after the pixel binning. 
+	cosmo=0,H0=70.0,Om0=0.3,del_wave_nebem=10.0,store_full_samplers=1,name_out_fits=None):
+	"""Function for performing SED fitting to a spectrophotometric data cube. The data cube should has been binned using the 
+	function :func:`pixel_binning`.
 
 	:param fits_binmap:
-		Input FITS file of reduced data cube after pixel binning. This FITS file is the one that is output by :func:`pixel_binning_photo` function in the :mod:`piXedfit_bin` module. 
-		This is a mandatory parameter.
+		Input FITS file of the spectrophotometric data cube that has been binned.
 
 	:param binid_range:
-		Range of bin IDs that are going to be fit. Allowed format is [idmin,idmax]. The id starts from 0. If empty, [], fitting will be done to SEDs of all spatial bins.
+		Range of bin IDs which the SEDs are going to be fit. The accepted format is [idmin,idmax]. The ID starts from 0. 
+		If None, the SED fitting will be done to all of the spatial bins in the galaxy.
 
 	:param bin_ids:
-		Bin ids whose the SEDs are going to be fit. Allowed format is a 1D array. The id starts from 0. Both binid_range and bin_ids can't be empty, []. If both of them are not empty, the bin_ids will be used. 
+		Bin IDs which the SEDs are going to be fit. The accepted format is 1D array. 
+		The ID starts from 0. Both binid_range and bin_ids can't be None. If both of them are not None, the bin_ids will be used. 
 
 	:param models_spec:
-		Model spectral templates in the rest-frame that is generated prior to the fitting. This set of models will be used in the main fitting step if fit_method='rdsps' or initial fitting if fit_method='mcmc'. 
+		Model spectral templates in the rest-frame generated prior to the SED fitting process using the function :func:`piXedfit.piXedfit_model.save_models_rest_spec`. 
+		This set of model spectra will be used in the main fitting step if fit_method='rdsps' or initial fitting if fit_method='mcmc'. 
+
+	:param params_ranges:
+		Ranges of the parameter defined (i.e., outputted) using the :func:`params_ranges` in the :class:`priors` class.
+
+	:param params_priors:
+		Forms of adopted priros. The acceptable format is a list, such as params_priors=[prior1, prior2, prior3] where prior1, prior2, and prior3 are output of functions in the :class:`priors` class.
 
 	:param fit_method: (default: 'mcmc')
-		Choice for the fitting method. Options are: (1)'mcmc', and (2)'rdsps'.
+		Choice for the fitting method. Options are: 'mcmc' and 'rdsps'.
 
 	:param gal_z:
 		Redshift of the galaxy. If gal_z=None, then redshift is taken from the header of the FITS file. 
-		If gal_z in the FITS file header is negatiive, then redshift is set to be free. 
-
-	:param spec_sigma: (default: 2.6)
-		Spectral resolution.
-
-	:param poly_order: (default: 5.0)
-
-	:param params_range:
-		Ranges of parameters. The format of this input argument is python dictionary. 
-		The range for redshift ('z') only relevant if gal_z=None (i.e., redshift becomes free parameter).
-
-	:param nrands_z: (default: 10)
-		Number of random redshift to be generated in the main fitting if fit_method='rdsps' or initial fitting if fit_method='mcmc'.
-
-	:param add_igm_absorption: (default: 0)
-		Switch for the IGM absorption. Options are: (1)0 means turn off, and (2)1 means turn on.
-
-	:param igm_type: (default: 0)
-		Choice for the IGM absorption model. Options are: (a) 0 for Madau (1995), and (b) 1 for Inoue+(2014).
+		If gal_z in the FITS header is negative, the redshift is set to be free in the SED fitting (i.e., photometric redshift). 
 	
-	:param likelihood: (default: 'gauss')
-		Choice of likelihood function for the RDSPS method. Only relevant if the fit_method='rdsps'. Options are: (1)'gauss', and (2) 'student_t'.
+	:param nrands_z:
+		Number of random redshifts to be generated (within the chosen range as set in the params_range) in the main fitting if fit_method='rdsps' or initial fitting if fit_method='mcmc'.
+		This is only relevant if gal_z=None (i.e., photometric redshift will be activated).
 
-	:param dof: (default: 2.0)
-		Degree of freedom (nu) in the Student's likelihood function. Only relevant if the fit_method='rdsps' and likelihood='student_t'.
+	:param add_igm_absorption:
+		Switch for the IGM absorption. Options are: 0 for switch off and 1 for switch on.
 
-	:param nwalkers: (default: 100)
-		Number of walkers to be set in the MCMC process. This parameter is only applicable if fit_method='mcmc'.
+	:param igm_type: 
+		Choice for the IGM absorption model. Options are: 0 for Madau (1995) and 1 for Inoue+(2014).
+	
+	:param spec_sigma: 
+		Spectral resolution (in Angstrom) of the input spectrum.
 
-	:param nsteps: (default: 600)
+	:param poly_order: 
+		The degree of the legendre polynomial function to be used for correcting the shape (normalization) of the model spectra.
+
+	:param likelihood: 
+		Choice of likelihood function for the RDSPS method. Only relevant if the fit_method='rdsps'. Options are: 'gauss' for the Gaussian form and 'student_t' for the student's t form.
+
+	:param dof: 
+		Degree of freedom (nu) in the Student's t likelihood function. Only relevant if the fit_method='rdsps' and likelihood='student_t'.
+
+	:param nwalkers: 
+		Number of walkers in the MCMC process. This parameter is only applicable if fit_method='mcmc'.
+
+	:param nsteps: 
 		Number of steps for each walker in the MCMC process. Only relevant if fit_method='mcmc'.
 
-	:param nsteps_cut: (optional, default: 50)
-		Number of first steps of each walkers that will be cut when constructing the final sampler chains. Only relevant if fit_method='mcmc'.
+	:param nsteps_cut: 
+		Number of first steps of each walkers that will be cut when collecting the final sampler chains. Only relevant if fit_method='mcmc' and store_full_samplers=1.
 
-	:param nproc: (default: 10)
+	:param nproc: 
 		Number of processors (cores) to be used in the calculation.
 
-	:param initfit_nmodels_mcmc: (default: 30000)
-		Number of models to be used for initial fitting in the MCMC method. 
+	:param initfit_nmodels_mcmc: 
+		Number of models to be used in the initial fitting in the MCMC method. Only relevant if fit_method='mcmc'.  
 
-	:param perc_chi2: (optional, default: 90.0)
-		Lowest chi-square Percentage from the full model SEDs that are considered in the calculation of posterior-weighted averaging. 
-		This parameter is only relevant for the RDSPS fitting method and it is not applicable for the MCMC method.
+	:param perc_chi2:
+		A percentile in the set of models sorted based on the chi-square values that will be considered in the calculation of the best-fit parameters (i.e., posterior-weighted averages) in the RDSPS fitting. 
+		This parameter is only relevant if fit_method='rdsps'.
+	
+	:param spec_chi_sigma_clip: 
+		Standard deviation (sigma) to be adopted in the sigma clipping to the spectrum data points that are regarded as outliers before 
+		calculating chi-square in the SED fitting process. The sigma clipping is carried out based on the distribution of chi values (sum((D-M)/Derr)). 
 
-	:param spec_chi_sigma_clip: (default: 3.0)
-
-	:param cosmo: (default: 0)
-		Choices for the cosmology. Options are: (1)'flat_LCDM' or 0, (2)'WMAP5' or 1, (3)'WMAP7' or 2, (4)'WMAP9' or 3, (5)'Planck13' or 4, (6)'Planck15' or 5.
+	:param cosmo: 
+		Choices for the cosmology. Options are: (a)'flat_LCDM' or 0, (b)'WMAP5' or 1, (c)'WMAP7' or 2, (d)'WMAP9' or 3, (e)'Planck13' or 4, (f)'Planck15' or 5.
 		These options are similar to the choices available in the `Astropy Cosmology <https://docs.astropy.org/en/stable/cosmology/#built-in-cosmologies>`_ package.
 
-	:param H0: (default: 70.0)
+	:param H0: 
 		The Hubble constant at z=0. Only relevant when cosmo='flat_LCDM' is chosen.
 
-	:param Om0: (default: 0.3)
+	:param Om0: 
 		The Omega matter at z=0.0. Only relevant when cosmo='flat_LCDM' is chosen.
 
-	:param store_full_samplers: (default: 1 or True)
-		Flag indicating whether full sampler models will be stored into the output FITS file or not. 
-		Options are: (a) 1 or True and (b) 0 or False.
+	:param del_wave_nebem:
+		This parameter defines the Wavelength region (+/- del_wave_nebem) around the emission lines that will be excluded in the fitting of spectral continuum between the model spectrum and the observed one.  
 
-	:param name_out_fits: (optional, default: [])
-		Names of output FITS files. This parameter is optional. If not empty, it must be in a list format with number of elements is the same as the number of bins to be fit. 
-		Example: name_out_fits = ['bin1.fits', 'bin2.fits', ..., 'binN.fits'].
+	:param store_full_samplers:
+		Flag indicating whether full sampler models will be stored into the output FITS file or not. Options are: 1 or True for storing the full samplers and 0 or False otherwise.
+
+	:param name_out_fits: 
+		Names of output FITS files. This parameter is optional. If not None it must be in a list format with the same number of elements as the number of bins to be performed SED fitting. 
+		Example: name_out_fits = ['bin1.fits', 'bin2.fits', ..., 'binN.fits']. If None, default names will be adopted.
 	"""
 
 	# open the input FITS file
@@ -653,14 +719,14 @@ def SEDfit_from_binmap_specphoto(fits_binmap,binid_range=[],bin_ids=[],models_sp
 	elif fit_method=='rdsps' or fit_method=='RDSPS':
 		nproc_new = nproc
 
-	if params_ranges==None:
+	if params_ranges is None:
 		pr = priors()
 		params_ranges = pr.params_ranges()
 
-	if params_priors==None:
+	if params_priors is None:
 		params_priors = []
 
-	if gal_z==None or gal_z<=0.0:
+	if gal_z is None or gal_z<=0.0:
 		gal_z = float(header['z'])
 		if gal_z<=0.0:
 			gal_z = -99.0
@@ -679,22 +745,22 @@ def SEDfit_from_binmap_specphoto(fits_binmap,binid_range=[],bin_ids=[],models_sp
 	os.system('mv %s %s' % (name_config,temp_dir))
 
 	nbins_calc = 0
-	if len(bin_ids)>0:
-		if len(binid_range) > 0:
+	if bin_ids is not None:
+		if binid_range is not None:
 			print ("Both bin_ids and binid_range are not empty, so calculation will be done based on bin_ids.")
 		bin_ids = np.asarray(bin_ids)
 		nbins_calc = len(bin_ids)
 
-	elif len(bin_ids)==0:
-		if len(binid_range) == 0:
+	elif bin_ids is None:
+		if binid_range is None:
 			print ("Both bin_ids and binid_range are empty, so SED fitting will be done to all the bins.")
 			bin_ids = np.arange(nbins_photo)
-		elif len(binid_range) > 0:
+		elif binid_range is not None:
 			binid_min = binid_range[0]
 			binid_max = binid_range[1]
 			bin_ids = np.arange(int(binid_min), int(binid_max))
 
-	if 0<len(name_out_fits)<nbins_calc:
+	if name_out_fits is not None and 0<len(name_out_fits)<nbins_calc:
 		print ("The number of elements in name_out_fits should be the same as the number of bins to be calculated!")
 		sys.exit()
 
@@ -702,7 +768,7 @@ def SEDfit_from_binmap_specphoto(fits_binmap,binid_range=[],bin_ids=[],models_sp
 	for idx_bin in bin_ids:
 
 		# name for output FITS file
-		if len(name_out_fits) == 0:
+		if name_out_fits is None:
 			if fit_method=='mcmc' or fit_method=='MCMC':
 				name_out_fits1 = "mcmc_bin%d.fits" % (idx_bin+1)
 			elif fit_method=='rdsps' or fit_method=='RDSPS':
@@ -802,93 +868,92 @@ def SEDfit_from_binmap_specphoto(fits_binmap,binid_range=[],bin_ids=[],models_sp
 			os.system("rm %s%s" % (temp_dir,flg_write[ii]))
 
 
-def SEDfit_from_binmap(fits_binmap,binid_range=[],bin_ids=[],models_spec=None,params_ranges=None,params_priors=None,
+def SEDfit_from_binmap(fits_binmap,binid_range=None,bin_ids=None,models_spec=None,params_ranges=None,params_priors=None,
 	fit_method='mcmc',gal_z=None,nrands_z=10,add_igm_absorption=0,igm_type=0,likelihood='gauss',dof=3.0,nwalkers=100,
-	nsteps=600,nsteps_cut=50,nproc=10,initfit_nmodels_mcmc=30000,perc_chi2=90.0,cosmo=0,H0=70.0,Om0=0.3,
-	store_full_samplers=1,name_out_fits=[]):
+	nsteps=600,nsteps_cut=50,nproc=10,initfit_nmodels_mcmc=30000,perc_chi2=90.0,cosmo=0,H0=70.0,Om0=0.3,store_full_samplers=1,
+	name_out_fits=None):
 
-	"""A function for performing SED fitting to set of spatially resolved SEDs from the reduced data cube that is produced after the pixel binning. 
+	"""Function for performing SED fitting to a photometric data cube. The data cube should has been binned using the function :func:`pixel_binning`.
 
 	:param fits_binmap:
-		Input FITS file of reduced data cube after pixel binning. This FITS file is the one that is output by :func:`pixel_binning_photo` function in the :mod:`piXedfit_bin` module. 
-		This is a mandatory parameter.
+		Input FITS file of the spectrophotometric data cube that has been binned.
 
 	:param binid_range:
-		Range of bin IDs that are going to be fit. Allowed format is [idmin,idmax]. The id starts from 0. If empty, [], fitting will be done to SEDs of all spatial bins.
+		Range of bin IDs which the SEDs are going to be fit. The accepted format is [idmin,idmax]. The ID starts from 0. 
+		If None, the SED fitting will be done to all of the spatial bins in the galaxy.
 
 	:param bin_ids:
-		Bin ids whose the SEDs are going to be fit. Allowed format is a 1D array. The id starts from 0. Both binid_range and bin_ids can't be empty, []. If both of them are not empty, the bin_ids will be used. 
+		Bin IDs which the SEDs are going to be fit. The accepted format is 1D array. 
+		The ID starts from 0. Both binid_range and bin_ids can't be None. If both of them are not None, the bin_ids will be used. 
 
 	:param models_spec:
-		Model spectral templates in the rest-frame that is generated prior to the fitting. This set of models will be used in the main fitting step if fit_method='rdsps' or initial fitting if fit_method='mcmc'. 
+		Model spectral templates in the rest-frame generated prior to the SED fitting process using the function :func:`piXedfit.piXedfit_model.save_models_rest_spec`. 
+		This set of model spectra will be used in the main fitting step if fit_method='rdsps' or initial fitting if fit_method='mcmc'. 
 
 	:param params_ranges:
+		Ranges of the parameter defined (i.e., outputted) using the :func:`params_ranges` in the :class:`priors` class.
 
 	:param params_priors:
+		Forms of adopted priros. The acceptable format is a list, such as params_priors=[prior1, prior2, prior3] where prior1, prior2, and prior3 are output of functions in the :class:`priors` class.
 
 	:param fit_method: (default: 'mcmc')
-		Choice for the fitting method. Options are: (1)'mcmc', and (2)'rdsps'.
+		Choice for the fitting method. Options are: 'mcmc' and 'rdsps'.
 
 	:param gal_z:
 		Redshift of the galaxy. If gal_z=None, then redshift is taken from the header of the FITS file. 
-		If gal_z in the FITS file header is negatiive, then redshift is set to be free. 
-
-	:param params_range:
-		Ranges of parameters. The format of this input argument is python dictionary. 
-		The range for redshift ('z') only relevant if gal_z=None (i.e., redshift becomes free parameter). 
-
-	:param nrands_z: (default: 10)
-		Number of random redshift to be generated in the main fitting if fit_method='rdsps' or initial fitting if fit_method='mcmc'.
-
-	:param add_igm_absorption: (default: 0)
-		Switch for the IGM absorption. Options are: (1)0 means turn off, and (2)1 means turn on.
-
-	:param igm_type: (default: 0)
-		Choice for the IGM absorption model. Options are: (a) 0 for Madau (1995), and (b) 1 for Inoue+(2014).
+		If gal_z in the FITS header is negative, the redshift is set to be free in the SED fitting (i.e., photometric redshift). 
 	
-	:param likelihood: (default: 'gauss')
-		Choice of likelihood function for the RDSPS method. Only relevant if the fit_method='rdsps'. Options are: (1)'gauss', and (2) 'student_t'.
+	:param nrands_z:
+		Number of random redshifts to be generated (within the chosen range as set in the params_range) in the main fitting if fit_method='rdsps' or initial fitting if fit_method='mcmc'.
+		This is only relevant if gal_z=None (i.e., photometric redshift will be activated).
 
-	:param dof: (default: 2.0)
-		Degree of freedom (nu) in the Student's likelihood function. Only relevant if the fit_method='rdsps' and likelihood='student_t'.
+	:param add_igm_absorption:
+		Switch for the IGM absorption. Options are: 0 for switch off and 1 for switch on.
 
-	:param nwalkers: (default: 100)
-		Number of walkers to be set in the MCMC process. This parameter is only applicable if fit_method='mcmc'.
+	:param igm_type: 
+		Choice for the IGM absorption model. Options are: 0 for Madau (1995) and 1 for Inoue+(2014).
+	
+	:param likelihood: 
+		Choice of likelihood function for the RDSPS method. Only relevant if the fit_method='rdsps'. Options are: 'gauss' for the Gaussian form and 'student_t' for the student's t form.
 
-	:param nsteps: (default: 600)
+	:param dof: 
+		Degree of freedom (nu) in the Student's t likelihood function. Only relevant if the fit_method='rdsps' and likelihood='student_t'.
+
+	:param nwalkers: 
+		Number of walkers in the MCMC process. This parameter is only applicable if fit_method='mcmc'.
+
+	:param nsteps: 
 		Number of steps for each walker in the MCMC process. Only relevant if fit_method='mcmc'.
 
-	:param nsteps_cut: (optional, default: 50)
-		Number of first steps of each walkers that will be cut when constructing the final sampler chains. 
-		Only relevant if fit_method='mcmc'.
+	:param nsteps_cut: 
+		Number of first steps of each walkers that will be cut when collecting the final sampler chains. Only relevant if fit_method='mcmc' and store_full_samplers=1.
 
-	:param nproc: (default: 10)
+	:param nproc: 
 		Number of processors (cores) to be used in the calculation.
 
-	:param initfit_nmodels_mcmc: (default: 30000)
-		Number of models to be used for initial fitting in the MCMC method.
+	:param initfit_nmodels_mcmc: 
+		Number of models to be used in the initial fitting in the MCMC method. Only relevant if fit_method='mcmc'.  
 
-	:param perc_chi2: (optional, default: 90.0)
-		Lowest chi-square Percentage from the full model SEDs that are considered in the calculation of posterior-weighted averaging. 
-		This parameter is only relevant for the RDSPS fitting method and it is not applicable for the MCMC method.
-
-	:param cosmo: (default: 0)
-		Choices for the cosmology. Options are: (1)'flat_LCDM' or 0, (2)'WMAP5' or 1, (3)'WMAP7' or 2, (4)'WMAP9' or 3, (5)'Planck13' or 4, (6)'Planck15' or 5.
+	:param perc_chi2:
+		A percentile in the set of models sorted based on the chi-square values that will be considered in the calculation of the best-fit parameters (i.e., posterior-weighted averages) in the RDSPS fitting. 
+		This parameter is only relevant if fit_method='rdsps'.
+	
+	:param cosmo: 
+		Choices for the cosmology. Options are: (a)'flat_LCDM' or 0, (b)'WMAP5' or 1, (c)'WMAP7' or 2, (d)'WMAP9' or 3, (e)'Planck13' or 4, (f)'Planck15' or 5.
 		These options are similar to the choices available in the `Astropy Cosmology <https://docs.astropy.org/en/stable/cosmology/#built-in-cosmologies>`_ package.
 
-	:param H0: (default: 70.0)
+	:param H0: 
 		The Hubble constant at z=0. Only relevant when cosmo='flat_LCDM' is chosen.
 
-	:param Om0: (default: 0.3)
+	:param Om0: 
 		The Omega matter at z=0.0. Only relevant when cosmo='flat_LCDM' is chosen.
 
-	:param store_full_samplers: (default: 1 or True)
-		Flag indicating whether full sampler models will be stored into the output FITS file or not. 
-		Options are: (a) 1 or True and (b) 0 or False.
+	:param store_full_samplers:
+		Flag indicating whether full sampler models will be stored into the output FITS file or not. Options are: 1 or True for storing the full samplers and 0 or False otherwise.
 
-	:param name_out_fits: (optional, default: [])
-		Names of output FITS files. This parameter is optional. If not empty, it must be in a list format with number of elements is the same as the number of bins to be fit. 
-		Example: name_out_fits = ['bin1.fits', 'bin2.fits', ..., 'binN.fits'].
+	:param name_out_fits: 
+		Names of output FITS files. This parameter is optional. If not None it must be in a list format with the same number of elements as the number of bins to be performed SED fitting. 
+		Example: name_out_fits = ['bin1.fits', 'bin2.fits', ..., 'binN.fits']. If None, default names will be adopted.
 	"""
 
 	# open pixel binning maps
@@ -922,14 +987,14 @@ def SEDfit_from_binmap(fits_binmap,binid_range=[],bin_ids=[],models_spec=None,pa
 	elif fit_method=='rdsps' or fit_method=='RDSPS':
 		nproc_new = nproc
 
-	if params_ranges==None:
+	if params_ranges is None:
 		pr = priors()
 		params_ranges = pr.params_ranges()
 
-	if params_priors==None:
+	if params_priors is None:
 		params_priors = []
 
-	if gal_z==None or gal_z<=0.0:
+	if gal_z is None or gal_z<=0.0:
 		gal_z = float(header['z'])
 		if gal_z<=0.0:
 			gal_z = -99.0
@@ -947,22 +1012,22 @@ def SEDfit_from_binmap(fits_binmap,binid_range=[],bin_ids=[],models_spec=None,pa
 	os.system('mv %s %s' % (name_config,temp_dir))
 
 	nbins_calc = 0
-	if len(bin_ids)>0:
+	if bin_ids is not None:
 		if len(binid_range) > 0:
 			print ("Both bin_ids and binid_range are not empty, calculation will be done based on bin_ids.")
 		bin_ids = np.asarray(bin_ids)
 		nbins_calc = len(bin_ids)
 
-	elif len(bin_ids)==0:
-		if len(binid_range) == 0:
+	elif bin_ids is None:
+		if binid_range is None:
 			print ("Both bin_ids and binid_range are empty, SED fitting will be done to all the bins.")
 			bin_ids = np.arange(nbins)
-		elif len(binid_range) > 0:
+		elif binid_range is not None:
 			binid_min = binid_range[0]
 			binid_max = binid_range[1]
 			bin_ids = np.arange(int(binid_min), int(binid_max))
 
-	if 0<len(name_out_fits)<nbins_calc:
+	if name_out_fits is not None and 0<len(name_out_fits)<nbins_calc:
 		print ("The number of elements in name_out_fits should be the same as the number of bins to be calculated!")
 		sys.exit()
 
@@ -978,7 +1043,7 @@ def SEDfit_from_binmap(fits_binmap,binid_range=[],bin_ids=[],models_spec=None,pa
 			os.system('mv %s %s' % (name_SED_txt,temp_dir))
 
 			# name of output FITS file
-			if len(name_out_fits) == 0:
+			if lname_out_fits is None:
 				name_out_fits1 = "mcmc_bin%d.fits" % (idx_bin+1)
 			else:
 				name_out_fits1 = name_out_fits[int(count_id)]
@@ -1011,7 +1076,7 @@ def SEDfit_from_binmap(fits_binmap,binid_range=[],bin_ids=[],models_spec=None,pa
 			os.system('mv %s %s' % (name_SED_txt,temp_dir))
 
 			# output file names:
-			if len(name_out_fits) == 0:
+			if name_out_fits is None:
 				name_out_fits1 = "rdsps_bin%d.fits" % (bin_ids[0]+1)
 			else:
 				name_out_fits1 = name_out_fits[0]
@@ -1052,7 +1117,7 @@ def SEDfit_from_binmap(fits_binmap,binid_range=[],bin_ids=[],models_spec=None,pa
 			os.system('mv %s %s' % (name_inputSEDs,temp_dir))
 
 			# name outputs:
-			if len(name_out_fits) == 0:
+			if name_out_fits is None:
 				name_outs = randname("name_outs",".dat")
 				file_out = open(name_outs,"w")
 				for idx_bin in bin_ids:
@@ -1099,89 +1164,88 @@ def SEDfit_from_binmap(fits_binmap,binid_range=[],bin_ids=[],models_spec=None,pa
 			os.system("rm %s%s" % (temp_dir,flg_write[ii]))
 
 
-def SEDfit_pixels_from_fluxmap(fits_fluxmap,x_range=[],y_range=[],models_spec=None,params_ranges=None,params_priors=None,
+def SEDfit_pixels_from_fluxmap(fits_fluxmap,x_range=None,y_range=None,models_spec=None,params_ranges=None,params_priors=None,
 	fit_method='mcmc',gal_z=None,nrands_z=10,add_igm_absorption=0,igm_type=0,likelihood='gauss',dof=2.0,nwalkers=100,nsteps=600,
-	nsteps_cut=50,nproc=10,initfit_nmodels_mcmc=30000,cosmo=0,H0=70.0,Om0=0.3,perc_chi2=10.0,store_full_samplers=1):
+	nsteps_cut=50,nproc=10,initfit_nmodels_mcmc=30000,perc_chi2=10.0,cosmo=0,H0=70.0,Om0=0.3,store_full_samplers=1):
 
-	"""A function for performing SED fitting on pixel-by-pixel basis. 
+	"""Function for performing SED fitting to a photometric data cube on the pixel-by-pixel basis. 
 
 	:param fits_fluxmap:
-		Input FITS file of reduced 3D data cube of multiband fluxes. It is the ouput (or should have the same format as that of the output) 
-		of the image processing by :func:`images_processing` function of the :mod:`piXedfit_images` module.
+		Input FITS file of photometric data cube. It is the ouput (or should have the same format as that of the output) 
+		of the image processing by :func:`images_processing` function.
 
 	:param x_range:
 		Range of x-axis coordinate within which SED fitting will be performed to the pixels. The format is [xmin,xmax]. 
-		If x_range=[], the whole x-axis range of the data cube is considered.  
+		If x_range=None, the whole x-axis range of the data cube is considered.  
 
 	:param y_range:
 		Range of y-axis coordinate within which SED fitting will be performed to the pixels. The format is [ymin,ymax]. 
-		If y_range=[], the whole y-axis range of the data cube is considered.
+		If y_range=None, the whole y-axis range of the data cube is considered.
 
 	:param models_spec:
-		Model spectral templates in the rest-frame that is generated prior to the fitting. This set of models will be used in the main fitting step if fit_method='rdsps' or initial fitting if fit_method='mcmc'. 
+		Model spectral templates in the rest-frame generated prior to the SED fitting process using the function :func:`piXedfit.piXedfit_model.save_models_rest_spec`. 
+		This set of model spectra will be used in the main fitting step if fit_method='rdsps' or initial fitting if fit_method='mcmc'. 
 
 	:param params_ranges:
+		Ranges of the parameter defined (i.e., outputted) using the :func:`params_ranges` in the :class:`priors` class.
 
 	:param params_priors:
+		Forms of adopted priros. The acceptable format is a list, such as params_priors=[prior1, prior2, prior3] where prior1, prior2, and prior3 are output of functions in the :class:`priors` class.
 
-	:param fit_method: (default: 'mcmc')
-		Choice for the fitting method. Options are: (1)'mcmc', and (2)'rdsps'.
+	:param fit_method:
+		Choice for the fitting method. Options are: 'mcmc' and 'rdsps'.
 
-	:param gal_z: 
-		Redshift of the galaxy. If gal_z=None, then redshift is taken from the FITS file header. 
-		If gal_z from the header is negative, then redshift is set to be free. **As for the current version of **piXedfit**, photo-z hasn't been implemented**.
-
-	:param params_range:
-		Ranges of parameters. The format of this input argument is python dictionary. 
-		The range for redshift ('z') only relevant if gal_z=None (i.e., redshift becomes free parameter). 
-
-	:param nrands_z: (default: 10)
-		Number of random redshift to be generated in the main fitting if fit_method='rdsps' or initial fitting if fit_method='mcmc'.
-
-	:param add_igm_absorption: (default: 0)
-		Switch for the IGM absorption. Options are: (1)0 means turn off, and (2)1 means turn on.
-
-	:param igm_type: (default: 0)
-		Choice for the IGM absorption model. Options are: (a) 0 for Madau (1995), and (b) 1 for Inoue+(2014).
+	:param gal_z:
+		Redshift of the galaxy. If gal_z=None, then redshift is taken from the header of the FITS file. 
+		If gal_z in the FITS header is negative, the redshift is set to be free in the SED fitting (i.e., photometric redshift). 
 	
-	:param likelihood: (default: 'gauss')
-		Choice of likelihood function for the RDSPS method. Only relevant if the fit_method='rdsps'. Options are: (1)'gauss', and (2) 'student_t'.
+	:param nrands_z:
+		Number of random redshifts to be generated (within the chosen range as set in the params_range) in the main fitting if fit_method='rdsps' or initial fitting if fit_method='mcmc'.
+		This is only relevant if gal_z=None (i.e., photometric redshift will be activated).
 
-	:param dof: (default: 2.0)
-		Degree of freedom (nu) in the Student's likelihood function. Only relevant if the fit_method='rdsps' and likelihood='student_t'.
+	:param add_igm_absorption:
+		Switch for the IGM absorption. Options are: 0 for switch off and 1 for switch on.
 
-	:param nwalkers: (default: 100)
-		Number of walkers to be set in the MCMC process. This parameter is only applicable if fit_method='mcmc'.
+	:param igm_type: 
+		Choice for the IGM absorption model. Options are: 0 for Madau (1995) and 1 for Inoue+(2014).
 
-	:param nsteps: (default: 600)
+	:param likelihood: 
+		Choice of likelihood function for the RDSPS method. Only relevant if the fit_method='rdsps'. Options are: 'gauss' for the Gaussian form and 'student_t' for the student's t form.
+
+	:param dof: 
+		Degree of freedom (nu) in the Student's t likelihood function. Only relevant if the fit_method='rdsps' and likelihood='student_t'.
+
+	:param nwalkers: 
+		Number of walkers in the MCMC process. This parameter is only applicable if fit_method='mcmc'.
+
+	:param nsteps: 
 		Number of steps for each walker in the MCMC process. Only relevant if fit_method='mcmc'.
 
-	:param nsteps_cut: (optional, default: 50)
-		Number of first steps of each walkers that will be cut when constructing the final sampler chains. Only relevant if fit_method='mcmc'.
+	:param nsteps_cut: 
+		Number of first steps of each walkers that will be cut when collecting the final sampler chains. Only relevant if fit_method='mcmc' and store_full_samplers=1.
 
-	:param nproc: (default: 10)
+	:param nproc: 
 		Number of processors (cores) to be used in the calculation.
 
-	:param initfit_nmodels_mcmc: (default: 30000)
-		Number of models to be used for initial fitting in the MCMC method. 
+	:param initfit_nmodels_mcmc: 
+		Number of models to be used in the initial fitting in the MCMC method. Only relevant if fit_method='mcmc'.  
 
-	:param cosmo: (default: 0)
-		Choices for the cosmology. Options are: (1)'flat_LCDM' or 0, (2)'WMAP5' or 1, (3)'WMAP7' or 2, (4)'WMAP9' or 3, (5)'Planck13' or 4, (6)'Planck15' or 5.
+	:param perc_chi2:
+		A percentile in the set of models sorted based on the chi-square values that will be considered in the calculation of the best-fit parameters (i.e., posterior-weighted averages) in the RDSPS fitting. 
+		This parameter is only relevant if fit_method='rdsps'.
+	
+	:param cosmo: 
+		Choices for the cosmology. Options are: (a)'flat_LCDM' or 0, (b)'WMAP5' or 1, (c)'WMAP7' or 2, (d)'WMAP9' or 3, (e)'Planck13' or 4, (f)'Planck15' or 5.
 		These options are similar to the choices available in the `Astropy Cosmology <https://docs.astropy.org/en/stable/cosmology/#built-in-cosmologies>`_ package.
 
-	:param H0: (default: 70.0)
+	:param H0: 
 		The Hubble constant at z=0. Only relevant when cosmo='flat_LCDM' is chosen.
 
-	:param Om0: (default: 0.3)
+	:param Om0: 
 		The Omega matter at z=0.0. Only relevant when cosmo='flat_LCDM' is chosen.
 
-	:param perc_chi2: (default: 10.0)
-		Lowest chi-square Percentage from the full model SEDs that are considered in the calculation of posterior-weighted averaging. 
-		This parameter is only relevant for the RDSPS fitting method and it is not applicable for the MCMC method.
-
-	:param store_full_samplers: (default: 1 or True)
-		Flag indicating whether full sampler models will be stored into the output FITS file or not. 
-		Options are: (a) 1 or True and (b) 0 or False.
+	:param store_full_samplers:
+		Flag indicating whether full sampler models will be stored into the output FITS file or not. Options are: 1 or True for storing the full samplers and 0 or False otherwise.
 	"""
 
 	# open the input FITS file
@@ -1209,7 +1273,7 @@ def SEDfit_pixels_from_fluxmap(fits_fluxmap,x_range=[],y_range=[],models_spec=No
 	os.system('mv %s %s' % (name_filters_list,temp_dir))
 
 	# Define x- and y-ranges
-	if len(x_range)==0:
+	if x_range is None:
 		xmin, xmax = 0, dim_x
 	else:
 		if x_range[0]<0 or x_range[1]>dim_x:
@@ -1218,7 +1282,7 @@ def SEDfit_pixels_from_fluxmap(fits_fluxmap,x_range=[],y_range=[],models_spec=No
 		else:
 			xmin, xmax = x_range[0], x_range[1] 
 
-	if len(y_range)==0:
+	if y_range is None:
 		ymin, ymax = 0, dim_y
 	else:
 		if y_range[0]<0 or y_range[1]>dim_y:
@@ -1227,7 +1291,7 @@ def SEDfit_pixels_from_fluxmap(fits_fluxmap,x_range=[],y_range=[],models_spec=No
 		else:
 			ymin, ymax = y_range[0], y_range[1]
 
-	if gal_z==None or gal_z<=0.0:
+	if gal_z is None or gal_z<=0.0:
 		gal_z = float(header['z'])
 		if gal_z<=0.0:
 			gal_z = -99.0
@@ -1345,341 +1409,12 @@ def SEDfit_pixels_from_fluxmap(fits_fluxmap,x_range=[],y_range=[],models_spec=No
 			os.system("rm %s%s" % (temp_dir,flg_write[ii]))
 
 
-def inferred_params_mcmc_list(list_name_fits=[],name_out_fits=None):
-	"""Function for calculating inferred parameters (i.e., median posteriors) of fitting results.
-	The expected input is a list of FITS files contining the MCMC samplers which are output of :func:`singleSEDfit` or :func:`SEDfit_from_binmap` functions. 
-	The output of this function is a FITS file containing summary of inferred parameters.
+def maps_parameters(fits_binmap, bin_ids, name_sampler_fits, fits_fluxmap=None, refband_SFR=None, refband_SM=None, 
+	refband_Mdust=None, name_out_fits=None):
+	"""Function for constructing maps of properties of a galaxy from the collectin of fitting results of the spatial bins within the galaxy.
 
-	:param list_name_fits: (Mandatory, default=[])
-		List of names of the input FITS files. The FITS files are output of fitting with MCMC method using :func:`singleSEDfit` or :func:`SEDfit_from_binmap` functions.
-		All the FITS files should have identical structure. In other word, they are results of fitting with the same set of free parameters.
-
-	:param name_out_fits: (optional, default: None)
-		Desired name for the output FITS file.
-	"""
-
-	nfiles = len(list_name_fits)
-
-	hdu = fits.open(list_name_fits[0])
-	header = hdu[0].header
-	nparams = int(header['nparams'])
-	free_z = header['free_z']
-	ncols = int(header['ncols'])
-
-	if nfiles>1:
-		for ii in range(0,nfiles):
-			hdu0 = fits.open(list_name_fits[ii])
-			header0 = hdu0[0].header
-			nparams0 = int(header0['nparams'])
-			free_z0 = header0['free_z']
-			if nparams!=nparams0 or free_z!=free_z0:
-				print ("Only set of fitting results with the same fitting parameters are allowed!")
-				sys.exit()
-			hdu0.close()
-
-	# get parameters
-	tfields = int(hdu[1].header['TFIELDS'])
-	params = []
-	for ii in range(1,tfields):
-		str_temp = 'TTYPE%d' % (ii+1)
-		params.append(hdu[1].header[str_temp])
-	nparams_new = len(params)
-	print("List of parameters:")
-	print (params)
-	hdu.close()
-
-	# define indexes
-	indexes = ["p16","p50","p84"]
-	nindexes = len(indexes)
-
-	# allocate memory:
-	arrays_fitres = {}
-	string_idx = []
-	for pp in range(0,nparams_new):
-		for ii in range(0,nindexes):
-			str_temp = "%s-%s" % (params[pp],indexes[ii])
-			arrays_fitres[str_temp] = np.zeros(nfiles)
-			string_idx.append(str_temp)
-	nstring_idx = len(string_idx)
-
-	# calcultions
-	for jj in range(0,nfiles):
-		hdu = fits.open(list_name_fits[jj])
-		data_samplers = hdu[1].data 
-		hdu.close()
-
-		idx_excld = np.where(data_samplers['log_sfr']<=-29.0)
-
-		for pp in range(0,nparams_new):
-			data_samp = np.delete(data_samplers[params[pp]], idx_excld[0])
-			for ii in range(0,nindexes):
-				str_temp = "%s-%s" % (params[pp],indexes[ii])
-
-				if indexes[ii] == 'p16':
-					arrays_fitres[str_temp][jj] = np.percentile(data_samp, 16)
-				elif indexes[ii] == 'p50':
-					arrays_fitres[str_temp][jj] = np.percentile(data_samp, 50)
-				elif indexes[ii] == 'p84':
-					arrays_fitres[str_temp][jj] = np.percentile(data_samp, 84)
-
-	# make output FITS file to store the results
-	hdr = fits.Header()
-	hdr['nfiles'] = nfiles
-	ids = np.zeros(nfiles)
-	for ii in range(0,nfiles):
-		str_temp = 'file%d' % ii
-		hdr[str_temp] = list_name_fits[ii]
-		ids[ii] = ii + 1
-	for pp in range(0,nparams_new):
-		str_temp = 'param%d' % pp
-		hdr[str_temp] = params[pp]
-	for ii in range(0,nindexes):
-		str_temp = 'index%d' % ii
-		hdr[str_temp] = indexes[ii]
-	primary_hdu = fits.PrimaryHDU(header=hdr)
-
-	cols0 = []
-	col = fits.Column(name='id', format='K', array=np.array(ids))
-	cols0.append(col)
-
-	for ii in range(0,nstring_idx):
-		col = fits.Column(name=string_idx[ii], format='D', array=np.array(arrays_fitres[string_idx[ii]]))
-		cols0.append(col)
-
-	cols = fits.ColDefs(cols0)
-	hdu = fits.BinTableHDU.from_columns(cols)
-	hdul = fits.HDUList([primary_hdu, hdu])
-
-	if name_out_fits == None:
-		name_out_fits = 'bestfit_parameters.fits'
-	hdul.writeto(name_out_fits, overwrite=True)
-
-	return name_out_fits
-
-
-def inferred_params_rdsps_list(list_name_fits=[], perc_chi2=10.0, name_out_fits=None):
-	"""Function for calculating inferred parameters (i.e., median posteriors) of fitting results obtained with RDSPS method.
-	The expected input is a list of FITS files contining the model properties which are output of :func:`singleSEDfit` or :func:`SEDfit_from_binmap` functions. 
-	The output of this function is a FITS file containing summary of inferred parameters.
-
-	:param list_name_fits: (Mandatory, default=[])
-		List of names of the input FITS files. The FITS files are output of fitting with RDSPS method using :func:`singleSEDfit` or :func:`SEDfit_from_binmap` functions.
-		All the FITS files should have identical structure. In other word, they are results of fitting with the same set of free parameters.
-
-	:param perc_chi2: (default: 10.0)
-		Lowest chi-square Percentage from the full model SEDs that are considered in the calculation of posterior-weighted averaging. 
-
-	:param name_out_fits: (default: None)
-		Desired name for the output FITS file.
-	"""
-	
-	nseds = len(list_name_fits)
-
-	# open one FITS file
-	hdu = fits.open(list_name_fits[0])
-	duste_stat = hdu[0].header['duste_stat']
-
-	# get parameters
-	tfields = int(hdu[1].header['TFIELDS'])
-	params = []
-	for ii in range(1,tfields-2):				## exclude 'chi2' and 'prob'
-		str_temp = 'TTYPE%d' % (ii+1)
-		params.append(hdu[1].header[str_temp])
-	nparams = len(params)
-	hdu.close()
-
-	# allocate memory
-	bfit_params = {}
-	bfit_params_err = {}
-	for pp in range(0,nparams):
-		bfit_params[params[pp]] = np.zeros(nseds)
-		bfit_params_err[params[pp]] = np.zeros(nseds)
-
-	# iteration
-	length_string = np.zeros(nseds)
-	for ii in range(0,nseds):
-		length_string[ii] = len(list_name_fits[ii])
-		hdu = fits.open(list_name_fits[ii])
-		data_samplers = hdu[1].data
-		hdu.close()
-
-		crit_chi2 = np.percentile(data_samplers['chi2'], perc_chi2)
-		idx_sel = np.where((data_samplers['chi2']<=crit_chi2) & (data_samplers['log_sfr']>-29.0) & (np.isnan(data_samplers['lnprob'])==False) & (np.isinf(data_samplers['lnprob'])==False))
-
-		array_lnprob = data_samplers['lnprob'][idx_sel[0]] - max(data_samplers['lnprob'][idx_sel[0]])  # normalize
-		array_prob = np.exp(array_lnprob)
-		array_prob = array_prob/np.sum(array_prob)						 # normalize
-		tot_prob = np.sum(array_prob)
-
-		for pp in range(0,nparams):
-			array_val = data_samplers[params[pp]][idx_sel[0]]
-
-			mean_val = np.sum(array_val*array_prob)/tot_prob
-			mean_val2 = np.sum(np.square(array_val)*array_prob)/tot_prob
-			std_val = sqrt(abs(mean_val2 - (mean_val**2)))
-
-			bfit_params[params[pp]][ii] = mean_val
-			bfit_params_err[params[pp]][ii] = std_val
-
-	# store into FITS file
-	hdr = fits.Header()
-	hdr['nparams'] = nparams
-	hdr['nseds'] = nseds
-	for pp in range(0,nparams):
-		str_temp = 'param%d' % pp
-		hdr[str_temp] = params[pp]
-	primary_hdu = fits.PrimaryHDU(header=hdr)
-	hdul = fits.HDUList()
-	hdul.append(primary_hdu)
-
-	id_seds = np.linspace(1, nseds, nseds)
-	cols0 = []
-	col = fits.Column(name='id', format='K', array=np.array(id_seds))
-	cols0.append(col)
-	str_temp = 'A%d' % max(length_string)
-	col = fits.Column(name='name', format=str_temp, array=np.array(list_name_fits))
-	cols0.append(col)
-	cols = fits.ColDefs(cols0)
-	hdul.append(fits.BinTableHDU.from_columns(cols, name='input_fits'))
-
-	cols0 = []
-	col = fits.Column(name='id', format='K', array=np.array(id_seds))
-	cols0.append(col)
-	for pp in range(0,nparams):
-		col = fits.Column(name=params[pp], format='D', array=np.array(bfit_params[params[pp]]))
-		cols0.append(col)
-	cols = fits.ColDefs(cols0)
-	hdul.append(fits.BinTableHDU.from_columns(cols, name='mean'))
-
-	cols0 = []
-	col = fits.Column(name='id', format='K', array=np.array(id_seds))
-	cols0.append(col)
-	for pp in range(0,nparams):
-		col = fits.Column(name=params[pp], format='D', array=np.array(bfit_params_err[params[pp]]))
-		cols0.append(col)
-	cols = fits.ColDefs(cols0)
-	hdul.append(fits.BinTableHDU.from_columns(cols, name='std'))
-
-	if name_out_fits == None:
-		name_out_fits = 'bfit_params.fits'
-	hdul.writeto(name_out_fits, overwrite=True)
-
-	return name_out_fits
-
-
-def get_inferred_params_mcmc(list_name_sampler_fits=[], bin_excld_flag=[]):
-	"""A function for calculating inferred parameters from the fitting results with MCMC method.
-	"""
-	nfiles = len(list_name_sampler_fits)
-
-	# get list of parameters
-	hdu = fits.open(list_name_sampler_fits[nfiles-1])
-	tfields = int(hdu[1].header['TFIELDS'])
-	params = []
-	for ii in range(1,tfields):
-		str_temp = 'TTYPE%d' % (ii+1)
-		params.append(hdu[1].header[str_temp])
-	nparams = len(params)
-	hdu.close()
-
-	indexes = ["p16","p50","p84"]
-	nindexes = len(indexes)
-
-	# allocate memory
-	bfit_param = {}
-	for pp in range(0,nparams):
-		bfit_param[params[pp]] = {}
-		for ii in range(0,nindexes):
-			bfit_param[params[pp]][indexes[ii]] = np.zeros(nfiles) - 99.0
-
-	# calculation
-	for ii in range(0,nfiles):
-		if bin_excld_flag[ii] != 1:
-			hdu = fits.open(list_name_sampler_fits[ii])
-			ncols = int(hdu[0].header['ncols'])
-			params0 = []
-			for jj in range(2,ncols+1):
-				str_temp = "col%d" % jj
-				params0.append(hdu[0].header[str_temp])
-			nparams0 = len(params0)
-			data_samplers = hdu[1].data 
-
-			idx_excld = np.where(data_samplers['log_sfr']<=-29.0)
-
-			# iteration
-			for pp in range(0,nparams0):
-				data_samp = np.delete(data_samplers[params0[pp]], idx_excld[0])
-				for kk in range(0,nindexes):
-					if indexes[kk] == 'p16':
-						bfit_param[params0[pp]][indexes[kk]][ii] = np.percentile(data_samp, 16)
-					elif indexes[kk] == 'p50':
-						bfit_param[params0[pp]][indexes[kk]][ii] = np.percentile(data_samp, 50)
-					elif indexes[kk] == 'p84':
-						bfit_param[params0[pp]][indexes[kk]][ii] = np.percentile(data_samp, 84)
-			hdu.close()
-
-	return bfit_param,params
-
-
-def get_inferred_params_rdsps(list_name_sampler_fits=[], bin_excld_flag=[], perc_chi2=10.0):
-	nfiles = len(list_name_sampler_fits)
-
-	# get parameters
-	hdu = fits.open(list_name_sampler_fits[0]) 
-	duste_stat = hdu[0].header['duste_stat']
-	params = []
-	for pp in range(0,int(hdu[0].header['nparams'])):
-		str_temp = 'param%d' % pp
-		params.append(hdu[0].header[str_temp])
-	hdu.close()
-	params.append('log_mass')
-	params.append('log_sfr')
-	params.append('log_mw_age')
-	if duste_stat == 'duste':
-		params.append('log_dustmass')
-	nparams = len(params)
-
-	indexes = ["mean", "mean_err"]
-
-	bfit_param = {}
-	for pp in range(0,nparams):
-		bfit_param[params[pp]] = {}
-		bfit_param[params[pp]]["mean"] = np.zeros(nfiles) - 99.0
-		bfit_param[params[pp]]["mean_err"] = np.zeros(nfiles) - 99.0
-
-	for ii in range(0,nfiles):
-		if bin_excld_flag[ii] != 1:
-			hdu = fits.open(list_name_sampler_fits[ii])
-			data_samplers = hdu[1].data
-			hdu.close()
-
-			crit_chi2 = np.percentile(data_samplers['chi2'], perc_chi2)
-			idx_sel = np.where((data_samplers['chi2']<=crit_chi2) & (data_samplers['log_sfr']>-29.0) & (np.isnan(data_samplers['lnprob'])==False) & (np.isinf(data_samplers['lnprob'])==False))
-
-			array_lnprob = data_samplers['lnprob'][idx_sel[0]] - max(data_samplers['lnprob'][idx_sel[0]])  # normalize
-			array_prob = np.exp(array_lnprob)
-			array_prob = array_prob/np.sum(array_prob)						 # normalize
-			tot_prob = np.sum(array_prob)
-
-			for pp in range(0,nparams):
-				array_val = data_samplers[params[pp]][idx_sel[0]]
-
-				mean_val = np.sum(array_val*array_prob)/tot_prob
-				mean_val2 = np.sum(np.square(array_val)*array_prob)/tot_prob
-				std_val = sqrt(abs(mean_val2 - (mean_val**2)))
-
-				bfit_param[params[pp]]["mean"][ii] = mean_val
-				bfit_param[params[pp]]["mean_err"][ii] = std_val
-
-	return bfit_param,params,indexes
-
-
-def maps_parameters(fits_binmap=None, bin_ids=[], name_sampler_fits=[], fits_fluxmap=None, refband_SFR=None, refband_SM=None, 
-	refband_Mdust=None, perc_chi2=90.0, name_out_fits=None):
-	"""Function that can be used for constructing maps of properties from the fitting results of spatial bins.
-
-	:param fits_binmap: (Mandatory, default=None)
-		FITS file containing the reduced data after the pixel binning process, which is output of the :func:`pixel_binning_photo` function in the :mod:`piXedfit_bin` module.
+	:param fits_binmap:
+		Input FITS file of the spectrophotometric data cube that has been binned.
 
 	:param bin_ids:
 		Bin indices of the FITS files listed in name_sampler_fits input. Allowed format is a 1D array. The id starts from 0. 
@@ -1688,27 +1423,23 @@ def maps_parameters(fits_binmap=None, bin_ids=[], name_sampler_fits=[], fits_flu
 		List of the names of the FITS files containing the fitting results of spatial bins. This should have the same number of element as that of bin_ids. 
 		The number of element doesn't necessarily the same as the number of bins. A missing bin will be ignored in the creation of the maps of properties.
 
-	:param fits_fluxmap: (Mandatory, default: None)
+	:param fits_fluxmap:
 		FITS file containing reduced maps of multiband fluxes, which is output of the :func:`flux_map` in the :class:`images_processing` class in the :mod:`piXedfit_images` module.
 
-	:param refband_SFR: (default: None)
+	:param refband_SFR:
 		Index of band in the multiband set that is used for reference in dividing map of SFR in bin space into map of SFR in pixel space.
 		If None, the band with shortest wavelength is selected.
 
-	:param refband_SM: (default: None)
+	:param refband_SM:
 		Index of band in the multiband set that is used for reference in dividing map of stellar mass in bin space into map of stellar mass in pixel space.
 		If None, the band with longest wavelength is selected.
 
-	:param refband_Mdust: (default: None)
+	:param refband_Mdust:
 		Index of band/filter in the multiband set that is used for reference in dividing map of dust mass in bin space into map of dust mass in pixel space.
 		If None, the band with longest wavelength is selected.
 
-	:param perc_chi2: (optional, default=80.0)
-		A parameter that set the percentile cut of the random model SEDs. The cut is applied after the models are sorted based on their chi-square values. 
-		This parameter defines up to what percentile the models will be cut. This parameter is only used if the fitting results are obtained with the RDSPS method.  
-
-	:param name_out_fits: (optional, default: None)
-		Desired name for the output FITS file.   
+	:param name_out_fits: 
+		Desired name for the output FITS file. If None, a default name will be used.  
 	"""
 
 	# open the FITS file containing the pixel binning map
@@ -1716,21 +1447,20 @@ def maps_parameters(fits_binmap=None, bin_ids=[], name_sampler_fits=[], fits_flu
 	unit_bin = float(hdu[0].header['unit'])
 	if hdu[0].header['SPECPHOT'] == 0:
 		nbins = int(hdu[0].header['nbins'])
-		pix_bin_flag = hdu['bin_map'].data
+		binmap = hdu['bin_map'].data
 		bin_flux = hdu['bin_flux'].data*unit_bin
 		bin_flux_err = hdu['bin_fluxerr'].data*unit_bin
-
 	elif hdu[0].header['SPECPHOT'] == 1:
 		nbins = int(hdu[0].header['NBINSPH'])
-		pix_bin_flag = hdu['PHOTO_BIN_MAP'].data
+		binmap = hdu['PHOTO_BIN_MAP'].data
 		bin_flux = hdu['BIN_PHOTO_FLUX'].data*unit_bin
 		bin_flux_err = hdu['BIN_PHOTO_FLUXERR'].data*unit_bin
 	gal_z = float(hdu[0].header['z'])
 	nbands = int(hdu[0].header['nfilters'])
 	hdu.close()
 
-	dim_y = pix_bin_flag.shape[0]
-	dim_x = pix_bin_flag.shape[1]
+	dim_y = binmap.shape[0]
+	dim_x = binmap.shape[1]
 
 	# flag for excluded bins
 	name_sampler_fits1 = []
@@ -1754,122 +1484,125 @@ def maps_parameters(fits_binmap=None, bin_ids=[], name_sampler_fits=[], fits_flu
 		pix_flux_err = hdu['PHOTO_FLUXERR'].data*unit_pix
 	hdu.close()
 
-	# check the fitting method and whether the sampler chains are stored or not
-	hdu = fits.open(name_sampler_fits[0])
-	fit_method = hdu[0].header['fitmethod']
-	store_full_samplers = int(hdu[0].header['storesamp'])
-	hdu.close()
+	# number of files
+	nfiles = len(name_sampler_fits)
 
+	#=> get some information
+	hdu = fits.open(name_sampler_fits[nfiles-1])
+	fit_method = hdu[0].header['fitmethod']
+	# list of parameters
+	params = []
+	for pp in range(0,int(hdu[0].header['nparams'])):
+		params.append(hdu[0].header['param%d' % pp])
+	if fit_method == 'mcmc':
+		params.append('log_sfr')
+		params.append('log_mw_age')
+		if int(hdu[0].header['duste_stat'])==1:
+			params.append('log_dustmass')
+		if int(hdu[0].header['add_agn'])==1:
+			params.append('log_fagn_bol')
+	nparams = len(params)
+	# indices
 	if fit_method == 'rdsps':
 		indexes = ["mean", "mean_err"]
-		nindexes = len(indexes)
+	elif fit_method == 'mcmc':
+		indexes = ["p16","p50","p84"]
+	nindexes = len(indexes)
+	hdu.close()
 
-		#=> get the fitting results
-		if store_full_samplers == 1:
-			bfit_param,params,indexes = get_inferred_params_rdsps(list_name_sampler_fits=name_sampler_fits1, bin_excld_flag=bin_excld_flag, perc_chi2=perc_chi2)
+	# allocate memory
+	bfit_param = {}
+	for pp in range(0,nparams):
+		bfit_param[params[pp]] = {}
+		for ii in range(0,nindexes):
+			bfit_param[params[pp]][indexes[ii]] = np.zeros(nbins) - 99.0
 
-		elif store_full_samplers == 0:
-			nfiles = len(name_sampler_fits)
-
-			# get params
-			hdu = fits.open(name_sampler_fits[nfiles-1])
-			params = []
-			for ii in range(2,int(hdu[0].header['ncols']+1)):
-				str_temp = 'col%d' % ii
-				params.append(hdu[0].header[str_temp])
-			hdu.close()
-			nparams = len(params)
-
-			# allocate memory
-			bfit_param = {}
+	# get bfit_param in bin space
+	for ii in range(0,nbins):
+		if bin_excld_flag[ii] != 1:
+			hdu = fits.open(name_sampler_fits1[ii])
 			for pp in range(0,nparams):
-				bfit_param[params[pp]] = {}
-				for ii in range(0,nindexes):
-					bfit_param[params[pp]][indexes[ii]] = np.zeros(nbins) - 99.0
+				if fit_method == 'rdsps':
+					bfit_param[params[pp]]["mean"][ii] = hdu['fit_params'].data[params[pp]][0]
+					bfit_param[params[pp]]["mean_err"][ii] = hdu['fit_params'].data[params[pp]][1]
+				elif fit_method == 'mcmc':
+					bfit_param[params[pp]]["p16"][ii] = hdu['fit_params'].data[params[pp]][0]
+					bfit_param[params[pp]]["p50"][ii] = hdu['fit_params'].data[params[pp]][1]
+					bfit_param[params[pp]]["p84"][ii] = hdu['fit_params'].data[params[pp]][2]
+			hdu.close()
 
-			# get bfit_param
-			for ii in range(0,nbins):
-				if bin_excld_flag[ii] != 1:
-					hdu = fits.open(name_sampler_fits1[ii])
-					for pp in range(0,nparams):
-						bfit_param[params[pp]]["mean"][ii] = hdu[1].data[params[pp]][0]
-						bfit_param[params[pp]]["mean_err"][ii] = hdu[1].data[params[pp]][1]
-					hdu.close()
-
-		nparams = len(params)
-		#=> Store to FITS file
-		hdul = fits.HDUList()
-		hdr = fits.Header()
-		hdr['gal_z'] = gal_z
-		hdr['nbins'] = nbins
-		count_HDU = 2
-		# bin space
-		for pp in range(0,nparams):
+	#=> Store to FITS file
+	hdul = fits.HDUList()
+	hdr = fits.Header()
+	hdr['gal_z'] = gal_z
+	hdr['nbins'] = nbins
+	count_HDU = 2
+	# bin space
+	for pp in range(0,nparams):
+		for ii in range(0,nindexes):
+			idx_str = "bin-%s-%s" % (params[pp],indexes[ii])
+			hdr['HDU%d' % int(count_HDU)] = idx_str
+			count_HDU = count_HDU + 1
+	# pixel space
+	params_pix = []
+	for pp in range(0,nparams):
+		if params[pp] == 'log_sfr' or params[pp] == 'log_mass' or params[pp]=='log_dustmass':
+			params_pix.append(params[pp])
 			for ii in range(0,nindexes):
-				idx_str = "bin-%s-%s" % (params[pp],indexes[ii])
-				str_temp = 'HDU%d' % int(count_HDU)
-				hdr[str_temp] = idx_str
+				idx_str = "pix-%s-%s" % (params[pp],indexes[ii])
+				hdr['HDU%d' % int(count_HDU)] = idx_str
 				count_HDU = count_HDU + 1
-		# pixel space
-		params_pix = []
-		for pp in range(0,nparams):
-			if params[pp] == 'log_sfr' or params[pp] == 'log_mass' or params[pp]=='log_dustmass':
-				params_pix.append(params[pp])
-				for ii in range(0,nindexes):
-					idx_str = "pix-%s-%s" % (params[pp],indexes[ii])
-					str_temp = 'HDU%d' % int(count_HDU)
-					hdr[str_temp] = idx_str
-					count_HDU = count_HDU + 1
-		hdr['nHDU'] = count_HDU
-		primary_hdu = fits.PrimaryHDU(header=hdr)
-		hdul.append(primary_hdu)
+	hdr['nHDU'] = count_HDU
+	primary_hdu = fits.PrimaryHDU(header=hdr)
+	hdul.append(primary_hdu)
 
-		# get number of parameters to be distributed to pixel space
-		nparams_pix = len(params_pix)
+	# get number of parameters to be distributed to pixel space
+	nparams_pix = len(params_pix)
 
-		hdul.append(fits.ImageHDU(galaxy_region, name='galaxy_region'))
+	hdul.append(fits.ImageHDU(galaxy_region, name='galaxy_region'))
 
-		#maps in bin space
-		for pp in range(0,nparams):
-			for ii in range(0,nindexes):
-				idx_str = "bin-%s-%s" % (params[pp],indexes[ii])
-				map_prop = np.zeros((dim_y,dim_x))
-				for bb in range(0,nbins):
-					rows, cols = np.where(pix_bin_flag==bb+1)
-					map_prop[rows,cols] = bfit_param[params[pp]][indexes[ii]][bb]
-				hdul.append(fits.ImageHDU(map_prop, name=idx_str))
+	# maps in bin space
+	for pp in range(0,nparams):
+		for ii in range(0,nindexes):
+			idx_str = "bin-%s-%s" % (params[pp],indexes[ii])
+			map_prop = np.zeros((dim_y,dim_x))
+			for bb in range(0,nbins):
+				rows, cols = np.where(binmap==bb+1)
+				map_prop[rows,cols] = bfit_param[params[pp]][indexes[ii]][bb]
+			hdul.append(fits.ImageHDU(map_prop, name=idx_str))
 
-		# reference bands:
-		if refband_SFR == None:
-			refband_SFR = 0
-		if refband_SM == None:
-			refband_SM = nbands-1
-		if refband_Mdust == None:
-			refband_Mdust = nbands-1
+	# reference bands:
+	if refband_SFR is None:
+		refband_SFR = 0
+	if refband_SM is None:
+		refband_SM = nbands-1
+	if refband_Mdust is None:
+		refband_Mdust = nbands-1
 
-		refband_params_pix = {}
-		refband_params_pix['log_sfr'] = refband_SFR
-		refband_params_pix['log_mass'] = refband_SM
-		for pp in range(0,nparams_pix):
-			if params_pix[pp] == 'log_dustmass':
-				refband_params_pix['log_dustmass'] = refband_Mdust
+	refband_params_pix = {}
+	refband_params_pix['log_sfr'] = refband_SFR
+	refband_params_pix['log_mass'] = refband_SM
+	for pp in range(0,nparams_pix):
+		if params_pix[pp] == 'log_dustmass':
+			refband_params_pix['log_dustmass'] = refband_Mdust
 
-		# maps in pixel space
-		for pp in range(0,nparams_pix):
-			for ii in range(0,nindexes):
-				idx_str = "pix-%s-%s" % (params_pix[pp],indexes[ii])
-				map_prop = np.zeros((dim_y,dim_x))
+	# maps in pixel space
+	for pp in range(0,nparams_pix):
+		for ii in range(0,nindexes):
+			idx_str = "pix-%s-%s" % (params_pix[pp],indexes[ii])
+			map_prop = np.zeros((dim_y,dim_x))
 
+			if fit_method == 'rdsps':
 				if indexes[ii] == 'mean':
 					for bb in range(0,nbins):
-						rows, cols = np.where(pix_bin_flag==bb+1)
+						rows, cols = np.where(binmap==bb+1)
 						bin_val = np.power(10.0,bfit_param[params_pix[pp]][indexes[ii]][bb])
 						pix_val = bin_val*pix_flux[int(refband_params_pix[params_pix[pp]])][rows,cols]/bin_flux[int(refband_params_pix[params_pix[pp]])][rows,cols]
 						map_prop[rows,cols] = np.log10(pix_val)
 					hdul.append(fits.ImageHDU(map_prop, name=idx_str))
 				else:
 					for bb in range(0,nbins):
-						rows, cols = np.where(pix_bin_flag==bb+1)
+						rows, cols = np.where(binmap==bb+1)
 						bin_val = np.power(10.0,bfit_param[params_pix[pp]]["mean"][bb])
 						bin_valerr = np.power(10.0,bfit_param[params_pix[pp]][indexes[ii]][bb])
 						bin_f = bin_flux[int(refband_params_pix[params_pix[pp]])][rows,cols]
@@ -1879,128 +1612,23 @@ def maps_parameters(fits_binmap=None, bin_ids=[], name_sampler_fits=[], fits_flu
 						pix_val = bin_val*np.sqrt((bin_val*bin_val/bin_valerr/bin_valerr) + (bin_f*bin_f/bin_ferr/bin_ferr) + (pix_f*pix_f/pix_ferr/pix_ferr))
 						map_prop[rows,cols] = np.log10(pix_val)
 					hdul.append(fits.ImageHDU(map_prop, name=idx_str))
-					
-		if name_out_fits == None:
-			name_out_fits = "fitres_%s" % fits_binmap
-		hdul.writeto(name_out_fits, overwrite=True)
 
-	elif fit_method == 'mcmc':
-		indexes = ["p16","p50","p84"]
-		nindexes = len(indexes)
-
-		#=> get the fitting results
-		if store_full_samplers == 1:
-			bfit_param,params = get_inferred_params_mcmc(list_name_sampler_fits=name_sampler_fits1,bin_excld_flag=bin_excld_flag)
-
-		elif store_full_samplers == 0:
-			nfiles = len(name_sampler_fits)
-
-			# get params
-			hdu = fits.open(name_sampler_fits[nfiles-1])
-			params = []
-			for ii in range(2,int(hdu[0].header['ncols']+1)):
-				str_temp = 'col%d' % ii
-				params.append(hdu[0].header[str_temp])
-			hdu.close()
-			nparams = len(params)
-
-			# allocate memory
-			bfit_param = {}
-			for pp in range(0,nparams):
-				bfit_param[params[pp]] = {}
-				for ii in range(0,nindexes):
-					bfit_param[params[pp]][indexes[ii]] = np.zeros(nbins) - 99.0
-
-			# get bfit_param
-			for ii in range(0,nbins):
-				if bin_excld_flag[ii] != 1:
-					hdu = fits.open(name_sampler_fits1[ii])
-					for pp in range(0,nparams):
-						bfit_param[params[pp]]["p16"][ii] = hdu[1].data[params[pp]][0]
-						bfit_param[params[pp]]["p50"][ii] = hdu[1].data[params[pp]][1]
-						bfit_param[params[pp]]["p84"][ii] = hdu[1].data[params[pp]][2]
-					hdu.close()
-
-		nparams = len(params)
-		# Make FITS file:
-		hdul = fits.HDUList()
-		hdr = fits.Header()
-		hdr['gal_z'] = gal_z
-		hdr['nbins'] = nbins
-		count_HDU = 2
-		# bin space
-		for pp in range(0,nparams):
-			for ii in range(0,nindexes):
-				idx_str = "bin-%s-%s" % (params[pp],indexes[ii])
-				str_temp = 'HDU%d' % int(count_HDU)
-				hdr[str_temp] = idx_str
-				count_HDU = count_HDU + 1
-		# pixel space
-		params_pix = []
-		for pp in range(0,nparams):
-			if params[pp] == 'log_sfr' or params[pp] == 'log_mass' or params[pp]=='log_dustmass':
-				params_pix.append(params[pp])
-				for ii in range(0,nindexes):
-					idx_str = "pix-%s-%s" % (params[pp],indexes[ii])
-					str_temp = 'HDU%d' % int(count_HDU)
-					hdr[str_temp] = idx_str
-					count_HDU = count_HDU + 1
-		hdr['nHDU'] = count_HDU
-		primary_hdu = fits.PrimaryHDU(header=hdr)
-		hdul.append(primary_hdu)
-
-		# get number of parameters to be distributed to pixel space
-		nparams_pix = len(params_pix)
-
-		hdul.append(fits.ImageHDU(galaxy_region, name='galaxy_region'))
-
-		#maps in bin space
-		for pp in range(0,nparams):
-			for ii in range(0,nindexes):
-				idx_str = "bin-%s-%s" % (params[pp],indexes[ii])
-				map_prop = np.zeros((dim_y,dim_x))
+			elif fit_method == 'mcmc':
 				for bb in range(0,nbins):
-					rows, cols = np.where(pix_bin_flag==bb+1)
-					map_prop[rows,cols] = bfit_param[params[pp]][indexes[ii]][bb]
-				hdul.append(fits.ImageHDU(map_prop, name=idx_str))
-
-		# reference bands:
-		if refband_SFR == None:
-			refband_SFR = 0
-		if refband_SM == None:
-			refband_SM = nbands-1
-		if refband_Mdust == None:
-			refband_Mdust = nbands-1
-
-		refband_params_pix = {}
-		refband_params_pix['log_sfr'] = refband_SFR
-		refband_params_pix['log_mass'] = refband_SM
-		for pp in range(0,nparams_pix):
-			if params_pix[pp] == 'log_dustmass':
-				refband_params_pix['log_dustmass'] = refband_Mdust
-
-		# maps in pixel space
-		for pp in range(0,nparams_pix):
-			for ii in range(0,nindexes):
-				idx_str = "pix-%s-%s" % (params_pix[pp],indexes[ii])
-				map_prop = np.zeros((dim_y,dim_x))
-
-				for bb in range(0,nbins):
-					rows, cols = np.where(pix_bin_flag==bb+1)
+					rows, cols = np.where(binmap==bb+1)
 					bin_val = np.power(10.0,bfit_param[params_pix[pp]][indexes[ii]][bb])
 					pix_val = bin_val*pix_flux[int(refband_params_pix[params_pix[pp]])][rows,cols]/bin_flux[int(refband_params_pix[params_pix[pp]])][rows,cols]
 					map_prop[rows,cols] = np.log10(pix_val)
 				hdul.append(fits.ImageHDU(map_prop, name=idx_str))
 					
-		if name_out_fits == None:
-			name_out_fits = "fitres_%s" % fits_binmap
-		hdul.writeto(name_out_fits, overwrite=True)
-
+	if name_out_fits is None:
+		name_out_fits = "fitres_%s" % fits_binmap
+	hdul.writeto(name_out_fits, overwrite=True)
 
 	return name_out_fits
 
 
-def maps_parameters_fit_pixels(fits_fluxmap=None, pix_x=[], pix_y=[], name_sampler_fits=[], perc_chi2=80.0, name_out_fits=None):
+def maps_parameters_fit_pixels(fits_fluxmap, pix_x, pix_y, name_sampler_fits, name_out_fits=None):
 	"""Function for calculating maps of properties from the fitting results obtained with the MCMC method on pixel basis.
 
 	:param fits_fluxmap: 
@@ -2016,10 +1644,6 @@ def maps_parameters_fit_pixels(fits_fluxmap=None, pix_x=[], pix_y=[], name_sampl
 		List of names of the FITS files containing the fitting results. 
 		The three inputs of pix_x, pix_y, and name_sampler_fits should have the same number of elements.
 
-	:param perc_chi2: (optional, default=80.0)
-		A parameter that set the percentile cut of the random model SEDs. The cut is applied after the models are sorted based on their chi-square values. 
-		This parameter defines up to what percentile the models will be cut. This parameter is only used if the fitting results are obtained with the RDSPS method.  
-
 	:param name_out_fits: (optional, default: None)
 		Desired name for the output FITS file.   
 	"""
@@ -2027,96 +1651,62 @@ def maps_parameters_fit_pixels(fits_fluxmap=None, pix_x=[], pix_y=[], name_sampl
 	npixs = len(name_sampler_fits)
 
 	if len(pix_x)!=npixs or len(pix_y)!=npixs:
-		print ("pix_x and pix_y should have the same number of elements as that of name_sampler_fits!")
+		print ("pix_x and pix_y should have the same number of elements as name_sampler_fits!")
 		sys.exit()
 
 	# open FITS file containing maps of multiband fluxes
 	hdu = fits.open(fits_fluxmap)
 	galaxy_region = hdu['galaxy_region'].data
-
 	gal_z = float(hdu[0].header['z'])
 	hdu.close()
 
 	dim_y = galaxy_region.shape[0]
 	dim_x = galaxy_region.shape[1]
 
-	# check the fitting method and whether the sampler chains are stored or not
-	hdu = fits.open(name_sampler_fits[0])
+	#=> get some information
+	hdu = fits.open(name_sampler_fits[npixs-1])
 	fit_method = hdu[0].header['fitmethod']
-	store_full_samplers = int(hdu[0].header['storesamp'])
+	# list of parameters
+	params = []
+	for pp in range(0,int(hdu[0].header['nparams'])):
+		params.append(hdu[0].header['param%d' % pp])
+	if fit_method == 'mcmc':
+		params.append('log_sfr')
+		params.append('log_mw_age')
+		if int(hdu[0].header['duste_stat'])==1:
+			params.append('log_dustmass')
+		if int(hdu[0].header['add_agn'])==1:
+			params.append('log_fagn_bol')
+	nparams = len(params)
+	# indices
+	if fit_method == 'rdsps':
+		indexes = ["mean", "mean_err"]
+	elif fit_method == 'mcmc':
+		indexes = ["p16","p50","p84"]
+	nindexes = len(indexes)
 	hdu.close()
 
-	if fit_method=='rdsps':
-		indexes = ["mean", "mean_err"]
-		nindexes = len(indexes)
+	# allocate memory
+	bfit_param = {}
+	for pp in range(0,nparams):
+		bfit_param[params[pp]] = {}
+		for ii in range(0,nindexes):
+			bfit_param[params[pp]][indexes[ii]] = np.zeros(nbins) - 99.0
 
-		#=> get the fitting results
-		if store_full_samplers == 1:
-			bfit_param,params,indexes = get_inferred_params_rdsps(list_name_sampler_fits=name_sampler_fits, bin_excld_flag=bin_excld_flag, 
-																	perc_chi2=perc_chi2)
-
-		elif store_full_samplers == 0:
-			# get params
-			hdu = fits.open(name_sampler_fits[npixs-1])
-			params = []
-			for ii in range(2,int(hdu[0].header['ncols']+1)):
-				str_temp = 'col%d' % ii
-				params.append(hdu[0].header[str_temp])
-			hdu.close()
-			nparams = len(params)
-
-			# allocate memory
-			bfit_param = {}
-			for pp in range(0,nparams):
-				bfit_param[params[pp]] = {}
-				for ii in range(0,nindexes):
-					bfit_param[params[pp]][indexes[ii]] = np.zeros(npixs) - 99.0
-
-			# get bfit_param
-			for ii in range(0,npixs):
-				hdu = fits.open(name_sampler_fits[ii])
-				for pp in range(0,nparams):
-					bfit_param[params[pp]]["mean"][ii] = hdu[1].data[params[pp]][0]
-					bfit_param[params[pp]]["mean_err"][ii] = hdu[1].data[params[pp]][1]
-				hdu.close()
-
-	elif fit_method=='mcmc':
-		indexes = ["p16","p50","p84"]
-		nindexes = len(indexes)
-
-		#=> get the fitting results
-		if store_full_samplers == 1:
-			bin_excld_flag = np.zeros(npixs)
-			bfit_param,params = get_inferred_params_mcmc(list_name_sampler_fits=name_sampler_fits,bin_excld_flag=bin_excld_flag)
-
-		elif store_full_samplers == 0:
-			# get params
-			hdu = fits.open(name_sampler_fits[npixs-1])
-			params = []
-			for ii in range(2,int(hdu[0].header['ncols']+1)):
-				str_temp = 'col%d' % ii
-				params.append(hdu[0].header[str_temp])
-			hdu.close()
-			nparams = len(params)
-
-			# allocate memory
-			bfit_param = {}
-			for pp in range(0,nparams):
-				bfit_param[params[pp]] = {}
-				for ii in range(0,nindexes):
-					bfit_param[params[pp]][indexes[ii]] = np.zeros(npixs) - 99.0
-
-			# get bfit_param
-			for ii in range(0,npixs):
-				hdu = fits.open(name_sampler_fits[ii])
-				for pp in range(0,nparams):
-					bfit_param[params[pp]]["p16"][ii] = hdu[1].data[params[pp]][0]
-					bfit_param[params[pp]]["p50"][ii] = hdu[1].data[params[pp]][1]
-					bfit_param[params[pp]]["p84"][ii] = hdu[1].data[params[pp]][2]
-				hdu.close()
+	# get bfit_param
+	for ii in range(0,npixs):
+		hdu = fits.open(name_sampler_fits[ii])
+		for pp in range(0,nparams):
+			if fit_method == 'rdsps':
+				bfit_param[params[pp]]["mean"][ii] = hdu['fit_params'].data[params[pp]][0]
+				bfit_param[params[pp]]["mean_err"][ii] = hdu['fit_params'].data[params[pp]][1]
+			elif fit_method == 'mcmc':
+					bfit_param[params[pp]]["p16"][ii] = hdu['fit_params'].data[params[pp]][0]
+					bfit_param[params[pp]]["p50"][ii] = hdu['fit_params'].data[params[pp]][1]
+					bfit_param[params[pp]]["p84"][ii] = hdu['fit_params'].data[params[pp]][2]
+		hdu.close()
 
 	# store the maps to FITS file
-	nparams = len(params)
 	hdul = fits.HDUList()
 	hdr = fits.Header()
 	hdr['gal_z'] = gal_z
@@ -2125,27 +1715,25 @@ def maps_parameters_fit_pixels(fits_fluxmap=None, pix_x=[], pix_y=[], name_sampl
 	for pp in range(0,nparams):
 		for ii in range(0,nindexes):
 			idx_str = "pix-%s-%s" % (params[pp],indexes[ii])
-			str_temp = 'HDU%d' % int(count_HDU)
-			hdr[str_temp] = idx_str
+			hdr['HDU%d' % int(count_HDU)] = idx_str
 			count_HDU = count_HDU + 1
 	hdr['nHDU'] = count_HDU
 	primary_hdu = fits.PrimaryHDU(header=hdr)
 	hdul.append(primary_hdu)
 
+	# galaxy's region
 	hdul.append(fits.ImageHDU(galaxy_region, name='galaxy_region'))
 
 	# maps of properties
 	for pp in range(0,nparams):
 		for ii in range(0,nindexes):
-			idx_str = "bin-%s-%s" % (params[pp],indexes[ii])
+			idx_str = "pix-%s-%s" % (params[pp],indexes[ii])
 			map_prop = np.zeros((dim_y,dim_x)) - 99.0
 			for jj in range(0,npixs):
-				yy = int(pix_y[jj])
-				xx = int(pix_x[jj])
-				map_prop[yy][xx] = bfit_param[params[pp]][indexes[ii]][jj]
+				map_prop[int(pix_y[jj])][int(pix_x[jj])] = bfit_param[params[pp]][indexes[ii]][jj]
 			hdul.append(fits.ImageHDU(map_prop, name=idx_str))
 					
-	if name_out_fits == None:
+	if name_out_fits is None:
 		name_out_fits = "fitres_%s" % fits_binmap
 	hdul.writeto(name_out_fits, overwrite=True)
 

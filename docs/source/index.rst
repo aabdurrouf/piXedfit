@@ -7,8 +7,6 @@ broad-band imaging data with IFS data, pixel binning, SED fitting, and producing
 **piXedfit** is a versatile tool that has been equipped with the multiprocessing module (namely message passing interface or MPI) for 
 efficient analysis of the datasets of a large number of galaxies. Detailed description on **piXedfit** and its performance is presented in `Abdurro'uf et al. (2021) <https://ui.adsabs.harvard.edu/abs/2021arXiv210109717A/abstract>`_.  
 
-While this website is still under construction, people interested in knowing how **piXedfit** works can see some demonstrations in folder *examples* on the `GitHub page <https://github.com/aabdurrouf/piXedfit>`_ or some animations here: `images processing <https://github.com/aabdurrouf/piXedfit/blob/main/docs/source/demos_img_pros.rst>`_, `pixel binning <https://github.com/aabdurrouf/piXedfit/blob/main/docs/source/demos_pixel_binning.rst>`_ and `SED fitting <https://github.com/aabdurrouf/piXedfit/blob/main/docs/source/demos_sed_fitting.rst>`_.   
-
 .. image:: 3Dcube_specphoto.png
 .. image:: demo_pixedfit_ngc309_new_edit.svg
 .. image:: plot_maps_props_new.svg

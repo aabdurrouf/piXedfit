@@ -1,7 +1,7 @@
 
 
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" >
+<html class="writer-html4" lang="en" >
 <head>
   <meta charset="utf-8">
   
@@ -26,11 +26,10 @@
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
-        <script src="_static/jquery.js"></script>
-        <script src="_static/underscore.js"></script>
-        <script src="_static/doctools.js"></script>
-        <script src="_static/language_data.js"></script>
-        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     
     <script type="text/javascript" src="_static/js/theme.js"></script>
 
@@ -183,105 +182,127 @@
             
   <div class="section" id="module-piXedfit.utils.filtering">
 <span id="utils"></span><h1>Utils<a class="headerlink" href="#module-piXedfit.utils.filtering" title="Permalink to this headline">¶</a></h1>
-<dl class="py function">
-<dt id="piXedfit.utils.filtering.add_filter">
-<code class="sig-prename descclassname">piXedfit.utils.filtering.</code><code class="sig-name descname">add_filter</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">filter_name</span></em>, <em class="sig-param"><span class="n">filter_wave</span></em>, <em class="sig-param"><span class="n">filter_transmission</span></em>, <em class="sig-param"><span class="n">filter_cwave</span></em><span class="sig-paren">)</span><a class="headerlink" href="#piXedfit.utils.filtering.add_filter" title="Permalink to this definition">¶</a></dt>
-<dd><p>A function for adding a new filter transmission function into piXedfit</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>filter_name</strong> – A given name (in string) for the filter curve</p></li>
-<li><p><strong>filter_wave</strong> – array of wavelength in the filter transmission function</p></li>
-<li><p><strong>filter_transmission</strong> – array of transmission corresponding with the filter_wave</p></li>
-<li><p><strong>filter_cwave</strong> – The central wavelength or effective wavelength of the filter</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt id="piXedfit.utils.filtering.change_filter_name">
-<code class="sig-prename descclassname">piXedfit.utils.filtering.</code><code class="sig-name descname">change_filter_name</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">old_filter_name</span></em>, <em class="sig-param"><span class="n">new_filter_name</span></em><span class="sig-paren">)</span><a class="headerlink" href="#piXedfit.utils.filtering.change_filter_name" title="Permalink to this definition">¶</a></dt>
-<dd><p>A function for changing a filter name</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>old_filter_name</strong> – Old filter name.</p></li>
-<li><p><strong>new_filter_name</strong> – New filter name.</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt id="piXedfit.utils.filtering.cwave_filters">
-<code class="sig-prename descclassname">piXedfit.utils.filtering.</code><code class="sig-name descname">cwave_filters</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">filters</span></em><span class="sig-paren">)</span><a class="headerlink" href="#piXedfit.utils.filtering.cwave_filters" title="Permalink to this definition">¶</a></dt>
-<dd><p>A function for retrieving central wavelengths of a set of filters</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>filters</strong> – A list of filters names</p>
-</dd>
-<dt class="field-even">Returns cwaves</dt>
-<dd class="field-even"><p>A list of central wavelengths of the filters</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt id="piXedfit.utils.filtering.filtering">
-<code class="sig-prename descclassname">piXedfit.utils.filtering.</code><code class="sig-name descname">filtering</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">wave</span></em>, <em class="sig-param"><span class="n">spec</span></em>, <em class="sig-param"><span class="n">filters</span></em><span class="sig-paren">)</span><a class="headerlink" href="#piXedfit.utils.filtering.filtering" title="Permalink to this definition">¶</a></dt>
-<dd><p>A function for integrating a spectrum through a filter transmission function</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>wave</strong> – array of wavelength of the input spectrum</p></li>
-<li><p><strong>spec</strong> – array of fluxes of the input spectrum</p></li>
-<li><p><strong>filters</strong> – List of filters name in array of string</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns fluxes</dt>
-<dd class="field-even"><p>Array of photometric fluxes</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt id="piXedfit.utils.filtering.get_filter_curve">
-<code class="sig-prename descclassname">piXedfit.utils.filtering.</code><code class="sig-name descname">get_filter_curve</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">filter_name</span></em><span class="sig-paren">)</span><a class="headerlink" href="#piXedfit.utils.filtering.get_filter_curve" title="Permalink to this definition">¶</a></dt>
-<dd><p>A function to get a transmission function of a filter available in piXedfit</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>filter_name</strong> – Name of the filter</p>
-</dd>
-<dt class="field-even">Returns wave</dt>
-<dd class="field-even"><p>Array of wavelength</p>
-</dd>
-<dt class="field-odd">Returns trans</dt>
-<dd class="field-odd"><p>Array of transmission values</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
+<dl class="function">
 <dt id="piXedfit.utils.filtering.list_filters">
-<code class="sig-prename descclassname">piXedfit.utils.filtering.</code><code class="sig-name descname">list_filters</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#piXedfit.utils.filtering.list_filters" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">piXedfit.utils.filtering.</code><code class="descname">list_filters</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#piXedfit.utils.filtering.list_filters" title="Permalink to this definition">¶</a></dt>
 <dd><p>A function for listing the available filters transmission functions in piXedfit</p>
-<dl class="field-list simple">
-<dt class="field-odd">Returns filters</dt>
-<dd class="field-odd"><p>List of filters curves available</p>
-</dd>
-</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name" colspan="2">Returns filters:</th></tr>
+<tr class="field-odd field"><td>&#160;</td><td class="field-body">List of filters curves available</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
-<dl class="py function">
+<dl class="function">
+<dt id="piXedfit.utils.filtering.add_filter">
+<code class="descclassname">piXedfit.utils.filtering.</code><code class="descname">add_filter</code><span class="sig-paren">(</span><em>filter_name</em>, <em>filter_wave</em>, <em>filter_transmission</em>, <em>filter_cwave</em><span class="sig-paren">)</span><a class="headerlink" href="#piXedfit.utils.filtering.add_filter" title="Permalink to this definition">¶</a></dt>
+<dd><p>A function for adding a new filter transmission function into piXedfit</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>filter_name</strong> – A given name (in string) for the filter curve</li>
+<li><strong>filter_wave</strong> – array of wavelength in the filter transmission function</li>
+<li><strong>filter_transmission</strong> – array of transmission corresponding with the filter_wave</li>
+<li><strong>filter_cwave</strong> – The central wavelength or effective wavelength of the filter</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
 <dt id="piXedfit.utils.filtering.remove_filter">
-<code class="sig-prename descclassname">piXedfit.utils.filtering.</code><code class="sig-name descname">remove_filter</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">filter_name</span></em><span class="sig-paren">)</span><a class="headerlink" href="#piXedfit.utils.filtering.remove_filter" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">piXedfit.utils.filtering.</code><code class="descname">remove_filter</code><span class="sig-paren">(</span><em>filter_name</em><span class="sig-paren">)</span><a class="headerlink" href="#piXedfit.utils.filtering.remove_filter" title="Permalink to this definition">¶</a></dt>
 <dd><p>A function for removing a filter transmission function from piXedfit</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>filter_name</strong> – The filter name.</p>
-</dd>
-</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>filter_name</strong> – The filter name.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="piXedfit.utils.filtering.change_filter_name">
+<code class="descclassname">piXedfit.utils.filtering.</code><code class="descname">change_filter_name</code><span class="sig-paren">(</span><em>old_filter_name</em>, <em>new_filter_name</em><span class="sig-paren">)</span><a class="headerlink" href="#piXedfit.utils.filtering.change_filter_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>A function for changing a filter name</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>old_filter_name</strong> – Old filter name.</li>
+<li><strong>new_filter_name</strong> – New filter name.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="piXedfit.utils.filtering.get_filter_curve">
+<code class="descclassname">piXedfit.utils.filtering.</code><code class="descname">get_filter_curve</code><span class="sig-paren">(</span><em>filter_name</em><span class="sig-paren">)</span><a class="headerlink" href="#piXedfit.utils.filtering.get_filter_curve" title="Permalink to this definition">¶</a></dt>
+<dd><p>A function to get a transmission function of a filter available in piXedfit</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>filter_name</strong> – Name of the filter</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns wave:</th><td class="field-body">Array of wavelength</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Returns trans:</th><td class="field-body">Array of transmission values</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="piXedfit.utils.filtering.cwave_filters">
+<code class="descclassname">piXedfit.utils.filtering.</code><code class="descname">cwave_filters</code><span class="sig-paren">(</span><em>filters</em><span class="sig-paren">)</span><a class="headerlink" href="#piXedfit.utils.filtering.cwave_filters" title="Permalink to this definition">¶</a></dt>
+<dd><p>A function for retrieving central wavelengths of a set of filters</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>filters</strong> – A list of filters names</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns cwaves:</th><td class="field-body">A list of central wavelengths of the filters</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="piXedfit.utils.filtering.filtering">
+<code class="descclassname">piXedfit.utils.filtering.</code><code class="descname">filtering</code><span class="sig-paren">(</span><em>wave</em>, <em>spec</em>, <em>filters</em><span class="sig-paren">)</span><a class="headerlink" href="#piXedfit.utils.filtering.filtering" title="Permalink to this definition">¶</a></dt>
+<dd><p>A function for integrating a spectrum through a filter transmission function</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>wave</strong> – array of wavelength of the input spectrum</li>
+<li><strong>spec</strong> – array of fluxes of the input spectrum</li>
+<li><strong>filters</strong> – List of filters name in array of string</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns fluxes:</th><td class="field-body"><p class="first last">Array of photometric fluxes</p>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 </div>

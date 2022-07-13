@@ -8,7 +8,6 @@ from astropy.cosmology import *
 
 global PIXEDFIT_HOME
 PIXEDFIT_HOME = os.environ['PIXEDFIT_HOME']
-sys.path.insert(0, PIXEDFIT_HOME)
 
 from piXedfit.utils.filtering import interp_filters_curves
 from piXedfit.piXedfit_model import generate_modelSED_spec_fit, generate_modelSED_propphoto_nomwage_fit, calc_mw_age 
@@ -21,11 +20,12 @@ comm = MPI.COMM_WORLD
 size = comm.Get_size()
 rank = comm.Get_rank()
 
+temp_dir = PIXEDFIT_HOME+'/data/temp/'
+
 # configuration file
 global config_data
 config_file = str(sys.argv[2])
-dir_file = PIXEDFIT_HOME+'/data/temp/'
-data = np.genfromtxt(dir_file+config_file, dtype=str)
+data = np.genfromtxt(temp_dir+config_file, dtype=str)
 config_data = {}
 for ii in range(0,len(data[:,0])):
 	str_temp = data[:,0][ii]
@@ -33,9 +33,8 @@ for ii in range(0,len(data[:,0])):
 
 # filters
 global filters, nbands
-dir_file = PIXEDFIT_HOME+'/data/temp/'
 name_filters = str(sys.argv[1])
-filters = np.genfromtxt(dir_file+name_filters, dtype=str)
+filters = np.genfromtxt(temp_dir+name_filters, dtype=str)
 nbands = len(filters)
 
 # nebular emission
