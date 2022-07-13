@@ -2,6 +2,14 @@ import numpy as np
 from math import pi, pow, sqrt, cos, sin 
 import sys, os
 from astropy.io import fits 
+from astroquery.sdss import SDSS
+from astroquery.mast import Observations
+from astroquery.esa.hubble import ESAHubble
+from astroquery.ipac.irsa import sha
+import urllib
+import pyvo
+import gzip, shutil, glob
+from astropy.table import Table
 from astropy.cosmology import *
 import warnings
 warnings.filterwarnings('ignore')
@@ -9,12 +17,10 @@ warnings.filterwarnings('ignore')
 from ..utils.filtering import cwave_filters
 
 
-__all__ = ["sort_filters", "kpc_per_pixel", "k_lmbd_Fitz1986_LMC", "EBV_foreground_dust", "skybg_sdss", "get_gain_dark_variance", 
-			"var_img_sdss", "var_img_GALEX", "var_img_2MASS", "var_img_WISE", "var_img_from_unc_img","var_img_from_weight_img", 
-			"mask_region_bgmodel", "subtract_background", "get_psf_fwhm","get_largest_FWHM_PSF", "ellipse_fit", "draw_ellipse", 
-			"ellipse_sma", "crop_ellipse_galregion","crop_ellipse_galregion_fits", "crop_stars", "crop_stars_galregion_fits",  
-			"crop_image_given_radec", "segm_sep", "crop_image_given_xy", "check_avail_kernel", "create_kernel_gaussian",
-			"raise_errors", "get_img_pixsizes", "in_kernels", "get_flux_or_sb", "crop_2D_data"]
+__all__ = ["sort_filters", "kpc_per_pixel", "k_lmbd_Fitz1986_LMC", "EBV_foreground_dust", "Sloan", "TwoMASS", "WISE", "Galex", "HST", "Spitzer","skybg_sdss", "get_gain_dark_variance", "var_img_sdss", "var_img_GALEX", "var_img_2MASS", "var_img_WISE", "var_img_from_unc_img",
+			"var_img_from_weight_img", "mask_region_bgmodel", "subtract_background", "get_psf_fwhm","get_largest_FWHM_PSF", "ellipse_fit", "draw_ellipse", "ellipse_sma", "crop_ellipse_galregion",
+			"crop_ellipse_galregion_fits", "crop_stars", "crop_stars_galregion_fits",  "crop_image_given_radec", "segm_sep", "crop_image_given_xy", "check_avail_kernel", "create_kernel_gaussian",
+      "raise_errors", "get_img_pixsizes", "in_kernels", "get_flux_or_sb", "crop_2D_data"]
 
 
 def sort_filters(filters):
@@ -159,6 +165,206 @@ def EBV_foreground_dust(ra, dec):
 	ebv_SDSS = Alambda_SDSS/k_lmbd_Fitz1986_LMC(wave_SDSS)
 	ebv = np.mean(ebv_SDSS)
 	return ebv
+
+
+def Sloan(pos,bands = ['u','g','r','i','z'],size=20):
+	"""A tool to download images from SDSS.
+
+	:param pos: 
+		Target's coordinate, in the astropy.coordinates form.
+
+	:param bands: (defaults: ['u','g','r','i','z'])
+		Request image in which filter. Default to download every band
+
+	:param size:  (defaults: 20[arcsec])
+		Search cone size. Note that this size IS NOT image size.
+
+	"""
+	
+	# Query the region
+	xid = SDSS.query_region(pos, spectro=False,radius = size * u.arcsec)
+
+	# a to c are dummy variables to drop repeated images
+	a = xid.to_pandas()
+	b = a.drop_duplicates(subset=['run','rerun','camcol','field'])   # remove repeated images
+	c = Table([b.ra,b.dec,b.objid,b.run,b.rerun,b.camcol,b.field],names = ('ra','dec','objid','run','rerun','camcol','field'))
+
+	# Start downloading here
+	for band in bands:
+		im = SDSS.get_images(matches=c, band = band)
+		i = 0 # Numbering each file
+		for image in im:
+			image.writeto(f'SDSS_{band}_{i}.fits', overwrite = True)
+			print(f"{band} image downloaded")
+			i += 1
+
+
+def TwoMASS(pos,size = 0.1):
+	"""A tool to download TwoMASS images from IRSA.
+
+	:param pos: 
+		Target's coordinate, in the astropy.coordinates form.
+
+	:param size:  (defaults: 0.1[deg])
+		Search cone size. Note that this size IS NOT image size.
+	"""
+
+	# Connect to pyvo service
+	image_service = pyvo.regsearch(servicetype='image', keywords=['2mass'])
+	image_table = image_service[0].search(pos=pos, size=size) # index 0 is fixed according to regsearch result
+	im_table = image_table.to_table()
+
+	# Dummy variavles to remove repeat images
+	a = im_table.to_pandas()
+	b = a[a['format'].str.contains('fits')].drop_duplicates(subset=['band','hem','date','scan','image']) # filter for fits file, exclude html files
+
+	# Start downloading
+	for _, row in b.sort_values(['band','date']).iterrows(): # By sorting to couple same scan images
+		no = 0
+		while os.path.exists(f"{row.band}_{no}.fits.gz"): # file numbering
+			no += 1
+		urllib.request.urlretrieve(f"{row.download}", f"{row.band}_{no}.fits.gz") # Download images from IRSA
+    
+    # Because images from IRSA are zipped, we need to unzip them
+	for file in glob.glob("*.gz"):
+		with gzip.open(file, 'r') as f_in, open(file.replace(".gz", ""), 'wb') as f_out:
+			shutil.copyfileobj(f_in, f_out)  # unzipped gz files
+		os.remove(file)   # delete .gz files 
+
+def WISE(pos, size = 0.1, pix = 800):
+	"""A tool to download allwise images from IRSA.
+
+	:param pos:
+		Target's coordinate, in the astropy.coordinates form.
+
+	:param size: (defaults: 0.1[deg])
+		Search cone size. Note that this size IS NOT image size.
+
+	:param pix: (defaults to 800)
+		This does crop on the image. If you want to download the whole image from WISE, please set pix = 0
+		Recommend not to download the original image which is way too large (~60 MB).
+
+	"""
+
+	# Connect to pyvo service
+	image_service = pyvo.regsearch(servicetype='image', keywords=['allwise'])
+	image_table = image_service[0].search(pos=pos, size=size) # index 0 is fixed according to regsearch result
+	im_table = image_table.to_table()
+
+	# Dummy variables to remove repeat images
+	a = im_table.to_pandas()
+	b = a[a['sia_fmt'].str.contains('fits')].drop_duplicates(subset=['sia_url']) # filter for fits file, exclude html files
+
+
+	for _, row in b.sort_values(['sia_bp_id','coadd_id']).iterrows():
+		no = 0
+
+		while os.path.exists(f"{row.sia_bp_id}_{no}.fits.gz"): # file numbering
+			no += 1
+
+		if pix != 0: # doing crop on the url
+
+			urllib.request.urlretrieve(f"{row.sia_url}?center={pos.ra.degree},{pos.dec.degree}&size={pix}pix", f"{row.sia_bp_id}_{no}.fits.gz") 
+			urllib.request.urlretrieve(f"{row.unc_url}?center={pos.ra.degree},{pos.dec.degree}&size={pix}pix", f"{row.sia_bp_id}_unc_{no}.fits.gz") 
+
+		elif pix == 0: # request original image
+			urllib.request.urlretrieve(f"{row.sia_url}", f"{row.sia_bp_id}_{no}.fits") 
+			urllib.request.urlretrieve(f"{row.unc_url}", f"{row.sia_bp_id}_unc_{no}.fits") 
+
+	# Unzip all the images
+	for file in glob.glob("*.gz"):
+		with gzip.open(file, 'r') as f_in, open(file.replace(".gz", ""), 'wb') as f_out:
+			shutil.copyfileobj(f_in, f_out)  # unzipped gz files
+		os.remove(file)   # delete gz files  
+
+
+def Galex(pos, size = 0.1, unzip = True):
+	"""A tool to download allwise images from GALEX.
+
+	:param pos:
+		Target's coordinate, in the astropy.coordinates form.
+	:param size: (defaults to 0.1 [deg] )
+		Search cone size. Note that this size IS NOT image size.	
+	:param unzip: (defaults to True)
+		Whether to unzip the download file.
+	"""
+
+		# Full list
+	obs_table = Observations.query_region(pos,radius= size)
+	data_products_by_obs = Observations.get_product_list(obs_table[:])
+	# query list
+	data_products = data_products_by_obs[(data_products_by_obs['obs_collection'] == 'GALEX')]
+
+	# Preventing from repeating download
+	# Here we only download three datatypes: intensity map, sky background map and background subtracted image
+	a = data_products.to_pandas()
+	b = a[a.productFilename.str.contains('int.fits|skybg.fits|intbgsub.fits')]
+
+	# Start downloading
+	for _, row in b.iterrows():
+		Observations.download_file(row.dataURI)
+
+	if unzip:
+		for file in glob.glob("*.gz"):
+			with gzip.open(file, 'r') as f_in, open(file.replace(".gz", ""), 'wb') as f_out:
+				shutil.copyfileobj(f_in, f_out)  # unzipped gz files
+			os.remove(file)   # delete gz files  
+	else:
+		pass
+
+
+def HST(pos,size = 1, save = True, output_fmt = 'csv'):
+	"""A tool to download allwise images from Hubble Space Telescope.
+
+	:param pos:
+		Target's coordinate, in the astropy.coordinates form.
+	:param size: (defaults to 1 [arcmin] )
+		Search cone size. Note that this size IS NOT image size.
+	:param save: (defaults to True)
+		Whether to save searching result.
+	:param output_fmt: (defaults to 'csv')
+		Search result file extension, by default 'csv'
+        Other formats: 'csv', 'votable', 'xml'
+	"""
+
+	if output_fmt not in ['csv','votable','xml']:
+		raise TypeError("output format is not supported. Please use one of these: csv, votable, xml")
+
+	# Start Hubble service
+	esahubble = ESAHubble()
+	table = esahubble.cone_search_criteria(radius = size , coordinates = pos , save = save, output_format= output_fmt ,obs_collection= "HST", filename = f'Search_Result_Table.{output_fmt}')
+
+	# Select HST images
+	a = table.to_pandas()
+	b = a[(a.collection == 'HST') & (a.data_product_type == 'image')]
+	b.to_csv("Download_Table.csv")
+
+	# Start downloading
+	for obs_id in b.observation_id.unique():
+		esahubble.download_product(observation_id= obs_id, filename = f"data_for_{obs_id}.tar")
+
+def Spitzer(pos, size = 1/120):
+	"""A tool to download allwise images from Spitzer.
+
+	:param pos:
+		Target's coordinate, in the astropy.coordinates form.
+	:param size: (defaults to 1/120 [deg] )
+		Search cone size. Note that this size IS NOT image size.
+	"""
+
+	# Start searching
+	table = sha.query(coord = pos , size = size)
+	
+	# Filtering images
+	table[table['filetype'] == 'Image']
+	# Save filtered result
+	table.write('Download_detail.csv', format='csv', overwrite = True)
+
+	# Start downloading
+	for url in table[table['filetype'] == b' Image   ']['accessUrl'][:2]:
+		sha.save_file(url.strip())
+    
+
 
 
 def skybg_sdss(fits_image):
