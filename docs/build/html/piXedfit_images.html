@@ -203,8 +203,8 @@ These kernel images should have the same pixel size as the corresponding input i
 For this input, it is not mandatory to make the input filters in a wavelength order.</li>
 <li><strong>sci_img</strong> – Dictionary containing names of the science images. An example of input: sci_img={‘sdss_u’:’img1.fits’, ‘sdss_g’:’img2.fits’}</li>
 <li><strong>var_img</strong> – Dictionary containing names of the variance images. It has a similar format to sci_img.</li>
-<li><strong>gal_ra</strong> – Right Ascension (RA) coordinate of the target galaxy.</li>
-<li><strong>gal_dec</strong> – Declination (DEC) coordinate of the target galaxy.</li>
+<li><strong>gal_ra</strong> – Right Ascension (RA) coordinate of the target galaxy. This should be in degree.</li>
+<li><strong>gal_dec</strong> – Declination (DEC) coordinate of the target galaxy. This should be in degree.</li>
 <li><strong>img_unit</strong> – (optional)
 Unit of pixel value in the multiband images. The acceptable format of this input is a python dictionary, similar to that of sci_img. This input is optional.
 This input will only be considered (and required) if the input images are not among the default list of recognized imaging data
@@ -343,29 +343,24 @@ to be the same as the image center.</li>
 
 <dl class="function">
 <dt id="piXedfit.piXedfit_images.kpc_per_pixel">
-<code class="descclassname">piXedfit.piXedfit_images.</code><code class="descname">kpc_per_pixel</code><span class="sig-paren">(</span><em>z=0.01</em>, <em>arcsec_per_pix=1.5</em>, <em>cosmo='flat_LCDM'</em>, <em>H0=70.0</em>, <em>Om0=0.3</em><span class="sig-paren">)</span><a class="headerlink" href="#piXedfit.piXedfit_images.kpc_per_pixel" title="Permalink to this definition">¶</a></dt>
-<dd><p>Function for calculating a physical scale (in kpc) corresponding to a pixel size of an imaging data.</p>
+<code class="descclassname">piXedfit.piXedfit_images.</code><code class="descname">kpc_per_pixel</code><span class="sig-paren">(</span><em>z</em>, <em>arcsec_per_pix</em>, <em>cosmo='flat_LCDM'</em>, <em>H0=70.0</em>, <em>Om0=0.3</em><span class="sig-paren">)</span><a class="headerlink" href="#piXedfit.piXedfit_images.kpc_per_pixel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function for calculating a physical scale (in kpc) corresponding to a single pixel in an image.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>z</strong> – (default: 0.01)
-Redshift of the galaxy.</li>
-<li><strong>arsec_per_pix</strong> – (default: 1.5)
-Pixel size in arcsecond.</li>
-<li><strong>cosmo</strong> – (default: ‘flat_LCDM’)
-Choices for the cosmology. The options are: (1)’flat_LCDM’ or 0, (2)’WMAP5’ or 1, (3)’WMAP7’ or 2, (4)’WMAP9’ or 3, (5)’Planck13’ or 4, (6)’Planck15’ or 5, (7)’Planck18’ or 6.
+<li><strong>z</strong> – Redshift of the galaxy.</li>
+<li><strong>arsec_per_pix</strong> – Pixel size in arcsecond.</li>
+<li><strong>cosmo</strong> – Choices for the cosmology. The options are: (a)’flat_LCDM’ or 0, (b)’WMAP5’ or 1, (c)’WMAP7’ or 2, (d)’WMAP9’ or 3, (e)’Planck13’ or 4, (f)’Planck15’ or 5, (g)’Planck18’ or 6.
 These are similar to the choices available in the <a class="reference external" href="https://docs.astropy.org/en/stable/cosmology/#built-in-cosmologies">Astropy Cosmology</a> package.</li>
-<li><strong>H0</strong> – (default: 70.0)
-The Hubble constant at z=0. Only relevant when cosmo=’flat_LCDM’ is chosen.</li>
-<li><strong>Om0</strong> – (default: 0.3)
-The Omega matter at z=0.0. Only relevant when cosmo=’flat_LCDM’ is chosen.</li>
+<li><strong>H0</strong> – The Hubble constant at z=0. Only relevant if cosmo=’flat_LCDM’.</li>
+<li><strong>Om0</strong> – The Omega matter at z=0.0. Only relevant if cosmo=’flat_LCDM’.</li>
 </ul>
 </td>
 </tr>
 <tr class="field-even field"><th class="field-name" colspan="2">Returns kpc_per_pix:</th></tr>
-<tr class="field-even field"><td>&#160;</td><td class="field-body"><p class="first last">corresponding physical scale in kpc unit of the given pixel size.</p>
+<tr class="field-even field"><td>&#160;</td><td class="field-body"><p class="first last">Output physical scale in kpc.</p>
 </td>
 </tr>
 </tbody>
@@ -376,8 +371,7 @@ The Omega matter at z=0.0. Only relevant when cosmo=’flat_LCDM’ is chosen.</
 <dt id="piXedfit.piXedfit_images.var_img_from_unc_img">
 <code class="descclassname">piXedfit.piXedfit_images.</code><code class="descname">var_img_from_unc_img</code><span class="sig-paren">(</span><em>unc_image</em>, <em>name_out_fits=None</em><span class="sig-paren">)</span><a class="headerlink" href="#piXedfit.piXedfit_images.var_img_from_unc_img" title="Permalink to this definition">¶</a></dt>
 <dd><p>Function for constructing a variance image from an input of uncertainty image.
-This function simply takes square of the uncertainty image and store it into a FITS file while retaining the
-header information.</p>
+This function simply takes square of the uncertainty image and store it into a new FITS file while retaining the header information.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -397,7 +391,7 @@ Name of output FITS file. If None, a generic name will be generated.</li>
 <dt id="piXedfit.piXedfit_images.var_img_from_weight_img">
 <code class="descclassname">piXedfit.piXedfit_images.</code><code class="descname">var_img_from_weight_img</code><span class="sig-paren">(</span><em>wht_image</em>, <em>name_out_fits=None</em><span class="sig-paren">)</span><a class="headerlink" href="#piXedfit.piXedfit_images.var_img_from_weight_img" title="Permalink to this definition">¶</a></dt>
 <dd><p>Function for constructing a variance image from an input weight (i.e., inverse variance) image.
-This funciton will simply take inverse of the weight image and store it into a new FITS file while
+This funciton simply takes inverse of the weight image and store it into a new FITS file while
 retaining the header information.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -407,7 +401,7 @@ retaining the header information.</p>
 </tr>
 <tr class="field-even field"><th class="field-name" colspan="2">Returns name_out_fits:</th></tr>
 <tr class="field-even field"><td>&#160;</td><td class="field-body">(optional, default: None)
-Name of output FITS file. If None, a generic name will be used.</td>
+Name of output FITS file. If None, a generic name will be made.</td>
 </tr>
 </tbody>
 </table>
@@ -416,7 +410,7 @@ Name of output FITS file. If None, a generic name will be used.</td>
 <dl class="function">
 <dt id="piXedfit.piXedfit_images.var_img_sdss">
 <code class="descclassname">piXedfit.piXedfit_images.</code><code class="descname">var_img_sdss</code><span class="sig-paren">(</span><em>fits_image</em>, <em>filter_name</em>, <em>name_out_fits=None</em><span class="sig-paren">)</span><a class="headerlink" href="#piXedfit.piXedfit_images.var_img_sdss" title="Permalink to this definition">¶</a></dt>
-<dd><p>A function for constructing a variance image of SDSS image</p>
+<dd><p>A function for constructing a variance image from an input SDSS image</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -428,8 +422,7 @@ Name of output FITS file. If None, a generic name will be used.</td>
 </td>
 </tr>
 <tr class="field-even field"><th class="field-name" colspan="2">Returns name_out_fits:</th></tr>
-<tr class="field-even field"><td>&#160;</td><td class="field-body"><p class="first last">(optional, default: None)
-Name of output FITS file. If None, a generic name will be used.</p>
+<tr class="field-even field"><td>&#160;</td><td class="field-body"><p class="first last">Name of output FITS file. If None, a generic name will be used.</p>
 </td>
 </tr>
 </tbody>
@@ -449,8 +442,7 @@ Name of output FITS file. If None, a generic name will be used.</p>
 This type of image is provided in the GALEX website as indicated with “-intbgsub” (i.e., background subtracted intensity map).</li>
 <li><strong>skybg_img</strong> – Input sky background image .</li>
 <li><strong>filter_name</strong> – A string of filter name. Options are: ‘galex_fuv’ and ‘galex_nuv’.</li>
-<li><strong>name_out_fits</strong> – (optional, default: None)
-Desired name for the output variance image. If None, a generic name will be used.</li>
+<li><strong>name_out_fits</strong> – Desired name for the output variance image. If None, a generic name will be used.</li>
 </ul>
 </td>
 </tr>
@@ -460,23 +452,19 @@ Desired name for the output variance image. If None, a generic name will be used
 
 <dl class="function">
 <dt id="piXedfit.piXedfit_images.var_img_2MASS">
-<code class="descclassname">piXedfit.piXedfit_images.</code><code class="descname">var_img_2MASS</code><span class="sig-paren">(</span><em>sci_img</em>, <em>skyrms_img=[]</em>, <em>skyrms_img_data=[]</em>, <em>skyrms_value=None</em>, <em>name_out_fits=None</em><span class="sig-paren">)</span><a class="headerlink" href="#piXedfit.piXedfit_images.var_img_2MASS" title="Permalink to this definition">¶</a></dt>
-<dd><p>Function for deriving a variance image from a 2MASS image.
-The estimation of uncertainty is based on information from the <a class="reference external" href="http://wise2.ipac.caltech.edu/staff/jarrett/2mass/3chan/noise/#coadd">2MASS website</a>.</p>
+<code class="descclassname">piXedfit.piXedfit_images.</code><code class="descname">var_img_2MASS</code><span class="sig-paren">(</span><em>sci_img</em>, <em>skyrms_img=None</em>, <em>skyrms_value=None</em>, <em>name_out_fits=None</em><span class="sig-paren">)</span><a class="headerlink" href="#piXedfit.piXedfit_images.var_img_2MASS" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function for constructing a variance image from an input 2MASS image.
+The estimation of flux uncertainty follows the information provided on the <a class="reference external" href="http://wise2.ipac.caltech.edu/staff/jarrett/2mass/3chan/noise/#coadd">2MASS website</a>.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>sci_img</strong> – Input science image (i.e., background subtracted).</li>
-<li><strong>skyrms_img</strong> – FITS file of the RMS background image. If skyrms_img_data==[] or skyrms_value==None,
-this parameter should be provided. The background subtraction and calculation of RMS image can be done using
-the <a class="reference internal" href="#piXedfit.piXedfit_images.subtract_background" title="piXedfit.piXedfit_images.subtract_background"><code class="xref py py-func docutils literal notranslate"><span class="pre">subtract_background()</span></code></a> function.</li>
-<li><strong>skyrms_img_data</strong> – 2D array of the RMS background image.</li>
-<li><strong>skyrms_value</strong> – Scalar value of median or mean of the RMS background image.
-If the 2D data of RMS is not provided, this value will be used.</li>
-<li><strong>name_out_fits</strong> – (optional, default: None)
-Desired name for the output FITS file.</li>
+<li><strong>sci_img</strong> – Input background-subtracted science image.</li>
+<li><strong>skyrms_img</strong> – FITS file of the RMS background image. If skyrms_value=None, this parameter should be provided.
+The background subtraction and calculation of RMS image can be performed using the <a class="reference internal" href="#piXedfit.piXedfit_images.subtract_background" title="piXedfit.piXedfit_images.subtract_background"><code class="xref py py-func docutils literal notranslate"><span class="pre">subtract_background()</span></code></a> function.</li>
+<li><strong>skyrms_value</strong> – Scalar value of median or mean of the RMS background image. This input will be considered when skyrms_img=None.</li>
+<li><strong>name_out_fits</strong> – Desired name for the output FITS file.</li>
 </ul>
 </td>
 </tr>
@@ -488,16 +476,16 @@ Desired name for the output FITS file.</li>
 <dt id="piXedfit.piXedfit_images.var_img_WISE">
 <code class="descclassname">piXedfit.piXedfit_images.</code><code class="descname">var_img_WISE</code><span class="sig-paren">(</span><em>sci_img</em>, <em>unc_img</em>, <em>filter_name</em>, <em>skyrms_img</em>, <em>name_out_fits=None</em><span class="sig-paren">)</span><a class="headerlink" href="#piXedfit.piXedfit_images.var_img_WISE" title="Permalink to this definition">¶</a></dt>
 <dd><p>Function for constructing variance image from an input WISE image.
-The uncertainty estimation is based on information from the <a class="reference external" href="http://wise2.ipac.caltech.edu/docs/release/allsky/expsup/sec2_3f.html">WISE website</a></p>
+The uncertainty estimation follows the information from the <a class="reference external" href="http://wise2.ipac.caltech.edu/docs/release/allsky/expsup/sec2_3f.html">WISE website</a></p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>sci_img</strong> – Input science image (i.e., background subtracted).</li>
-<li><strong>unc_img</strong> – Input uncertainty image. This type of image is provided in the
+<li><strong>sci_img</strong> – Input background-subtracted science image.</li>
+<li><strong>unc_img</strong> – Input uncertainty image. This type of WISE image is provided in the
 <a class="reference external" href="https://irsa.ipac.caltech.edu/applications/wise/">IRSA website</a> and indicated with ‘-unc-‘ keyword.</li>
-<li><strong>filter_name</strong> – A string of filter name. Options are: ‘wise_w1’, ‘wise_w2’, ‘wise_w3’, and ‘wise_w4’</li>
+<li><strong>filter_name</strong> – The filter name. Options are: ‘wise_w1’, ‘wise_w2’, ‘wise_w3’, and ‘wise_w4’</li>
 <li><strong>skyrms_img</strong> – Input RMS background image. This image is produced in the background subtraction with the <a class="reference internal" href="#piXedfit.piXedfit_images.subtract_background" title="piXedfit.piXedfit_images.subtract_background"><code class="xref py py-func docutils literal notranslate"><span class="pre">subtract_background()</span></code></a> function.</li>
 <li><strong>name_out_fits</strong> – (optional, default: None)
 Desired name for the output FITS file. If None, a generic name will be made.</li>
@@ -510,42 +498,31 @@ Desired name for the output FITS file. If None, a generic name will be made.</li
 
 <dl class="function">
 <dt id="piXedfit.piXedfit_images.subtract_background">
-<code class="descclassname">piXedfit.piXedfit_images.</code><code class="descname">subtract_background</code><span class="sig-paren">(</span><em>fits_image</em>, <em>hdu_idx=0</em>, <em>sigma=3.0</em>, <em>box_size=None</em>, <em>mask_region=[]</em>, <em>mask_sources=True</em>, <em>var=None</em>, <em>thresh=1.5</em>, <em>minarea=5</em>, <em>deblend_nthresh=32</em>, <em>deblend_cont=0.005</em><span class="sig-paren">)</span><a class="headerlink" href="#piXedfit.piXedfit_images.subtract_background" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">piXedfit.piXedfit_images.</code><code class="descname">subtract_background</code><span class="sig-paren">(</span><em>fits_image</em>, <em>hdu_idx=0</em>, <em>sigma=3.0</em>, <em>box_size=None</em>, <em>mask_region=None</em>, <em>mask_sources=True</em>, <em>var_image=None</em>, <em>thresh=1.5</em>, <em>minarea=5</em>, <em>deblend_nthresh=32</em>, <em>deblend_cont=0.005</em><span class="sig-paren">)</span><a class="headerlink" href="#piXedfit.piXedfit_images.subtract_background" title="Permalink to this definition">¶</a></dt>
 <dd><p>Function for estimating 2D background and subtracting it from the input image. This function also produce RMS image.
 This function adopts the Background2D function from the photutils package. To estimate 2D background,
-the input image is gridded and sigma clipping is done to each bin/grid. Then 2D interpolation is performed to
-construct 2D background image. A calculation in this function is based on the <a class="reference external" href="https://photutils.readthedocs.io/en/stable/api/photutils.background.Background2D.html#photutils.background.Background2D">Background2D</a>
-of the photutils.</p>
+the input image is gridded and sigma clipping is done to each bin (grid). Then 2D interpolation is performed to construct the 2D background image.
+A more information can be seen at <a class="reference external" href="https://photutils.readthedocs.io/en/stable/api/photutils.background.Background2D.html#photutils.background.Background2D">photutils</a> website.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>fits_image</strong> – Input image.</li>
-<li><strong>hdu_idx</strong> – (int, optional, default: 0)
-The FITS file extension where the image is stored. Default is 0 (HDU0).</li>
-<li><strong>sigma</strong> – (float, optional, default: 3.0)
-Sigma clipping threshold value.</li>
-<li><strong>box_size</strong> – (int or array_like, optional, default: None)
-The box size along each axis in the image gridding. The format is: [ny, nx]. If None, both axes will be divided into 10 grids.</li>
-<li><strong>mask_region</strong> – (array_like, optional, default: [])
-Region within the image that are going to be excluded.
+<li><strong>hdu_idx</strong> – The extension (HDU) where the image is stored. Default is 0 (HDU0).</li>
+<li><strong>sigma</strong> – Sigma clipping threshold value.</li>
+<li><strong>box_size</strong> – The box size for the image gridding. The format is: [ny, nx]. If None, both axes will be divided into 10 grids.</li>
+<li><strong>mask_region</strong> – Region within the image that are going to be excluded.
 mask_region should be 2D array with the same size as the input image.</li>
-<li><strong>mask_sources</strong> – (array_like, default: True)
-If True, source detection and segmentation will be performed with SEP (Pyhton version of SExtractor)
+<li><strong>mask_sources</strong> – If True, source detection and segmentation will be performed with SEP (Pyhton version of SExtractor)
 and the regions associated with the detected sources will be excluded. This help reducing contamination by astronomical sources.</li>
-<li><strong>var</strong> – (optional, optional, default: None)
-Variance image (in FITS file format) to be used in the sources detection process. This input argument is only relevant if mask_sources=True.</li>
-<li><strong>thresh</strong> – (float, optional, default: 1.5)
-Detection threshold for the sources detection. If variance image is supplied, the threshold value for a given pixel is
+<li><strong>var_image</strong> – Variance image (in FITS file format) to be used in the sources detection process. This input argument is only relevant if mask_sources=True.</li>
+<li><strong>thresh</strong> – Detection threshold for the sources detection. If variance image is supplied, the threshold value for a given pixel is
 interpreted as a multiplicative factor of the uncertainty (i.e. square root of the variance) on that pixel.
-If var=None, the threshold is taken to be 2.5 percentile of the pixel values in the image.</li>
-<li><strong>minarea</strong> – (int, optional, default: 5)
-Minimum number of pixels above threshold triggering detection.</li>
-<li><strong>deblend_nthresh</strong> – (float, optional, default: 32)
-The same as deblend_nthresh parameter in the SEP.</li>
-<li><strong>deblend_cont</strong> – (float, optional, default: 0.005)
-The same as deblend_cont parameter in the SEP.</li>
+If var_image=None, the threshold is taken to be 2.5 percentile of the pixel values in the image.</li>
+<li><strong>minarea</strong> – Minimum number of pixels above threshold triggering detection.</li>
+<li><strong>deblend_nthresh</strong> – Number of thresholds used for object deblending.</li>
+<li><strong>deblend_cont</strong> – Minimum contrast ratio used for object deblending. To entirely disable deblending, set to 1.0.</li>
 </ul>
 </td>
 </tr>
@@ -555,18 +532,18 @@ The same as deblend_cont parameter in the SEP.</li>
 
 <dl class="function">
 <dt id="piXedfit.piXedfit_images.crop_stars_galregion_fits">
-<code class="descclassname">piXedfit.piXedfit_images.</code><code class="descname">crop_stars_galregion_fits</code><span class="sig-paren">(</span><em>input_fits</em>, <em>x_cent=[]</em>, <em>y_cent=[]</em>, <em>radius=[]</em>, <em>name_out_fits=None</em><span class="sig-paren">)</span><a class="headerlink" href="#piXedfit.piXedfit_images.crop_stars_galregion_fits" title="Permalink to this definition">¶</a></dt>
-<dd><p>A function for cropping foreground stars within a galaxy’s region of interst.
-The input is a FITS file of reduced multiband fluxes maps output of flux_map() function</p>
+<code class="descclassname">piXedfit.piXedfit_images.</code><code class="descname">crop_stars_galregion_fits</code><span class="sig-paren">(</span><em>input_fits</em>, <em>x_cent</em>, <em>y_cent</em>, <em>radius</em>, <em>name_out_fits=None</em><span class="sig-paren">)</span><a class="headerlink" href="#piXedfit.piXedfit_images.crop_stars_galregion_fits" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function for cropping foreground stars within a galaxy’s region of interst.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>input_fits</strong> – The input FITS file.</li>
-<li><strong>and y_cent</strong> (<em>x_cent</em>) – Arrays containing cenral coordinates of the stars.</li>
-<li><strong>radius</strong> – Arrays containing the estimated radii of the stars.</li>
-<li><strong>name_out_fits</strong> – Desired name for the output FITS file. If None, a generic name will be used.</li>
+<li><strong>input_fits</strong> – The input FITS file containing the data cube that is produced using the <code class="xref py py-func docutils literal notranslate"><span class="pre">flux_map()</span></code> funciton in the <a class="reference internal" href="#piXedfit.piXedfit_images.images_processing" title="piXedfit.piXedfit_images.images_processing"><code class="xref py py-class docutils literal notranslate"><span class="pre">images_processing</span></code></a> class.</li>
+<li><strong>x_cent</strong> – 1D array of x coordinates of the center of the stars.</li>
+<li><strong>y_cent</strong> – 1D array of y coordinates of the center of the stars.</li>
+<li><strong>radius</strong> – 1D array of the estimated circular radii of the stars.</li>
+<li><strong>name_out_fits</strong> – Desired name for the output FITS file. If None, a generic name will be made.</li>
 </ul>
 </td>
 </tr>
@@ -577,18 +554,18 @@ The input is a FITS file of reduced multiband fluxes maps output of flux_map() f
 <dl class="function">
 <dt id="piXedfit.piXedfit_images.EBV_foreground_dust">
 <code class="descclassname">piXedfit.piXedfit_images.</code><code class="descname">EBV_foreground_dust</code><span class="sig-paren">(</span><em>ra</em>, <em>dec</em><span class="sig-paren">)</span><a class="headerlink" href="#piXedfit.piXedfit_images.EBV_foreground_dust" title="Permalink to this definition">¶</a></dt>
-<dd><p>Function for estimating E(B-V) associated with the foreground Galactic dust attenuation.</p>
+<dd><p>Function for estimating E(B-V) dust attenuation due to the foreground Galactic dust attenuation at a given coordinate on the sky.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>ra</strong> – Right ascension in degree.</li>
-<li><strong>dec</strong> – Declination in degree.</li>
+<li><strong>ra</strong> – Right ascension coordinate in degree.</li>
+<li><strong>dec</strong> – Declination coordinate in degree.</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns ebv:</th><td class="field-body"><p class="first last">E(B-V) associated with the foreground Galactic dust.</p>
+<tr class="field-even field"><th class="field-name">Returns ebv:</th><td class="field-body"><p class="first last">E(B-V) value.</p>
 </td>
 </tr>
 </tbody>

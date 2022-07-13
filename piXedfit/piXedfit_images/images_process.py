@@ -42,10 +42,10 @@ class images_processing:
 		Dictionary containing names of the variance images. It has a similar format to sci_img.
 
 	:param gal_ra:
-		Right Ascension (RA) coordinate of the target galaxy.
+		Right Ascension (RA) coordinate of the target galaxy. This should be in degree.
 
 	:param gal_dec:
-		Declination (DEC) coordinate of the target galaxy.
+		Declination (DEC) coordinate of the target galaxy. This should be in degree.
 
 	:param img_unit: (optional)
 		Unit of pixel value in the multiband images. The acceptable format of this input is a python dictionary, similar to that of sci_img. This input is optional.
