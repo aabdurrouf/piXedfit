@@ -9,3 +9,4 @@ sep
 emcee
 schwimmbad
 astroquery
+pyvo

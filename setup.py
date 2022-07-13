@@ -50,5 +50,5 @@ setup(
     #scripts=glob.glob("scripts/*.py"),
     include_package_data=True,
     install_requires=["numpy", "h5py", "scipy", "astropy", "photutils==1.1.0", "matplotlib", "reproject", 
-                      "sep", "emcee", "schwimmbad", "astroquery"],
+                      "sep", "emcee", "schwimmbad", "astroquery", "pyvo"],
 )
