@@ -3,9 +3,6 @@ import h5py
 import os, sys
 from astropy.io import fits
 
-#global PIXEDFIT_HOME
-#PIXEDFIT_HOME = os.environ['PIXEDFIT_HOME']
-
 try:
 	global PIXEDFIT_HOME
 	PIXEDFIT_HOME = os.environ['PIXEDFIT_HOME']
@@ -15,8 +12,6 @@ except:
 
 __all__ = ["list_filters", "add_filter", "remove_filter", "change_filter_name", "get_filter_curve", 
 			"cwave_filters", "filtering", "interp_filters_curves", "filtering_interp_filters"]
-
-#dir_file = PIXEDFIT_HOME+'/data/filters/'
 
 def convert_fits_to_hdf5():
 	# open file
@@ -63,7 +58,7 @@ def get_all(name):
     print(name)
 
 def list_filters():
-	"""A function for listing the available filters transmission functions in piXedfit
+	"""Function for listing the available filters transmission functions in piXedfit
 
 	:returns filters:
 		List of filters curves available
@@ -96,14 +91,14 @@ def list_filters_noprint():
 
 
 def add_filter(filter_name,filter_wave,filter_transmission,filter_cwave):
-	"""A function for adding a new filter transmission function into piXedfit
+	"""Function for adding a new filter transmission function into piXedfit
 
 	:param filter_name:
 		A given name (in string) for the filter curve
 	:param filter_wave:
-		array of wavelength in the filter transmission function
+		Array of wavelength in the filter transmission function
 	:param filter_transmission:
-		array of transmission corresponding with the filter_wave
+		Array of transmission corresponding with the filter_wave
 	:param filter_cwave:
 		The central wavelength or effective wavelength of the filter
 	"""
@@ -122,7 +117,7 @@ def add_filter(filter_name,filter_wave,filter_transmission,filter_cwave):
 
 
 def remove_filter(filter_name):
-	"""A function for removing a filter transmission function from piXedfit
+	"""Function for removing a filter transmission function from piXedfit
 
 	:param filter_name:
 		The filter name.
@@ -166,7 +161,7 @@ def remove_filter(filter_name):
 
 
 def change_filter_name(old_filter_name, new_filter_name):
-	"""A function for changing a filter name
+	"""Function for changing a filter name
 
 	:param old_filter_name:
 		Old filter name.
@@ -219,7 +214,7 @@ def change_filter_name(old_filter_name, new_filter_name):
 
 
 def get_filter_curve(filter_name):
-	"""A function to get a transmission function of a filter available in piXedfit
+	"""Function to get a transmission function of a filter that is available in piXedfit
 
 	:param filter_name:
 		Name of the filter
@@ -243,7 +238,7 @@ def get_filter_curve(filter_name):
 
 
 def cwave_filters(filters):
-	"""A function for retrieving central wavelengths of a set of filters
+	"""Function for retrieving central wavelengths of a set of filters
 
 	:param filters:
 		A list of filters names
@@ -269,7 +264,7 @@ def cwave_filters(filters):
 
 
 def filtering(wave,spec,filters):
-	"""A function for integrating a spectrum through a filter transmission function
+	"""Function for convolving a spectrum with a set of filter transmission functions
 
 	:param wave:
 		array of wavelength of the input spectrum

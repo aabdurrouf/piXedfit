@@ -427,7 +427,7 @@ def generate_modelSED_photo(filters,sp=None,imf_type=1,duste_switch=0,add_neb_em
 	"""Function for generating a model photometric SED given some parameters.
 
 	:param filters: 
-		List of photometric filters. The list of filters recognized by piXedfit can be accesses using :func:`piXedfit.utils.filtering.list_filters`. 
+		List of photometric filters. The list of filters recognized by piXedfit can be accessed using :func:`piXedfit.utils.filtering.list_filters`. 
 		Please see `this page <https://pixedfit.readthedocs.io/en/latest/manage_filters.html>`_ for information on managing filters that include listing available filters, adding, and removing filters. 
 
 	:param sp: (optional, default: None)
@@ -905,7 +905,7 @@ def save_models_photo(filters,gal_z,imf_type=1,sfh_form=4,dust_law=1,add_igm_abs
 	The values of the parameters are randomly generated and for each parameter, the random values are uniformly distributed.  
 
 	:param filters: 
-		List of photometric filters. The list of filters recognized by piXedfit can be accesses using :func:`piXedfit.utils.filtering.list_filters`. 
+		List of photometric filters. The list of filters recognized by piXedfit can be accessed using :func:`piXedfit.utils.filtering.list_filters`. 
 		Please see `this page <https://pixedfit.readthedocs.io/en/latest/manage_filters.html>`_ for information on managing filters that include listing available filters, adding, and removing filters. 
 
 	:param gal_z:
@@ -1167,7 +1167,7 @@ def save_models_rest_spec(imf_type=1,sfh_form=4,dust_law=1,duste_switch=0,add_ne
 
 	# output files name:
 	if name_out == None:
-		name_out = "random_modelSEDs.hdf5"
+		name_out = "random_model_spectra.hdf5"
 	file_out.write("name_out %s\n" % name_out)  
 	file_out.close()
 
