@@ -41,6 +41,11 @@ source  ~/.bashrc
 * To add the environmental variable permanently, we can add the same line to ```~/.bash_profile``` of ```~/.profile``` and do ```source``` command.
 
 
+## Convolution Kernels
+
+Because of the large sizes of the kernel files, we do not upload them to this repository. We put the kernel files on this google drive [link](https://drive.google.com/drive/folders/1pTRASNKLuckkY8_sl8WYeZ62COvcBtGn?usp=sharing). To be able to use image processing feature (piXedfit_images), you need to download the necessary kernel files and copy them to /data/kernels ($PIXEDFIT_HOME/data/kernels). List of the kernel files needed for image processing would depend on the imaging data that will be analyzed.
+
+
 ## Citation
 If you use this code for your research, please reference [Abdurro'uf et al. (2021)](https://ui.adsabs.harvard.edu/abs/2021ApJS..254...15A/abstract):
 
