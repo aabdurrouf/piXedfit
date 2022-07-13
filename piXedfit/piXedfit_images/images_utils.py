@@ -17,8 +17,8 @@ warnings.filterwarnings('ignore')
 from ..utils.filtering import cwave_filters
 
 
-__all__ = ["sort_filters", "kpc_per_pixel", "k_lmbd_Fitz1986_LMC", "EBV_foreground_dust", "Sloan", "TwoMASS", 
-	   "WISE", "Galex", "HST", "Spitzer","skybg_sdss", "get_gain_dark_variance", "var_img_sdss", "var_img_GALEX", 
+__all__ = ["sort_filters", "kpc_per_pixel", "k_lmbd_Fitz1986_LMC", "EBV_foreground_dust", "dwd_sdss", "dwd_2mass", 
+	   "dwd_wise", "dwd_galex", "dwd_hst", "dwd_spitzer","skybg_sdss", "get_gain_dark_variance", "var_img_sdss", "var_img_GALEX", 
 	   "var_img_2MASS", "var_img_WISE", "var_img_from_unc_img","var_img_from_weight_img", "mask_region_bgmodel", 
 	   "subtract_background", "get_psf_fwhm","get_largest_FWHM_PSF", "ellipse_fit", "draw_ellipse", "ellipse_sma", 
 	   "crop_ellipse_galregion","crop_ellipse_galregion_fits", "crop_stars", "crop_stars_galregion_fits", 
@@ -170,7 +170,7 @@ def EBV_foreground_dust(ra, dec):
 	return ebv
 
 
-def Sloan(pos,bands = ['u','g','r','i','z'],size=20):
+def dwd_sdss(pos,bands = ['u','g','r','i','z'],size=20):
 	"""A tool to download images from SDSS.
 
 	:param pos: 
@@ -202,7 +202,7 @@ def Sloan(pos,bands = ['u','g','r','i','z'],size=20):
 			i += 1
 
 
-def TwoMASS(pos,size = 0.1):
+def dwd_2mass(pos,size = 0.1):
 	"""A tool to download TwoMASS images from IRSA.
 
 	:param pos: 
@@ -234,7 +234,7 @@ def TwoMASS(pos,size = 0.1):
 			shutil.copyfileobj(f_in, f_out)  # unzipped gz files
 		os.remove(file)   # delete .gz files 
 
-def WISE(pos, size = 0.1, pix = 800):
+def dwd_wise(pos, size = 0.1, pix = 800):
 	"""A tool to download allwise images from IRSA.
 
 	:param pos:
@@ -281,7 +281,7 @@ def WISE(pos, size = 0.1, pix = 800):
 		os.remove(file)   # delete gz files  
 
 
-def Galex(pos, size = 0.1, unzip = True):
+def dwd_galex(pos, size = 0.1, unzip = True):
 	"""A tool to download allwise images from GALEX.
 
 	:param pos:
@@ -316,7 +316,7 @@ def Galex(pos, size = 0.1, unzip = True):
 		pass
 
 
-def HST(pos,size = 1, save = True, output_fmt = 'csv'):
+def dwd_hst(pos,size = 1, save = True, output_fmt = 'csv'):
 	"""A tool to download allwise images from Hubble Space Telescope.
 
 	:param pos:
@@ -346,7 +346,7 @@ def HST(pos,size = 1, save = True, output_fmt = 'csv'):
 	for obs_id in b.observation_id.unique():
 		esahubble.download_product(observation_id= obs_id, filename = f"data_for_{obs_id}.tar")
 
-def Spitzer(pos, size = 1/120):
+def dwd_spitzer(pos, size = 1/120):
 	"""A tool to download allwise images from Spitzer.
 
 	:param pos:

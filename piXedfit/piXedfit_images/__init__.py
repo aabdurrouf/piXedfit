@@ -6,4 +6,4 @@ __all__ = ["images_processing", "sort_filters", "kpc_per_pixel", "k_lmbd_Fitz198
 			"var_img_from_weight_img", "mask_region_bgmodel", "subtract_background", "get_psf_fwhm", "get_largest_FWHM_PSF", 
 			"ellipse_fit", "draw_ellipse", "ellipse_sma", "crop_ellipse_galregion", "crop_ellipse_galregion_fits", "crop_stars", 
 			"crop_stars_galregion_fits",  "crop_image_given_radec", "crop_image_given_xy",  "check_avail_kernel", 
-			"create_kernel_gaussian"]
+			"create_kernel_gaussian","dwd_sdss", "dwd_2mass", "dwd_wise", "dwd_galex", "dwd_hst", "dwd_spitzer",]
