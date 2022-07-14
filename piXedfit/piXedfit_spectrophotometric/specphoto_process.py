@@ -222,7 +222,7 @@ def match_imgifs_spectral(specphoto_file, models_spec=None, nproc=10, del_wave_n
 		This set of models only need to be produced once and then it can be used for all galaxies in a sample. 
 		If models_spec=None, a default file is then called from piXedfit/data/mod ($PIXEDFIT_HOME/data/mod). 
 		However, this file is not available in that directory at first piXedfit is installed, instead user need to download it 
-		from `this link <https://drive.google.com/drive/folders/1YjZGg97dPT8S95NJmO5tiFH9jWhbxuVy?usp=sharing>`_ and put it on that 
+		from `this link <https://drive.google.com/drive/folders/1Fvl42e_LNWLYhKabDS1ew6wTQjeopcc6?usp=sharing>`_ and put it on that 
 		directory in the local machine.   
 
 	:param nproc:

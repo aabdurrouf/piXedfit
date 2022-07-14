@@ -19,7 +19,7 @@
 ## Installation
 Please see [installation](https://pixedfit.readthedocs.io/en/latest/install.html) for dependencies and requirements. To install **piXedfit**, please follow the instruction below.
 
-* cd to a desired installation directory and clone **piXedfit**.
+* cd to a desired installation directory, clone **piXedfit**, and install.
 ```
 cd <install_dir>
 git clone https://github.com/aabdurrouf/piXedfit.git
@@ -40,10 +40,12 @@ source  ~/.bashrc
 ```
 * To add the environmental variable permanently, we can add the same line to ```~/.bash_profile``` or ```~/.profile``` and do ```source``` command.
 
+The above instruction is for first installation, for upgrading **piXedfit**, please see [installation](https://pixedfit.readthedocs.io/en/latest/install.html).
+
 
 ## Convolution Kernels
 
-Because of the large sizes of the kernel files, we do not upload them to this repository. We put the kernel files on this google drive [link](https://drive.google.com/drive/folders/1pTRASNKLuckkY8_sl8WYeZ62COvcBtGn?usp=sharing). To be able to use image processing feature (piXedfit_images), you need to download the necessary kernel files and copy them to /data/kernels ($PIXEDFIT_HOME/data/kernels). List of the kernel files needed for image processing would depend on the imaging data that will be analyzed.
+Because of the large sizes of the kernel files, we do not upload them to this repository. We put the kernel files on this google drive [link](https://drive.google.com/drive/folders/1Fvl42e_LNWLYhKabDS1ew6wTQjeopcc6?usp=sharing). To be able to use image processing feature (piXedfit_images), you need to download the necessary kernel files and copy them to /data/kernels ($PIXEDFIT_HOME/data/kernels). List of the kernel files needed for image processing would depend on the imaging data that will be analyzed.
 
 
 ## Citation
@@ -70,6 +72,9 @@ archivePrefix = {arXiv},
 }
 ``` 
    
+If you use the pixel binning module (`piXedfit_bin`), please also reference [Abdurro'uf & Akiyama (2017)](https://ui.adsabs.harvard.edu/abs/2017MNRAS.469.2806A/abstract).
+
+
 ## Reference
 A list of some projects **piXedfit** is benefitted from:
 *  [Astropy](https://www.astropy.org/)

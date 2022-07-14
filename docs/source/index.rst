@@ -10,12 +10,12 @@ piXedfit
 Features
 --------
 **piXedfit** has six modules that work independently with each other. For instance, it is possible to use the SED fitting module for fitting either global (integrated) or spatially resolved SEDs of galaxies. Those modules include:
-*  **piXedfit_images**: image processing.
-*  **piXedfit_spectrophotometric**: spatial and spectral matching between multiband imaging data and IFS data.   
-*  **piXedfit_bin**: pixel binning to optimize S/N of SEDs on spatially resolved scales.  
-*  **piXedfit_model**: generating model SEDs.     
-*  **piXedfit_fitting**: SED fitting on spatially resolved scales or global (integrated) scales.
-*  **piXedfit_analysis**: Analysis of SED fitting result, including visualization plots and retrieving best-fitting parameters.
+*  :mod:`piXedfit_images`: image processing.
+*  :mod:`piXedfit_spectrophotometric`: spatial and spectral matching between multiband imaging data and IFS data.   
+*  :mod:`piXedfit_bin`: pixel binning to optimize S/N of SEDs on spatially resolved scales.  
+*  :mod:`piXedfit_model`: generating model SEDs.     
+*  :mod:`piXedfit_fitting`: SED fitting on spatially resolved scales or global (integrated) scales.
+*  :mod:`piXedfit_analysis`: Analysis of SED fitting result, including visualization plots and retrieving best-fitting parameters.
 
 .. toctree::
    :maxdepth: 2
@@ -65,7 +65,7 @@ Features
 
 Citation
 --------
-If you use this code for your research, please reference `Abdurro'uf et al. (2021) <https://ui.adsabs.harvard.edu/abs/2021ApJS..254...15A/abstract>`_.
+If you use this code for your research, please reference `Abdurro'uf et al. (2021) <https://ui.adsabs.harvard.edu/abs/2021ApJS..254...15A/abstract>`_. If you use the pixel binning module (:mod:`piXedfit_bin`), please also reference `Abdurro'uf & Akiyama (2017) <https://ui.adsabs.harvard.edu/abs/2017MNRAS.469.2806A/abstract>`_.
 
 
 Reference

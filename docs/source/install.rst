@@ -5,15 +5,15 @@ Dependencies
 ------------
 
 * Python >= 3.7 
-* `FSPS <https://github.com/cconroy20/fsps>`_ and `Python FSPS <https://dfm.io/python-fsps/current/>`_.
+* `FSPS <https://github.com/cconroy20/fsps>`_ and `Python FSPS <https://dfm.io/python-fsps/current/>`_. Note that we need to set an environmental variable called SPS_HOME to make FSPS works. Please follow the instruction in FSPS website for this.
 * `mpi4py <https://mpi4py.readthedocs.io/en/stable/index.html#>`_ for parallel processing.
 * `emcee <https://emcee.readthedocs.io/en/stable/>`_ for SED fitting with MCMC method. 
 
 
-Installing piXedfit
--------------------
+Installing piXedfit for the first time
+--------------------------------------
 
-* cd to a desired installation directory and clone **piXedfit**.
+* cd to a desired installation directory, clone **piXedfit**, and install.
 
 .. code-block:: shell
 
@@ -52,6 +52,20 @@ Add the line and then do
 
 	source ~/.bash_profile
 
+
+Upgrading piXedfit
+------------------
+
+* cd to the installation directory and clone **piXedfit**.
+
+.. code-block:: shell
+
+	cd <install_dir>
+	git clone https://github.com/aabdurrouf/piXedfit.git temp
+	cp -r temp/piXedfit requirements.txt setup.py piXedfit/
+	rm -r temp
+	cd piXedfit
+	python -m pip install .
 
 
 
