@@ -574,8 +574,6 @@ def get_dust_mass_fagnbol_mainSFH_fit(sp=None,imf_type=1,sfh_form=4,params_fsps=
 	norm0 = formed_mass/mass
 	dust_mass = dust_mass0*norm0
 
-	#print ("mass0=%e  dust_mass0=%e formed_mass=%e  norm=%e  dust_mass=%e" % (mass,dust_mass0,formed_mass,norm0,dust_mass))
-
 	return dust_mass, fagn_bol
 
 
@@ -653,7 +651,6 @@ def spec_given_SFH_ZH(lbt=[],SFH_sfr=[],ZH_logzsol=[],z=0.001,cosmo='flat_LCDM',
 	spec = np.sum(spec_array, axis=0)
 
 	# redshifting:
-	#spec_wave,spec_flux = redshifting.cosmo_redshifting(cosmo=cosmo,H0=H0,Om0=Om0,z=z,wave=wave,spec=spec) ### in erg/s/cm^2/Ang.
 	spec_wave,spec_flux = cosmo_redshifting(cosmo=cosmo,H0=H0,Om0=Om0,z=z,wave=wave,spec=spec) ### in erg/s/cm^2/Ang.
 
 	return spec_wave,spec_flux,survive_mass

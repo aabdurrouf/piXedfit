@@ -730,7 +730,7 @@ class images_processing:
 			#==> get magnitude zero-point and fluxes for zero-magnitudes zero point conversion: of 2MASS:
 			if filters[bb]=='2mass_j' or filters[bb]=='2mass_h' or filters[bb]=='2mass_k':
 				# get magnitude zero-point
-				if len(mag_zp_2mass) == 0:
+				if mag_zp_2mass is None:
 					name_init_image = sci_img[filters[bb]]
 					hdu = fits.open(name_init_image)
 					MAGZP_2mass = float(hdu[0].header["MAGZP"])
