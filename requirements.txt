@@ -10,3 +10,4 @@ emcee
 schwimmbad
 astroquery
 pyvo
+pandas
