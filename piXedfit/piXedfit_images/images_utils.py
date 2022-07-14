@@ -279,7 +279,7 @@ def WISE(pos, size = 0.1, pix = 800):
 
 
 def Galex(pos, size = 0.1, unzip = True):
-	"""A tool to download allwise images from GALEX.
+	"""A tool to download GALEX images from MAST.
 
 	:param pos:
 		Target's coordinate, in the astropy.coordinates form.
@@ -314,7 +314,7 @@ def Galex(pos, size = 0.1, unzip = True):
 
 
 def HST(pos,size = 1, save = True, output_fmt = 'csv'):
-	"""A tool to download allwise images from Hubble Space Telescope.
+	"""A tool to download images from Hubble Space Telescope.
 
 	:param pos:
 		Target's coordinate, in the astropy.coordinates form.
@@ -344,7 +344,7 @@ def HST(pos,size = 1, save = True, output_fmt = 'csv'):
 		esahubble.download_product(observation_id= obs_id, filename = f"data_for_{obs_id}.tar")
 
 def Spitzer(pos, size = 1/120):
-	"""A tool to download allwise images from Spitzer.
+	"""A tool to download Spitzer images from IRSA.
 
 	:param pos:
 		Target's coordinate, in the astropy.coordinates form.
