@@ -62,7 +62,7 @@ Upgrading piXedfit
 
 	cd <install_dir>
 	git clone https://github.com/aabdurrouf/piXedfit.git temp
-	cp -r temp/piXedfit requirements.txt setup.py piXedfit/
+	cp -r temp/piXedfit temp/requirements.txt temp/setup.py piXedfit/
 	rm -rf temp
 	cd piXedfit
 	python -m pip install .

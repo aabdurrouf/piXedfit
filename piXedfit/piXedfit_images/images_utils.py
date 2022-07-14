@@ -183,6 +183,7 @@ def dwd_sdss(pos,bands = ['u','g','r','i','z'],size=20):
 		Search cone size. Note that this size IS NOT image size.
 
 	"""
+	import astropy.units as u
 	
 	# Query the region
 	xid = SDSS.query_region(pos, spectro=False,radius = size * u.arcsec)
