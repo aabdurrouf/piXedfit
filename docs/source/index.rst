@@ -10,6 +10,7 @@ piXedfit
 Features
 --------
 **piXedfit** has six modules that work independently with each other. For instance, it is possible to use the SED fitting module for fitting either global (integrated) or spatially resolved SEDs of galaxies. Those modules include:
+
 *  :mod:`piXedfit_images`: image processing.
 *  :mod:`piXedfit_spectrophotometric`: spatial and spectral matching between multiband imaging data and IFS data.   
 *  :mod:`piXedfit_bin`: pixel binning to optimize S/N of SEDs on spatially resolved scales.  

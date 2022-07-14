@@ -56,14 +56,14 @@ Add the line and then do
 Upgrading piXedfit
 ------------------
 
-* cd to the installation directory and clone **piXedfit**.
+* cd to the installation directory, clone **piXedfit**, and install.
 
 .. code-block:: shell
 
 	cd <install_dir>
 	git clone https://github.com/aabdurrouf/piXedfit.git temp
 	cp -r temp/piXedfit requirements.txt setup.py piXedfit/
-	rm -r temp
+	rm -rf temp
 	cd piXedfit
 	python -m pip install .
 
