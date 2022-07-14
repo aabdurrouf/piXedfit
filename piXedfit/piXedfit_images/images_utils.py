@@ -2,13 +2,6 @@ import numpy as np
 from math import pi, pow, sqrt, cos, sin 
 import sys, os
 from astropy.io import fits 
-from astroquery.sdss import SDSS
-from astroquery.mast import Observations
-from astroquery.esa.hubble import ESAHubble
-from astroquery.ipac.irsa import sha
-import urllib
-import pyvo
-import gzip, shutil, glob
 from astropy.table import Table
 from astropy.cosmology import *
 import warnings
@@ -184,6 +177,7 @@ def dwd_sdss(pos,bands = ['u','g','r','i','z'],size=20):
 
 	"""
 	import astropy.units as u
+	from astroquery.sdss import SDSS
 	
 	# Query the region
 	xid = SDSS.query_region(pos, spectro=False,radius = size * u.arcsec)
@@ -212,6 +206,9 @@ def dwd_2mass(pos,size = 0.1):
 	:param size:  (defaults: 0.1[deg])
 		Search cone size. Note that this size IS NOT image size.
 	"""
+	import urllib
+	import pyvo
+	import gzip, shutil, glob
 
 	# Connect to pyvo service
 	image_service = pyvo.regsearch(servicetype='image', keywords=['2mass'])
@@ -249,6 +246,9 @@ def dwd_wise(pos, size = 0.1, pix = 800):
 		Recommend not to download the original image which is way too large (~60 MB).
 
 	"""
+	import urllib
+	import pyvo
+	import gzip, shutil, glob
 
 	# Connect to pyvo service
 	image_service = pyvo.regsearch(servicetype='image', keywords=['allwise'])
@@ -293,7 +293,10 @@ def dwd_galex(pos, size = 0.1, unzip = True):
 		Whether to unzip the download file.
 	"""
 
-		# Full list
+	from astroquery.mast import Observations
+	import gzip, shutil, glob
+
+	# Full list
 	obs_table = Observations.query_region(pos,radius= size)
 	data_products_by_obs = Observations.get_product_list(obs_table[:])
 	# query list
@@ -331,6 +334,8 @@ def dwd_hst(pos,size = 1, save = True, output_fmt = 'csv'):
         Other formats: 'csv', 'votable', 'xml'
 	"""
 
+	from astroquery.esa.hubble import ESAHubble
+
 	if output_fmt not in ['csv','votable','xml']:
 		raise TypeError("output format is not supported. Please use one of these: csv, votable, xml")
 
@@ -355,6 +360,8 @@ def dwd_spitzer(pos, size = 1/120):
 	:param size: (defaults to 1/120 [deg] )
 		Search cone size. Note that this size IS NOT image size.
 	"""
+
+	from astroquery.ipac.irsa import sha
 
 	# Start searching
 	table = sha.query(coord = pos , size = size)
