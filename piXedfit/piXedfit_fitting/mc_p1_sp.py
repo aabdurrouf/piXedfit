@@ -51,11 +51,8 @@ def initfit_fz(gal_z,DL_Gpc):
 	comm.Scatter(idx_mpi, recvbuf_idx, root=0)
 
 	mod_params_temp = np.zeros((nparams,numDataPerRank))
-	mod_chi2_temp = np.zeros(numDataPerRank)
 	mod_chi2_photo_temp = np.zeros(numDataPerRank)
 	mod_redcd_chi2_spec_temp = np.zeros(numDataPerRank)
-	mod_fluxes_temp = np.zeros((nbands,numDataPerRank))
-	mod_spec_flux_temp = np.zeros((nwaves_clean,numDataPerRank))
 
 	count = 0
 	for ii in recvbuf_idx:
@@ -104,13 +101,8 @@ def initfit_fz(gal_z,DL_Gpc):
 		chi_spec,lower,upper = sigmaclip(chi_spec0, low=spec_chi_sigma_clip, high=spec_chi_sigma_clip)
 		chi2_spec = np.sum(np.square(chi_spec))
 
-		chi2 = chi2_photo + chi2_spec
-
-		mod_chi2_temp[int(count)] = chi2
 		mod_chi2_photo_temp[int(count)] = chi2_photo
 		mod_redcd_chi2_spec_temp[int(count)] = chi2_spec/len(chi_spec)
-		mod_fluxes_temp[:,int(count)] = fluxes  									# before normalized
-		mod_spec_flux_temp[:,int(count)] = conv_mod_spec_flux_clean/norm 			# before normalized
 
 		# get parameters
 		for pp in range(0,nparams):
@@ -127,122 +119,23 @@ def initfit_fz(gal_z,DL_Gpc):
 		sys.stdout.flush()
 
 	mod_params = np.zeros((nparams,nmodels))
-	mod_fluxes = np.zeros((nbands,nmodels))
-	mod_spec_flux = np.zeros((nwaves_clean,nmodels))
-	mod_chi2 = np.zeros(nmodels)
 	mod_chi2_photo = np.zeros(nmodels)
 	mod_redcd_chi2_spec = np.zeros(nmodels)
 
 	# gather the scattered data and collect to rank=0
-	comm.Gather(mod_chi2_temp, mod_chi2, root=0)
 	comm.Gather(mod_chi2_photo_temp, mod_chi2_photo, root=0)
 	comm.Gather(mod_redcd_chi2_spec_temp, mod_redcd_chi2_spec, root=0)
-
 	for pp in range(0,nparams):
 		comm.Gather(mod_params_temp[pp], mod_params[pp], root=0)
-	for bb in range(0,nbands):
-		comm.Gather(mod_fluxes_temp[bb], mod_fluxes[bb], root=0)
-	for bb in range(0,nwaves_clean):
-		comm.Gather(mod_spec_flux_temp[bb], mod_spec_flux[bb], root=0)
 
-	status_add_err = np.zeros(1)
-	modif_obs_flux_err = np.zeros(nbands)
-	modif_spec_flux_err_clean = np.zeros(nwaves_clean)
-
-	if rank == 0:
-		idx0, min_val = min(enumerate(mod_chi2_photo), key=itemgetter(1))
-		fluxes = mod_fluxes[:,idx0]
-		norm = model_leastnorm(obs_fluxes,obs_flux_err,fluxes)
-
-		if mod_chi2_photo[idx0]/nbands > redcd_chi2:  
-			sys_err_frac = 0.01
-			while sys_err_frac <= 0.5:
-				modif_obs_flux_err = np.sqrt(np.square(obs_flux_err) + np.square(sys_err_frac*obs_fluxes))
-				chi2 = np.sum(np.square(((norm*fluxes)-obs_fluxes)/modif_obs_flux_err))
-				if chi2/nbands <= redcd_chi2:
-					break
-				sys_err_frac = sys_err_frac + 0.01
-			status_add_err[0] = 1
-		elif mod_chi2_photo[idx0]/nbands <= redcd_chi2:
-			status_add_err[0] = 0
-
-		if mod_redcd_chi2_spec[idx0] > redcd_chi2:  
-			sys_err_frac = 0.01
-			while sys_err_frac <= 0.5:
-				modif_spec_flux_err_clean = np.sqrt(np.square(spec_flux_err_clean) + np.square(sys_err_frac*spec_flux_clean))
-				chi_spec0 = ((norm*mod_spec_flux[:,idx0])-spec_flux_clean)/modif_spec_flux_err_clean
-				chi_spec,lower,upper = sigmaclip(chi_spec0, low=spec_chi_sigma_clip, high=spec_chi_sigma_clip)
-				chi2_spec = np.sum(np.square(chi_spec))
-				if chi2_spec/len(chi_spec) <= redcd_chi2:
-					break
-				sys_err_frac = sys_err_frac + 0.01
-			status_add_err[0] = 1
-		elif mod_redcd_chi2_spec[idx0] <= redcd_chi2:
-			status_add_err[0] = 0
-
-	comm.Bcast(status_add_err, root=0)
-
-	if status_add_err[0] == 0:
-		# Broadcast
-		comm.Bcast(mod_params, root=0)
-		comm.Bcast(mod_chi2, root=0)
-		 
-	elif status_add_err[0] == 1:
-		comm.Bcast(mod_fluxes, root=0)
-		comm.Bcast(mod_spec_flux, root=0)
-		comm.Bcast(modif_obs_flux_err, root=0) 
-		comm.Bcast(modif_spec_flux_err_clean, root=0)
-
-		mod_chi2_temp = np.zeros(numDataPerRank)
-		mod_params_temp = np.zeros((nparams,numDataPerRank))
-
-		count = 0
-		for ii in recvbuf_idx:
-			
-			if modif_obs_flux_err[0]>0:
-				norm = model_leastnorm(obs_fluxes,modif_obs_flux_err,mod_fluxes[:,int(count)])
-			else:
-				norm = model_leastnorm(obs_fluxes,obs_flux_err,mod_fluxes[:,int(count)])
-			norm_fluxes = norm*mod_fluxes[:,int(count)]
-			chi_photo = (norm_fluxes-obs_fluxes)/obs_flux_err
-			chi2_photo = np.sum(np.square(chi_photo))
-
-			if modif_spec_flux_err_clean[0]>0:
-				chi_spec0 = ((norm*mod_spec_flux[:,int(count)])-spec_flux_clean)/modif_spec_flux_err_clean
-			else:
-				chi_spec0 = ((norm*mod_spec_flux[:,int(count)])-spec_flux_clean)/spec_flux_err_clean
-			chi_spec,lower,upper = sigmaclip(chi_spec0, low=spec_chi_sigma_clip, high=spec_chi_sigma_clip)
-			chi2_spec = np.sum(np.square(chi_spec))
-
-			chi2 = chi2_photo + chi2_spec
-
-			mod_chi2_temp[int(count)] = chi2
-
-			# get parameters
-			for pp in range(0,nparams):
-				str_temp = 'mod/par/%s' % params[pp]
-				if params[pp]=='log_mass':
-					mod_params_temp[pp][int(count)] = f[str_temp][idx_parmod_sel[0][int(ii)]] + log10(norm)
-				else:
-					mod_params_temp[pp][int(count)] = f[str_temp][idx_parmod_sel[0][int(ii)]]
-
-			count = count + 1
-
-		mod_chi2 = np.zeros(nmodels)
-		mod_params = np.zeros((nparams,nmodels))
-				
-		# gather the scattered data
-		comm.Gather(mod_chi2_temp, mod_chi2, root=0)
-		for pp in range(0,nparams):
-			comm.Gather(mod_params_temp[pp], mod_params[pp], root=0)
-
-		# Broadcast
-		comm.Bcast(mod_chi2, root=0)
-		comm.Bcast(mod_params, root=0)
+	# Broadcast
+	comm.Bcast(mod_chi2_photo, root=0)
+	comm.Bcast(mod_redcd_chi2_spec, root=0)
+	comm.Bcast(mod_params, root=0)
 
 	f.close()
 
-	return mod_params, mod_chi2
+	return mod_params, mod_chi2_photo, mod_redcd_chi2_spec
 
 
 def initfit_vz(gal_z,DL_Gpc,zz,nrands_z):
@@ -269,7 +162,8 @@ def initfit_vz(gal_z,DL_Gpc,zz,nrands_z):
 	comm.Scatter(idx_mpi, recvbuf_idx, root=0)
 
 	mod_params_temp = np.zeros((nparams,numDataPerRank))
-	mod_chi2_temp = np.zeros(numDataPerRank)
+	mod_chi2_photo_temp = np.zeros(numDataPerRank)
+	mod_redcd_chi2_spec_temp = np.zeros(numDataPerRank)
 
 	count = 0
 	for ii in recvbuf_idx:
@@ -318,9 +212,8 @@ def initfit_vz(gal_z,DL_Gpc,zz,nrands_z):
 		chi_spec,lower,upper = sigmaclip(chi_spec0, low=spec_chi_sigma_clip, high=spec_chi_sigma_clip)
 		chi2_spec = np.sum(np.square(chi_spec))
 
-		chi2 = chi2_photo + chi2_spec
-
-		mod_chi2_temp[int(count)] = chi2
+		mod_chi2_photo_temp[int(count)] = chi2_photo
+		mod_redcd_chi2_spec_temp[int(count)] = chi2_spec/len(chi_spec)
 
 		# get parameters
 		for pp in range(0,nparams):
@@ -339,19 +232,23 @@ def initfit_vz(gal_z,DL_Gpc,zz,nrands_z):
 		sys.stdout.flush()
 
 	mod_params = np.zeros((nparams,nmodels))
-	mod_chi2 = np.zeros(nmodels)
+	mod_chi2_photo = np.zeros(nmodels)
+	mod_redcd_chi2_spec = np.zeros(nmodels)
 
-	comm.Gather(mod_chi2_temp, mod_chi2, root=0)
+	# gather the scattered data and collect to rank=0
+	comm.Gather(mod_chi2_photo_temp, mod_chi2_photo, root=0)
+	comm.Gather(mod_redcd_chi2_spec_temp, mod_redcd_chi2_spec, root=0)
 	for pp in range(0,nparams):
 		comm.Gather(mod_params_temp[pp], mod_params[pp], root=0)
 
 	# Broadcast
-	comm.Bcast(mod_chi2, root=0)
+	comm.Bcast(mod_chi2_photo, root=0)
+	comm.Bcast(mod_redcd_chi2_spec, root=0)
 	comm.Bcast(mod_params, root=0)
 
 	f.close()
 
-	return mod_params, mod_chi2
+	return mod_params, mod_chi2_photo, mod_redcd_chi2_spec
 
 def lnprior(theta):
 	idx_sel = np.where((theta>=priors_min) & (theta<=priors_max))
@@ -462,10 +359,8 @@ def_params_val = {'log_mass':0.0,'z':0.001,'log_fagn':-3.0,'log_tauagn':1.0,'log
 
 global def_params_fsps, params_assoc_fsps, status_log
 def_params_fsps = ['logzsol', 'log_tau', 'log_age', 'dust_index', 'dust1', 'dust2', 'log_gamma', 'log_umin', 'log_qpah','log_fagn', 'log_tauagn']
-params_assoc_fsps = {'logzsol':"logzsol", 'log_tau':"tau", 'log_age':"tage", 
-					'dust_index':"dust_index", 'dust1':"dust1", 'dust2':"dust2",
-					'log_gamma':"duste_gamma", 'log_umin':"duste_umin", 
-					'log_qpah':"duste_qpah",'log_fagn':"fagn", 'log_tauagn':"agn_tau"}
+params_assoc_fsps = {'logzsol':"logzsol", 'log_tau':"tau", 'log_age':"tage", 'dust_index':"dust_index", 'dust1':"dust1", 
+					'dust2':"dust2",'log_gamma':"duste_gamma", 'log_umin':"duste_umin", 'log_qpah':"duste_qpah",'log_fagn':"fagn", 'log_tauagn':"agn_tau"}
 status_log = {'logzsol':0, 'log_tau':1, 'log_age':1, 'dust_index':0, 'dust1':0, 'dust2':0,
 				'log_gamma':1, 'log_umin':1, 'log_qpah':1,'log_fagn':1, 'log_tauagn':1}
 
@@ -772,9 +667,12 @@ nparams_fsps = len(params_fsps)
 
 # initial fitting
 if free_z == 0:
-	mod_params, mod_chi2 = initfit_fz(gal_z,DL_Gpc)
-	idx0, min_val = min(enumerate(mod_chi2), key=itemgetter(1))
-	minchi2_params_initfit = mod_params[:,idx0]
+	mod_params, mod_chi2_photo, mod_redcd_chi2_spec = initfit_fz(gal_z,DL_Gpc)
+
+	sort_idx = np.argsort(mod_chi2_photo)
+	idx0, min_val = min(enumerate(mod_redcd_chi2_spec[sort_idx[0:10]]), key=itemgetter(1))
+	mod_id = sort_idx[0:10][idx0]
+	minchi2_params_initfit = mod_params[:,int(mod_id)]
 
 elif free_z == 1:
 	global rand_z, nrands_z
@@ -783,17 +681,21 @@ elif free_z == 1:
 
 	nmodels_merge = int(nmodels*nrands_z)
 	mod_params_merge = np.zeros((nparams,nmodels_merge))
-	mod_chi2_merge = np.zeros(nmodels_merge)
+	mod_chi2_photo_merge = np.zeros(nmodels_merge)
+	mod_redcd_chi2_spec_merge = np.zeros(nmodels_merge)
 	for zz in range(0,nrands_z):
 		gal_z = rand_z[zz]
-		mod_params, mod_chi2 = initfit_vz(gal_z,DL_Gpc,zz,nrands_z)
+		mod_params, mod_chi2_photo, mod_redcd_chi2_spec = initfit_vz(gal_z,DL_Gpc,zz,nrands_z)
 
 		for pp in range(0,nparams):
 			mod_params_merge[pp,int(zz*nmodels):int((zz+1)*nmodels)] = mod_params[pp]
-		mod_chi2_merge[int(zz*nmodels):int((zz+1)*nmodels)] = mod_chi2[:]
+		mod_chi2_photo_merge[int(zz*nmodels):int((zz+1)*nmodels)] = mod_chi2_photo[:]
+		mod_redcd_chi2_spec_merge[int(zz*nmodels):int((zz+1)*nmodels)] = mod_redcd_chi2_spec[:]
 
-	idx0, min_val = min(enumerate(mod_chi2_merge), key=itemgetter(1))
-	minchi2_params_initfit = mod_params_merge[:,idx0]
+	sort_idx = np.argsort(mod_chi2_photo_merge)
+	idx0, min_val = min(enumerate(mod_redcd_chi2_spec_merge[sort_idx[0:10]]), key=itemgetter(1))
+	mod_id = sort_idx[0:10][idx0]
+	minchi2_params_initfit = mod_params_merge[:,int(mod_id)]
 
 if rank == 0:
 	sys.stdout.write('\n')
