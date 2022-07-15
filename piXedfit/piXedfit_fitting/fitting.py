@@ -363,10 +363,11 @@ def singleSEDfit(obs_flux,obs_flux_err,filters,models_spec,params_ranges=None,pa
 	return name_out_fits
 
 
-def singleSEDfit_specphoto(obs_flux,obs_flux_err,filters,spec_wave,spec_flux,spec_flux_err,models_spec,params_ranges=None,
-	params_priors=None,fit_method='mcmc',gal_z=None,nrands_z=10,add_igm_absorption=0,igm_type=0,spec_sigma=2.6,poly_order=8, 
-	likelihood='gauss',dof=2.0,nwalkers=100,nsteps=600,nsteps_cut=50,nproc=10,initfit_nmodels_mcmc=30000,perc_chi2=90.0, 
-	spec_chi_sigma_clip=3.0,cosmo=0,H0=70.0,Om0=0.3,del_wave_nebem=10.0,store_full_samplers=1,name_out_fits=None):
+def singleSEDfit_specphoto(obs_flux,obs_flux_err,filters,spec_wave,spec_flux,spec_flux_err,models_spec,
+	wavelength_range=None,params_ranges=None,params_priors=None,fit_method='mcmc',gal_z=None,nrands_z=10,
+	add_igm_absorption=0,igm_type=0,spec_sigma=2.6,poly_order=8, likelihood='gauss',dof=2.0,nwalkers=100,nsteps=600,
+	nsteps_cut=50,nproc=10,initfit_nmodels_mcmc=30000,perc_chi2=90.0, spec_chi_sigma_clip=3.0,cosmo=0,H0=70.0,Om0=0.3,
+	del_wave_nebem=10.0,store_full_samplers=1,name_out_fits=None):
 	"""Function for performing SED fitting to a single spectrophotometric SED.
 
 	:param obs_flux: 
@@ -392,6 +393,10 @@ def singleSEDfit_specphoto(obs_flux,obs_flux_err,filters,spec_wave,spec_flux,spe
 	:param models_spec:
 		Model spectral templates in the rest-frame generated prior to the SED fitting process using the function :func:`piXedfit.piXedfit_model.save_models_rest_spec`. 
 		This set of model spectra will be used in the main fitting step if fit_method='rdsps' or initial fitting if fit_method='mcmc'. 
+
+	:param wavelength_range:
+		Range of wavelength within which the observed spectrum will be considered in the SED fitting. 
+		The accepted format is [wmin,wmax] with wmin and wmax are minimum and maximum wavelengths.
 
 	:param params_ranges:
 		Ranges of the parameter defined (i.e., outputted) using the :func:`params_ranges` in the :class:`priors` class.
@@ -506,6 +511,12 @@ def singleSEDfit_specphoto(obs_flux,obs_flux_err,filters,spec_wave,spec_flux,spe
 
 	# input SED in HDF5
 	inputSED_file = randname("inputSED_file",".hdf5")
+	# cut spectrum if required
+	if wavelength_range is not None:
+		idx0 = np.where((spec_wave>=wavelength_range[0]) & (spec_wave<=wavelength_range[1]))
+		spec_wave = spec_wave[idx0[0]]
+		spec_flux = spec_flux[idx0[0]]
+		spec_flux_err = spec_flux_err[idx0[0]]
 	write_input_specphoto_hdf5(inputSED_file,obs_flux,obs_flux_err,spec_wave,spec_flux,spec_flux_err)
 	os.system('mv %s %s' % (inputSED_file,temp_dir))
 
@@ -569,10 +580,11 @@ def singleSEDfit_specphoto(obs_flux,obs_flux_err,filters,spec_wave,spec_flux,spe
 	return name_out_fits
 
 
-def SEDfit_from_binmap_specphoto(fits_binmap,binid_range=None,bin_ids=None,models_spec=None,params_ranges=None,params_priors=None,
-	fit_method='mcmc',gal_z=None,nrands_z=10,add_igm_absorption=0,igm_type=0,spec_sigma=2.6,poly_order=8,likelihood='gauss',
-	dof=3.0,nwalkers=100,nsteps=600,nsteps_cut=50,nproc=10,initfit_nmodels_mcmc=30000,perc_chi2=90.0,spec_chi_sigma_clip=3.0, 
-	cosmo=0,H0=70.0,Om0=0.3,del_wave_nebem=10.0,store_full_samplers=1,name_out_fits=None):
+def SEDfit_from_binmap_specphoto(fits_binmap,binid_range=None,bin_ids=None,wavelength_range=None,models_spec=None,
+	params_ranges=None,params_priors=None,fit_method='mcmc',gal_z=None,nrands_z=10,add_igm_absorption=0,igm_type=0,
+	spec_sigma=2.6,poly_order=8,likelihood='gauss',dof=3.0,nwalkers=100,nsteps=600,nsteps_cut=50,nproc=10,
+	initfit_nmodels_mcmc=30000,perc_chi2=90.0,spec_chi_sigma_clip=3.0, cosmo=0,H0=70.0,Om0=0.3,del_wave_nebem=10.0,
+	store_full_samplers=1,name_out_fits=None):
 	"""Function for performing SED fitting to a spectrophotometric data cube. The data cube should has been binned using the 
 	function :func:`pixel_binning`.
 
@@ -586,6 +598,10 @@ def SEDfit_from_binmap_specphoto(fits_binmap,binid_range=None,bin_ids=None,model
 	:param bin_ids:
 		Bin IDs which the SEDs are going to be fit. The accepted format is 1D array. 
 		The ID starts from 0. Both binid_range and bin_ids can't be None. If both of them are not None, the bin_ids will be used. 
+
+	:param wavelength_range:
+		Range of wavelength within which the observed spectrum will be considered in the SED fitting. 
+		The accepted format is [wmin,wmax] with wmin and wmax are minimum and maximum wavelengths.
 
 	:param models_spec:
 		Model spectral templates in the rest-frame generated prior to the SED fitting process using the function :func:`piXedfit.piXedfit_model.save_models_rest_spec`. 
@@ -780,8 +796,15 @@ def SEDfit_from_binmap_specphoto(fits_binmap,binid_range=None,bin_ids=None,model
 		if np.sum(bin_spec_flux[int(idx_bin)])>0:
 			# input SED in HDF5
 			inputSED_file = randname("inputSED_file",".hdf5")
+			# cut spectrum if required
+			if wavelength_range is not None:
+				idx0 = np.where((spec_wave>=wavelength_range[0]) & (spec_wave<=wavelength_range[1]))
+				spec_wave = spec_wave[idx0[0]]
+				spec_flux = bin_spec_flux[int(idx_bin)][idx0[0]]
+				spec_flux_err = bin_spec_flux_err[int(idx_bin)][idx0[0]]
+
 			write_input_specphoto_hdf5(inputSED_file,bin_photo_flux[int(idx_bin)],bin_photo_flux_err[int(idx_bin)],
-										spec_wave,bin_spec_flux[int(idx_bin)],bin_spec_flux_err[int(idx_bin)])
+										spec_wave,spec_flux,spec_flux_err)
 			os.system('mv %s %s' % (inputSED_file,temp_dir))
 
 			if fit_method=='mcmc' or fit_method=='MCMC':

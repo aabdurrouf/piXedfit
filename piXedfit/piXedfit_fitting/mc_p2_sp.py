@@ -103,9 +103,14 @@ def store_to_fits(nsamples=None,sampler_params=None,sampler_log_sfr=None,sampler
 			spec_flux_ratio = spec_flux_clean/conv_mod_spec_flux_clean
 
 			# fit with legendre polynomial
-			poly_legendre = np.polynomial.legendre.Legendre.fit(spec_wave_clean, spec_flux_ratio, poly_order)
+			poly_legendre1 = np.polynomial.legendre.Legendre.fit(spec_wave_clean, spec_flux_ratio, poly_order)
+			poly_legendre2 = np.polynomial.legendre.Legendre.fit(spec_wave_clean, poly_legendre1(spec_wave_clean), 3)
 
-			corr_factor = poly_legendre(spec_wave)
+			# fit with legendre polynomial
+			#poly_legendre = np.polynomial.legendre.Legendre.fit(spec_wave_clean, spec_flux_ratio, poly_order)
+
+			#corr_factor = poly_legendre(spec_wave)
+			corr_factor = poly_legendre1(spec_wave)/poly_legendre2(spec_wave)
 			bfit_photo_flux_temp[:,int(count)] = norm_fluxes
 			bfit_spec_flux_temp[:,int(count)] = corr_factor*func(spec_wave) 
 			bfit_corr_factor_temp[:,int(count)] = corr_factor

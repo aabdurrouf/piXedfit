@@ -4,10 +4,11 @@ astropy
 photutils==1.1.0
 matplotlib
 h5py
-reproject
+reproject >= 0.7
 sep
 emcee
 schwimmbad
 astroquery
 pyvo
 pandas
+tqdm
