@@ -802,6 +802,9 @@ def SEDfit_from_binmap_specphoto(fits_binmap,binid_range=None,bin_ids=None,wavel
 				spec_wave = spec_wave[idx0[0]]
 				spec_flux = bin_spec_flux[int(idx_bin)][idx0[0]]
 				spec_flux_err = bin_spec_flux_err[int(idx_bin)][idx0[0]]
+			else:
+				spec_flux = bin_spec_flux[int(idx_bin)]
+				spec_flux_err = bin_spec_flux_err[int(idx_bin)]
 
 			write_input_specphoto_hdf5(inputSED_file,bin_photo_flux[int(idx_bin)],bin_photo_flux_err[int(idx_bin)],
 										spec_wave,spec_flux,spec_flux_err)
