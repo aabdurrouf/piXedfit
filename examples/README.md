@@ -1,4 +1,4 @@
-# Examples of Imaging data and integral field spectroscopy (IFS) data analysis with piXedfit
+# Examples of analysis of Imaging data and integral field spectroscopy (IFS) data with piXedfit
 
 * `FUVtoFIR`: analysis of 23-band imaging data ranging from far-ultraviolet (FUV) to far-infrared (FIR) --> target galaxy M51
 * `FUVtoNIR_MaNGA`: analysis of 12-band imaging data ranging from FUV to near-infrared (NIR), combined with IFS data from MaNGA survey
