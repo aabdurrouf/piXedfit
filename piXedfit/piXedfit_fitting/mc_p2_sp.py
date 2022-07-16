@@ -106,14 +106,14 @@ def store_to_fits(nsamples=None,sampler_params=None,sampler_log_sfr=None,sampler
 			# fit with legendre polynomial
 			poly_legendre1 = np.polynomial.legendre.Legendre.fit(spec_wave_clean, spec_flux_ratio, poly_order)
 			poly_legendre2 = np.polynomial.legendre.Legendre.fit(spec_wave_clean, poly_legendre1(spec_wave_clean), 3)
-			corr_factor0 = poly_legendre1(spec_wave_clean)/poly_legendre2(spec_wave_clean)
-			poly_legendre = np.polynomial.legendre.Legendre.fit(spec_wave_clean, corr_factor0*func(spec_wave_clean), poly_order)
+			corr_factor1 = poly_legendre1(spec_wave_clean)/poly_legendre2(spec_wave_clean)
+			conv_mod_spec_flux_clean = conv_mod_spec_flux_clean*corr_factor1
+			poly_legendre = np.polynomial.legendre.Legendre.fit(spec_wave_clean, spec_flux_clean/conv_mod_spec_flux_clean, poly_order)
 
-			#corr_factor = poly_legendre(spec_wave)
-			corr_factor = poly_legendre(spec_wave)
+			corr_factor2 = poly_legendre(spec_wave)
 			bfit_photo_flux_temp[:,int(count)] = norm_fluxes
-			bfit_spec_flux_temp[:,int(count)] = corr_factor*func(spec_wave) 
-			bfit_corr_factor_temp[:,int(count)] = corr_factor
+			bfit_spec_flux_temp[:,int(count)] = corr_factor2*func(spec_wave)
+			bfit_corr_factor_temp[:,int(count)] = corr_factor2
 
 			#==> for best-fit model spectrum to the observed photometric SED
 			spec_SED = generate_modelSED_spec_decompose(sp=sp,params_val=params_val,imf=imf,duste_switch=duste_switch,
