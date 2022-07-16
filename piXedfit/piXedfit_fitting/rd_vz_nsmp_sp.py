@@ -89,10 +89,16 @@ def bayesian_sedfit_gauss(gal_z,zz):
 		spec_flux_ratio = spec_flux_clean/conv_mod_spec_flux_clean
 
 		# fit with legendre polynomial
-		poly_legendre = np.polynomial.legendre.Legendre.fit(spec_wave_clean, spec_flux_ratio, poly_order)
+		poly_legendre1 = np.polynomial.legendre.Legendre.fit(spec_wave_clean, spec_flux_ratio, poly_order)
+		poly_legendre2 = np.polynomial.legendre.Legendre.fit(spec_wave_clean, poly_legendre1(spec_wave_clean), 3)
 
 		# apply to the model
-		conv_mod_spec_flux_clean = poly_legendre(spec_wave_clean)*conv_mod_spec_flux_clean
+		conv_mod_spec_flux_clean = poly_legendre1(spec_wave_clean)*conv_mod_spec_flux_clean/poly_legendre2(spec_wave_clean)
+		
+		# fit with legendre polynomial
+		#poly_legendre = np.polynomial.legendre.Legendre.fit(spec_wave_clean, spec_flux_ratio, poly_order)
+		# apply to the model
+		#conv_mod_spec_flux_clean = poly_legendre(spec_wave_clean)*conv_mod_spec_flux_clean
 		
 		chi_spec0 = (conv_mod_spec_flux_clean-spec_flux_clean)/spec_flux_err_clean
 		chi_spec,lower,upper = sigmaclip(chi_spec0, low=spec_chi_sigma_clip, high=spec_chi_sigma_clip)
@@ -219,10 +225,16 @@ def bayesian_sedfit_student_t(gal_z,zz):
 		spec_flux_ratio = spec_flux_clean/conv_mod_spec_flux_clean
 
 		# fit with legendre polynomial
-		poly_legendre = np.polynomial.legendre.Legendre.fit(spec_wave_clean, spec_flux_ratio, poly_order)
+		poly_legendre1 = np.polynomial.legendre.Legendre.fit(spec_wave_clean, spec_flux_ratio, poly_order)
+		poly_legendre2 = np.polynomial.legendre.Legendre.fit(spec_wave_clean, poly_legendre1(spec_wave_clean), 3)
 
 		# apply to the model
-		conv_mod_spec_flux_clean = poly_legendre(spec_wave_clean)*conv_mod_spec_flux_clean
+		conv_mod_spec_flux_clean = poly_legendre1(spec_wave_clean)*conv_mod_spec_flux_clean/poly_legendre2(spec_wave_clean)
+
+		# fit with legendre polynomial
+		#poly_legendre = np.polynomial.legendre.Legendre.fit(spec_wave_clean, spec_flux_ratio, poly_order)
+		# apply to the model
+		#conv_mod_spec_flux_clean = poly_legendre(spec_wave_clean)*conv_mod_spec_flux_clean
 		
 		chi_spec0 = (conv_mod_spec_flux_clean-spec_flux_clean)/spec_flux_err_clean
 		chi_spec,lower,upper = sigmaclip(chi_spec0, low=spec_chi_sigma_clip, high=spec_chi_sigma_clip)
@@ -349,7 +361,14 @@ def store_to_fits(sampler_params,mod_chi2,mod_chi2_photo,mod_redcd_chi2_spec,mod
 	spec_flux_ratio = spec_flux_clean/conv_mod_spec_flux_clean
 
 	# fit with legendre polynomial
-	poly_legendre = np.polynomial.legendre.Legendre.fit(spec_wave_clean, spec_flux_ratio, poly_order)
+	poly_legendre1 = np.polynomial.legendre.Legendre.fit(spec_wave_clean, spec_flux_ratio, poly_order)
+	poly_legendre2 = np.polynomial.legendre.Legendre.fit(spec_wave_clean, poly_legendre1(spec_wave_clean), 3)
+	corr_factor1 = poly_legendre1(spec_wave_clean)/poly_legendre2(spec_wave_clean)
+	conv_mod_spec_flux_clean = conv_mod_spec_flux_clean*corr_factor1
+	poly_legendre = np.polynomial.legendre.Legendre.fit(spec_wave_clean, spec_flux_clean/conv_mod_spec_flux_clean, poly_order)
+	
+	# fit with legendre polynomial
+	#poly_legendre = np.polynomial.legendre.Legendre.fit(spec_wave_clean, spec_flux_ratio, poly_order)
 
 	# apply to the model
 	conv_mod_spec_flux_clean = poly_legendre(spec_wave_clean)*conv_mod_spec_flux_clean
