@@ -8,6 +8,7 @@ from astropy.cosmology import *
 
 global PIXEDFIT_HOME
 PIXEDFIT_HOME = os.environ['PIXEDFIT_HOME']
+sys.path.insert(0, PIXEDFIT_HOME)
 
 from piXedfit.utils.posteriors import model_leastnorm
 from piXedfit.piXedfit_model import get_no_nebem_wave_fit

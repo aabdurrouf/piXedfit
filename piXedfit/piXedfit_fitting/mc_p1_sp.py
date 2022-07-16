@@ -17,6 +17,7 @@ from scipy.interpolate import interp1d
 
 global PIXEDFIT_HOME
 PIXEDFIT_HOME = os.environ['PIXEDFIT_HOME']
+sys.path.insert(0, PIXEDFIT_HOME)
 
 from piXedfit.utils.filtering import interp_filters_curves, filtering_interp_filters 
 from piXedfit.utils.posteriors import model_leastnorm, ln_gauss_prob
@@ -720,7 +721,7 @@ priors_min[int(nparams)-1] = minchi2_params_initfit[int(nparams)-1] - 1.5
 priors_max[int(nparams)-1] = minchi2_params_initfit[int(nparams)-1] + 1.5
 
 init_pos = minchi2_params_initfit
-width_initpos = 0.08
+width_initpos = 0.05
 
 pos = []
 for ii in range(0,nwalkers):

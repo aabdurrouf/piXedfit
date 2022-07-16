@@ -10,6 +10,7 @@ from scipy.interpolate import interp1d
 
 global PIXEDFIT_HOME
 PIXEDFIT_HOME = os.environ['PIXEDFIT_HOME']
+sys.path.insert(0, PIXEDFIT_HOME)
 
 from piXedfit.piXedfit_model import calc_mw_age, get_dust_mass_mainSFH_fit, get_dust_mass_fagnbol_mainSFH_fit 
 from piXedfit.piXedfit_model import get_dust_mass_othSFH_fit, get_sfr_dust_mass_othSFH_fit 
@@ -105,12 +106,11 @@ def store_to_fits(nsamples=None,sampler_params=None,sampler_log_sfr=None,sampler
 			# fit with legendre polynomial
 			poly_legendre1 = np.polynomial.legendre.Legendre.fit(spec_wave_clean, spec_flux_ratio, poly_order)
 			poly_legendre2 = np.polynomial.legendre.Legendre.fit(spec_wave_clean, poly_legendre1(spec_wave_clean), 3)
-
-			# fit with legendre polynomial
-			#poly_legendre = np.polynomial.legendre.Legendre.fit(spec_wave_clean, spec_flux_ratio, poly_order)
+			corr_factor0 = poly_legendre1(spec_wave_clean)/poly_legendre2(spec_wave_clean)
+			poly_legendre = np.polynomial.legendre.Legendre.fit(spec_wave_clean, corr_factor0*func(spec_wave_clean), poly_order)
 
 			#corr_factor = poly_legendre(spec_wave)
-			corr_factor = poly_legendre1(spec_wave)/poly_legendre2(spec_wave)
+			corr_factor = poly_legendre(spec_wave)
 			bfit_photo_flux_temp[:,int(count)] = norm_fluxes
 			bfit_spec_flux_temp[:,int(count)] = corr_factor*func(spec_wave) 
 			bfit_corr_factor_temp[:,int(count)] = corr_factor

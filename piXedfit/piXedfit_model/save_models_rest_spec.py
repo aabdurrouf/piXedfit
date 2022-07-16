@@ -9,6 +9,7 @@ from astropy.cosmology import *
 
 global PIXEDFIT_HOME
 PIXEDFIT_HOME = os.environ['PIXEDFIT_HOME']
+sys.path.insert(0, PIXEDFIT_HOME)
 
 from piXedfit.piXedfit_model import generate_modelSED_spec_fit, generate_modelSED_propphoto_nomwage_fit, calc_mw_age, generate_modelSED_spec_restframe_props 
 from piXedfit.piXedfit_fitting import get_params
