@@ -3,11 +3,11 @@
 Managing filters
 ================
 
-Before proceeding any analysis with **piXedfit**, we should make sure that our photometric filters (i.e., the transmission functions) are recognized by **piXedfit**. For this, **piXedfit** provides various functions that can be used by user for managing the library of filters within the **piXedfit** system. Below, we will demonstrate how to do it.
+Before proceeding any analysis with **piXedfit**, we should make sure that our photometric filters (i.e., the transmission curves) are recognized by **piXedfit**. For this, **piXedfit** provides functions for managing the library of filters within the **piXedfit** system. Below, we will demonstrate how to manage the filters library. For more information about the functions, please look at the API reference `here <https://pixedfit.readthedocs.io/en/latest/utils.html>`_.
 
 See available filters
 ---------------------
-To see a list of filters that are already available in **piXedfit**, we can use the following function.
+To see a list of filters that already available in **piXedfit**, we can use :func:`list_filters` function.
 
 	.. code-block:: python
 
@@ -18,7 +18,7 @@ To see a list of filters that are already available in **piXedfit**, we can use 
 
 Add filter
 ----------
-We can also add a new filter transmission function using the following script.
+We can also add a new filter transmission using :func:`add_filter` function.
 
 	.. code-block:: python
 
@@ -33,7 +33,7 @@ We can also add a new filter transmission function using the following script.
 
 Remove filter
 -------------
-To remove a filter from the list of available filters, we can use the following function.
+To remove a particular filter from the library in **piXedfit**, we can use :func:`remove_filter` function.
 
 	.. code-block:: python
 
@@ -44,7 +44,7 @@ To remove a filter from the list of available filters, we can use the following 
 
 Change filter name
 ------------------
-One can change name of a filter in the list via
+One can change name of a filter in the library using :func:`change_filter_name` function.
 
 	.. code-block:: python
 
@@ -55,7 +55,7 @@ One can change name of a filter in the list via
 
 Get filter transmission
 -----------------------
-It is also possible to get the transmission function of a filter. Below shows an example of script to get and plot the transmision functions of SDSS filters.
+It is also possible to get the transmission curve of a filter. The following is an example of script to retrieve and plot the transmision curves of SDSS filters using the :func:`get_filter_curve`.
 
 	.. code-block:: python
 
@@ -78,9 +78,9 @@ It is also possible to get the transmission function of a filter. Below shows an
 .. image:: filter_1.png
 
 
-Get central wavelength of filters
----------------------------------
-One can also get information on the central wavelength of a filter using the following command.
+Get central wavelengths of filters
+----------------------------------
+One can also get the central wavelengths of filters using the :func:`cwave_filters` function.
 
 	.. code-block:: python
 
@@ -88,7 +88,7 @@ One can also get information on the central wavelength of a filter using the fol
 
 		photo_wave = cwave_filters(filters)
 
-``filters`` is a list of filter names (in string format).
+``filters`` is a list of filter names.
 
 
 
