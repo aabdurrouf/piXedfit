@@ -1069,7 +1069,7 @@ def SEDfit_from_binmap(fits_binmap,binid_range=None,bin_ids=None,models_spec=Non
 			os.system('mv %s %s' % (name_SED_txt,temp_dir))
 
 			# name of output FITS file
-			if lname_out_fits is None:
+			if name_out_fits is None:
 				name_out_fits1 = "mcmc_bin%d.fits" % (idx_bin+1)
 			else:
 				name_out_fits1 = name_out_fits[int(count_id)]

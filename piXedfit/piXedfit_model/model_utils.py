@@ -477,7 +477,7 @@ def get_sfr_dust_mass_othSFH_fit(sp=None,imf_type=1,sfh_form=4,params_fsps=['log
 			mass0 = sp.stellar_mass
 			dust_mass0 = sp.dust_mass
 			norm = formed_mass/mass0
-			spec = spec0*norm
+			#spec = spec0*norm
 			dust_mass = dust_mass0*norm
 			SFR = sp.sfr
 
