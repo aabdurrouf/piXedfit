@@ -32,7 +32,6 @@ Features
    image_ifs_match
    pixel_binning
    fit_ing_SEDs
-   fit_res_SEDs
    plot_fitres
    get_maps_prop
 
