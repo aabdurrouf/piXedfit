@@ -57,13 +57,13 @@ The following is an example of script for fitting a single photometric SED.
 
 		# input SED to be fit
 		obs_flux = [1.4638932316652199e-16, 1.4038745561641324e-16, 3.8179726118818497e-16, 9.173751654543811e-16, 
-					1.12950610607557e-15, 1.1081589447235416e-15, 1.0348753094599238e-15, 7.921053538416444e-16, 
-					5.479813400644683e-16, 2.620524286818637e-16, 3.9683859472674366e-17, 1.1746973239557648e-17]
+			1.12950610607557e-15, 1.1081589447235416e-15, 1.0348753094599238e-15, 7.921053538416444e-16, 
+			5.479813400644683e-16, 2.620524286818637e-16, 3.9683859472674366e-17, 1.1746973239557648e-17]
 		obs_flux_err = [1.3245499396855221e-17, 5.1672408967693435e-18, 1.0684115183145074e-17, 2.8758039375671638e-18, 
-					2.4362783666430513e-18, 2.43151290865674e-18, 6.020149814200945e-18, 1.4838739345484332e-17, 
-					1.1592521846969518e-17, 8.156051820519197e-18, 4.044010707857459e-18, 1.104563357898008e-18]
+			2.4362783666430513e-18, 2.43151290865674e-18, 6.020149814200945e-18, 1.4838739345484332e-17, 
+			1.1592521846969518e-17, 8.156051820519197e-18, 4.044010707857459e-18, 1.104563357898008e-18]
 		filters = ['galex_fuv', 'galex_nuv', 'sdss_u', 'sdss_g', 'sdss_r', 'sdss_i', 'sdss_z', '2mass_j', 
-					'2mass_h', '2mass_k', 'wise_w1', 'wise_w2']
+			'2mass_h', '2mass_k', 'wise_w1', 'wise_w2']
 
 		# redshift
 		gal_z = 0.0188977
@@ -140,10 +140,10 @@ The following is an example of script for performing SED fitting to spectrophoto
 
 		nproc = 20           # number of cores to be used in the calculation
 		SEDfit_from_binmap_specphoto(fits_binmap, binid_range=binid_range, models_spec=models_spec,
-									wavelength_range=wavelength_range,params_ranges=params_ranges, 
-									params_priors=params_priors,fit_method=fit_method,spec_sigma=spec_sigma, 
-									nwalkers=100,nsteps=800,nproc=nproc,initfit_nmodels_mcmc=100000,
-									store_full_samplers=1)
+						wavelength_range=wavelength_range,params_ranges=params_ranges, 
+						params_priors=params_priors,fit_method=fit_method,spec_sigma=spec_sigma, 
+						nwalkers=100,nsteps=800,nproc=nproc,initfit_nmodels_mcmc=100000,
+						store_full_samplers=1)
 
 
 
