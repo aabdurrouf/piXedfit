@@ -36,6 +36,14 @@ To generate random model spectra at rest-frame, we can make a script as shown in
 
 The produced models will be used as input in various tasks, including a matching between the imaging and IFS data (see :func:`piXedfit.piXedfit_spectrophotometric.match_imgifs_spectral` and `this example <https://pixedfit.readthedocs.io/en/latest/image_ifs_match.html#spectral-matching>`_), SED fitting with RDSPS method, and initial fitting in the SED fitting with the MCMC method (see API reference of the :ref:`piXedfit_fitting <api_fitting>` module).
 
+.. note::
+	It is important to note that all the configurations in the SED modeling and SED fitting are determined in this step. 
+
+Here we determine what types of models that we want to generate and fit to our observed SEDs. This modeling configuration include the choice of initial mass function (IMF; `imf_type`), the choice of star formation history (SFH; `sfh_form`), the choice of dust attenuation law (`dust_law`), whether to switch on/off the following features (nebular emission `add_neb_emission`, dust emission `duste_switch`, AGN dusty torus emission `add_agn`, intergalactic medium `add_igm_absorption`), and the choice of cosmological parameters. Those features have parameters associated with them. This determines the free parameters that will be involved in the SED fitting process.
+
+.. note::
+	For the stellar age parameter (`log_age`) to be sufficiently sampled, it is recommended to set a range for `log_age` with minimum value of -1.0 or -2.0 and maximum value that corresponds to the age of the universe at the redshift of the target galaxy.
+
 
 Generate random model photometric SEDs at observer-frame
 --------------------------------------------------------

@@ -6,6 +6,7 @@
 * Tutorial of automatically downloading images from the servers of GALEX, SDSS, 2MASS, WISE, and Spitzer surveys
 * Tutorial of generating model spectra at rest-frame 
 
+
 To do list:
-* Upload tutorial on SED fitting with varius forms of priors
-* Upload tutorial on SED fitting in which redshift is free (i.e., photometric redshift)
+* Upload tutorial on SED fitting with varius forms of priors, including joint priors such as mass-metallicity and mass-age priors.
+* Upload tutorial on SED fitting in which redshift is free (i.e., photometric redshift).
