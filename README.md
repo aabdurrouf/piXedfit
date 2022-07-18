@@ -1,4 +1,6 @@
 [![GitHub license](https://img.shields.io/github/license/aabdurrouf/piXedfit)](https://github.com/aabdurrouf/piXedfit/blob/main/LICENSE.txt)
+https://img.shields.io/github/issues/aabdurrouf/piXedfit
+[![arXiv](https://img.shields.io/badge/arXiv-2101.09717-b31b1b.svg)](https://arxiv.org/abs/2101.09717)
 
 # piXedfit
 
