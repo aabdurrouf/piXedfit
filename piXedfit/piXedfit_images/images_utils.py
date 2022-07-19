@@ -846,6 +846,7 @@ def var_img_from_weight_img(wht_image, name_out_fits=None):
 		Name of output FITS file. If None, a generic name will be made.
 	"""
 	hdu = fits.open(wht_image)
+	header = hdu[0].header
 	data_image = hdu[0].data
 	hdu.close()
 
