@@ -3,7 +3,6 @@ scipy
 astropy
 photutils==1.1.0
 matplotlib
-h5py
 reproject >= 0.7
 sep
 emcee

@@ -50,7 +50,7 @@ The above instruction is for first installation, for upgrading **piXedfit**, ple
 
 ## Convolution Kernels
 
-Because of the large sizes of the kernel files, we do not upload them to this repository. We put the kernel files on this google drive [link](https://drive.google.com/drive/folders/1pTRASNKLuckkY8_sl8WYeZ62COvcBtGn?usp=sharing). To be able to use image processing feature (`piXedfit_images`), you need to download the necessary kernel files and copy them to /data/kernels ($PIXEDFIT_HOME/data/kernels). List of the kernel files needed for image processing would depend on the imaging data that will be analyzed.
+Because of the large sizes of the kernel files, we do not upload them to this repository. We put the kernel files on this google drive [link](https://drive.google.com/drive/folders/1Fvl42e_LNWLYhKabDS1ew6wTQjeopcc6?usp=sharing). To be able to use image processing feature (`piXedfit_images`), you need to download the necessary kernel files and copy them to /data/kernels ($PIXEDFIT_HOME/data/kernels). List of the kernel files needed for image processing would depend on the imaging data that will be analyzed.
 
 
 ## Citation

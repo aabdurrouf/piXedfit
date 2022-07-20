@@ -7,7 +7,8 @@ Dependencies
 * Python >= 3.7 
 * `FSPS <https://github.com/cconroy20/fsps>`_ and `Python FSPS <https://dfm.io/python-fsps/current/>`_. Note that we need to set an environmental variable called SPS_HOME to make FSPS works. Please follow the instruction in FSPS website for this.
 * `mpi4py <https://mpi4py.readthedocs.io/en/stable/index.html#>`_ for parallel processing.
-* `emcee <https://emcee.readthedocs.io/en/stable/>`_ for SED fitting with MCMC method. 
+* `emcee <https://emcee.readthedocs.io/en/stable/>`_ for SED fitting with MCMC method.
+* `HDF5 <https://www.hdfgroup.org/solutions/hdf5/>`_ and `h5py <https://docs.h5py.org/en/stable/build.html>`_ (follow the installation instruction from the website).  
 
 
 Installing piXedfit for the first time
