@@ -11,3 +11,4 @@ astroquery
 pyvo
 pandas
 tqdm
+h5py
