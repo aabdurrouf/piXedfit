@@ -26,6 +26,7 @@ from piXedfit.utils.redshifting import cosmo_redshifting
 from piXedfit.utils.igm_absorption import igm_att_madau, igm_att_inoue
 from piXedfit.piXedfit_spectrophotometric import spec_smoothing
 from piXedfit.piXedfit_fitting import get_params
+from piXedfit.utils.igm_absorption import igm_att_madau, igm_att_inoue
 
 
 def initfit_fz(gal_z,DL_Gpc):

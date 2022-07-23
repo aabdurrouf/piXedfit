@@ -667,7 +667,7 @@ def plot_corner(name_sampler_fits, params=['log_sfr','log_mass','log_dustmass','
 	'log_alpha':'log($\\alpha$)', 'log_beta':'log($\\beta$)','log_tau':'log($\\tau$)','logzsol':'log($Z/Z_{\odot}$)','z':'z'}, 
 	params_ranges = {'log_sfr':[-99.0,-99.0],'log_mass':[-99.0,-99.0],'log_dustmass':[-99.0,-99.0],'log_fagn':[-5.0,0.48],
 	'log_fagn_bol':[-99.0,-99.0],'log_tauagn':[0.70,2.18],'log_qpah':[-1.0, 0.845],'log_umin':[-1.0, 1.176],'log_gamma':[-3.0,-0.824],
-	'dust1':[0.0,3.0],'dust2':[0.0, 3.0], 'dust_index':[-2.2,0.4],'log_mw_age':[-99.0,-99.0],'log_age': [-3.0, 1.14],
+	'dust1':[0.0,4.0],'dust2':[0.0,4.0], 'dust_index':[-2.2,0.4],'log_mw_age':[-99.0,-99.0],'log_age': [-3.0, 1.14],
 	'log_t0': [-2.0, 1.14],'log_alpha':[-2.5,2.5],'log_beta':[-2.5,2.5],'log_tau': [-2.5, 1.5], 'logzsol': [-2.0, 0.5], 
 	'z': [-99.0, -99.0]}, nbins=12, fontsize_label=20, fontsize_tick=14, name_plot=None):
 	
