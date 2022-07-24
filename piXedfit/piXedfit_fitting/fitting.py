@@ -581,7 +581,7 @@ def singleSEDfit_specphoto(obs_flux,obs_flux_err,filters,spec_wave,spec_flux,spe
 
 
 def SEDfit_from_binmap_specphoto(fits_binmap,binid_range=None,bin_ids=None,wavelength_range=None,models_spec=None,
-	params_ranges=None,params_priors=None,fit_method='mcmc',gal_z=None,nrands_z=10,add_igm_absorption=0,igm_type=0,
+	params_ranges=None,params_priors=None,fit_method='mcmc',gal_z=None,free_z=0,nrands_z=10,add_igm_absorption=0,igm_type=0,
 	spec_sigma=2.6,poly_order=8,likelihood='gauss',dof=3.0,nwalkers=100,nsteps=600,nsteps_cut=50,nproc=10,
 	initfit_nmodels_mcmc=30000,perc_chi2=90.0,spec_chi_sigma_clip=3.0, cosmo=0,H0=70.0,Om0=0.3,del_wave_nebem=10.0,
 	store_full_samplers=1,name_out_fits=None):
@@ -619,6 +619,10 @@ def SEDfit_from_binmap_specphoto(fits_binmap,binid_range=None,bin_ids=None,wavel
 	:param gal_z:
 		Redshift of the galaxy. If gal_z=None, then redshift is taken from the header of the FITS file. 
 		If gal_z in the FITS header is negative, the redshift is set to be free in the SED fitting (i.e., photometric redshift). 
+	
+	:param free_z:
+		A flag stating whether redshift would be free prameter (value: 1) or not (value: 0). 
+		If free_z=1, the gal_z input is not relevant, but the redshift range that is set when setting priors would be considered. 
 	
 	:param nrands_z:
 		Number of random redshifts to be generated (within the chosen range as set in the params_range) in the main fitting if fit_method='rdsps' or initial fitting if fit_method='mcmc'.
@@ -742,15 +746,11 @@ def SEDfit_from_binmap_specphoto(fits_binmap,binid_range=None,bin_ids=None,wavel
 	if params_priors is None:
 		params_priors = []
 
-	if gal_z is None or gal_z<=0.0:
-		gal_z = float(header['z'])
-		if gal_z<=0.0:
-			gal_z = -99.0
-			free_z = 1
-		else:
-			free_z = 0
-	else:
-		free_z = 0
+	if free_z == 0:
+		if gal_z is None or gal_z<=0.0:
+			gal_z = float(header['z'])
+	elif free_z == 1:
+		gal_z = -99.0
 
 	# configuration file
 	name_config = randname("config_file",".dat")
@@ -895,7 +895,7 @@ def SEDfit_from_binmap_specphoto(fits_binmap,binid_range=None,bin_ids=None,wavel
 
 
 def SEDfit_from_binmap(fits_binmap,binid_range=None,bin_ids=None,models_spec=None,params_ranges=None,params_priors=None,
-	fit_method='mcmc',gal_z=None,nrands_z=10,add_igm_absorption=0,igm_type=0,likelihood='gauss',dof=3.0,nwalkers=100,
+	fit_method='mcmc',gal_z=None,free_z=0,nrands_z=10,add_igm_absorption=0,igm_type=0,likelihood='gauss',dof=3.0,nwalkers=100,
 	nsteps=600,nsteps_cut=50,nproc=10,initfit_nmodels_mcmc=30000,perc_chi2=90.0,cosmo=0,H0=70.0,Om0=0.3,store_full_samplers=1,
 	name_out_fits=None):
 
@@ -928,6 +928,10 @@ def SEDfit_from_binmap(fits_binmap,binid_range=None,bin_ids=None,models_spec=Non
 	:param gal_z:
 		Redshift of the galaxy. If gal_z=None, then redshift is taken from the header of the FITS file. 
 		If gal_z in the FITS header is negative, the redshift is set to be free in the SED fitting (i.e., photometric redshift). 
+
+	:param free_z:
+		A flag stating whether redshift would be free prameter (value: 1) or not (value: 0). 
+		If free_z=1, the gal_z input is not relevant, but the redshift range that is set when setting priors would be considered. 
 	
 	:param nrands_z:
 		Number of random redshifts to be generated (within the chosen range as set in the params_range) in the main fitting if fit_method='rdsps' or initial fitting if fit_method='mcmc'.
@@ -1020,15 +1024,11 @@ def SEDfit_from_binmap(fits_binmap,binid_range=None,bin_ids=None,models_spec=Non
 	if params_priors is None:
 		params_priors = []
 
-	if gal_z is None or gal_z<=0.0:
-		gal_z = float(header['z'])
-		if gal_z<=0.0:
-			gal_z = -99.0
-			free_z = 1
-		else:
-			free_z = 0
-	else:
-		free_z = 0
+	if free_z == 0:
+		if gal_z is None or gal_z<=0.0:
+			gal_z = float(header['z'])
+	elif free_z == 1:
+		gal_z = -99.0
 
 	# configuration file
 	name_config = randname("config_file",".dat")
@@ -1191,7 +1191,7 @@ def SEDfit_from_binmap(fits_binmap,binid_range=None,bin_ids=None,models_spec=Non
 
 
 def SEDfit_pixels_from_fluxmap(fits_fluxmap,x_range=None,y_range=None,models_spec=None,params_ranges=None,params_priors=None,
-	fit_method='mcmc',gal_z=None,nrands_z=10,add_igm_absorption=0,igm_type=0,likelihood='gauss',dof=2.0,nwalkers=100,nsteps=600,
+	fit_method='mcmc',gal_z=None,free_z=0,nrands_z=10,add_igm_absorption=0,igm_type=0,likelihood='gauss',dof=2.0,nwalkers=100,nsteps=600,
 	nsteps_cut=50,nproc=10,initfit_nmodels_mcmc=30000,perc_chi2=10.0,cosmo=0,H0=70.0,Om0=0.3,store_full_samplers=1):
 
 	"""Function for performing SED fitting to a photometric data cube on the pixel-by-pixel basis. 
@@ -1224,6 +1224,10 @@ def SEDfit_pixels_from_fluxmap(fits_fluxmap,x_range=None,y_range=None,models_spe
 	:param gal_z:
 		Redshift of the galaxy. If gal_z=None, then redshift is taken from the header of the FITS file. 
 		If gal_z in the FITS header is negative, the redshift is set to be free in the SED fitting (i.e., photometric redshift). 
+	
+	:param free_z:
+		A flag stating whether redshift would be free prameter (value: 1) or not (value: 0). 
+		If free_z=1, the gal_z input is not relevant, but the redshift range that is set when setting priors would be considered. 
 	
 	:param nrands_z:
 		Number of random redshifts to be generated (within the chosen range as set in the params_range) in the main fitting if fit_method='rdsps' or initial fitting if fit_method='mcmc'.
@@ -1317,15 +1321,11 @@ def SEDfit_pixels_from_fluxmap(fits_fluxmap,x_range=None,y_range=None,models_spe
 		else:
 			ymin, ymax = y_range[0], y_range[1]
 
-	if gal_z is None or gal_z<=0.0:
-		gal_z = float(header['z'])
-		if gal_z<=0.0:
-			gal_z = -99.0
-			free_z = 1
-		else:
-			free_z = 0
-	else:
-		free_z = 0
+	if free_z == 0:
+		if gal_z is None or gal_z<=0.0:
+			gal_z = float(header['z'])
+	elif free_z == 1:
+		gal_z = -99.0
 
 	# configuration file
 	name_config = randname("config_file",".dat")
