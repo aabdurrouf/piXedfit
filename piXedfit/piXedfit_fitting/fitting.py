@@ -21,7 +21,7 @@ __all__ = ["singleSEDfit", "singleSEDfit_specphoto", "SEDfit_from_binmap", "SEDf
 
 
 class priors:
-	"""Functions for defining priors to be used in the Bayesian SED fitting process. First, one need to define ranges for the parameters using :func:`params_ranges`, 
+	"""Functions for defining priors to be used in the Bayesian SED fitting process. First, one needs to define ranges for the parameters using:func:`params_ranges`, 
 	then define shape of the prior distribution function of each parameter. The available analytic forms for the prior are uniform, Gaussian, Student's t, and gamma functions.
 	User can also choose an arbitrary one, using :func:`arbitrary`. It is also possible to define a joint prior between a given parameter and stellar mass. This joint prior 
 	can be adopted from a known scaling relation, such as stellar mass vs metallicity relation. Note that it is not required to define range of all parameters to be involved in SED fitting. 
