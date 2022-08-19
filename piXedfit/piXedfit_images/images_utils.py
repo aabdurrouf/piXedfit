@@ -196,6 +196,8 @@ def dwd_sdss(pos,bands = ['u','g','r','i','z'],size=20):
 			print(f"{band} image downloaded")
 			i += 1
 
+	return 1
+
 
 def dwd_2mass(pos,size = 0.1):
 	"""A tool to download TwoMASS images from IRSA.
@@ -231,6 +233,7 @@ def dwd_2mass(pos,size = 0.1):
 		with gzip.open(file, 'r') as f_in, open(file.replace(".gz", ""), 'wb') as f_out:
 			shutil.copyfileobj(f_in, f_out)  # unzipped gz files
 		os.remove(file)   # delete .gz files 
+	return 1
 
 def dwd_wise(pos, size = 0.1, pix = 800):
 	"""A tool to download allwise images from IRSA.
@@ -280,9 +283,10 @@ def dwd_wise(pos, size = 0.1, pix = 800):
 		with gzip.open(file, 'r') as f_in, open(file.replace(".gz", ""), 'wb') as f_out:
 			shutil.copyfileobj(f_in, f_out)  # unzipped gz files
 		os.remove(file)   # delete gz files  
+	return 1
 
 
-def dwd_galex(pos, size = 0.1, unzip = True):
+def dwd_galex(pos, size = 0.1, unzip = True, maximum = None):
 	"""A tool to download allwise images from GALEX.
 
 	:param pos:
@@ -291,6 +295,8 @@ def dwd_galex(pos, size = 0.1, unzip = True):
 		Search cone size. Note that this size IS NOT image size.	
 	:param unzip: (defaults to True)
 		Whether to unzip the download file.
+	:param maximum: (defaults to None)
+		maximum value to download 
 	"""
 
 	from astroquery.mast import Observations
@@ -308,8 +314,18 @@ def dwd_galex(pos, size = 0.1, unzip = True):
 	b = a[a.productFilename.str.contains('int.fits|skybg.fits|intbgsub.fits')]
 
 	# Start downloading
-	for _, row in b.iterrows():
-		Observations.download_file(row.dataURI)
+	if maximum == None:
+		for _, row in b.iterrows():
+			Observations.download_file(row.dataURI)
+	elif maximum != None:
+		counter = 0
+		for _, row in b.iterrows():
+			Observations.download_file(row.dataURI)
+			counter += 1
+			if counter == maximum:
+				break
+
+
 
 	if unzip:
 		for file in glob.glob("*.gz"):
@@ -318,9 +334,11 @@ def dwd_galex(pos, size = 0.1, unzip = True):
 			os.remove(file)   # delete gz files  
 	else:
 		pass
+	
+	return 1
 
 
-def dwd_hst(pos,size = 1, save = True, output_fmt = 'csv'):
+def dwd_hst(pos,size = 1, maximum = None, save = True, output_fmt = 'csv'):
 	"""A tool to download allwise images from Hubble Space Telescope.
 
 	:param pos:
@@ -349,10 +367,21 @@ def dwd_hst(pos,size = 1, save = True, output_fmt = 'csv'):
 	b.to_csv("Download_Table.csv")
 
 	# Start downloading
-	for obs_id in b.observation_id.unique():
-		esahubble.download_product(observation_id= obs_id, filename = f"data_for_{obs_id}.tar")
+	if maximum == None:
+		for obs_id in b.observation_id.unique():
+			esahubble.download_product(observation_id= obs_id, filename = f"{obs_id}.tar")
+	elif maximum != None:
+		counter = 0
+		for obs_id in b.observation_id.unique():
+			esahubble.download_product(observation_id= obs_id, filename = f"{obs_id}.tar")
+			counter += 1
+			if counter == maximum:
+				break
+	
 
-def dwd_spitzer(pos, size = 1/120):
+	return 1
+
+def dwd_spitzer(pos, maximum = None, size = 1/120):
 	"""A tool to download allwise images from Spitzer.
 
 	:param pos:
@@ -372,8 +401,19 @@ def dwd_spitzer(pos, size = 1/120):
 	table.write('Download_detail.csv', format='csv', overwrite = True)
 
 	# Start downloading
-	for url in table[table['filetype'] == b' Image   ']['accessUrl'][:2]:
-		sha.save_file(url.strip())
+	if maximum == None:
+		for url in table[table['filetype'] == b' Image   ']['accessUrl']:
+			sha.save_file(url.strip())
+	elif maximum != None:
+		counter = 0
+		for url in table[table['filetype'] == b' Image   ']['accessUrl']:
+			sha.save_file(url.strip())
+			counter +=1
+			if counter == maximum:
+				break
+		
+	
+	return 1
     
 
 

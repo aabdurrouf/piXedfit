@@ -1188,6 +1188,8 @@ def SEDfit_from_binmap(fits_binmap,binid_range=None,bin_ids=None,models_spec=Non
 	if len(flg_write)>0:
 		for ii in range(0,len(flg_write)):
 			os.system("rm %s%s" % (temp_dir,flg_write[ii]))
+	
+	return 1
 
 
 def SEDfit_pixels_from_fluxmap(fits_fluxmap,x_range=None,y_range=None,models_spec=None,params_ranges=None,params_priors=None,

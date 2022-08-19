@@ -166,7 +166,7 @@ def plot_SED_rdsps_photo(filters=None,obs_photo=None,bfit_photo=None,bfit_mod_sp
 		plt.errorbar(photo_cwave/1.0e+4,obs_fluxes,yerr=obs_flux_err,color=photo_color,markersize=1,fmt='o', zorder=7)
 		plt.scatter(photo_cwave/1.0e+4,obs_fluxes,s=markersize, marker='s', lw=2, edgecolor=photo_color, color='none', zorder=8)
 
-	f1.text(0.25, 0.9, "reduced $\chi^2 = %.3f$" % header_samplers['redcd_chi2'], verticalalignment='bottom', 
+	f1.text(0.25, 0.9, r"reduced $\chi^2 = %.3f$" % header_samplers['redcd_chi2'], verticalalignment='bottom', 
 			horizontalalignment='right', transform=f1.transAxes, color='black', fontsize=20)
 
 	if decompose==1 or decompose==True:
@@ -662,9 +662,9 @@ def plot_corner(name_sampler_fits, params=['log_sfr','log_mass','log_dustmass','
 	'log_qpah','log_umin','log_gamma','dust1','dust2','dust_index','log_mw_age','log_age','log_t0','log_alpha','log_beta',
 	'log_tau','logzsol','z'], label_params={'log_sfr':'log(SFR)','log_mass':'log($M_{*}$)','log_dustmass':'log($M_{dust}$)',
 	'log_fagn':'log($f_{AGN,*}$)','log_fagn_bol':'log($f_{AGN,bol}$)','log_tauagn':'log($\\tau_{AGN}$)','log_qpah':'log($Q_{PAH}$)',
-	'log_umin':'log($U_{min}$)','log_gamma':'log($\gamma_{e}$)','dust1':'$\hat \\tau_{1}$','dust2':'$\hat \\tau_{2}$', 'dust_index':'$n$', 
-	'log_mw_age':'log($\mathrm{age}_{\mathrm{MW}}$)','log_age':'log($\mathrm{age}_{\mathrm{sys}}$)','log_t0':'log($t_{0}$)',
-	'log_alpha':'log($\\alpha$)', 'log_beta':'log($\\beta$)','log_tau':'log($\\tau$)','logzsol':'log($Z/Z_{\odot}$)','z':'z'}, 
+	'log_umin':'log($U_{min}$)','log_gamma':r'log($\gamma_{e}$)','dust1':r'$\hat \\tau_{1}$','dust2':r'$\hat \\tau_{2}$', 'dust_index':'$n$', 
+	'log_mw_age':r'log($\mathrm{age}_{\mathrm{MW}}$)','log_age':r'log($\mathrm{age}_{\mathrm{sys}}$)','log_t0':'log($t_{0}$)',
+	'log_alpha':'log($\\alpha$)', 'log_beta':'log($\\beta$)','log_tau':'log($\\tau$)','logzsol':r'log($Z/Z_{\odot}$)','z':'z'}, 
 	params_ranges = {'log_sfr':[-99.0,-99.0],'log_mass':[-99.0,-99.0],'log_dustmass':[-99.0,-99.0],'log_fagn':[-5.0,0.48],
 	'log_fagn_bol':[-99.0,-99.0],'log_tauagn':[0.70,2.18],'log_qpah':[-1.0, 0.845],'log_umin':[-1.0, 1.176],'log_gamma':[-3.0,-0.824],
 	'dust1':[0.0,4.0],'dust2':[0.0,4.0], 'dust_index':[-2.2,0.4],'log_mw_age':[-99.0,-99.0],'log_age': [-3.0, 1.14],
