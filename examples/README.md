@@ -8,5 +8,5 @@
 
 
 To do list:
-* Upload tutorial on SED fitting with varius forms of priors, including joint priors such as mass-metallicity and mass-age priors.
+* Upload tutorial on SED fitting with various forms of priors, including joint priors such as mass-metallicity and mass-age priors.
 * Upload tutorial on SED fitting in which redshift is free (i.e., photometric redshift).

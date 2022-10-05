@@ -196,6 +196,7 @@ def dwd_sdss(pos,bands = ['u','g','r','i','z'],size=20):
 			print(f"{band} image downloaded")
 			i += 1
 
+	return 1
 
 def dwd_2mass(pos,size = 0.1):
 	"""A tool to download TwoMASS images from IRSA.

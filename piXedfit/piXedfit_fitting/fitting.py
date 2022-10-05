@@ -1038,20 +1038,25 @@ def SEDfit_from_binmap(fits_binmap,binid_range=None,bin_ids=None,models_spec=Non
 	os.system('mv %s %s' % (name_config,temp_dir))
 
 	nbins_calc = 0
-	if bin_ids is not None:
-		if len(binid_range) > 0:
-			print ("Both bin_ids and binid_range are not empty, calculation will be done based on bin_ids.")
+	# Both have input -> ValueError
+	if (bin_ids is not None) and (binid_range is not None):
+		raise ValueError("bind_ids and binid_range cannot be used simultaneously")
+	# binid_range is used
+	elif (bin_ids is not None) and (binid_range is None):
+		print ("Calculation will be done based on bin_ids.")
 		bin_ids = np.asarray(bin_ids)
 		nbins_calc = len(bin_ids)
-
-	elif bin_ids is None:
-		if binid_range is None:
-			print ("Both bin_ids and binid_range are empty, SED fitting will be done to all the bins.")
-			bin_ids = np.arange(nbins)
-		elif binid_range is not None:
+	# binid_range is used
+	elif (bin_ids is None) and (binid_range is not None):
 			binid_min = binid_range[0]
 			binid_max = binid_range[1]
 			bin_ids = np.arange(int(binid_min), int(binid_max))
+	# Both are None -> all bins
+	elif (bin_ids is None) and (binid_range is None) :
+			print ("Both bin_ids and binid_range are empty, SED fitting will be done to all the bins.")
+			bin_ids = np.arange(nbins)
+			bin_ids += 1 # fix the numbering. 0 is the background, non galaxy area
+
 
 	if name_out_fits is not None and 0<len(name_out_fits)<nbins_calc:
 		print ("The number of elements in name_out_fits should be the same as the number of bins to be calculated!")
@@ -1061,7 +1066,7 @@ def SEDfit_from_binmap(fits_binmap,binid_range=None,bin_ids=None,models_spec=Non
 		count_id = 0
 		for idx_bin in bin_ids:
 			# SED of bin
-			rows, cols = np.where(bin_map==idx_bin+1)
+			rows, cols = np.where(bin_map==idx_bin)
 
 			# input SED text file
 			name_SED_txt = randname("inputSED_file",".dat")
@@ -1070,7 +1075,7 @@ def SEDfit_from_binmap(fits_binmap,binid_range=None,bin_ids=None,models_spec=Non
 
 			# name of output FITS file
 			if name_out_fits is None:
-				name_out_fits1 = "mcmc_bin%d.fits" % (idx_bin+1)
+				name_out_fits1 = "mcmc_bin%d.fits" % (idx_bin)
 			else:
 				name_out_fits1 = name_out_fits[int(count_id)]
 
@@ -1095,7 +1100,7 @@ def SEDfit_from_binmap(fits_binmap,binid_range=None,bin_ids=None,models_spec=Non
 	elif fit_method=='rdsps' or fit_method=='RDSPS':
 		# single bin
 		if len(bin_ids) == 1:
-			rows, cols = np.where(bin_map==int(bin_ids[0])+1)
+			rows, cols = np.where(bin_map==int(bin_ids[0]))
 
 			name_SED_txt = randname("inputSED_file",".dat")
 			write_input_singleSED(name_SED_txt,bin_flux_trans[rows[0]][cols[0]],bin_flux_err_trans[rows[0]][cols[0]])
@@ -1103,7 +1108,7 @@ def SEDfit_from_binmap(fits_binmap,binid_range=None,bin_ids=None,models_spec=Non
 
 			# output file names:
 			if name_out_fits is None:
-				name_out_fits1 = "rdsps_bin%d.fits" % (bin_ids[0]+1)
+				name_out_fits1 = "rdsps_bin%d.fits" % (bin_ids[0])
 			else:
 				name_out_fits1 = name_out_fits[0]
 
@@ -1134,7 +1139,7 @@ def SEDfit_from_binmap(fits_binmap,binid_range=None,bin_ids=None,models_spec=Non
 				fl = m.create_group('flux')
 				fle = m.create_group('flux_err')
 				for ii in range(0,len(bin_ids)):
-					rows, cols = np.where(bin_map==bin_ids[ii]+1)
+					rows, cols = np.where(bin_map==bin_ids[ii])
 					str_temp = 'b%d_f' % ii
 					fl.create_dataset(str_temp, data=np.array(bin_flux_trans[rows[0]][cols[0]]))
 
@@ -1147,7 +1152,7 @@ def SEDfit_from_binmap(fits_binmap,binid_range=None,bin_ids=None,models_spec=Non
 				name_outs = randname("name_outs",".dat")
 				file_out = open(name_outs,"w")
 				for idx_bin in bin_ids:
-					name0 = "rdsps_bin%d.fits" % (idx_bin+1)
+					name0 = "rdsps_bin%d.fits" % (idx_bin)
 					file_out.write("%s\n" % name0)
 				file_out.close()
 			else:

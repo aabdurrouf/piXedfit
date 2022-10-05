@@ -40,7 +40,7 @@ def plot_SED_rdsps_photo(filters=None,obs_photo=None,bfit_photo=None,bfit_mod_sp
 	obs_flux_err = convert_unit_spec_from_ergscm2A(photo_cwave,obs_flux_err,funit=funit)
 
 	# plotting
-	fig1 = plt.figure(figsize=(14,7))
+	fig1 = plt.figure(figsize=(21,9))
 
 	gs = GridSpec(nrows=2, ncols=1, height_ratios=[3, 1], left=0.1, right=0.98, top=0.98, bottom=0.13, hspace=0.001)
 
@@ -166,8 +166,8 @@ def plot_SED_rdsps_photo(filters=None,obs_photo=None,bfit_photo=None,bfit_mod_sp
 		plt.errorbar(photo_cwave/1.0e+4,obs_fluxes,yerr=obs_flux_err,color=photo_color,markersize=1,fmt='o', zorder=7)
 		plt.scatter(photo_cwave/1.0e+4,obs_fluxes,s=markersize, marker='s', lw=2, edgecolor=photo_color, color='none', zorder=8)
 
-	f1.text(0.25, 0.9, "reduced $\chi^2 = %.3f$" % header_samplers['redcd_chi2'], verticalalignment='bottom', 
-			horizontalalignment='right', transform=f1.transAxes, color='black', fontsize=20)
+	f1.text(0.136, 0.92, "reduced $\chi^2 = %.3f$" % header_samplers['redcd_chi2'], verticalalignment='bottom', 
+			horizontalalignment='right', transform=f1.transAxes, color='black', fontsize=18)
 
 	if decompose==1 or decompose==True:
 		if show_legend == True:
