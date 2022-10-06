@@ -1041,7 +1041,7 @@ def SEDfit_from_binmap(fits_binmap,binid_range=None,bin_ids=None,models_spec=Non
 	# Both have input -> ValueError
 	if (bin_ids is not None) and (binid_range is not None):
 		raise ValueError("bind_ids and binid_range cannot be used simultaneously")
-	# binid_range is used
+	# bin_ids is used
 	elif (bin_ids is not None) and (binid_range is None):
 		print ("Calculation will be done based on bin_ids.")
 		bin_ids = np.asarray(bin_ids)
