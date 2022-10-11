@@ -1336,8 +1336,8 @@ def SEDfit_pixels_from_fluxmap(fits_fluxmap,x_range=None,y_range=None,models_spe
 	name_config = randname("config_file",".dat")
 	flg_write = write_conf_file(name_config,params_ranges,params_priors,nwalkers,nsteps,nsteps_cut,nproc,cosmo,H0,
 					Om0,fit_method,likelihood,dof,models_spec,gal_z,nrands_z,add_igm_absorption,igm_type,
-					perc_chi2,initfit_nmodels_mcmc,spec_sigma=spec_sigma,poly_order=poly_order,
-					del_wave_nebem=del_wave_nebem,spec_chi_sigma_clip=spec_chi_sigma_clip)
+					perc_chi2,initfit_nmodels_mcmc,spec_sigma=2.6,poly_order=8,
+					del_wave_nebem=10.0,spec_chi_sigma_clip=3.0)
 	os.system('mv %s %s' % (name_config,temp_dir))
 
 	if fit_method=='mcmc' or fit_method=='MCMC':
