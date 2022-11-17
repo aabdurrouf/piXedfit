@@ -1336,8 +1336,8 @@ def SEDfit_pixels_from_fluxmap(fits_fluxmap,x_range=None,y_range=None,models_spe
 	name_config = randname("config_file",".dat")
 	flg_write = write_conf_file(name_config,params_ranges,params_priors,nwalkers,nsteps,nsteps_cut,nproc,cosmo,H0,
 					Om0,fit_method,likelihood,dof,models_spec,gal_z,nrands_z,add_igm_absorption,igm_type,
-					perc_chi2,initfit_nmodels_mcmc,spec_sigma=2.6,poly_order=8,
-					del_wave_nebem=10.0,spec_chi_sigma_clip=3.0)
+					perc_chi2,initfit_nmodels_mcmc,spec_sigma=None,poly_order=None,
+					del_wave_nebem=None,spec_chi_sigma_clip=None)
 	os.system('mv %s %s' % (name_config,temp_dir))
 
 	if fit_method=='mcmc' or fit_method=='MCMC':
@@ -1722,7 +1722,7 @@ def maps_parameters_fit_pixels(fits_fluxmap, pix_x, pix_y, name_sampler_fits, na
 	for pp in range(0,nparams):
 		bfit_param[params[pp]] = {}
 		for ii in range(0,nindexes):
-			bfit_param[params[pp]][indexes[ii]] = np.zeros(nbins) - 99.0
+			bfit_param[params[pp]][indexes[ii]] = np.zeros(npixs) - 99.0
 
 	# get bfit_param
 	for ii in range(0,npixs):
@@ -1765,7 +1765,7 @@ def maps_parameters_fit_pixels(fits_fluxmap, pix_x, pix_y, name_sampler_fits, na
 			hdul.append(fits.ImageHDU(map_prop, name=idx_str))
 					
 	if name_out_fits is None:
-		name_out_fits = "fitres_%s" % fits_binmap
+		name_out_fits = "fitres_%s" % name_sampler_fits[0]
 	hdul.writeto(name_out_fits, overwrite=True)
 
 

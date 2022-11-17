@@ -737,7 +737,11 @@ for ii in range(0,n_obs_sed):
 
 	# store to fits file
 	if rank == 0:
-		fits_name_out = name_out_fits[ii]
+		if name_out_fits.size == 1:
+			fits_name_out = name_out_fits.item()
+		elif name_out_fits.size > 1:
+			fits_name_out = name_out_fits[ii]
+
 		store_to_fits(sampler_params,mod_chi2,mod_prob,fits_name_out)
 
 		sys.stdout.write('\n')
