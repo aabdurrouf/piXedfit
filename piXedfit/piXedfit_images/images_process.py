@@ -175,7 +175,13 @@ class images_processing:
 		elif flag_psfmatch == 0:
 			####============== (2) PSF matching ============#####
 			##==> (a) Get filter index with largest PSF size:
-			idfil_psfmatch = get_largest_FWHM_PSF(filters=filters)
+			key = [i for i in kernels if kernels[i] is not None]
+			if len(key)>0:
+				key = [i for i in kernels if kernels[i] is None]
+				idfil_psfmatch = filters.index(key[0])
+			else:
+				idfil_psfmatch = get_largest_FWHM_PSF(filters=filters)
+
 			print ("[PSF matching to %s]" % filters[idfil_psfmatch])
 
 			##==> (b) Get Kernels:
