@@ -270,7 +270,7 @@ def lnprior(theta):
 			elif params_priors[params[pp]]['form'] == 'joint_with_mass':
 				loc = np.interp(theta[nparams-1],params_priors[params[pp]]['lmass'],params_priors[params[pp]]['pval'])
 				scale = params_priors[params[pp]]['scale']
-				lnprior += np.log(normal.pdf(f[str_temp][idx_parmod_sel[0][int(ii)]],loc=loc,scale=scale))
+				lnprior += np.log(normal.pdf(theta[pp],loc=loc,scale=scale))
 			
 		return lnprior
 	return -np.inf
