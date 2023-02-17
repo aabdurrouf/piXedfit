@@ -1039,8 +1039,8 @@ def SEDfit_from_binmap(fits_binmap,binid_range=None,bin_ids=None,models_spec=Non
 
 	nbins_calc = 0
 	if bin_ids is not None:
-		if len(binid_range) > 0:
-			print ("Both bin_ids and binid_range are not empty, calculation will be done based on bin_ids.")
+		if binid_range is not None:
+			print ("Both bin_ids and binid_range are not None, calculation will be done based on bin_ids.")
 		bin_ids = np.asarray(bin_ids)
 		nbins_calc = len(bin_ids)
 
