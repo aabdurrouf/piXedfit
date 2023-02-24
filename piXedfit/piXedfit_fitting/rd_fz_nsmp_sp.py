@@ -21,6 +21,7 @@ from piXedfit.utils.redshifting import cosmo_redshifting
 from piXedfit.utils.igm_absorption import igm_att_madau, igm_att_inoue
 from piXedfit.piXedfit_spectrophotometric import spec_smoothing, match_spectra_poly_legendre_fit
 from piXedfit.piXedfit_model import get_no_nebem_wave_fit, generate_modelSED_spec
+from piXedfit.piXedfit_fitting import params_log_flag
 
 
 def bayesian_sedfit_gauss():
@@ -899,6 +900,10 @@ if rank==0:
 # number of model SEDs
 global nmodels_parent
 nmodels_parent = int(f['mod'].attrs['nmodels'])
+
+# get flag for params with logarithmic scale
+global params_log
+params_log = params_log_flag(params)
 
 # get the prior ranges of the parameters.
 # for RDSPS fitting, a fix parameters can't be declared when the fitting run

@@ -802,6 +802,18 @@ def plot_sfh_mcmc(name_sampler_fits, nchains=200, del_t=0.05, lbacktime_max=None
 
 	:returns name_plot:
 		Desired name for the output plot. This is optional. If None, a default name will be used.
+
+	:returns grid_lbt:
+		Look-back times.
+
+	:return grid_sfr_p16:
+		16th percentile of the SFR(t).
+
+	:return grid_sfr_p50:
+		50th percentile of the SFR(t).
+
+	:return grid_sfr_p84:
+		84th percentile of the SFR(t).
 	"""
 	
 	hdu = fits.open(name_sampler_fits)

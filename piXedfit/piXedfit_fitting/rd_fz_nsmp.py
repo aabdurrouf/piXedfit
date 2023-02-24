@@ -17,6 +17,7 @@ from piXedfit.utils.posteriors import model_leastnorm, calc_chi2, ln_gauss_prob,
 from piXedfit.utils.filtering import interp_filters_curves, filtering_interp_filters, cwave_filters
 from piXedfit.utils.redshifting import cosmo_redshifting
 from piXedfit.utils.igm_absorption import igm_att_madau, igm_att_inoue
+from piXedfit.piXedfit_fitting import params_log_flag
 
 
 def bayesian_sedfit_gauss():
@@ -361,10 +362,18 @@ def store_to_fits(sampler_params,mod_chi2,mod_prob,fits_name_out):
 	array_prob = np.exp(array_lnprob)
 	array_prob = array_prob/np.sum(array_prob)						 # normalize
 	tot_prob = np.sum(array_prob)
-	array_val = sampler_params['log_mass'][idx_sel[0]]
-	mean_lmass = np.sum(array_val*array_prob)/tot_prob
-	mean_lmass2 = np.sum(np.square(array_val)*array_prob)/tot_prob
-	std_lmass = sqrt(abs(mean_lmass2 - (mean_lmass**2)))
+	#array_val = sampler_params['log_mass'][idx_sel[0]]
+	#mean_lmass = np.sum(array_val*array_prob)/tot_prob
+	#mean_lmass2 = np.sum(np.square(array_val)*array_prob)/tot_prob
+	#std_lmass = sqrt(abs(mean_lmass2 - (mean_lmass**2)))
+
+	array_val = np.power(10.0, sampler_params['log_mass'][idx_sel[0]])
+	mean_mass = np.sum(array_val*array_prob)/tot_prob
+	mean_mass2 = np.sum(np.square(array_val)*array_prob)/tot_prob
+	std_mass = sqrt(abs(mean_mass2 - (mean_mass**2)))
+
+	mean_lmass = np.log10(mean_mass)
+	std_lmass = 0.5*np.log10((mean_mass+std_mass)/abs((mean_mass-std_mass)))
 
 	# add more if parameters are joint with mass
 	if len(params_prior_jtmass)>0:
@@ -397,12 +406,20 @@ def store_to_fits(sampler_params,mod_chi2,mod_prob,fits_name_out):
 			params_bfits[pp][0] = mean_lmass
 			params_bfits[pp][1] = std_lmass
 		else:
-			array_val = sampler_params[params[pp]][idx_sel[0]]
-			mean_val = np.sum(array_val*array_prob)/tot_prob
-			mean_val2 = np.sum(np.square(array_val)*array_prob)/tot_prob
-			std_val = sqrt(abs(mean_val2 - (mean_val**2)))
-			params_bfits[pp][0] = mean_val
-			params_bfits[pp][1] = std_val
+			if params_log[params[pp]] == 0:
+				array_val = sampler_params[params[pp]][idx_sel[0]]
+				mean_val = np.sum(array_val*array_prob)/tot_prob
+				mean_val2 = np.sum(np.square(array_val)*array_prob)/tot_prob
+				std_val = sqrt(abs(mean_val2 - (mean_val**2)))
+				params_bfits[pp][0] = mean_val
+				params_bfits[pp][1] = std_val
+			else:
+				array_val = np.power(10.0,sampler_params[params[pp]][idx_sel[0]])
+				mean_val = np.sum(array_val*array_prob)/tot_prob
+				mean_val2 = np.sum(np.square(array_val)*array_prob)/tot_prob
+				std_val = sqrt(abs(mean_val2 - (mean_val**2)))
+				params_bfits[pp][0] = np.log10(mean_val)
+				params_bfits[pp][1] = 0.5*np.log10((mean_val+std_val)/abs((mean_val-std_val)))
 
 	# store to FITS file
 	hdr = fits.Header()
@@ -592,6 +609,10 @@ if rank==0:
 # number of model SEDs
 global nmodels_parent
 nmodels_parent = int(f['mod'].attrs['nmodels'])
+
+# get flag for params with logarithmic scale
+global params_log
+params_log = params_log_flag(params) 
 
 # get the prior ranges of the parameters.
 # for RDSPS fitting, a fix parameters can't be declared when the fitting run

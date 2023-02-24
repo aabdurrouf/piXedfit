@@ -675,8 +675,8 @@ if free_z == 0:
 	mod_params, mod_chi2_photo, mod_redcd_chi2_spec = initfit_fz(gal_z,DL_Gpc)
 
 	sort_idx = np.argsort(mod_chi2_photo)
-	idx0, min_val = min(enumerate(mod_redcd_chi2_spec[sort_idx[0:3]]), key=itemgetter(1))
-	mod_id = sort_idx[0:3][idx0]
+	idx0, min_val = min(enumerate(mod_redcd_chi2_spec[sort_idx[0:100]]), key=itemgetter(1))
+	mod_id = sort_idx[0:100][idx0]
 	minchi2_params_initfit = mod_params[:,int(mod_id)]
 
 elif free_z == 1:
@@ -698,8 +698,8 @@ elif free_z == 1:
 		mod_redcd_chi2_spec_merge[int(zz*nmodels):int((zz+1)*nmodels)] = mod_redcd_chi2_spec[:]
 
 	sort_idx = np.argsort(mod_chi2_photo_merge)
-	idx0, min_val = min(enumerate(mod_redcd_chi2_spec_merge[sort_idx[0:3]]), key=itemgetter(1))
-	mod_id = sort_idx[0:3][idx0]
+	idx0, min_val = min(enumerate(mod_redcd_chi2_spec_merge[sort_idx[0:100]]), key=itemgetter(1))
+	mod_id = sort_idx[0:100][idx0]
 	minchi2_params_initfit = mod_params_merge[:,int(mod_id)]
 
 if rank == 0:

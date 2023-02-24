@@ -160,3 +160,5 @@ def write_conf_file(name,params_ranges,priors_coll,nwalkers,nsteps,nsteps_cut,np
 
 	return flg_write
 
+
+

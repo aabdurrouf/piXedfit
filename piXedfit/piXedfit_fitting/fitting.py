@@ -17,7 +17,7 @@ except:
 os.environ["OMP_NUM_THREADS"] = "1"
 
 __all__ = ["singleSEDfit", "singleSEDfit_specphoto", "SEDfit_from_binmap", "SEDfit_from_binmap_specphoto", 
-			"SEDfit_pixels_from_fluxmap", "maps_parameters", "maps_parameters_fit_pixels", "get_params", "priors"]
+			"SEDfit_pixels_from_fluxmap", "maps_parameters", "maps_parameters_fit_pixels", "get_params", "priors", "params_log_flag"]
 
 
 class priors:
@@ -1801,5 +1801,17 @@ def get_params(free_z, sfh_form, duste_switch, dust_law, add_agn):
 	nparams = len(params)
 
 	return params, nparams
+
+
+def params_log_flag(params):
+	params_log = {}
+	for pp in range(0,len(params)):
+		if params[pp]=='dust1' or params[pp]=='dust2' or params[pp]=='dust_index':
+			params_log[params[pp]] = 0
+		else:
+			params_log[params[pp]] = 1
+
+	return params_log
+
 
 
