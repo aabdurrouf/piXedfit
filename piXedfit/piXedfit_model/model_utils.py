@@ -1,7 +1,6 @@
 import numpy as np
 from math import pow, pi
 import sys, os
-#import fsps
 from operator import itemgetter
 from astropy.io import fits
 from scipy.interpolate import interp1d
@@ -18,9 +17,264 @@ with np.errstate(divide='ignore'):
 
 __all__ = ["tau_SFH", "delay_tau_SFH", "lognormal_SFH", "gaussian_SFH", "double_power_SFH", "grid_SFH", "grid_arbitrary_SFH","calc_mw_age", "construct_SFH", 
 			"construct_arbitrary_SFH", "calc_cumul_SM_t", "t_mass_formed", "frac_mass_stars", "csp_spec_restframe_fit", "get_dust_mass_othSFH_fit", 
-			"get_sfr_dust_mass_fagnbol_othSFH_fit", "get_sfr_dust_mass_othSFH_fit", "get_dust_mass_mainSFH_fit", "get_dust_mass_fagnbol_mainSFH_fit", "spec_given_SFH_ZH", 
-			"spec_given_ages_mass_Z", "convert_unit_spec_from_ergscm2A", "get_no_nebem_wave_fit", "calc_bollum_from_spec", 
-			"calc_bollum_from_spec_rest", "breakdown_CSP_into_SSP", "breakdown_CSP_into_SSP_restframe", "get_emlines_luminosities"]
+			"get_sfr_dust_mass_fagnbol_othSFH_fit", "get_sfr_dust_mass_othSFH_fit", "get_dust_mass_mainSFH_fit", "get_dust_mass_fagnbol_mainSFH_fit",
+			"convert_unit_spec_from_ergscm2A", "get_no_nebem_wave_fit", "calc_bollum_from_spec", "calc_bollum_from_spec_rest", 
+			"get_emlines_luminosities", "remove_lyalpha_line", "default_params", "default_params_range", "random_name", "config_file_generate_models", 
+			"set_initial_params_fsps", "default_params_val", "list_default_params", "list_params_fsps", "set_initial_fsps", "read_config_file_genmodels", 
+			"get_params_fsps", "list_default_params_fit", "get_params", "params_log_flag"]
+
+def list_default_params():
+	def_params = ['logzsol','log_tau','log_t0','log_alpha','log_beta','log_age','dust_index','dust1','dust2',
+					'log_gamma', 'log_umin', 'log_qpah', 'z', 'log_fagn','log_tauagn', 'gas_logu', 'gas_logz']
+	return def_params
+
+def list_default_params_fit():
+	def_params = ['logzsol','log_tau','log_t0','log_alpha','log_beta','log_age','dust_index','dust1','dust2',
+					'log_gamma', 'log_umin', 'log_qpah', 'z', 'log_fagn','log_tauagn', 'gas_logu', 'gas_logz', 'log_mass']
+	return def_params
+
+def list_params_fsps():
+	def_params_fsps = ['logzsol', 'log_tau', 'log_age', 'dust_index', 'dust1', 'dust2', 'log_gamma', 
+						'log_umin', 'log_qpah', 'log_fagn', 'log_tauagn', 'gas_logu', 'gas_logz']
+
+	params_assoc_fsps = {'logzsol':"logzsol", 'log_tau':"tau", 'log_age':"tage", 'dust_index':"dust_index", 'dust1':"dust1", 'dust2':"dust2", 'log_gamma':"duste_gamma", 
+						'log_umin':"duste_umin", 'log_qpah':"duste_qpah", 'log_fagn':"fagn", 'log_tauagn':"agn_tau", 'gas_logu':"gas_logu", 'gas_logz':"gas_logz"}
+
+	status_log = {'logzsol':0, 'log_tau':1, 'log_age':1, 'dust_index':0, 'dust1':0, 'dust2':0, 'log_gamma':1, 
+				'log_umin':1, 'log_qpah':1,'log_fagn':1, 'log_tauagn':1, 'gas_logu':1, 'gas_logz':1}
+
+	return def_params_fsps, params_assoc_fsps, status_log
+
+def get_params(free_z, sfh_form, duste_switch, dust_law, add_agn, free_gas_logz):
+
+	params = ['logzsol', 'log_tau']
+
+	# SFH
+	if sfh_form==2 or sfh_form==3:
+		params.append('log_t0')
+	elif sfh_form==4:
+		params.append('log_alpha')
+		params.append('log_beta')
+	params.append('log_age')
+
+	# dust attenuation
+	if dust_law==0:
+		params.append('dust_index')
+		params.append('dust1')
+	params.append('dust2')
+
+	# dust emission
+	if duste_switch==1:
+		params.append('log_gamma')
+		params.append('log_umin')
+		params.append('log_qpah')
+
+	# AGN
+	if add_agn == 1:
+		params.append('log_fagn')
+		params.append('log_tauagn')
+
+	# ionization parameter
+	params.append('gas_logu')
+
+	# gas-phas metallicity
+	if free_gas_logz == 1:
+		params.append('gas_logz')
+
+	# redshift
+	if free_z == 1:
+		params.append('z')
+
+	params.append('log_mass')
+
+	nparams = len(params)
+
+	return params, nparams
+
+
+def params_log_flag(params):
+	params_log = {}
+	for pp in range(0,len(params)):
+		if params[pp]=='dust1' or params[pp]=='dust2' or params[pp]=='dust_index':
+			params_log[params[pp]] = 0
+		else:
+			params_log[params[pp]] = 1
+
+	return params_log
+
+def get_params_fsps(params):
+	def_params_fsps, params_assoc_fsps, status_log = list_params_fsps()
+
+	params_fsps = []
+	for ii in range(len(def_params_fsps)):
+		if def_params_fsps[ii] in params:
+			params_fsps.append(def_params_fsps[ii])
+
+	nparams_fsps = len(params_fsps)
+
+	return params_fsps, nparams_fsps
+
+def default_params_val():
+	def_params_val = {'log_mass':0.0,'z':0.001,'log_fagn':-3.0,'log_tauagn':1.0,'log_qpah':0.54,'log_umin':0.0,'log_gamma':-2.0,'dust1':0.5,'dust2':0.5,
+					'dust_index':-0.7,'log_age':1.0,'log_alpha':0.1,'log_beta':0.1,'log_t0':0.4,'log_tau':0.4,'logzsol':0.0, 'gas_logu':-2.0,'gas_logz':None}
+	return def_params_val
+
+def default_params(params_val=None):
+	def_params_val = default_params_val()
+
+	keys = list(params_val.keys())
+	params_val_new = def_params_val
+	if params_val is not None:
+		for key in keys: 
+			if key in params_val_new:
+				params_val_new[key] = params_val[key]
+			else:
+				print ('parameter %s is not recognized! It will be ignored in the calculation process.' % key)
+
+	return params_val_new
+
+def default_params_range(params_range=None):
+	def_params_range = {'logzsol':[-2.0,0.2],'log_tau':[-1.0,1.5],'log_age':[-2.0,1.14],'log_alpha':[-2.0,2.0],'log_beta':[-2.0,2.0],'log_t0':[-1.0,1.14],
+					'dust_index':[-2.2,0.4],'dust1':[0.0,4.0], 'dust2':[0.0,4.0],'log_gamma':[-4.0, 0.0],'log_umin':[-1.0,1.39],'log_qpah':[-3.0,1.0],
+					'log_fagn':[-5.0,0.48],'log_tauagn':[0.7,2.18],'gas_logu':[-4.0,-1.0],'gas_logz':None}
+
+	keys = list(params_range.keys())
+	params_range_new = def_params_range
+	if params_range is not None:
+		for key in keys:
+			if key in params_range_new:
+				params_range_new[key] = params_range[key]
+			else:
+				print ('parameter %s is not recognized! It will be ignored in the calculation process.' % key)
+
+	return params_range_new
+
+
+def set_initial_params_fsps(sp=None,imf_type=None,duste_switch=None,add_neb_emission=None,dust_law=None,add_agn=None,
+	smooth_velocity=True,sigma_smooth=0.0,smooth_lsf=False,lsf_wave=None,lsf_sigma=None,params_val=None):
+
+	# input parameters:
+	formed_mass = pow(10.0,params_val['log_mass'])
+	age = pow(10.0,params_val['log_age'])
+	tau = pow(10.0,params_val['log_tau'])
+	t0 = pow(10.0,params_val['log_t0'])
+	alpha = pow(10.0,params_val['log_alpha'])
+	beta = pow(10.0,params_val['log_beta'])
+
+	if sp is None:
+		import fsps
+		sp = fsps.StellarPopulation(zcontinuous=1, imf_type=imf_type)
+
+	sp.params['imf_type'] = imf_type
+
+	# dust emission:
+	if duste_switch == 1:
+		sp.params["add_dust_emission"] = True
+		sp.params["duste_gamma"] = pow(10.0,params_val['log_gamma']) 
+		sp.params["duste_umin"] = pow(10.0,params_val['log_umin'])
+		sp.params["duste_qpah"] = pow(10.0,params_val['log_qpah'])
+	elif duste_switch == 0:
+		sp.params["add_dust_emission"] = False
+
+	# nebular emission:
+	if add_neb_emission == 1:
+		sp.params["add_neb_emission"] = True
+		sp.params['gas_logu'] = params_val['gas_logu']
+	elif add_neb_emission == 0:
+		sp.params["add_neb_emission"] = False
+
+	# AGN:
+	if add_agn == 1:
+		sp.params["fagn"] = pow(10.0,params_val['log_fagn'])
+		sp.params["agn_tau"] = pow(10.0,params_val['log_tauagn'])
+	elif add_agn == 0:
+		sp.params["fagn"] = 0
+
+	# dust atenuation:
+	if dust_law==0:
+		sp.params["dust_type"] = 0  
+		sp.params["dust_tesc"] = 7.0
+		sp.params["dust_index"] = params_val['dust_index']
+		sp.params["dust1_index"] = -1.0
+		sp.params["dust1"] = params_val['dust1']
+		sp.params["dust2"] = params_val['dust2']
+	elif dust_law==1:
+		sp.params["dust_type"] = 2  
+		sp.params["dust1"] = 0
+		sp.params["dust2"] = params_val['dust2']
+
+	# other parameters:
+	sp.params["logzsol"] = params_val['logzsol']
+	if params_val['gas_logz'] is None: 
+		sp.params['gas_logz'] = params_val['logzsol']
+	else:
+		sp.params['gas_logz'] = params_val['gas_logz']
+	sp.params['tage'] = age
+
+	# spectral smoothing
+	if smooth_velocity == True or smooth_velocity == 1:
+		sp.params['smooth_velocity'] = True
+	elif smooth_velocity == False or smooth_velocity == 0:
+		sp.params['smooth_velocity'] = False
+
+	sp.params['sigma_smooth'] = sigma_smooth
+
+	if smooth_lsf is True:
+		sp.params['smooth_lsf'] == True
+		sp.set_lsf(lsf_wave, lsf_sigma)
+
+	return sp, formed_mass, age, tau, t0, alpha, beta
+
+def set_initial_fsps(sp,duste_switch,add_neb_emission,add_agn,sfh_form,dust_law,smooth_velocity=True,sigma_smooth=0.0,smooth_lsf=False,lsf_wave=None,lsf_sigma=None):
+	if duste_switch==1:
+		sp.params["add_dust_emission"] = True
+	elif duste_switch==0:
+		sp.params["add_dust_emission"] = False
+
+	if add_neb_emission == 1:
+		sp.params["add_neb_emission"] = True
+	elif add_neb_emission == 0:
+		sp.params["add_neb_emission"] = False
+
+	if add_agn == 0:
+		sp.params["fagn"] = 0
+	elif add_agn == 1:
+		sp.params["fagn"] = 1
+
+	if dust_law == 0:
+		sp.params["dust_type"] = 0  
+		sp.params["dust_tesc"] = 7.0
+		sp.params["dust1_index"] = -1.0
+	elif dust_law == 1:
+		sp.params["dust_type"] = 2  
+		sp.params["dust1"] = 0
+
+	if sfh_form==0 or sfh_form==1:
+		if sfh_form == 0:
+			sp.params["sfh"] = 1
+		elif sfh_form == 1:
+			sp.params["sfh"] = 4
+		sp.params["const"] = 0
+		sp.params["sf_start"] = 0
+		sp.params["sf_trunc"] = 0
+		sp.params["fburst"] = 0
+		sp.params["tburst"] = 30.0
+	elif sfh_form==2 or sfh_form==3 or sfh_form==4:
+		sp.params["sfh"] = 3
+
+	# spectral smoothing
+	if smooth_velocity == True or smooth_velocity == 1:
+		sp.params['smooth_velocity'] = True
+	elif smooth_velocity == False or smooth_velocity == 0:
+		sp.params['smooth_velocity'] = False
+
+	sp.params['sigma_smooth'] = sigma_smooth
+
+	if smooth_lsf is True:
+		sp.params['smooth_lsf'] == True
+		sp.set_lsf(lsf_wave, lsf_sigma)
+
+	return sp
 
 
 def tau_SFH(tau,t):
@@ -246,8 +500,7 @@ def rest_wave_fsps():
 	return wave
 
 
-def csp_spec_restframe_fit(sp=None,sfh_form=4,formed_mass=1.0,age=0.0,
-	tau=0.0,t0=0.0,alpha=0.0,beta=0.0):
+def csp_spec_restframe_fit(sp=None,sfh_form=4,formed_mass=1.0,age=0.0,tau=0.0,t0=0.0,alpha=0.0,beta=0.0):
 	"""A function for generating model spectrum of an CSP
 
 	:param sp:
@@ -271,7 +524,6 @@ def csp_spec_restframe_fit(sp=None,sfh_form=4,formed_mass=1.0,age=0.0,
 		wave = rest_wave_fsps()
 		spec = np.zeros(len(wave))
 		dust_mass = 1.0e-35
-
 	else:
 		sfh_sfr[idx[0]] = 0
 
@@ -299,19 +551,11 @@ def csp_spec_restframe_fit(sp=None,sfh_form=4,formed_mass=1.0,age=0.0,
 	return SFR,mass,wave,spec,dust_mass
 
 
-def get_dust_mass_othSFH_fit(sp=None,imf_type=1,sfh_form=4,params_fsps=['logzsol', 'log_tau', 'log_age', 
-	'dust_index', 'dust1', 'dust2', 'log_gamma', 'log_umin', 'log_qpah','log_fagn', 'log_tauagn'], params_val={'log_mass':0.0,
-	'z':0.001,'log_fagn':-3.0,'log_tauagn':1.0,'log_qpah':0.54,'log_umin':0.0,'log_gamma':-2.0,'dust1':0.5,'dust2':0.5,
-	'dust_index':-0.7,'log_age':1.0,'log_alpha':0.1,'log_beta':0.1,'log_t0':0.4,'log_tau':0.4,'logzsol':0.0}):
-	
-	params_assoc_fsps = {'logzsol':"logzsol", 'log_tau':"tau", 'log_age':"tage", 
-					'dust_index':"dust_index", 'dust1':"dust1", 'dust2':"dust2",
-					'log_gamma':"duste_gamma", 'log_umin':"duste_umin", 
-					'log_qpah':"duste_qpah",'log_fagn':"fagn", 'log_tauagn':"agn_tau"}
-	status_log = {'logzsol':0, 'log_tau':1, 'log_age':1, 'dust_index':0, 'dust1':0, 'dust2':0,
-				'log_gamma':1, 'log_umin':1, 'log_qpah':1,'log_fagn':1, 'log_tauagn':1}
+def get_dust_mass_othSFH_fit(sp=None,imf_type=1,sfh_form=4,params_fsps=None, params_val=None):
 
-	# get stellar mass:
+	def_params_fsps, params_assoc_fsps, status_log = list_params_fsps()
+
+	# get stellar mass
 	formed_mass = pow(10.0,params_val['log_mass'])
 	t0 = pow(10.0,params_val['log_t0'])
 	tau = pow(10.0,params_val['log_tau'])
@@ -319,7 +563,7 @@ def get_dust_mass_othSFH_fit(sp=None,imf_type=1,sfh_form=4,params_fsps=['logzsol
 	alpha = pow(10.0,params_val['log_alpha'])
 	beta = pow(10.0,params_val['log_beta'])
 
-	# input model parameters to FSPS:
+	# input model parameters to FSPS
 	nparams_fsps = len(params_fsps)
 	for pp in range(0,nparams_fsps):
 		str_temp = params_assoc_fsps[params_fsps[pp]]
@@ -329,11 +573,9 @@ def get_dust_mass_othSFH_fit(sp=None,imf_type=1,sfh_form=4,params_fsps=['logzsol
 			sp.params[str_temp] = pow(10.0,params_val[params_fsps[pp]])
 
 	sp.params['imf_type'] = imf_type
-	sp.params['gas_logz'] = params_val['logzsol']
 
 	# make grid of SFH:
-	sfh_t, sfh_sfr = construct_SFH(sfh_form=sfh_form,t0=t0,tau=tau,alpha=alpha,
-										beta=beta,age=age,formed_mass=formed_mass)
+	sfh_t, sfh_sfr = construct_SFH(sfh_form=sfh_form,t0=t0,tau=tau,alpha=alpha,beta=beta,age=age,formed_mass=formed_mass)
 
 	# exclude nan or inf
 	idx = np.where((np.isnan(sfh_sfr)==True) | (np.isinf(sfh_sfr)==True) | (sfh_sfr<0))
@@ -346,7 +588,6 @@ def get_dust_mass_othSFH_fit(sp=None,imf_type=1,sfh_form=4,params_fsps=['logzsol
 		else:
 			sp.params["sfh"] = 3
 			sp.set_tabular_sfh(sfh_t, sfh_sfr)
-			#wave, spec0 = sp.get_spectrum(peraa=True,tage=age) ## spectrum in L_sun/AA
 			mass0 = sp.stellar_mass
 			dust_mass0 = sp.dust_mass
 			norm = formed_mass/mass0
@@ -355,19 +596,11 @@ def get_dust_mass_othSFH_fit(sp=None,imf_type=1,sfh_form=4,params_fsps=['logzsol
 	return dust_mass
 
 
-def get_sfr_dust_mass_fagnbol_othSFH_fit(sp=None,imf_type=1,sfh_form=4,params_fsps=['logzsol', 'log_tau', 'log_age', 
-	'dust_index', 'dust1', 'dust2', 'log_gamma', 'log_umin', 'log_qpah','log_fagn', 'log_tauagn'],params_val={'log_mass':0.0,
-	'z':0.001,'log_fagn':-3.0,'log_tauagn':1.0,'log_qpah':0.54,'log_umin':0.0,'log_gamma':-2.0,'dust1':0.5,'dust2':0.5,
-	'dust_index':-0.7,'log_age':1.0,'log_alpha':0.1,'log_beta':0.1,'log_t0':0.4,'log_tau':0.4,'logzsol':0.0}):
-	
-	params_assoc_fsps = {'logzsol':"logzsol", 'log_tau':"tau", 'log_age':"tage", 
-					'dust_index':"dust_index", 'dust1':"dust1", 'dust2':"dust2",
-					'log_gamma':"duste_gamma", 'log_umin':"duste_umin", 
-					'log_qpah':"duste_qpah",'log_fagn':"fagn", 'log_tauagn':"agn_tau"}
-	status_log = {'logzsol':0, 'log_tau':1, 'log_age':1, 'dust_index':0, 'dust1':0, 'dust2':0,
-				'log_gamma':1, 'log_umin':1, 'log_qpah':1,'log_fagn':1, 'log_tauagn':1}
+def get_sfr_dust_mass_fagnbol_othSFH_fit(sp=None,imf_type=1,sfh_form=4,params_fsps=None,params_val=None):
 
-	# get stellar mass:
+	def_params_fsps, params_assoc_fsps, status_log = list_params_fsps()
+
+	# get stellar mass
 	formed_mass = pow(10.0,params_val['log_mass'])
 	t0 = pow(10.0,params_val['log_t0'])
 	tau = pow(10.0,params_val['log_tau'])
@@ -375,7 +608,7 @@ def get_sfr_dust_mass_fagnbol_othSFH_fit(sp=None,imf_type=1,sfh_form=4,params_fs
 	alpha = pow(10.0,params_val['log_alpha'])
 	beta = pow(10.0,params_val['log_beta'])
 
-	# input model parameters to FSPS:
+	# input model parameters to FSPS
 	nparams_fsps = len(params_fsps)
 	for pp in range(0,nparams_fsps):
 		str_temp = params_assoc_fsps[params_fsps[pp]]
@@ -385,12 +618,9 @@ def get_sfr_dust_mass_fagnbol_othSFH_fit(sp=None,imf_type=1,sfh_form=4,params_fs
 			sp.params[str_temp] = pow(10.0,params_val[params_fsps[pp]])
 
 	sp.params['imf_type'] = imf_type
-	# gas phase metallicity:
-	sp.params['gas_logz'] = params_val['logzsol']
 
 	# make grid of SFH:
-	sfh_t, sfh_sfr = construct_SFH(sfh_form=sfh_form,t0=t0,tau=tau,alpha=alpha,
-										beta=beta,age=age,formed_mass=formed_mass)
+	sfh_t, sfh_sfr = construct_SFH(sfh_form=sfh_form,t0=t0,tau=tau,alpha=alpha,beta=beta,age=age,formed_mass=formed_mass)
 
 	# exclude nan or inf
 	idx = np.where((np.isnan(sfh_sfr)==True) | (np.isinf(sfh_sfr)==True) | (sfh_sfr<0))
@@ -424,19 +654,11 @@ def get_sfr_dust_mass_fagnbol_othSFH_fit(sp=None,imf_type=1,sfh_form=4,params_fs
 	return SFR, dust_mass, log_fagn_bol
 
 
-def get_sfr_dust_mass_othSFH_fit(sp=None,imf_type=1,sfh_form=4,params_fsps=['logzsol', 'log_tau', 'log_age', 
-	'dust_index', 'dust1', 'dust2', 'log_gamma', 'log_umin', 'log_qpah','log_fagn', 'log_tauagn'], params_val={'log_mass':0.0,
-	'z':0.001,'log_fagn':-3.0,'log_tauagn':1.0,'log_qpah':0.54,'log_umin':0.0,'log_gamma':-2.0,'dust1':0.5,'dust2':0.5,
-	'dust_index':-0.7,'log_age':1.0,'log_alpha':0.1,'log_beta':0.1,'log_t0':0.4,'log_tau':0.4,'logzsol':0.0}):
+def get_sfr_dust_mass_othSFH_fit(sp=None,imf_type=1,sfh_form=4,params_fsps=None, params_val=None):
 	
-	params_assoc_fsps = {'logzsol':"logzsol", 'log_tau':"tau", 'log_age':"tage", 
-					'dust_index':"dust_index", 'dust1':"dust1", 'dust2':"dust2",
-					'log_gamma':"duste_gamma", 'log_umin':"duste_umin", 
-					'log_qpah':"duste_qpah",'log_fagn':"fagn", 'log_tauagn':"agn_tau"}
-	status_log = {'logzsol':0, 'log_tau':1, 'log_age':1, 'dust_index':0, 'dust1':0, 'dust2':0,
-				'log_gamma':1, 'log_umin':1, 'log_qpah':1,'log_fagn':1, 'log_tauagn':1}
+	def_params_fsps, params_assoc_fsps, status_log = list_params_fsps()
 
-	# get stellar mass:
+	# get stellar mass
 	formed_mass = pow(10.0,params_val['log_mass'])
 	t0 = pow(10.0,params_val['log_t0'])
 	tau = pow(10.0,params_val['log_tau'])
@@ -444,7 +666,7 @@ def get_sfr_dust_mass_othSFH_fit(sp=None,imf_type=1,sfh_form=4,params_fsps=['log
 	alpha = pow(10.0,params_val['log_alpha'])
 	beta = pow(10.0,params_val['log_beta'])
 
-	# input model parameters to FSPS:
+	# input model parameters to FSPS
 	nparams_fsps = len(params_fsps)
 	for pp in range(0,nparams_fsps):
 		str_temp = params_assoc_fsps[params_fsps[pp]]
@@ -454,8 +676,6 @@ def get_sfr_dust_mass_othSFH_fit(sp=None,imf_type=1,sfh_form=4,params_fsps=['log
 			sp.params[str_temp] = pow(10.0,params_val[params_fsps[pp]])
 
 	sp.params['imf_type'] = imf_type
-	# gas phase metallicity:
-	sp.params['gas_logz'] = params_val['logzsol']
 
 	# make grid of SFH:
 	sfh_t, sfh_sfr = construct_SFH(sfh_form=sfh_form,t0=t0,tau=tau,alpha=alpha,beta=beta,age=age,formed_mass=formed_mass)
@@ -473,28 +693,18 @@ def get_sfr_dust_mass_othSFH_fit(sp=None,imf_type=1,sfh_form=4,params_fsps=['log
 		else:
 			sp.params["sfh"] = 3
 			sp.set_tabular_sfh(sfh_t, sfh_sfr)
-			#wave, spec0 = sp.get_spectrum(peraa=True,tage=age) ## spectrum in L_sun/AA
 			mass0 = sp.stellar_mass
 			dust_mass0 = sp.dust_mass
 			norm = formed_mass/mass0
-			#spec = spec0*norm
 			dust_mass = dust_mass0*norm
 			SFR = sp.sfr
 
 	return SFR, dust_mass
 
 
-def get_dust_mass_mainSFH_fit(sp=None,imf_type=1,sfh_form=4,params_fsps=['logzsol', 'log_tau', 'log_age', 
-	'dust_index', 'dust1', 'dust2', 'log_gamma', 'log_umin', 'log_qpah','log_fagn', 'log_tauagn'], params_val={'log_mass':0.0,
-	'z':0.001,'log_fagn':-3.0,'log_tauagn':1.0,'log_qpah':0.54,'log_umin':0.0,'log_gamma':-2.0,'dust1':0.5,'dust2':0.5,
-	'dust_index':-0.7,'log_age':1.0,'log_alpha':0.1,'log_beta':0.1,'log_t0':0.4,'log_tau':0.4,'logzsol':0.0}):
+def get_dust_mass_mainSFH_fit(sp=None,imf_type=1,sfh_form=4,params_fsps=None, params_val=None):
 
-	params_assoc_fsps = {'logzsol':"logzsol", 'log_tau':"tau", 'log_age':"tage", 
-					'dust_index':"dust_index", 'dust1':"dust1", 'dust2':"dust2",
-					'log_gamma':"duste_gamma", 'log_umin':"duste_umin", 
-					'log_qpah':"duste_qpah",'log_fagn':"fagn", 'log_tauagn':"agn_tau"}
-	status_log = {'logzsol':0, 'log_tau':1, 'log_age':1, 'dust_index':0, 'dust1':0, 'dust2':0,
-				'log_gamma':1, 'log_umin':1, 'log_qpah':1,'log_fagn':1, 'log_tauagn':1}
+	def_params_fsps, params_assoc_fsps, status_log = list_params_fsps()
 
 	# get stellar mass:
 	formed_mass = pow(10.0,params_val['log_mass'])
@@ -511,7 +721,6 @@ def get_dust_mass_mainSFH_fit(sp=None,imf_type=1,sfh_form=4,params_fsps=['logzso
 			sp.params[str_temp] = pow(10.0,params_val[params_fsps[pp]])
 
 	sp.params['imf_type'] = imf_type
-	sp.params['gas_logz'] = params_val['logzsol']
 
 	# generate the SED:
 	mass = sp.stellar_mass
@@ -521,22 +730,12 @@ def get_dust_mass_mainSFH_fit(sp=None,imf_type=1,sfh_form=4,params_fsps=['logzso
 	norm0 = formed_mass/mass
 	dust_mass = dust_mass0*norm0
 
-	#print ("mass0=%e  dust_mass0=%e formed_mass=%e  norm=%e  dust_mass=%e" % (mass,dust_mass0,formed_mass,norm0,dust_mass))
-
 	return dust_mass
 
 
-def get_dust_mass_fagnbol_mainSFH_fit(sp=None,imf_type=1,sfh_form=4,params_fsps=['logzsol', 'log_tau', 'log_age', 
-	'dust_index', 'dust1', 'dust2', 'log_gamma', 'log_umin', 'log_qpah','log_fagn', 'log_tauagn'], params_val={'log_mass':0.0,
-	'z':0.001,'log_fagn':-3.0,'log_tauagn':1.0,'log_qpah':0.54,'log_umin':0.0,'log_gamma':-2.0,'dust1':0.5,'dust2':0.5,
-	'dust_index':-0.7,'log_age':1.0,'log_alpha':0.1,'log_beta':0.1,'log_t0':0.4,'log_tau':0.4,'logzsol':0.0}):
+def get_dust_mass_fagnbol_mainSFH_fit(sp=None,imf_type=1,sfh_form=4,params_fsps=None,params_val=None):
 
-	params_assoc_fsps = {'logzsol':"logzsol", 'log_tau':"tau", 'log_age':"tage", 
-					'dust_index':"dust_index", 'dust1':"dust1", 'dust2':"dust2",
-					'log_gamma':"duste_gamma", 'log_umin':"duste_umin", 
-					'log_qpah':"duste_qpah",'log_fagn':"fagn", 'log_tauagn':"agn_tau"}
-	status_log = {'logzsol':0, 'log_tau':1, 'log_age':1, 'dust_index':0, 'dust1':0, 'dust2':0,
-				'log_gamma':1, 'log_umin':1, 'log_qpah':1,'log_fagn':1, 'log_tauagn':1}
+	def_params_fsps, params_assoc_fsps, status_log = list_params_fsps()
 
 	# get stellar mass:
 	formed_mass = pow(10.0,params_val['log_mass'])
@@ -553,8 +752,6 @@ def get_dust_mass_fagnbol_mainSFH_fit(sp=None,imf_type=1,sfh_form=4,params_fsps=
 			sp.params[str_temp] = pow(10.0,params_val[params_fsps[pp]])
 
 	sp.params['imf_type'] = imf_type
-	# gas phase metallicity:
-	sp.params['gas_logz'] = params_val['logzsol']
 
 	# generate the SED and get AGN luminosity
 	wave, spec = sp.get_spectrum(peraa=True,tage=age) ## spectrum in L_sun/AA
@@ -575,157 +772,6 @@ def get_dust_mass_fagnbol_mainSFH_fit(sp=None,imf_type=1,sfh_form=4,params_fsps=
 	dust_mass = dust_mass0*norm0
 
 	return dust_mass, fagn_bol
-
-
-def spec_given_SFH_ZH(lbt=[],SFH_sfr=[],ZH_logzsol=[],z=0.001,cosmo='flat_LCDM',H0=70.0,Om0=0.3,imf=1,duste_switch=0,
-	add_neb_emission=1,dust_law=1,add_agn=0,add_igm_absorption=0,dust1=0.0,dust2=0.0,dust_index=-99.0,
-	gas_logu=-2.0,log_gamma=-99.0,log_umin=-99.0,log_qpah=-99.0,log_fagn=-99.0,log_tauagn=-99.0):
-	"""A function to calculate spectra of a galaxy given SFH and metal enrichment history. SFH_sfr is in unit of M_solar/yr.
-	lbt should be in Gyr. 
-	"""
-	
-	# calling FSPS:
-	import fsps
-	sp = fsps.StellarPopulation(zcontinuous=1, imf_type=imf)
-
-	sp.params['imf_type'] = imf
-
-	# dust emission:
-	if duste_switch == 1:
-		sp.params["add_dust_emission"] = True
-		sp.params["duste_gamma"] = pow(10.0,log_gamma) 
-		sp.params["duste_umin"] = pow(10.0,log_umin)
-		sp.params["duste_qpah"] = pow(10.0,log_qpah)
-	elif duste_switch == 0:
-		sp.params["add_dust_emission"] = False
-	# nebular emission:
-	if add_neb_emission == 1:
-		sp.params["add_neb_emission"] = True
-		sp.params['gas_logu'] = -2.0
-	elif add_neb_emission == 0:
-		sp.params["add_neb_emission"] = False
-	# AGN:
-	if add_agn == 1:
-		sp.params["fagn"] = pow(10.0,log_fagn)
-		sp.params["agn_tau"] = pow(10.0,log_tauagn)
-	elif add_agn == 0:
-		sp.params["fagn"] = 0
-	# SSP
-	sp.params["sfh"] = 0
-	# dust attenuation:
-	if dust_law==0:
-		sp.params["dust_type"] = 0  
-		sp.params["dust_tesc"] = 7.0
-		sp.params["dust_index"] = dust_index
-		dust1_index = -1.0
-		sp.params["dust1_index"] = dust1_index
-		sp.params["dust1"] = dust1
-		sp.params["dust2"] = dust2
-	elif dust_law==1:
-		sp.params["dust_type"] = 2
-		sp.params["dust1"] = 0
-		sp.params["dust2"] = dust2
-
-	# iteration:
-	ntimes = len(lbt)
-	spec_array = []
-	survive_mass = 0
-	for tt in range(0,ntimes-1):
-		# calculate mass formed:
-		formed_mass = abs(0.5*(lbt[tt]-lbt[tt+1])*(SFH_sfr[tt]+SFH_sfr[tt+1]))*1.0e+9
-		age0 = 0.5*(lbt[tt]+lbt[tt+1])
-
-		ave_Z = 0.5*(ZH_logzsol[tt]+ZH_logzsol[tt+1])
-		sp.params["logzsol"] = ave_Z
-		sp.params['gas_logz'] = ave_Z
-		sp.params['tage'] = age0
-
-		wave, spec0 = sp.get_spectrum(peraa=True,tage=age0) ## spectrum in L_sun/AA
-		mass0 = sp.stellar_mass
-		
-		spec_array.append(spec0*formed_mass)
-		survive_mass = survive_mass + (mass0*formed_mass)
-
-		# end of for tt: ntimes
-
-	spec = np.sum(spec_array, axis=0)
-
-	# redshifting:
-	spec_wave,spec_flux = cosmo_redshifting(cosmo=cosmo,H0=H0,Om0=Om0,z=z,wave=wave,spec=spec) ### in erg/s/cm^2/Ang.
-
-	return spec_wave,spec_flux,survive_mass
-
-
-def spec_given_ages_mass_Z(grid_age=[],grid_mass=[],grid_logzsol=[],z=0.001,cosmo='flat_LCDM',H0=70.0,Om0=0.3,imf=1,duste_switch=0,
-	add_neb_emission=1,dust_law=1,add_agn=0,add_igm_absorption=0,dust1=0.0,dust2=0.0,dust_index=-99.0,gas_logu=-2.0,
-	log_gamma=-99.0,log_umin=-99.0,log_qpah=-99.0,log_fagn=-99.0,log_tauagn=-99.0):
-	"""A function for generating model spectrum of a galaxy given input of ages, mass, and Z
-	"""
-
-	# calling FSPS:
-	import fsps
-	sp = fsps.StellarPopulation(zcontinuous=1, imf_type=imf)
-
-	sp.params['imf_type'] = imf
-
-	# dust emission switch:
-	if duste_switch == 1:
-		sp.params["add_dust_emission"] = True
-		sp.params["duste_gamma"] = pow(10.0,log_gamma) 
-		sp.params["duste_umin"] = pow(10.0,log_umin)
-		sp.params["duste_qpah"] = pow(10.0,log_qpah)
-	elif duste_switch == 0:
-		sp.params["add_dust_emission"] = False
-	# nebular emission switch:
-	if add_neb_emission == 1:
-		sp.params["add_neb_emission"] = True
-		sp.params['gas_logu'] = -2.0
-	elif add_neb_emission == 0:
-		sp.params["add_neb_emission"] = False
-	# AGN:
-	if add_agn == 1:
-		sp.params["fagn"] = pow(10.0,log_fagn)
-		sp.params["agn_tau"] = pow(10.0,log_tauagn)
-	elif add_agn == 0:
-		sp.params["fagn"] = 0
-	# SSP
-	sp.params["sfh"] = 0
-	# dust attenuation:
-	if dust_law==0:
-		sp.params["dust_type"] = 0  
-		sp.params["dust_tesc"] = 7.0
-		sp.params["dust_index"] = dust_index
-		dust1_index = -1.0
-		sp.params["dust1_index"] = dust1_index
-		sp.params["dust1"] = dust1
-		sp.params["dust2"] = dust2
-	elif dust_law==1:
-		sp.params["dust_type"] = 2
-		sp.params["dust1"] = 0
-		sp.params["dust2"] = dust2
-
-	# iteration:
-	ntimes = len(grid_age)
-	spec_array = []
-	for tt in range(0,ntimes):
-		sp.params["logzsol"] = grid_logzsol[tt]
-		sp.params['gas_logz'] = grid_logzsol[tt]
-		sp.params['tage'] = grid_age[tt]
-
-		wave, spec0 = sp.get_spectrum(peraa=True,tage=grid_age[tt]) ## spectrum in L_sun/AA
-		mass0 = sp.stellar_mass
-
-		norm = grid_mass[tt]/mass0
-		spec_array.append(spec0*norm)
-
-		# end of for tt: ntimes
-
-	spec = np.sum(spec_array, axis=0)
-
-	# redshifting:
-	spec_wave,spec_flux = cosmo_redshifting(cosmo=cosmo,H0=H0,Om0=Om0,z=z,wave=wave,spec=spec) ### in erg/s/cm^2/Ang.
-
-	return spec_wave,spec_flux
 
 
 def convert_unit_spec_from_ergscm2A(wave,spec,funit='Jy'):
@@ -829,8 +875,6 @@ def calc_bollum_from_spec_rest(spec_wave=[],spec_lum=[]):
 	return bol_lum
 
 
-### calculate bolometric luminosity from a given spectrum in flux per unit wavelength:
-### flux_lambda in unit erg/s/cm^2/Ang. and bolometric luminosity in erg/s
 def calc_bollum_from_spec(spec_wave=[],spec_flux=[],wave_min=1000,wave_max=10000,gal_z=0.01,cosmo='flat_LCDM',H0=70.0,Om0=0.3):
 	"""A function for calculating bolometric luminosity from a given spectrum in flux per unit wavelength: flux_lambda in unit erg/s/cm^2/Ang.
 	The output bolometric luminosity is in erg/s.
@@ -880,192 +924,14 @@ def calc_bollum_from_spec(spec_wave=[],spec_flux=[],wave_min=1000,wave_max=10000
 	return bol_lum
 
 
-def breakdown_CSP_into_SSP(sp=None,imf_type=1,logzsol=0.0,CSP_age=None,SFH_lbt=[],SFH_SFR=[],del_t=0.001,dust_law=1,
-	dust_index=-0.7,duste_switch=0,add_neb_emission=1,add_agn=0,dust1=0,dust2=0,log_umin=0,log_qpah=0,log_gamma=0,
-	log_fagn=0,log_tauagn=0,gal_z=0.001,cosmo='flat_LCDM',H0=70.0,Om0=0.3):
-	"""A function to break down a CSP into its SSP components
-	"""
-
-	# break down the SFH:
-	sfh_age = np.linspace(del_t,int(CSP_age/del_t)*del_t,int(CSP_age/del_t))
-	f = interp1d(SFH_lbt, SFH_SFR, fill_value="extrapolate")
-	sfh_sfr = f(sfh_age)
-	sfh_sfr[0] = sfh_sfr[1]
-	sfh_sfr[len(sfh_age)-1] = sfh_sfr[len(sfh_age)-2]
-
-	# get CSP age:
-	if CSP_age == None:
-		CSP_age = max(SFH_lbt)
-
-	#### ====================================================== #####
-	# calling FSPS:
-	if sp == None:
-		import fsps
-		sp = fsps.StellarPopulation(zcontinuous=1, imf_type=imf_type)
-
-	# dust emission:
-	if duste_switch == 1:
-		sp.params["add_dust_emission"] = True
-		sp.params["duste_gamma"] = pow(10.0,log_gamma) 
-		sp.params["duste_umin"] = pow(10.0,log_umin)
-		sp.params["duste_qpah"] = pow(10.0,log_qpah)
-	elif duste_switch == 0:
-		sp.params["add_dust_emission"] = False
-	# nebular emission:
-	if add_neb_emission == 1:
-		sp.params["add_neb_emission"] = True
-		sp.params['gas_logu'] = -2.0
-	elif add_neb_emission == 0:
-		sp.params["add_neb_emission"] = False
-	# AGN:
-	if add_agn == 1:
-		sp.params["fagn"] = pow(10.0,log_fagn)
-		sp.params["agn_tau"] = pow(10.0,log_tauagn)
-	elif add_agn == 0:
-		sp.params["fagn"] = 0
-
-	# SSP
-	sp.params["sfh"] = 0
-	# dust attenuation:
-	if dust_law==0:
-		sp.params["dust_type"] = 0  
-		sp.params["dust_tesc"] = 7.0
-		sp.params["dust_index"] = dust_index
-		dust1_index = -1.0
-		sp.params["dust1_index"] = dust1_index
-		sp.params["dust1"] = dust1
-		sp.params["dust2"] = dust2
-	elif dust_law==1:
-		sp.params["dust_type"] = 2
-		sp.params["dust1"] = 0
-		sp.params["dust2"] = dust2
-	#### ====================================================== #####
-
-	# get number of wavelength:
-	sp.params["logzsol"] = logzsol
-	sp.params["gas_logz"] = logzsol
-	sp.params["tage"] = CSP_age
-	wave, spec = sp.get_spectrum(peraa=True,tage=CSP_age) ## spectrum in L_sun/AA
-	nwaves = len(wave)
-
-	# get the spectra of SSPs:
-	nSSPs = len(sfh_age)
-	SSP_spectra = np.zeros((nSSPs,nwaves))
-	SSP_wave = np.zeros(nwaves)
-	for tt in range(0,nSSPs):
-		sp.params["logzsol"] = logzsol
-		sp.params["gas_logz"] = logzsol
-		sp.params["tage"] = sfh_age[tt]
-		wave, spec = sp.get_spectrum(peraa=True,tage=sfh_age[tt]) ## spectrum in L_sun/AA
-		mass = sp.stellar_mass
-		norm = sfh_sfr[tt]*del_t*1.0e+9/mass
-
-		# redshifting:
-		#spec_wave,spec_flux = redshifting.cosmo_redshifting(cosmo=cosmo,H0=H0,Om0=Om0,z=gal_z,wave=wave,spec=spec*norm) ### in erg/s/cm^2/Ang.
-		spec_wave,spec_flux = cosmo_redshifting(cosmo=cosmo,H0=H0,Om0=Om0,z=gal_z,wave=wave,spec=spec*norm) ### in erg/s/cm^2/Ang.
-
-		SSP_spectra[tt] = spec_flux
-		SSP_wave = spec_wave
-		# end of for tt: nSSPs
-
-	return SSP_wave,SSP_spectra,sfh_age,sfh_sfr
-
-
-
-### define a function to break down a CSP into its SSP components:
-def breakdown_CSP_into_SSP_restframe(sp=None,imf_type=1,logzsol=0.0,CSP_age=None,SFH_lbt=[],SFH_SFR=[],del_t=0.001,dust_law=1,
-	dust_index=-0.7,duste_switch=0,add_neb_emission=1,add_agn=0,dust1=0,dust2=0,log_umin=0,log_qpah=0,log_gamma=0,log_fagn=0,
-	log_tauagn=0):
-	"""A function to break down a CSP into its SSP components (in rest-frame)
-	"""
-
-	# break down the SFH:
-	sfh_age = np.linspace(del_t,int(CSP_age/del_t)*del_t,int(CSP_age/del_t))
-	f = interp1d(SFH_lbt, SFH_SFR, fill_value="extrapolate")
-	sfh_sfr = f(sfh_age)
-	sfh_sfr[0] = sfh_sfr[1]
-	sfh_sfr[len(sfh_age)-1] = sfh_sfr[len(sfh_age)-2]
-
-	# get CSP age:
-	if CSP_age == None:
-		CSP_age = max(SFH_lbt)
-
-	#### ====================================================== #####
-	# calling FSPS:
-	if sp == None:
-		import fsps
-		sp = fsps.StellarPopulation(zcontinuous=1, imf_type=imf_type)
-
-	# dust emission switch:
-	if duste_switch == 1:
-		sp.params["add_dust_emission"] = True
-		sp.params["duste_gamma"] = pow(10.0,log_gamma) 
-		sp.params["duste_umin"] = pow(10.0,log_umin)
-		sp.params["duste_qpah"] = pow(10.0,log_qpah)
-	elif duste_switch == 0:
-		sp.params["add_dust_emission"] = False
-	# nebular emission switch:
-	if add_neb_emission == 1:
-		sp.params["add_neb_emission"] = True
-		sp.params['gas_logu'] = -2.0
-	elif add_neb_emission == 0:
-		sp.params["add_neb_emission"] = False
-	# AGN:
-	if add_agn == 1:
-		sp.params["fagn"] = pow(10.0,log_fagn)
-		sp.params["agn_tau"] = pow(10.0,log_tauagn)
-	elif add_agn == 0:
-		sp.params["fagn"] = 0
-
-	# SSP
-	sp.params["sfh"] = 0
-	# dust attenuation:
-	if dust_law==0:
-		sp.params["dust_type"] = 0  
-		sp.params["dust_tesc"] = 7.0
-		sp.params["dust_index"] = dust_index
-		dust1_index = -1.0
-		sp.params["dust1_index"] = dust1_index
-		sp.params["dust1"] = dust1
-		sp.params["dust2"] = dust2
-	elif dust_law==1:
-		sp.params["dust_type"] = 2
-		sp.params["dust1"] = 0
-		sp.params["dust2"] = dust2
-	#### ====================================================== #####
-
-	# get number of wavelength:
-	sp.params["logzsol"] = logzsol
-	sp.params["gas_logz"] = logzsol
-	sp.params["tage"] = CSP_age
-	wave, spec = sp.get_spectrum(peraa=True,tage=CSP_age) ## spectrum in L_sun/AA
-	nwaves = len(wave)
-
-	# get the spectra of SSPs:
-	nSSPs = len(sfh_age)
-	SSP_spectra = np.zeros((nSSPs,nwaves))
-	SSP_wave = np.zeros(nwaves)
-	for tt in range(0,nSSPs):
-		sp.params["logzsol"] = logzsol
-		sp.params["gas_logz"] = logzsol
-		sp.params["tage"] = sfh_age[tt]
-		wave, spec = sp.get_spectrum(peraa=True,tage=sfh_age[tt]) ## spectrum in L_sun/AA
-		mass = sp.stellar_mass
-		norm = sfh_sfr[tt]*del_t*1.0e+9/mass
-
-		SSP_spectra[tt] = spec*norm
-		SSP_wave = wave
-		# end of for tt: nSSPs
-
-	return SSP_wave,SSP_spectra,sfh_age,sfh_sfr
-
-
 def get_emlines_luminosities(sp=None,emlines_rest_waves=[],imf_type=1,duste_switch=1,add_neb_emission=1,dust_law=1,
-	sfh_form=4,add_agn=1,sfh_t=[],sfh_sfr=[],params_val={'log_mass':0.0,'z':0.001,'log_fagn':-3.0,'log_tauagn':1.0,
-	'log_qpah':0.54,'log_umin':0.0,'log_gamma':-2.0,'dust1':0.5,'dust2':0.5,'dust_index':-0.7,'log_age':1.0,'log_alpha':0.1,
-	'log_beta':0.1,'log_t0':0.4,'log_tau':0.4,'logzsol':0.0}):
+	sfh_form=4,add_agn=1,sfh_t=[],sfh_sfr=[],params_val={'log_mass':0.0,'z':0.001,'log_fagn':-3.0,'log_tauagn':1.0,'log_qpah':0.54,
+	'log_umin':0.0,'log_gamma':-2.0,'dust1':0.5,'dust2':0.5,'dust_index':-0.7,'log_age':1.0,'log_alpha':0.1,'log_beta':0.1,'log_t0':0.4,
+	'log_tau':0.4,'logzsol':0.0, 'gas_logu':-2.0,'gas_logz':None}):
 	"""A function to get luminosities of some emission lines.
 	"""
+
+	params_val = default_params(params_val)
 
 	formed_mass = pow(10.0,params_val['log_mass'])
 
@@ -1089,7 +955,7 @@ def get_emlines_luminosities(sp=None,emlines_rest_waves=[],imf_type=1,duste_swit
 	# nebular emission:
 	if add_neb_emission == 1:
 		sp.params["add_neb_emission"] = True
-		sp.params['gas_logu'] = -2.0
+		sp.params['gas_logu'] = params_val['gas_logu']
 	elif add_neb_emission == 0:
 		sp.params["add_neb_emission"] = False
 	# AGN:
@@ -1106,23 +972,25 @@ def get_emlines_luminosities(sp=None,emlines_rest_waves=[],imf_type=1,duste_swit
 		sp.params["dust_type"] = 0  
 		sp.params["dust_tesc"] = 7.0
 		sp.params["dust_index"] = params_val['dust_index']
-		dust1_index = -1.0
-		sp.params["dust1_index"] = dust1_index
+		sp.params["dust1_index"] = -1.0
 		sp.params["dust1"] = params_val['dust1']
 		sp.params["dust2"] = params_val['dust2']
 	elif dust_law==1:
 		sp.params["dust_type"] = 2
 		sp.params["dust1"] = 0
 		sp.params["dust2"] = params_val['dust2']
+
 	# other parameters:
-	sp.params["logzsol"] = params_val['logzsol'] 
-	sp.params['gas_logz'] = params_val['logzsol'] 
+	sp.params["logzsol"] = params_val['logzsol']
+	if params_val['gas_logz'] is None: 
+		sp.params['gas_logz'] = params_val['logzsol']
+	else:
+		sp.params['gas_logz'] = params_val['gas_logz']
 	sp.params['tage'] = age
 
 	# make grid of SFH:
 	if sfh_form==0 or sfh_form==1 or sfh_form==2 or sfh_form==3 or sfh_form==4:
-		sfh_t, sfh_sfr = construct_SFH(sfh_form=sfh_form,t0=t0,tau=tau,alpha=alpha,
-										beta=beta,age=age,formed_mass=formed_mass)
+		sfh_t, sfh_sfr = construct_SFH(sfh_form=sfh_form,t0=t0,tau=tau,alpha=alpha,beta=beta,age=age,formed_mass=formed_mass)
 	elif sfh_form=='arbitrary_sfh':
 		sfh_t0 = sfh_t
 		sfh_sfr0 = sfh_sfr
@@ -1167,6 +1035,244 @@ def get_emlines_luminosities(sp=None,emlines_rest_waves=[],imf_type=1,duste_swit
 		emline_luminosities[ii] = emline_lum[idx]*3.826e+33    ### in unit of erg/s
 
 	return emline_waves,emline_luminosities
+
+
+def remove_lyalpha_line(spec_wave, spec_flux_tot, spec_flux_nebe, z, width=800.0):
+	# Lyman-alpha wavelength
+	Lya_rest_wave = 1215.6701
+	Lya_wave = Lya_rest_wave*(1.0+z)
+
+	spec_flux_tot1 = np.zeros(len(spec_flux_tot))
+	idx_line = np.where((spec_wave>Lya_wave-width) & (spec_wave<Lya_wave+width))
+	spec_flux_tot1[idx_line[0]] = spec_flux_tot[idx_line[0]] - spec_flux_nebe[idx_line[0]]
+
+	idx_rest0 = np.arange(len(spec_flux_tot))
+	idx_rest = np.delete(idx_rest0, idx_line[0])
+	spec_flux_tot1[idx_rest] = spec_flux_tot[idx_rest]
+
+	return spec_flux_tot1
+
+
+def random_name(initial,ext):
+	return initial+str(np.random.randint(50000))+ext
+
+
+def config_file_generate_models(gal_z=None,imf_type=1,sfh_form=4,dust_law=1,add_igm_absorption=None,igm_type=None,duste_switch=0,
+	add_neb_emission=1,add_agn=0,nmodels=100000,nproc=10,smooth_velocity=True,sigma_smooth=0.0,smooth_lsf=False,lsf_wave=None,lsf_sigma=None,
+	cosmo='flat_LCDM',H0=70.0,Om0=0.3,params_range=None,name_out=None):
+
+	outputs = {}
+
+	name_config = random_name("config_file",".dat")
+	outputs['name_config'] = name_config
+	file_out = open(name_config,"w")
+	file_out.write("imf_type %d\n" % imf_type)
+
+	if add_neb_emission == True or add_neb_emission == 1:
+		file_out.write("add_neb_emission 1\n")
+	elif add_neb_emission == False or add_neb_emission == 0:
+		file_out.write("add_neb_emission 0\n")
+
+	if add_igm_absorption is not None:
+		if add_igm_absorption == True or add_igm_absorption == 1:
+			file_out.write("add_igm_absorption 1\n")
+		elif add_igm_absorption == False or add_igm_absorption == 0:
+			file_out.write("add_igm_absorption 0\n")
+
+	if igm_type is not None:
+		file_out.write("igm_type %d\n" % igm_type)
+
+	file_out.write("sfh_form %d\n" % sfh_form)
+	file_out.write("dust_law %d\n" % dust_law)
+	file_out.write("duste_switch %d\n" % duste_switch)
+	file_out.write("add_agn %d\n" % add_agn)
+	file_out.write("nmodels %d\n" % nmodels)
+
+	if params_range['gas_logz'] is None:
+		file_out.write("free_gas_logz 0\n")
+	elif params_range['gas_logz'] is not None:
+		file_out.write("free_gas_logz 1\n")
+
+	if smooth_velocity == True or smooth_velocity == 1:
+		file_out.write("smooth_velocity 1\n")
+	elif smooth_velocity == False or smooth_velocity == 0:
+		file_out.write("smooth_velocity 0\n")
+
+	file_out.write("sigma_smooth %lf\n" % sigma_smooth)
+
+	if smooth_lsf == True or smooth_lsf == 1:
+		file_out.write("smooth_lsf 1\n")
+		# make file storing line spread function
+		name_file_lsf = random_name("smooth_lsf",".dat")
+		file_out1 = open(name_file_lsf,"w")
+		for ii in range(len(lsf_wave)):
+			file_out1.write("%e %e\n" % (lsf_wave[ii],lsf_sigma[ii]))
+		file_out1.close()
+		file_out.write("name_file_lsf %s\n" % name_file_lsf)
+		outputs['name_file_lsf'] = name_file_lsf
+	elif smooth_lsf == False or smooth_lsf == 0:
+		file_out.write("smooth_lsf 0\n")
+
+	file_out.write("pr_logzsol_min %lf\n" % params_range['logzsol'][0])
+	file_out.write("pr_logzsol_max %lf\n" % params_range['logzsol'][1])
+	file_out.write("pr_log_tau_min %lf\n" % params_range['log_tau'][0])
+	file_out.write("pr_log_tau_max %lf\n" % params_range['log_tau'][1])
+	file_out.write("pr_log_t0_min %lf\n" % params_range['log_t0'][0])
+	file_out.write("pr_log_t0_max %lf\n" % params_range['log_t0'][1])
+	file_out.write("pr_log_alpha_min %lf\n" % params_range['log_alpha'][0])
+	file_out.write("pr_log_alpha_max %lf\n" % params_range['log_alpha'][1])
+	file_out.write("pr_log_beta_min %lf\n" % params_range['log_beta'][0])
+	file_out.write("pr_log_beta_max %lf\n" % params_range['log_beta'][1])
+	file_out.write("pr_log_age_min %lf\n" % params_range['log_age'][0])
+	file_out.write("pr_log_age_max %lf\n" % params_range['log_age'][1])
+	file_out.write("pr_dust_index_min %lf\n" % params_range['dust_index'][0])
+	file_out.write("pr_dust_index_max %lf\n" % params_range['dust_index'][1])
+	file_out.write("pr_dust1_min %lf\n" % params_range['dust1'][0])
+	file_out.write("pr_dust1_max %lf\n" % params_range['dust1'][1])
+	file_out.write("pr_dust2_min %lf\n" % params_range['dust2'][0])
+	file_out.write("pr_dust2_max %lf\n" % params_range['dust2'][1])
+	file_out.write("pr_log_gamma_min %lf\n" % params_range['log_gamma'][0])
+	file_out.write("pr_log_gamma_max %lf\n" % params_range['log_gamma'][1])
+	file_out.write("pr_log_umin_min %lf\n" % params_range['log_umin'][0])
+	file_out.write("pr_log_umin_max %lf\n" % params_range['log_umin'][1])
+	file_out.write("pr_log_qpah_min %lf\n" % params_range['log_qpah'][0])
+	file_out.write("pr_log_qpah_max %lf\n" % params_range['log_qpah'][1])
+	file_out.write("pr_log_fagn_min %lf\n" % params_range['log_fagn'][0])
+	file_out.write("pr_log_fagn_max %lf\n" % params_range['log_fagn'][1])
+	file_out.write("pr_log_tauagn_min %lf\n" % params_range['log_tauagn'][0])
+	file_out.write("pr_log_tauagn_max %lf\n" % params_range['log_tauagn'][1])
+	file_out.write("pr_gas_logu_min %lf\n" % params_range['gas_logu'][0])
+	file_out.write("pr_gas_logu_max %lf\n" % params_range['gas_logu'][1])
+
+	if params_range['gas_logz'] is not None:
+		file_out.write("pr_gas_logz_min %lf\n" % params_range['gas_logz'][0])
+		file_out.write("pr_gas_logz_max %lf\n" % params_range['gas_logz'][1])
+
+	# cosmology
+	if cosmo=='flat_LCDM' or cosmo==0:
+		cosmo1 = 0
+	elif cosmo=='WMAP5' or cosmo==1:
+		cosmo1 = 1
+	elif cosmo=='WMAP7' or cosmo==2:
+		cosmo1 = 2
+	elif cosmo=='WMAP9' or cosmo==3:
+		cosmo1 = 3
+	elif cosmo=='Planck13' or cosmo==4:
+		cosmo1 = 4
+	elif cosmo=='Planck15' or cosmo==5:
+		cosmo1 = 5
+	#elif cosmo=='Planck18' or cosmo==6:
+	#	cosmo1 = 6
+	else:
+		print ("Input cosmo is not recognized!")
+		sys.exit()
+	file_out.write("cosmo %d\n" % cosmo1)
+	file_out.write("H0 %lf\n" % H0)
+	file_out.write("Om0 %lf\n" % Om0)
+	file_out.write("name_out %s\n" % name_out)
+	
+	if gal_z is not None:
+		file_out.write("gal_z %lf\n" % gal_z)  
+	file_out.close()
+
+	return outputs
+
+
+def read_config_file_genmodels(dir_file,config_file):
+
+	#global imf, add_neb_emission, add_igm_absorption, igm_type, sfh_form, dust_law, duste_switch 
+	#global add_agn, nmodels, free_gas_logz, smooth_velocity, sigma_smooth, smooth_lsf, name_file_lsf, name_out
+	#global params, nparams, priors_min, priors_max
+	#global cosmo_str, cosmo, H0, Om0, gal_z
+
+	data = np.genfromtxt(dir_file+config_file, dtype=str)
+	config_data = {}
+	for ii in range(0,len(data[:,0])):
+		str_temp = data[:,0][ii]
+		config_data[str_temp] = data[:,1][ii]
+
+	imf = int(config_data['imf_type'])
+	add_neb_emission = int(config_data['add_neb_emission'])
+
+	if 'add_igm_absorption' in config_data:
+		add_igm_absorption = int(config_data['add_igm_absorption'])
+	else:
+		add_igm_absorption = 0
+
+	if 'igm_type' in config_data:
+		igm_type = int(config_data['igm_type'])
+	else:
+		igm_type = 0
+
+	sfh_form = int(config_data['sfh_form'])
+	dust_law = int(config_data['dust_law'])
+	duste_switch = int(config_data['duste_switch'])
+	add_agn = int(config_data['add_agn'])
+	nmodels = int(config_data['nmodels'])
+	free_gas_logz = int(config_data['free_gas_logz'])
+	smooth_velocity = int(config_data['smooth_velocity'])
+	sigma_smooth = float(config_data['sigma_smooth'])
+	smooth_lsf = int(config_data['smooth_lsf'])
+	if smooth_lsf == 1:
+		name_file_lsf = config_data['name_file_lsf']
+	else:
+		name_file_lsf = 'none'
+	name_out = config_data['name_out']
+
+	# get list of parameters
+	free_z = 0
+	params0, nparams0 = get_params(free_z, sfh_form, duste_switch, dust_law, add_agn, free_gas_logz)
+	params = params0[:int(nparams0-1)]   # exclude log_mass because models are normalized to solar mass
+	nparams = len(params) 
+
+	# get ranges of parameters
+	priors_min = np.zeros(nparams)
+	priors_max = np.zeros(nparams)
+	for pp in range(0,nparams): 
+		str_temp = 'pr_%s_min' % params[pp]
+		priors_min[pp] = float(config_data[str_temp])
+		str_temp = 'pr_%s_max' % params[pp]
+		priors_max[pp] = float(config_data[str_temp])
+
+	# cosmological parameters
+	cosmo = int(config_data['cosmo'])
+	if cosmo==0: 
+		cosmo_str = 'flat_LCDM' 
+	elif cosmo==1:
+		cosmo_str = 'WMAP5'
+	elif cosmo==2:
+		cosmo_str = 'WMAP7'
+	elif cosmo==3:
+		cosmo_str = 'WMAP9'
+	elif cosmo==4:
+		cosmo_str = 'Planck13'
+	elif cosmo==5:
+		cosmo_str = 'Planck15'
+	#elif cosmo==6:
+	#	cosmo_str = 'Planck18'
+	else:
+		print ("The cosmo input is not recognized!")
+		sys.exit()
+	H0 = float(config_data['H0'])
+	Om0 = float(config_data['Om0'])
+
+	if 'gal_z' in config_data:
+		gal_z = float(config_data['gal_z'])
+	else:
+		gal_z = 0.0
+
+	return imf, add_neb_emission, add_igm_absorption, igm_type, sfh_form, dust_law, duste_switch, add_agn, nmodels, free_gas_logz, smooth_velocity, sigma_smooth, smooth_lsf, name_file_lsf, name_out, params, nparams, priors_min, priors_max, cosmo_str, cosmo, H0, Om0, gal_z
+
+
+
+
+
+
+
+
+
+
+
 
 
 

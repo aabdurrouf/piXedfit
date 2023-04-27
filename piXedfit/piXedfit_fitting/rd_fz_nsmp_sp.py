@@ -21,7 +21,7 @@ from piXedfit.utils.redshifting import cosmo_redshifting
 from piXedfit.utils.igm_absorption import igm_att_madau, igm_att_inoue
 from piXedfit.piXedfit_spectrophotometric import spec_smoothing, match_spectra_poly_legendre_fit
 from piXedfit.piXedfit_model import get_no_nebem_wave_fit, generate_modelSED_spec
-from piXedfit.piXedfit_fitting import params_log_flag
+from piXedfit.piXedfit_model import params_log_flag
 
 
 def bayesian_sedfit_gauss():

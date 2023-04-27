@@ -10,9 +10,8 @@ global PIXEDFIT_HOME
 PIXEDFIT_HOME = os.environ['PIXEDFIT_HOME']
 sys.path.insert(0, PIXEDFIT_HOME)
 
-from piXedfit.utils.filtering import interp_filters_curves
-from piXedfit.piXedfit_model import generate_modelSED_spec_fit, generate_modelSED_propphoto_nomwage_fit, calc_mw_age 
-from piXedfit.piXedfit_fitting import get_params
+from piXedfit.utils.filtering import interp_filters_curves 
+from piXedfit.piXedfit_model import * 
 
 ## USAGE: mpirun -np [npros] python ./save_models_photo.py (1)name_filters_list (2)name_config
 
@@ -21,95 +20,36 @@ comm = MPI.COMM_WORLD
 size = comm.Get_size()
 rank = comm.Get_rank()
 
-temp_dir = PIXEDFIT_HOME+'/data/temp/'
-
-# configuration file
-global config_data
 config_file = str(sys.argv[2])
-data = np.genfromtxt(temp_dir+config_file, dtype=str)
-config_data = {}
-for ii in range(0,len(data[:,0])):
-	str_temp = data[:,0][ii]
-	config_data[str_temp] = data[:,1][ii]
+dir_file = PIXEDFIT_HOME+'/data/temp/'
 
-# filters
+imf, add_neb_emission, add_igm_absorption, igm_type, sfh_form, dust_law, duste_switch, add_agn, nmodels, free_gas_logz, smooth_velocity, sigma_smooth, smooth_lsf, name_file_lsf, name_out, params, nparams, priors_min, priors_max, cosmo_str, cosmo, H0, Om0, gal_z = read_config_file_genmodels(dir_file,config_file)
+
+if rank == 0:
+	print ("There are %d parameters: " % nparams)
+	print (params)
+
+# normalize with size
+nmodels = int(nmodels/size)*size
+
+params_fsps, nparams_fsps = get_params_fsps(params)
+def_params_val = default_params_val()
+def_params_val['z'] = gal_z
+
+# check whether smoothing with a line spread function or not
+if smooth_lsf == True or smooth_lsf == 1:
+	data = np.loadtxt(dir_file+name_file_lsf)
+	lsf_wave, lsf_sigma = data[:,0], data[:,1]
+else:
+	lsf_wave, lsf_sigma = None, None
+
+# get list of filters
 global filters, nbands
 name_filters = str(sys.argv[1])
-filters = np.genfromtxt(temp_dir+name_filters, dtype=str)
+filters = np.genfromtxt(dir_file+name_filters, dtype=str)
 nbands = len(filters)
 
-# nebular emission
-global add_neb_emission
-add_neb_emission = int(config_data['add_neb_emission'])
-
-# gas_logu
-global gas_logu
-gas_logu = float(config_data['gas_logu'])
-
-# SFH form
-global sfh_form
-sfh_form = int(config_data['sfh_form'])
-
-# redshift
-global gal_z
-gal_z = float(config_data['gal_z'])
-
-global imf
-imf = int(config_data['imf_type'])
-
-# dust emission
-global duste_switch
-duste_switch = int(config_data['duste_switch'])
-
-# dust extinction law
-global dust_law
-dust_law = int(config_data['dust_law'])
-
-# igm absorption
-global add_igm_absorption,igm_type
-add_igm_absorption = int(config_data['add_igm_absorption'])
-igm_type = int(config_data['igm_type'])
-
-# AGN
-global add_agn 
-add_agn = int(config_data['add_agn'])
-
-# number of model SEDs to be be generated
-global nmodels
-nmodels = int(int(config_data['nmodels'])/size)*size
-if rank == 0:
-	print ("Number of random model SEDs to be generated: %d" % nmodels)
-
-# name of output fits file
-name_fits = config_data['name_out_fits']
-
-# cosmology
-# The choices are: [0:flat_LCDM, 1:WMAP5, 2:WMAP7, 3:WMAP9, 4:Planck13, 5:Planck15]
-global cosmo_str, H0, Om0
-cosmo = int(config_data['cosmo'])
-if cosmo==0: 
-	cosmo_str = 'flat_LCDM' 
-elif cosmo==1:
-	cosmo_str = 'WMAP5'
-elif cosmo==2:
-	cosmo_str = 'WMAP7'
-elif cosmo==3:
-	cosmo_str = 'WMAP9'
-elif cosmo==4:
-	cosmo_str = 'Planck13'
-elif cosmo==5:
-	cosmo_str = 'Planck15'
-#elif cosmo==6:
-#	cosmo_str = 'Planck18'
-else:
-	print ("The cosmo input is not recognized!")
-	sys.exit()
-H0 = float(config_data['H0'])
-Om0 = float(config_data['Om0'])
-
-global free_z, DL_Gpc, trans_fltr_int
-free_z = 0
-# calculate luminosity distance
+global DL_Gpc, trans_fltr_int
 if cosmo_str=='flat_LCDM':
 	cosmo1 = FlatLambdaCDM(H0=H0, Om0=Om0)
 	DL_Gpc0 = cosmo1.luminosity_distance(gal_z)      # in unit of Mpc
@@ -127,101 +67,12 @@ elif cosmo_str=='Planck15':
 #	DL_Gpc0 = Planck18.luminosity_distance(gl_z)
 DL_Gpc = DL_Gpc0.value/1.0e+3
 
-# default parameter set
-global def_params, def_params_val
-def_params = ['logzsol','log_tau','log_t0','log_alpha','log_beta','log_age','dust_index','dust1','dust2','log_gamma',
-				'log_umin', 'log_qpah', 'z', 'log_fagn','log_tauagn']     # no normalization
-
-def_params_val={'log_mass':0.0,'z':0.001,'log_fagn':-3.0,'log_tauagn':1.0,'log_qpah':0.54,'log_umin':0.0,'log_gamma':-2.0,
-				'dust1':0.5,'dust2':0.5,'dust_index':-0.7,'log_age':1.0,'log_alpha':0.1,'log_beta':0.1,'log_t0':0.4,
-				'log_tau':0.4,'logzsol':0.0}
-
-if free_z == 0:
-	def_params_val['z'] = gal_z
-
-global def_params_fsps, params_assoc_fsps, status_log
-def_params_fsps = ['logzsol', 'log_tau', 'log_age', 'dust_index', 'dust1', 'dust2', 'log_gamma', 'log_umin', 
-				'log_qpah','log_fagn', 'log_tauagn']
-params_assoc_fsps = {'logzsol':"logzsol", 'log_tau':"tau", 'log_age':"tage", 
-					'dust_index':"dust_index", 'dust1':"dust1", 'dust2':"dust2",
-					'log_gamma':"duste_gamma", 'log_umin':"duste_umin", 
-					'log_qpah':"duste_qpah",'log_fagn':"fagn", 'log_tauagn':"agn_tau"}
-status_log = {'logzsol':0, 'log_tau':1, 'log_age':1, 'dust_index':0, 'dust1':0, 'dust2':0,
-				'log_gamma':1, 'log_umin':1, 'log_qpah':1,'log_fagn':1, 'log_tauagn':1}
 
 # call FSPS:
 global sp 
 sp = fsps.StellarPopulation(zcontinuous=1, imf_type=imf)
-if duste_switch==1:
-	sp.params["add_dust_emission"] = True
-elif duste_switch==0:
-	sp.params["add_dust_emission"] = False
-if add_neb_emission == 1:
-	sp.params["add_neb_emission"] = True
-	sp.params['gas_logu'] = gas_logu
-elif add_neb_emission == 0:
-	sp.params["add_neb_emission"] = False
-if add_agn == 0:
-	sp.params["fagn"] = 0
-elif add_agn == 1:
-	sp.params["fagn"] = 1
-
-if sfh_form==0 or sfh_form==1:
-	if sfh_form == 0:
-		sp.params["sfh"] = 1
-	elif sfh_form == 1:
-		sp.params["sfh"] = 4
-	sp.params["const"] = 0
-	sp.params["sf_start"] = 0
-	sp.params["sf_trunc"] = 0
-	sp.params["fburst"] = 0
-	sp.params["tburst"] = 30.0
-	if dust_law == 0:
-		sp.params["dust_type"] = 0  
-		sp.params["dust_tesc"] = 7.0
-		dust1_index = -1.0
-		sp.params["dust1_index"] = dust1_index
-	elif dust_law == 1:
-		sp.params["dust_type"] = 2  
-		sp.params["dust1"] = 0
-elif sfh_form==2 or sfh_form==3 or sfh_form==4:
-	sp.params["sfh"] = 3
-	if dust_law == 0: 
-		sp.params["dust_type"] = 0  
-		sp.params["dust_tesc"] = 7.0
-		dust1_index = -1.0
-		sp.params["dust1_index"] = dust1_index
-	elif dust_law == 1:
-		sp.params["dust_type"] = 2  
-		sp.params["dust1"] = 0
-
-# get number of parameters:
-global params, nparams
-params0, nparams0 = get_params(free_z, sfh_form, duste_switch, dust_law, add_agn)
-params = params0[:int(nparams0-1)]
-nparams = len(params)
-if rank == 0:
-	print ("parameters: ")
-	print (params)
-	print ("number of parameters: %d" % nparams)
-
-global params_fsps, nparams_fsps
-params_fsps = []
-for ii in range(0,len(def_params_fsps)):
-	for jj in range(0,nparams):
-		if def_params_fsps[ii] == params[jj]:
-			params_fsps.append(params[jj])
-nparams_fsps = len(params_fsps)
-
-# ranges of the parameters
-global priors_min, priors_max
-priors_min = np.zeros(nparams)
-priors_max = np.zeros(nparams)
-for pp in range(0,nparams): 
-	str_temp = 'pr_%s_min' % params[pp]
-	priors_min[pp] = float(config_data[str_temp])
-	str_temp = 'pr_%s_max' % params[pp]
-	priors_max[pp] = float(config_data[str_temp])
+sp = set_initial_fsps(sp,duste_switch,add_neb_emission,add_agn,sfh_form,dust_law,smooth_velocity=smooth_velocity,
+					sigma_smooth=sigma_smooth,smooth_lsf=smooth_lsf,lsf_wave=lsf_wave,lsf_sigma=lsf_sigma)
 
 # generate random parameters
 rand_params = np.zeros((nparams,nmodels))
@@ -253,7 +104,6 @@ for ii in recvbuf_idx:
 	params_val = def_params_val
 	for pp in range(0,nparams):
 		temp_val = rand_params[pp][int(ii)]  
-		#temp_val = np.random.uniform(priors_min[pp],priors_max[pp],1)
 		mod_params_temp[pp][int(count)] = temp_val
 		params_val[params[pp]] = temp_val
 
@@ -327,6 +177,7 @@ for pp in range(0,nparams):
 for bb in range(0,nbands):
 	comm.Gather(mod_fluxes_temp[bb], mod_fluxes[bb], root=0)
 
+# free_gas_logz, smooth_velocity, sigma_smooth, smooth_lsf, 
 # store into a FITS file
 if rank == 0:
 	hdr = fits.Header()
@@ -335,9 +186,12 @@ if rank == 0:
 	hdr['dust_law'] = dust_law
 	hdr['duste_switch'] = duste_switch
 	hdr['add_neb_emission'] = add_neb_emission
-	hdr['gas_logu'] = gas_logu
 	hdr['add_agn'] = add_agn
 	hdr['add_igm_absorption'] = add_igm_absorption
+	hdr['free_gas_logz'] = free_gas_logz
+	hdr['smooth_velocity'] =  smooth_velocity
+	hdr['sigma_smooth'] = sigma_smooth
+	hdr['smooth_lsf'] = smooth_lsf
 	hdr['cosmo'] = cosmo_str
 	hdr['H0'] = H0
 	hdr['Om0'] = Om0
@@ -430,7 +284,7 @@ if rank == 0:
 	primary_hdu = fits.PrimaryHDU(header=hdr)
 
 	hdul = fits.HDUList([primary_hdu, hdu])
-	hdul.writeto(name_fits, overwrite=True)
+	hdul.writeto(name_out, overwrite=True)
 
 
 

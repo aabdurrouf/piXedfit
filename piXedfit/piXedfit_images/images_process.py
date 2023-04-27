@@ -47,6 +47,9 @@ class images_processing:
 	:param gal_dec:
 		Declination (DEC) coordinate of the target galaxy. This should be in degree.
 
+	:param dir_images:
+		Directory where images are stored.
+
 	:param img_unit: (optional)
 		Unit of pixel value in the multiband images. The acceptable format of this input is a python dictionary, similar to that of sci_img. This input is optional.
 		This input will only be considered (and required) if the input images are not among the default list of recognized imaging data 
@@ -88,10 +91,13 @@ class images_processing:
 		
 	:param remove_files:
 		If True, the unnecessary image files produced during the image processing will be removed. This can save disk space. If False, those files will not be removed.   
+
+	:param idfil_align:
+		Index of the filter of which the image will be used as the reference in the spatial reprojection and sampling processes. 
 	"""
 
-	def __init__(self, filters, sci_img, var_img, gal_ra, gal_dec, img_unit=None, img_scale=None, img_pixsizes=None, 
-		flag_psfmatch=0, flag_reproject=0, flag_crop=0, kernels=None, gal_z=None, stamp_size=[101,101], remove_files=True):
+	def __init__(self, filters, sci_img, var_img, gal_ra, gal_dec, dir_images=None, img_unit=None, img_scale=None, img_pixsizes=None, run_image_processing=True,
+		flag_psfmatch=0, flag_reproject=0, flag_crop=0, kernels=None, gal_z=None, stamp_size=[101,101], remove_files=True, idfil_align=None):
 
 		raise_errors(filters, kernels, flag_psfmatch, img_unit, img_scale)
 
@@ -107,6 +113,7 @@ class images_processing:
 		self.var_img = var_img
 		self.gal_ra = gal_ra
 		self.gal_dec = gal_dec
+		self.dir_images = dir_images
 		self.flux_or_sb = flux_or_sb
 		self.img_unit = img_unit
 		self.img_scale = img_scale
@@ -118,12 +125,14 @@ class images_processing:
 		self.stamp_size = stamp_size
 		self.remove_files = remove_files
 		self.kernels = kernels
+		self.idfil_align = idfil_align
+		self.run_image_processing = run_image_processing
+
+		if run_image_processing == True:
+			self.reduced_stamps()
 
 	def reduced_stamps(self):
-		"""Run the image processing that includes PSF matching, spatial resampling and reprojection, and cropping around the target galaxy.
-
-		:returns output_stamps:
-			Dictionary containing name of postage stamps of reduced multiband images. 
+		"""Run the image processing that includes PSF matching, spatial resampling and reprojection, and cropping around the target galaxy. 
 		"""
 
 		from operator import itemgetter
@@ -155,14 +164,78 @@ class images_processing:
 		kernels = self.kernels	
 		gal_ra = self.gal_ra
 		gal_dec = self.gal_dec
+		dir_images = self.dir_images
 		stamp_size = self.stamp_size
+		idfil_align = self.idfil_align
+
+		# check directory
+		dir_images = check_dir(dir_images)
+
+		# add directory
+		sci_img_name, var_img_name = add_dir(sci_img_name, var_img_name, dir_images, filters)
 
 		# get index of filter that has image with largest pixel scale
-		fil_pixsizes = np.zeros(nbands)
-		for bb in range(0,nbands):
-			fil_pixsizes[bb] = img_pixsizes[filters[bb]]
-		idfil_align, max_val = max(enumerate(fil_pixsizes), key=itemgetter(1))
+		if idfil_align is None:
+			fil_pixsizes = np.asarray(list(img_pixsizes.values()))
+			idfil_align, max_val = max(enumerate(fil_pixsizes), key=itemgetter(1))
 		####============== End of (1) GET BASIC INPUT ============#####
+
+		#=> cropping around the target galaxy to minimize calculation time
+		if flag_crop == 0:
+			for bb in range(0,nbands):
+				dim_y0 = stamp_size[0]
+				dim_x0 = stamp_size[1]
+				dim_y1 = int(dim_y0*1.5*img_pixsizes[filters[idfil_align]]/img_pixsizes[filters[bb]])
+				dim_x1 = int(dim_x0*1.5*img_pixsizes[filters[idfil_align]]/img_pixsizes[filters[bb]])
+
+				#++> science image
+				hdu = fits.open(sci_img_name[filters[bb]])[0]
+				wcs = WCS(hdu.header)
+				gal_x, gal_y = wcs.wcs_world2pix(gal_ra, gal_dec, 1)
+				position = (gal_x,gal_y)
+				cutout = Cutout2D(hdu.data, position=position, size=(dim_y1,dim_x1), wcs=wcs)
+				#hdu.data = remove_naninf_image_2dinterpolation(cutout.data)
+				hdu.data = cutout.data
+				hdu.header.update(cutout.wcs.to_header())
+				name_out = "crop_%s" % check_name_remove_dir(sci_img_name[filters[bb]],dir_images) 
+				hdu.writeto(name_out, overwrite=True)
+				sci_img_name[filters[bb]] = name_out
+				print ("produce %s" % name_out)
+				temp_file_names.append(name_out)
+
+				#++> variance image
+				hdu = fits.open(var_img_name[filters[bb]])[0]
+				wcs = WCS(hdu.header)
+				gal_x, gal_y = wcs.wcs_world2pix(gal_ra, gal_dec, 1)
+				position = (gal_x,gal_y)
+				cutout = Cutout2D(hdu.data, position=position, size=(dim_y1,dim_x1), wcs=wcs)
+				hdu.data = remove_naninfzeroneg_image_2dinterpolation(cutout.data) 
+				hdu.header.update(cutout.wcs.to_header())
+				name_out = "crop_%s" % check_name_remove_dir(var_img_name[filters[bb]],dir_images)
+				hdu.writeto(name_out, overwrite=True)
+				var_img_name[filters[bb]] = name_out
+				print ("produce %s" % name_out)
+				temp_file_names.append(name_out)
+		else:
+			#++> science image
+			hdu = fits.open(sci_img_name[filters[bb]])
+			header = hdu[0].header
+			#new_data = remove_naninf_image_2dinterpolation(hdu[0].data)
+			new_data = hdu[0].data
+			hdu.close()
+			name_out = "crop_%s" % check_name_remove_dir(sci_img_name[filters[bb]],dir_images)
+			fits.writeto(name_out,new_data,header, overwrite=True)
+			sci_img_name[filters[bb]] = name_out
+
+			#++> variance image
+			hdu = fits.open(var_img_name[filters[bb]])
+			header = hdu[0].header
+			new_data = remove_naninfzeroneg_image_2dinterpolation(hdu[0].data)
+			hdu.close()
+			name_out = "crop_%s" % check_name_remove_dir(var_img_name[filters[bb]],dir_images)
+			fits.writeto(name_out,new_data,header, overwrite=True)
+			var_img_name[filters[bb]] = name_out
+
 
 		if flag_psfmatch == 1:
 			psfmatch_sci_img_name = {}
@@ -182,7 +255,7 @@ class images_processing:
 			else:
 				idfil_psfmatch = get_largest_FWHM_PSF(filters=filters)
 
-			print ("[PSF matching to %s]" % filters[idfil_psfmatch])
+			print ("=> PSF matching to %s" % filters[idfil_psfmatch])
 
 			##==> (b) Get Kernels:
 			status_kernel_resize = 1
@@ -228,37 +301,6 @@ class images_processing:
 					psfmatch_var_img_name[filters[bb]] = var_img_name[filters[bb]]
 				# for others
 				elif bb != idfil_psfmatch:
-					#=> cropping around the target galaxy to minimize calculation time
-					dim_y0 = stamp_size[0]
-					dim_x0 = stamp_size[1]
-					dim_y1 = int(dim_y0*1.5*img_pixsizes[filters[idfil_align]]/img_pixsizes[filters[bb]])
-					dim_x1 = int(dim_x0*1.5*img_pixsizes[filters[idfil_align]]/img_pixsizes[filters[bb]])
-
-					#++> science image
-					hdu = fits.open(sci_img_name[filters[bb]])[0]
-					wcs = WCS(hdu.header)
-					gal_x, gal_y = wcs.wcs_world2pix(gal_ra, gal_dec, 1)
-					position = (gal_x,gal_y)
-					cutout = Cutout2D(hdu.data, position=position, size=(dim_y1,dim_x1), wcs=wcs)
-					hdu.data = cutout.data 
-					hdu.header.update(cutout.wcs.to_header())
-					name_out = "crop_%s" % sci_img_name[filters[bb]]
-					hdu.writeto(name_out, overwrite=True)
-					print ("[produce %s]" % name_out)
-					temp_file_names.append(name_out)
-
-					#++> variance image
-					hdu = fits.open(var_img_name[filters[bb]])[0]
-					wcs = WCS(hdu.header)
-					gal_x, gal_y = wcs.wcs_world2pix(gal_ra, gal_dec, 1)
-					position = (gal_x,gal_y)
-					cutout = Cutout2D(hdu.data, position=position, size=(dim_y1,dim_x1), wcs=wcs)
-					hdu.data = cutout.data 
-					hdu.header.update(cutout.wcs.to_header())
-					name_out = "crop_%s" % var_img_name[filters[bb]]
-					hdu.writeto(name_out, overwrite=True)
-					print ("[produce %s]" % name_out)
-					temp_file_names.append(name_out)
 
 					# resize/resampling kernel image to match the sampling of the image
 					if status_kernel_resize == 1:
@@ -267,7 +309,7 @@ class images_processing:
 						kernel_resize0 = kernel_data[filters[bb]]
 
 					# crop kernel to reduce memory usage: roughly match the size of the cropped image that will be convolved with the kernel
-					name_temp = "crop_%s" % sci_img_name[filters[bb]]
+					name_temp = check_name_remove_dir(sci_img_name[filters[bb]],dir_images)
 					hdu_temp = fits.open(name_temp)
 					dim_y_temp = hdu_temp[0].data.shape[0]
 					dim_x_temp = hdu_temp[0].data.shape[1]
@@ -298,27 +340,27 @@ class images_processing:
 					# Normalize the kernel to have integrated value of 1.0
 					kernel_resize = kernel_resize1/np.sum(kernel_resize1)
 
-					print ("[PSF matching]")
 					#++> science image
-					name_fits = "crop_%s" % sci_img_name[filters[bb]]
+					name_fits = check_name_remove_dir(sci_img_name[filters[bb]],dir_images)
 					hdu = fits.open(name_fits)
 					psfmatch_data = convolve_fft(hdu[0].data, kernel_resize, allow_huge=True)
 					name_out = "psfmatch_%s" % name_fits
 					psfmatch_sci_img_name[filters[bb]] = name_out
 					fits.writeto(name_out,psfmatch_data,hdu[0].header, overwrite=True)
 					hdu.close()
-					print ("[produce %s]" % name_out)
+					print ("produce %s" % name_out)
 					temp_file_names.append(name_out)
 
 					#++> variance image
-					name_fits = "crop_%s" % var_img_name[filters[int(bb)]]
+					name_fits = check_name_remove_dir(var_img_name[filters[int(bb)]],dir_images)
 					hdu = fits.open(name_fits)
 					psfmatch_data = convolve_fft(hdu[0].data, kernel_resize, allow_huge=True)
+					psfmatch_data = remove_naninfzeroneg_image_2dinterpolation(psfmatch_data)
 					name_out = "psfmatch_%s" % name_fits
 					psfmatch_var_img_name[filters[bb]] = name_out
 					fits.writeto(name_out,psfmatch_data,hdu[0].header,overwrite=True)
 					hdu.close()
-					print ("[produce %s]" % name_out)
+					print ("produce %s" % name_out)
 					temp_file_names.append(name_out)
 
 			####============== End of (c) PSF matching ============#####
@@ -336,10 +378,10 @@ class images_processing:
 				cutout = Cutout2D(hdu.data, position=position, size=stamp_size, wcs=wcs)
 				hdu.data = cutout.data
 				hdu.header.update(cutout.wcs.to_header())
-				name_out = 'stamp_%s' % psfmatch_sci_img_name[filters[bb]]
+				name_out = 'stamp_%s' % check_name_remove_dir(psfmatch_sci_img_name[filters[bb]],dir_images)
 				hdu.writeto(name_out, overwrite=True)
 				align_psfmatch_sci_img_name[filters[bb]] = name_out
-				print ("[produce %s]" % name_out)
+				print ("produce %s" % name_out)
 
 				#++> variance image
 				hdu = fits.open(psfmatch_var_img_name[filters[bb]])[0]
@@ -349,10 +391,10 @@ class images_processing:
 				cutout = Cutout2D(hdu.data, position=position, size=stamp_size, wcs=wcs)
 				hdu.data = cutout.data
 				hdu.header.update(cutout.wcs.to_header())
-				name_out = 'stamp_%s' % psfmatch_var_img_name[filters[bb]]
+				name_out = 'stamp_%s' % check_name_remove_dir(psfmatch_var_img_name[filters[bb]],dir_images)
 				hdu.writeto(name_out, overwrite=True)
 				align_psfmatch_var_img_name[filters[bb]] = name_out
-				print ("[produce %s]" % name_out)
+				print ("produce %s" % name_out)
 
 
 		if flag_reproject==1 and flag_crop==1:
@@ -361,25 +403,25 @@ class images_processing:
 			for bb in range(0,nbands):
 				#++> science image
 				hdu = fits.open(psfmatch_sci_img_name[filters[bb]])
-				name_out = 'stamp_%s' % psfmatch_sci_img_name[filters[bb]]
+				name_out = 'stamp_%s' % check_name_remove_dir(psfmatch_sci_img_name[filters[bb]], dir_images)
 				fits.writeto(name_out, hdu[0].data, header=hdu[0].header, overwrite=True)
 				align_psfmatch_sci_img_name[filters[bb]] = name_out
-				print ("[produce %s]" % name_out)
+				print ("produce %s" % name_out)
 				hdu.close()
 
 				#++> variance image
 				hdu = fits.open(psfmatch_var_img_name[filters[bb]])
-				name_out = 'stamp_%s' % psfmatch_var_img_name[filters[bb]]
+				name_out = 'stamp_%s' % check_name_remove_dir(psfmatch_var_img_name[filters[bb]], dir_images)
 				fits.writeto(name_out, hdu[0].data, header=hdu[0].header, overwrite=True)
 				align_psfmatch_var_img_name[filters[bb]] = name_out
-				print ("[produce %s]" % name_out)
+				print ("produce %s" % name_out)
 				hdu.close()
 
 
 		if flag_reproject==0:
 			####============== (3) Spatial reprojection and resampling ============#####
-			print ("[images reprojection and resampling]")
-			print ("align images to the reprojection and sampling of %s: %lf arcsec/pixel" % (filters[idfil_align],img_pixsizes[filters[idfil_align]]))
+			print ("=> images reprojection and resampling")
+			print ("=> align images to match the projection and spatial sampling of %s: %lf arcsec/pixel" % (filters[idfil_align],img_pixsizes[filters[idfil_align]]))
 			align_psfmatch_sci_img_name = {}
 			align_psfmatch_var_img_name = {}
 			for bb in range(0,nbands):
@@ -395,10 +437,10 @@ class images_processing:
 			cutout = Cutout2D(hdu.data, position=position, size=stamp_size, wcs=wcs)
 			hdu.data = cutout.data
 			hdu.header.update(cutout.wcs.to_header())
-			name_out = 'stamp_%s' % psfmatch_sci_img_name[filters[idfil_align]]
+			name_out = 'stamp_%s' % check_name_remove_dir(psfmatch_sci_img_name[filters[idfil_align]],dir_images)
 			hdu.writeto(name_out, overwrite=True)
 			align_psfmatch_sci_img_name[filters[idfil_align]] = name_out
-			print ("[produce %s]" % name_out)
+			print ("produce %s" % name_out)
 
 			#++> variance image
 			hdu = fits.open(psfmatch_var_img_name[filters[idfil_align]])[0]
@@ -408,11 +450,10 @@ class images_processing:
 			cutout = Cutout2D(hdu.data, position=position, size=stamp_size, wcs=wcs)
 			hdu.data = cutout.data
 			hdu.header.update(cutout.wcs.to_header())
-			name_out = 'stamp_%s' % psfmatch_var_img_name[filters[idfil_align]]
+			name_out = 'stamp_%s' % check_name_remove_dir(psfmatch_var_img_name[filters[idfil_align]],dir_images)
 			hdu.writeto(name_out, overwrite=True)
 			align_psfmatch_var_img_name[filters[idfil_align]] = name_out
-			print ("[produce %s]" % name_out)
-
+			print ("produce %s" % name_out)
 
 			# for other filters:
 			# get header of stamp image that has largest pixel scale
@@ -431,11 +472,11 @@ class images_processing:
 					elif flux_or_sb[filters[bb]] == 1:  						# surface brightness
 						data_image = hdu[0].data
 						align_data_image, footprint = reproject_exact((data_image,hdu[0].header), header_for_align)
-					name_out = "stamp_%s" % psfmatch_sci_img_name[filters[bb]]
+					name_out = "stamp_%s" % check_name_remove_dir(psfmatch_sci_img_name[filters[bb]],dir_images)
 					fits.writeto(name_out,align_data_image,header_for_align,overwrite=True)
 					hdu.close()
 					align_psfmatch_sci_img_name[filters[bb]] = name_out
-					print ("[produce %s]" % name_out)
+					print ("produce %s" % name_out)
 
 					#++> variance image
 					hdu = fits.open(psfmatch_var_img_name[filters[bb]])
@@ -446,35 +487,120 @@ class images_processing:
 					elif flux_or_sb[filters[bb]] == 1:  						# surface brightness
 						data_image = hdu[0].data
 						align_data_image, footprint = reproject_exact((data_image,hdu[0].header), header_for_align)
-					name_out = "stamp_%s" % psfmatch_var_img_name[filters[bb]]
+					name_out = "stamp_%s" % check_name_remove_dir(psfmatch_var_img_name[filters[bb]],dir_images)
 					fits.writeto(name_out,align_data_image,header_for_align,overwrite=True)
 					hdu.close()
 					align_psfmatch_var_img_name[filters[bb]] = name_out
-					print ("[produce %s]" % name_out)
+					print ("produce %s" % name_out)
 
 			####============== (End of 3) Reprojection and resampling ============#####
 
 		# outputs
-		output_stamps = {}
+		global output_stamps1
+		output_stamps1 = {}
 		for bb in range(0,nbands):
 			str_temp = "name_img_%s" % filters[bb]
-			output_stamps[str_temp] = align_psfmatch_sci_img_name[filters[bb]]
+			output_stamps1[str_temp] = check_name_remove_dir(align_psfmatch_sci_img_name[filters[bb]],dir_images)
 
 			str_temp = "name_var_%s" % filters[bb]
-			output_stamps[str_temp] = align_psfmatch_var_img_name[filters[bb]]
+			output_stamps1[str_temp] = check_name_remove_dir(align_psfmatch_var_img_name[filters[bb]],dir_images)
 
-			output_stamps['idfil_align'] = idfil_align
-			output_stamps['idfil_psfmatch'] = idfil_psfmatch
+			output_stamps1['idfil_align'] = idfil_align
+			output_stamps1['idfil_psfmatch'] = idfil_psfmatch
 
 		# remove files
 		if self.remove_files==True:
 			for zz in range(0,len(temp_file_names)):
 				os.system("rm %s" % temp_file_names[zz])
 
-		return output_stamps
+	def get_output_stamps(self):
+		if self.run_image_processing == False:
+			print ('run_image_processing=False, so output_stamps is not available from this function!')
+		else:
+			return output_stamps1
+
+	def plot_image_stamps(self, output_stamps=None, ncols=6, savefig=True, name_plot_sci=None, name_plot_var=None):
+		""" Plotting resulted image stamps from the image processing. 
+
+		:param ncols:
+			Number of columns in the multipanel plots.
+
+		:param savefig: (default=True)
+			Decide to save the plot or not.
+
+		:param name_plot_sci: (optional)
+			Name for the output plot of science image stamps.
+
+		:param name_plot_var: (optional)
+			Name for the output plot of variance image stamps.
+
+		""" 
+		import matplotlib.pyplot as plt
+
+		filters = self.filters
+		nbands = len(filters)
+
+		if output_stamps is None:
+			if self.run_image_processing == False:
+				print ('output_stamps is required input if run_image_processing=False!')
+				sys.exit()
+			else:
+				output_stamps = output_stamps1
+
+		map_plots, nrows = mapping_multiplots(nbands,ncols)
+
+		# plot science images
+		fig1 = plt.figure(figsize=(ncols*4,nrows*4))
+		for bb in range(0,nbands):
+			yy, xx = np.where(map_plots==bb+1)
+			f1 = fig1.add_subplot(nrows, ncols, bb+1)
+			if map_plots[yy[0]][xx[0]-1] == 0:
+				plt.ylabel('[pixel]', fontsize=15)
+			if map_plots[yy[0]+1][xx[0]] == 0:
+				plt.xlabel('[pixel]', fontsize=15)
+
+			hdu = fits.open(output_stamps["name_img_%s" % filters[bb]])
+			plt.imshow(np.log10(hdu[0].data), origin='lower')
+			f1.text(0.5, 0.93, filters[bb], horizontalalignment='center', verticalalignment='center', 
+					transform = f1.transAxes, fontsize=18, color='black', weight="bold")
+			hdu.close()
+
+		plt.subplots_adjust(left=0.05, right=0.95, bottom=0.05, top=0.95, hspace=0.1, wspace=0.15)
+
+		if savefig is True:
+			if name_plot_sci is None:
+				name_plot_sci = 'stamp_science_images.png'
+			plt.savefig(name_plot_sci)
+		else:
+			plt.show()
+
+		# plot variance images
+		fig1 = plt.figure(figsize=(ncols*4,nrows*4))
+		for bb in range(0,nbands):
+			yy, xx = np.where(map_plots==bb+1)
+			f1 = fig1.add_subplot(nrows, ncols, bb+1)
+			if map_plots[yy[0]][xx[0]-1] == 0:
+				plt.ylabel('[pixel]', fontsize=15)
+			if map_plots[yy[0]+1][xx[0]] == 0:
+				plt.xlabel('[pixel]', fontsize=15)
+
+			hdu = fits.open(output_stamps["name_var_%s" % filters[bb]])
+			plt.imshow(np.log10(hdu[0].data), origin='lower')
+			f1.text(0.5, 0.93, filters[bb], horizontalalignment='center', verticalalignment='center', 
+					transform = f1.transAxes, fontsize=18, color='black', weight="bold")
+			hdu.close()
+
+		plt.subplots_adjust(left=0.05, right=0.95, bottom=0.05, top=0.95, hspace=0.1, wspace=0.15)
+
+		if savefig is True:
+			if name_plot_var is None:
+				name_plot_var = 'stamp_variance_images.png'
+			plt.savefig(name_plot_var)
+		else:
+			plt.show()
 
 
-	def segmentation_sep(self, output_stamps, thresh=1.5, minarea=30, deblend_nthresh=32, deblend_cont=0.005):
+	def segmentation_sep(self, output_stamps=None, thresh=1.5, minarea=30, deblend_nthresh=32, deblend_cont=0.005):
 		"""Get segmentation maps of a galaxy in multiple bands using the SEP (a Python version of the SExtractor). 
 
 		:param output_stamps:
@@ -491,15 +617,19 @@ class images_processing:
 
 		:param deblend_cont:
 			Minimum contrast ratio used for object deblending. Default is 0.005. To entirely disable deblending, set to 1.0.
-
-		:returns segm_maps:
-			Output segmentation maps.
 		"""
 
 		import sep 
 
 		filters = self.filters
 		nbands = len(filters)
+
+		if output_stamps is None:
+			if self.run_image_processing == False:
+				print ('output_stamps is required input if run_image_processing=False!')
+				sys.exit()
+			else:
+				output_stamps = output_stamps1
 
 		# get input science images
 		name_img = []
@@ -513,6 +643,7 @@ class images_processing:
 			str_temp = "name_var_%s" % filters[bb]
 			name_var.append(output_stamps[str_temp])
 
+		global segm_maps
 		segm_maps = []
 		for bb in range(0,nbands):
 			# data of science image
@@ -548,16 +679,56 @@ class images_processing:
 
 			segm_maps.append(segm_map1)
 
-		return segm_maps
+
+	def plot_segm_maps(self, ncols=6, savefig=True, name_plot=None):
+		""" Plotting segmentation maps. 
+
+		:param ncols:
+			Number of columns in the multipanel plots.
+
+		:param savefig: (default=True)
+			Decide to save the plot or not.
+
+		:param name_plot: (optional)
+			Name for the output plot.
+		""" 
+		import matplotlib.pyplot as plt
+
+		filters = self.filters
+		nbands = len(filters)
+
+		map_plots, nrows = mapping_multiplots(nbands,ncols)
+
+		# plotting maps of fluxes
+		fig1 = plt.figure(figsize=(ncols*4,nrows*4))
+		for bb in range(0,nbands):
+			yy, xx = np.where(map_plots==bb+1)
+			f1 = fig1.add_subplot(nrows, ncols, bb+1)
+			if map_plots[yy[0]][xx[0]-1] == 0:
+				plt.ylabel('[pixel]', fontsize=15)
+			if map_plots[yy[0]+1][xx[0]] == 0:
+				plt.xlabel('[pixel]', fontsize=15)
+
+			plt.imshow(segm_maps[bb], origin='lower')
+			f1.text(0.5, 0.93, '%d: %s' % (bb,filters[bb]), horizontalalignment='center', verticalalignment='center', 
+					transform = f1.transAxes, fontsize=18, color='white')
+
+		plt.subplots_adjust(left=0.05, right=0.95, bottom=0.05, top=0.95, hspace=0.1, wspace=0.1)
+
+		if savefig is True:
+			if name_plot is None:
+				name_plot = 'segm_maps.png'
+			plt.savefig(name_plot)
+		else:
+			plt.show()
 
 
-	def galaxy_region(self, segm_maps=None, use_ellipse=False, x_cent=None, y_cent=None, ell=0, pa=45.0, radius_sma=30.0):
+	def galaxy_region(self, segm_maps_ids=None, use_ellipse=False, x_cent=None, y_cent=None, ell=0, pa=45.0, radius_sma=30.0):
 		"""Define galaxy's region of interest for further analysis.
 
-		:param segm_maps: 
-			Input segmentation maps, which are output of the :func:`segmentation_sep`.
-			This input argument is required if the galaxy's region is to be defined based 
-			on the segmentation maps obtained with SEP.
+		:param segm_maps_ids:
+			Array of IDs of selected segmentation maps (i.e., filters) to be used (merged) for constructing the galaxy's region.
+			If None, all segmentation maps are merged together.
 
 		:param use_ellipse: 
 			Alternative of defining galaxy's region using elliptical aperture centered at the target galaxy.
@@ -592,12 +763,17 @@ class images_processing:
 
 		if use_ellipse==False or use_ellipse==0:
 			if len(segm_maps)>0:
-				# use the segmentation maps: merge them
-				for bb in range(0,len(segm_maps)):
-					rows, cols = np.where(segm_maps[bb] == 1)
-					gal_region[rows,cols] = 1
+				if segm_maps_ids is None:
+					for bb in range(0,len(segm_maps)):
+						rows, cols = np.where(segm_maps[bb] == 1)
+						gal_region[rows,cols] = 1
+				else:
+					for bb in range(0,len(segm_maps_ids)):
+						rows, cols = np.where(segm_maps[int(segm_maps_ids[bb])] == 1)
+						gal_region[rows,cols] = 1
 			else:
-				print ("In case of not using elliptical aperture, segm_maps input is required!")
+				print ("There is no segmentation region detected! Try other set of parameters for the segmentation process or alternatively use ellipital aperture to define the galaxy region by setting use_ellipse=True.")
+				#print ("In case of not using elliptical aperture, segm_maps input is required!")
 				sys.exit()
 
 		elif use_ellipse==True or use_ellipse==1:
@@ -625,12 +801,204 @@ class images_processing:
 		return gal_region
 
 
-	def flux_map(self, output_stamps, gal_region, Gal_EBV=None, scale_unit=1.0e-17, 
+	def rectangular_regions(self, output_stamps=None, x=None, y=None, ra=None, dec=None, make_plot=True, ncols=6, savefig=True, name_plot=None):
+
+		""" Define rectangular aperture and get pixels within it
+		:param x: 
+			x coordinates of the rectangular corners. The shape should be (n,4) with n is the number of rectangular apertures.
+
+		:param y:
+			y coordinates of the rectangular corners. The shape should be (n,4) with n is the number of rectangular apertures.
+
+		:param ra:
+			RA coordinates of the rectangular corners. The shape should be (n,4) with n is the number of rectangular apertures.
+			If x input is given, this input will be ignored.
+
+		:param dec:
+			DEC coordinates of the rectangular corners. The shape should be (n,4) with n is the number of rectangular apertures.
+			If y input is given, this inpur will be ignored.
+
+		:param pa:
+			Position angle of the rectangular aperture.
+
+		:param make_plot: 
+			Decide to make a plot or not.
+
+		:param ncols:
+			Number of columns
+			
+		:param savefig: (default=True)
+			Decide to save the plot or not.
+
+		:param name_plot: (optional)
+			Name for the output plot.
+
+		"""
+
+		from matplotlib.colors import ListedColormap
+
+		filters = self.filters
+		nbands = len(filters)
+
+		stamp_size = self.stamp_size
+		dim_y = int(stamp_size[0])
+		dim_x = int(stamp_size[1])
+
+		if output_stamps is None:
+			if self.run_image_processing == False:
+				print ('output_stamps is required input if run_image_processing=False!')
+				sys.exit()
+			else:
+				output_stamps = output_stamps1
+
+		# get the rectangular region
+		if x is not None:
+			x, y = np.asarray(x), np.asarray(y)
+			if len(x.shape) == 1:
+				nrect = 1
+			else:
+				nrect = x.shape[0]
+
+		elif ra is not None:
+			ra, dec = np.asarray(ra), np.asarray(dec)
+			if len(ra.shape) == 1:
+				nrect = 1
+			else:
+				nrect = ra.shape[0]
+
+		rect_region = np.zeros((dim_y,dim_x))
+		x1, x2, x3, x4, y1, y2, y3, y4 = [], [], [], [], [], [], [], []
+		for ii in range(nrect):
+			if nrect > 1:
+				if x is not None:
+					rect_region0, x10, x20, x30, x40, y10, y20, y30, y40 = get_rectangular_region(output_stamps["name_img_%s" % filters[0]], x=x[ii], y=y[ii])
+				else:
+					rect_region0, x10, x20, x30, x40, y10, y20, y30, y40 = get_rectangular_region(output_stamps["name_img_%s" % filters[0]], ra=ra[ii], dec=dec[ii])
+			else:
+				if x is not None:
+					rect_region0, x10, x20, x30, x40, y10, y20, y30, y40 = get_rectangular_region(output_stamps["name_img_%s" % filters[0]], x=x, y=y)
+				else:
+					rect_region0, x10, x20, x30, x40, y10, y20, y30, y40 = get_rectangular_region(output_stamps["name_img_%s" % filters[0]], ra=ra, dec=dec)
+
+			x1.append(x10)
+			x2.append(x20)
+			x3.append(x30)
+			x4.append(x40)
+
+			y1.append(y10)
+			y2.append(y20)
+			y3.append(y30)
+			y4.append(y40)
+
+			rows, cols = np.where(rect_region0==1)
+			rect_region[rows,cols] = 1
+
+		rows, cols = np.where(rect_region==0)
+		rect_region[rows,cols] = float('nan')
+
+		if make_plot == True:
+			import matplotlib.pyplot as plt
+
+			map_plots, nrows = mapping_multiplots(nbands,ncols)
+			fig1 = plt.figure(figsize=(ncols*4,nrows*4))
+			for bb in range(0,nbands):
+				yy, xx = np.where(map_plots==bb+1)
+				f1 = fig1.add_subplot(nrows, ncols, bb+1)
+				if map_plots[yy[0]][xx[0]-1] == 0:
+					plt.ylabel('[pixel]', fontsize=15)
+				if map_plots[yy[0]+1][xx[0]] == 0:
+					plt.xlabel('[pixel]', fontsize=15)
+
+				hdu = fits.open(output_stamps["name_img_%s" % filters[bb]])
+				plt.imshow(np.log10(hdu[0].data), origin='lower')
+				hdu.close()
+
+				plt.imshow(rect_region, origin='lower', cmap=ListedColormap(['brown']), alpha=0.5)
+				f1.text(0.5, 0.93, filters[bb], horizontalalignment='center', verticalalignment='center', 
+						transform = f1.transAxes, fontsize=18, color='black', weight="bold")
+
+				for ii in range(nrect):
+					plt.plot([x1[ii],x2[ii]], [y1[ii],y2[ii]], lw=1, color='red')
+					plt.plot([x2[ii],x4[ii]], [y2[ii],y4[ii]], lw=1, color='red')
+					plt.plot([x4[ii],x3[ii]], [y4[ii],y3[ii]], lw=1, color='red')
+					plt.plot([x3[ii],x1[ii]], [y3[ii],y1[ii]], lw=1, color='red')
+
+			plt.subplots_adjust(left=0.05, right=0.95, bottom=0.05, top=0.95, hspace=0.1, wspace=0.15)
+
+			if savefig is True:
+				if name_plot is None:
+					name_plot = 'rectangular_regions.png'
+				plt.savefig(name_plot)
+			else:
+				plt.show()
+
+		return rect_region
+
+
+	def plot_gal_region(self, gal_region, output_stamps=None, ncols=6, savefig=True, name_plot=None):
+
+		""" Plot the defined galaxy's region. 
+
+		:param gal_region:
+			The defined galaxy's region.
+
+		:param ncols:
+			Number of columns
+			
+		:param savefig: (default=True)
+			Decide to save the plot or not.
+
+		:param name_plot: (optional)
+			Name for the output plot.
+		"""
+
+		import matplotlib.pyplot as plt
+		from matplotlib.colors import ListedColormap
+
+		filters = self.filters
+		nbands = len(filters)
+
+		if output_stamps is None:
+			if self.run_image_processing == False:
+				print ('output_stamps is required input if run_image_processing=False!')
+				sys.exit()
+			else:
+				output_stamps = output_stamps1
+
+		rows, cols = np.where(gal_region==0)
+		gal_region[rows,cols] = float('nan')
+
+		map_plots, nrows = mapping_multiplots(nbands,ncols)
+
+		fig1 = plt.figure(figsize=(ncols*4,nrows*4))
+		for bb in range(0,nbands):
+			yy, xx = np.where(map_plots==bb+1)
+			f1 = fig1.add_subplot(nrows, ncols, bb+1)
+			if map_plots[yy[0]][xx[0]-1] == 0:
+				plt.ylabel('[pixel]', fontsize=15)
+			if map_plots[yy[0]+1][xx[0]] == 0:
+				plt.xlabel('[pixel]', fontsize=15)
+
+			hdu = fits.open(output_stamps["name_img_%s" % filters[bb]])
+			plt.imshow(np.log10(hdu[0].data), origin='lower')
+			hdu.close()
+			plt.imshow(gal_region, origin='lower', cmap=ListedColormap(['brown']), alpha=0.5)
+			f1.text(0.5, 0.93, filters[bb], horizontalalignment='center', verticalalignment='center', 
+					transform = f1.transAxes, fontsize=18, color='black')
+
+		plt.subplots_adjust(left=0.05, right=0.95, bottom=0.05, top=0.95, hspace=0.1, wspace=0.15)
+
+		if savefig is True:
+			if name_plot is None:
+				name_plot = 'gal_region.png'
+			plt.savefig(name_plot)
+		else:
+			plt.show()
+
+
+	def flux_map(self, gal_region, output_stamps=None, Gal_EBV=None, scale_unit=1.0e-17, 
 		mag_zp_2mass=None, unit_spire='Jy_per_beam', name_out_fits=None):
 		"""Function for calculating maps of multiband fluxes from the stamp images produced by the :func:`reduced_stamps`.
-
-		:param output_stamps:
-			Dictionary containing reduced multiband images produced by the :func:`reduced_stamps` function.
 
 		:param gal_region:
 			A 2D array containing the galaxy's region of interest. It is preferably the output of the :func:`gal_region`, but one can also 
@@ -667,12 +1035,18 @@ class images_processing:
 		gal_ra = self.gal_ra
 		gal_dec = self.gal_dec
 		gal_z = self.gal_z
-
 		flag_psfmatch = self.flag_psfmatch
 		flag_reproject = self.flag_reproject
-
 		img_unit = self.img_unit
-		img_scale = self.img_scale		
+		img_scale = self.img_scale	
+		idfil_align = self.idfil_align 	
+
+		if output_stamps is None:
+			if self.run_image_processing == False:
+				print ('output_stamps is required input if run_image_processing=False!')
+				sys.exit()
+			else:
+				output_stamps = output_stamps1
 
 		# get image dimension and example of stamp_img
 		str_temp = "name_img_%s" % filters[0]
@@ -710,10 +1084,9 @@ class images_processing:
 			Alambda[filters[bb]] = k_lmbd_Fitz1986_LMC(eff_wave[filters[bb]])*Gal_EBV
 
 		# get index of filter that has image with largest pixel scale:
-		fil_pixsizes = np.zeros(nbands)
-		for bb in range(0,nbands):
-			fil_pixsizes[bb] = img_pixsizes[filters[bb]]
-		idfil_align, max_val = max(enumerate(fil_pixsizes), key=itemgetter(1))
+		if idfil_align is None:
+			fil_pixsizes = np.asarray(list(img_pixsizes.values()))
+			idfil_align, max_val = max(enumerate(fil_pixsizes), key=itemgetter(1))
 		###================ End of (1) get basic information ===============####
 
 		###================ (2) Calculation of flux map ===============####
@@ -732,6 +1105,10 @@ class images_processing:
 			hdu = fits.open(output_stamps[str_temp]) 
 			var_img_data = hdu[0].data
 			hdu.close()
+
+			# replace NaN values in the science and variance images with interpolated values
+			#sci_img_data = remove_nan_image_2dinterpolation(sci_img_data)
+			#var_img_data = remove_nan_image_2dinterpolation(var_img_data)
 
 			#==> get magnitude zero-point and fluxes for zero-magnitudes zero point conversion: of 2MASS:
 			if filters[bb]=='2mass_j' or filters[bb]=='2mass_h' or filters[bb]=='2mass_k':

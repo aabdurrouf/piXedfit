@@ -16,12 +16,8 @@ with np.errstate(divide='ignore'):
 __all__ = ["generate_modelSED_photo_fit", "generate_modelSED_propphoto_nomwage_fit"]
 
 
-def generate_modelSED_photo_fit(sp=None,sfh_form=4,filters=['galex_fuv','galex_nuv','sdss_u',
-	'sdss_g','sdss_r','sdss_i','sdss_z'],add_igm_absorption=0,igm_type=0,params_fsps=['logzsol', 'log_tau', 'log_age', 
-	'dust_index', 'dust1', 'dust2', 'log_gamma', 'log_umin', 'log_qpah','log_fagn', 'log_tauagn'],DL_Gpc=0.0,cosmo='flat_LCDM',
-	H0=70.0,Om0=0.3,params_val={'log_mass':0.0,'z':0.001,'log_fagn':-3.0,'log_tauagn':1.0,'log_qpah':0.54,'log_umin':0.0,
-	'log_gamma':-2.0,'dust1':0.5,'dust2':0.5,'dust_index':-0.7,'log_age':1.0,'log_alpha':0.1,'log_beta':0.1,'log_t0':0.4,
-	'log_tau':0.4,'logzsol':0.0},interp_filters_waves=[],interp_filters_trans=[]):
+def generate_modelSED_photo_fit(sp=None,sfh_form=4,filters=None,add_igm_absorption=0,igm_type=0,params_fsps=None,DL_Gpc=0.0,cosmo='flat_LCDM',
+	H0=70.0,Om0=0.3,params_val=None,interp_filters_waves=[],interp_filters_trans=[]):
 	"""A function to generate model photometric SED
 
 	:param sp:
@@ -51,36 +47,24 @@ def generate_modelSED_photo_fit(sp=None,sfh_form=4,filters=['galex_fuv','galex_n
 	:param param_val:
 		A dictionary of parameters values.
 	"""
-	
-	params_assoc_fsps = {'logzsol':"logzsol", 'log_tau':"tau", 'log_age':"tage", 
-					'dust_index':"dust_index", 'dust1':"dust1", 'dust2':"dust2",
-					'log_gamma':"duste_gamma", 'log_umin':"duste_umin", 
-					'log_qpah':"duste_qpah",'log_fagn':"fagn", 'log_tauagn':"agn_tau"}
-	status_log = {'logzsol':0, 'log_tau':1, 'log_age':1, 'dust_index':0, 'dust1':0, 'dust2':0,
-				'log_gamma':1, 'log_umin':1, 'log_qpah':1,'log_fagn':1, 'log_tauagn':1}
 
-	# get stellar mass:
+	def_params_fsps, params_assoc_fsps, status_log = list_params_fsps()
+
 	formed_mass = pow(10.0,params_val['log_mass'])
 
 	# input model parameters to FSPS:
-	nparams_fsps = len(params_fsps)
-	for pp in range(0,nparams_fsps):
+	for pp in range(len(params_fsps)):
 		str_temp = params_assoc_fsps[params_fsps[pp]]
 		if status_log[params_fsps[pp]] == 0:
 			sp.params[str_temp] = params_val[params_fsps[pp]]
 		elif status_log[params_fsps[pp]] == 1:
 			sp.params[str_temp] = pow(10.0,params_val[params_fsps[pp]])
 
-	# gas phase metallicity:
-	sp.params['gas_logz'] = params_val['logzsol']
-
 	# generate the SED:
 	if sfh_form==0 or sfh_form==1:
 		age = pow(10.0,params_val['log_age'])
 		wave, extnc_spec = sp.get_spectrum(peraa=True,tage=age) ## spectrum in L_sun/AA
-		# get model mass:
 		mass = sp.stellar_mass
-		# get dust mass: 
 		dust_mass0 = sp.dust_mass   ## in solar mass/norm
 	elif sfh_form==2 or sfh_form==3 or sfh_form==4:
 		t0 = pow(10.0,params_val['log_t0'])
@@ -88,8 +72,7 @@ def generate_modelSED_photo_fit(sp=None,sfh_form=4,filters=['galex_fuv','galex_n
 		age = pow(10.0,params_val['log_age'])
 		alpha = pow(10.0,params_val['log_alpha'])
 		beta = pow(10.0,params_val['log_beta'])
-		SFR_fSM,mass,wave,extnc_spec,dust_mass0 = csp_spec_restframe_fit(sp=sp,sfh_form=sfh_form,formed_mass=formed_mass,
-																age=age,tau=tau,t0=t0,alpha=alpha,beta=beta)
+		SFR_fSM,mass,wave,extnc_spec,dust_mass0 = csp_spec_restframe_fit(sp=sp,sfh_form=sfh_form,formed_mass=formed_mass,age=age,tau=tau,t0=t0,alpha=alpha,beta=beta)
 
 	# redshifting
 	redsh_wave,redsh_spec0 = cosmo_redshifting(DL_Gpc=DL_Gpc,cosmo=cosmo,H0=H0,Om0=Om0,z=params_val['z'],wave=wave,spec=extnc_spec)
@@ -116,19 +99,10 @@ def generate_modelSED_photo_fit(sp=None,sfh_form=4,filters=['galex_fuv','galex_n
 	return photo_SED_flux
 
 
-def generate_modelSED_propphoto_nomwage_fit(sp=None,imf_type=1,sfh_form=4,filters=['galex_fuv','galex_nuv','sdss_u',
-	'sdss_g','sdss_r','sdss_i','sdss_z'],add_igm_absorption=0,igm_type=0,params_fsps=['logzsol', 'log_tau', 'log_age', 
-	'dust_index', 'dust1', 'dust2', 'log_gamma', 'log_umin', 'log_qpah','log_fagn', 'log_tauagn'], DL_Gpc=0.0,cosmo='flat_LCDM',
-	H0=70.0,Om0=0.3,params_val={'log_mass':0.0,'z':0.001,'log_fagn':-3.0,'log_tauagn':1.0,
-	'log_qpah':0.54,'log_umin':0.0,'log_gamma':-2.0,'dust1':0.5,'dust2':0.5,'dust_index':-0.7,'log_age':1.0,'log_alpha':0.1,
-	'log_beta':0.1,'log_t0':0.4,'log_tau':0.4,'logzsol':0.0},interp_filters_waves=[],interp_filters_trans=[]):
-	
-	params_assoc_fsps = {'logzsol':"logzsol", 'log_tau':"tau", 'log_age':"tage", 
-					'dust_index':"dust_index", 'dust1':"dust1", 'dust2':"dust2",
-					'log_gamma':"duste_gamma", 'log_umin':"duste_umin", 
-					'log_qpah':"duste_qpah",'log_fagn':"fagn", 'log_tauagn':"agn_tau"}
-	status_log = {'logzsol':0, 'log_tau':1, 'log_age':1, 'dust_index':0, 'dust1':0, 'dust2':0,
-				'log_gamma':1, 'log_umin':1, 'log_qpah':1,'log_fagn':1, 'log_tauagn':1}
+def generate_modelSED_propphoto_nomwage_fit(sp=None,imf_type=1,sfh_form=4,filters=None,add_igm_absorption=0,igm_type=0,params_fsps=None,DL_Gpc=0.0,cosmo='flat_LCDM',
+	H0=70.0,Om0=0.3,params_val=None,interp_filters_waves=[],interp_filters_trans=[]):
+
+	def_params_fsps, params_assoc_fsps, status_log = list_params_fsps()
 
 	formed_mass = pow(10.0,params_val['log_mass'])
 	t0 = pow(10.0,params_val['log_t0'])
@@ -147,7 +121,6 @@ def generate_modelSED_propphoto_nomwage_fit(sp=None,imf_type=1,sfh_form=4,filter
 			sp.params[str_temp] = pow(10.0,params_val[params_fsps[pp]])
 
 	sp.params['imf_type'] = imf_type
-	sp.params['gas_logz'] = params_val['logzsol']
 
 	if sfh_form==0 or sfh_form==1:
 		wave, extnc_spec = sp.get_spectrum(peraa=True,tage=age) 	# spectrum in L_sun/AA

@@ -17,8 +17,7 @@ global PIXEDFIT_HOME
 PIXEDFIT_HOME = os.environ['PIXEDFIT_HOME']
 sys.path.insert(0, PIXEDFIT_HOME)
 
-from piXedfit.utils.filtering import interp_filters_curves, filtering_interp_filters 
-from piXedfit.utils.posteriors import model_leastnorm, ln_gauss_prob, calc_chi2
+from piXedfit.utils.posteriors import model_leastnorm, ln_gauss_prob
 from piXedfit.utils.redshifting import cosmo_redshifting
 from piXedfit.utils.igm_absorption import igm_att_madau, igm_att_inoue
 from piXedfit.utils.igm_absorption import igm_att_madau, igm_att_inoue
@@ -33,7 +32,6 @@ def initfit_fz(gal_z,DL_Gpc):
 	spec_wave_clean,waveid_excld = get_no_nebem_wave_fit(gal_z,spec_wave,del_wave_nebem)
 	spec_flux_clean = np.delete(spec_flux, waveid_excld)
 	spec_flux_err_clean = np.delete(spec_flux_err, waveid_excld)
-	nwaves_clean = len(spec_wave_clean)
 
 	# open file containing models
 	f = h5py.File(models_spec, 'r')
@@ -52,7 +50,7 @@ def initfit_fz(gal_z,DL_Gpc):
 	comm.Scatter(idx_mpi, recvbuf_idx, root=0)
 
 	mod_params_temp = np.zeros((nparams,numDataPerRank))
-	mod_redcd_chi2_temp = np.zeros(numDataPerRank) 
+	mod_redcd_chi2_spec_temp = np.zeros(numDataPerRank)
 
 	count = 0
 	for ii in recvbuf_idx:
@@ -61,7 +59,7 @@ def initfit_fz(gal_z,DL_Gpc):
 		extnc_spec = f[str_temp][:]
 
 		# redshifting
-		redsh_wave, redsh_spec = cosmo_redshifting(DL_Gpc=DL_Gpc,cosmo=cosmo,H0=H0,Om0=Om0,z=gal_z,wave=wave,spec=extnc_spec)
+		redsh_wave,redsh_spec = cosmo_redshifting(DL_Gpc=DL_Gpc,cosmo=cosmo,H0=H0,Om0=Om0,z=gal_z,wave=wave,spec=extnc_spec)
 
 		# IGM absorption:
 		if add_igm_absorption == 1:
@@ -71,10 +69,7 @@ def initfit_fz(gal_z,DL_Gpc):
 			elif igm_type==1:
 				trans = igm_att_inoue(redsh_wave,gal_z)
 				redsh_spec = redsh_spec*trans
-
-		# filtering
-		fluxes = filtering_interp_filters(redsh_wave,redsh_spec,interp_filters_waves,interp_filters_trans)
-
+		
 		# cut the model spectrum
 		conv_mod_spec_wave,conv_mod_spec_flux = redsh_wave[idx_mod_wave[0]],redsh_spec[idx_mod_wave[0]]
 
@@ -86,22 +81,14 @@ def initfit_fz(gal_z,DL_Gpc):
 		smooth_spec_wave, smooth_mod_spec_flux = spec_smoothing(spec_wave_clean,conv_mod_spec_flux_clean,med_del_wave_sigma)
 		smooth_spec_wave, smooth_obs_spec_flux = spec_smoothing(spec_wave_clean,spec_flux_clean,med_del_wave_sigma)
 		smooth_spec_wave, smooth_obs_spec_flux_err = spec_smoothing(spec_wave_clean,spec_flux_err_clean,med_del_wave_sigma)
-		d_merge = smooth_obs_spec_flux.tolist() + obs_fluxes.tolist()
-		derr_merge = smooth_obs_spec_flux_err.tolist() + obs_flux_err.tolist()
-		m_merge = smooth_mod_spec_flux.tolist() + fluxes.tolist()
-		norm = model_leastnorm(d_merge, derr_merge, m_merge)
-		fluxes = fluxes*norm
-		conv_mod_spec_flux_clean = conv_mod_spec_flux_clean*norm 
-
+		norm = model_leastnorm(smooth_obs_spec_flux,smooth_obs_spec_flux_err,smooth_mod_spec_flux)
+		conv_mod_spec_flux_clean = conv_mod_spec_flux_clean*norm
+		
 		chi_spec0 = (conv_mod_spec_flux_clean-spec_flux_clean)/spec_flux_err_clean
 		chi_spec,lower,upper = sigmaclip(chi_spec0, low=spec_chi_sigma_clip, high=spec_chi_sigma_clip)
+		chi2_spec = np.sum(np.square(chi_spec))
 
-		idx1 = np.where((chi_spec0>=lower) & (chi_spec0<=upper))
-		m_merge = conv_mod_spec_flux_clean[idx1[0]].tolist() + fluxes.tolist()
-		d_merge = spec_flux_clean[idx1[0]].tolist() + obs_fluxes.tolist()
-		derr_merge = spec_flux_err_clean[idx1[0]].tolist() + obs_flux_err.tolist()
-			
-		mod_redcd_chi2_temp[int(count)] = calc_chi2(d_merge, derr_merge, m_merge)/len(m_merge)
+		mod_redcd_chi2_spec_temp[int(count)] = chi2_spec/len(chi_spec)
 
 		# get parameters
 		for pp in range(0,nparams):
@@ -118,19 +105,20 @@ def initfit_fz(gal_z,DL_Gpc):
 		sys.stdout.flush()
 
 	mod_params = np.zeros((nparams,nmodels))
-	mod_redcd_chi2 = np.zeros(nmodels)
+	mod_redcd_chi2_spec = np.zeros(nmodels)
 
-	comm.Gather(mod_redcd_chi2_temp, mod_redcd_chi2, root=0)
+	# gather the scattered data and collect to rank=0
+	comm.Gather(mod_redcd_chi2_spec_temp, mod_redcd_chi2_spec, root=0)
 	for pp in range(0,nparams):
 		comm.Gather(mod_params_temp[pp], mod_params[pp], root=0)
 
 	# Broadcast
-	comm.Bcast(mod_redcd_chi2, root=0)
+	comm.Bcast(mod_redcd_chi2_spec, root=0)
 	comm.Bcast(mod_params, root=0)
 
 	f.close()
 
-	return mod_params, mod_redcd_chi2
+	return mod_params, mod_redcd_chi2_spec
 
 
 def initfit_vz(gal_z,DL_Gpc,zz,nrands_z):
@@ -138,7 +126,7 @@ def initfit_vz(gal_z,DL_Gpc,zz,nrands_z):
 	spec_wave_clean,waveid_excld = get_no_nebem_wave_fit(gal_z,spec_wave,del_wave_nebem)
 	spec_flux_clean = np.delete(spec_flux, waveid_excld)
 	spec_flux_err_clean = np.delete(spec_flux_err, waveid_excld)
-	nwaves_clean = len(spec_wave_clean)
+	#nwaves_clean = len(spec_wave_clean)
 
 	# open file containing models
 	f = h5py.File(models_spec, 'r')
@@ -157,7 +145,6 @@ def initfit_vz(gal_z,DL_Gpc,zz,nrands_z):
 	comm.Scatter(idx_mpi, recvbuf_idx, root=0)
 
 	mod_params_temp = np.zeros((nparams,numDataPerRank))
-	mod_chi2_photo_temp = np.zeros(numDataPerRank)
 	mod_redcd_chi2_spec_temp = np.zeros(numDataPerRank)
 
 	count = 0
@@ -178,37 +165,24 @@ def initfit_vz(gal_z,DL_Gpc,zz,nrands_z):
 				trans = igm_att_inoue(redsh_wave,gal_z)
 				redsh_spec = redsh_spec*trans
 
-		# filtering
-		fluxes = filtering_interp_filters(redsh_wave,redsh_spec,interp_filters_waves,interp_filters_trans)
-		norm = model_leastnorm(obs_fluxes,obs_flux_err,fluxes)
-		norm_fluxes = norm*fluxes
-
-		chi_photo = (norm_fluxes-obs_fluxes)/obs_flux_err
-		chi2_photo = np.sum(np.square(chi_photo))
-		
-		# cut and normalize model spectrum
-		# smoothing model spectrum to meet resolution of IFS
-		conv_mod_spec_wave,conv_mod_spec_flux = redsh_wave[idx_mod_wave[0]],redsh_spec[idx_mod_wave[0]]*norm
+		# cut the model spectrum
+		conv_mod_spec_wave,conv_mod_spec_flux = redsh_wave[idx_mod_wave[0]],redsh_spec[idx_mod_wave[0]]
 
 		# get model continuum
-		func = interp1d(conv_mod_spec_wave,conv_mod_spec_flux, fill_value='extrapolate')
+		func = interp1d(conv_mod_spec_wave, conv_mod_spec_flux, fill_value='extrapolate')
 		conv_mod_spec_flux_clean = func(spec_wave_clean)
 
-		# get ratio of the obs and mod continuum
-		spec_flux_ratio = spec_flux_clean/conv_mod_spec_flux_clean
-
-		# fit with legendre polynomial
-		poly_legendre1 = np.polynomial.legendre.Legendre.fit(spec_wave_clean, spec_flux_ratio, poly_order)
-		poly_legendre2 = np.polynomial.legendre.Legendre.fit(spec_wave_clean, poly_legendre1(spec_wave_clean), 3)
-
-		# apply to the model
-		conv_mod_spec_flux_clean = poly_legendre1(spec_wave_clean)*conv_mod_spec_flux_clean/poly_legendre2(spec_wave_clean)
+		# estimate normalization
+		smooth_spec_wave, smooth_mod_spec_flux = spec_smoothing(spec_wave_clean,conv_mod_spec_flux_clean,med_del_wave_sigma)
+		smooth_spec_wave, smooth_obs_spec_flux = spec_smoothing(spec_wave_clean,spec_flux_clean,med_del_wave_sigma)
+		smooth_spec_wave, smooth_obs_spec_flux_err = spec_smoothing(spec_wave_clean,spec_flux_err_clean,med_del_wave_sigma)
+		norm = model_leastnorm(smooth_obs_spec_flux,smooth_obs_spec_flux_err,smooth_mod_spec_flux)
+		conv_mod_spec_flux_clean = conv_mod_spec_flux_clean*norm
 		
 		chi_spec0 = (conv_mod_spec_flux_clean-spec_flux_clean)/spec_flux_err_clean
 		chi_spec,lower,upper = sigmaclip(chi_spec0, low=spec_chi_sigma_clip, high=spec_chi_sigma_clip)
 		chi2_spec = np.sum(np.square(chi_spec))
 
-		mod_chi2_photo_temp[int(count)] = chi2_photo
 		mod_redcd_chi2_spec_temp[int(count)] = chi2_spec/len(chi_spec)
 
 		# get parameters
@@ -228,23 +202,20 @@ def initfit_vz(gal_z,DL_Gpc,zz,nrands_z):
 		sys.stdout.flush()
 
 	mod_params = np.zeros((nparams,nmodels))
-	mod_chi2_photo = np.zeros(nmodels)
 	mod_redcd_chi2_spec = np.zeros(nmodels)
 
 	# gather the scattered data and collect to rank=0
-	comm.Gather(mod_chi2_photo_temp, mod_chi2_photo, root=0)
 	comm.Gather(mod_redcd_chi2_spec_temp, mod_redcd_chi2_spec, root=0)
 	for pp in range(0,nparams):
 		comm.Gather(mod_params_temp[pp], mod_params[pp], root=0)
 
 	# Broadcast
-	comm.Bcast(mod_chi2_photo, root=0)
 	comm.Bcast(mod_redcd_chi2_spec, root=0)
 	comm.Bcast(mod_params, root=0)
 
 	f.close()
 
-	return mod_params, mod_chi2_photo, mod_redcd_chi2_spec
+	return mod_params, mod_redcd_chi2_spec
 
 def lnprior(theta):
 	idx_sel = np.where((theta>=priors_min) & (theta<=priors_max))
@@ -267,9 +238,8 @@ def lnprior(theta):
 		return lnprior
 	return -np.inf
 
-## function to calculate posterior probability:
 def lnprob(theta):
-	# get prior:
+
 	lp = lnprior(theta)
 
 	idx_sel = np.where((theta>=priors_min) & (theta<=priors_max))
@@ -303,32 +273,24 @@ def lnprob(theta):
 			elif igm_type==1:
 				trans = igm_att_inoue(redsh_wave,params_val['z'])
 				redsh_spec = redsh_spec*trans
-
-		# filtering
-		fluxes = filtering_interp_filters(redsh_wave,redsh_spec,interp_filters_waves,interp_filters_trans)
-
-		# cut the model spectrum
-		conv_mod_spec_wave,conv_mod_spec_flux = redsh_wave[idx_mod_wave[0]],redsh_spec[idx_mod_wave[0]]
+			
+		# cut and normalize model spectrum
+		conv_mod_spec_wave, conv_mod_spec_flux = redsh_wave[idx_mod_wave[0]], redsh_spec[idx_mod_wave[0]]
 
 		# get model continuum
 		func = interp1d(conv_mod_spec_wave, conv_mod_spec_flux, fill_value='extrapolate')
 		conv_mod_spec_flux_clean = func(spec_wave_clean)
-
+			
 		chi_spec0 = (conv_mod_spec_flux_clean-spec_flux_clean)/spec_flux_err_clean
 		chi_spec,lower,upper = sigmaclip(chi_spec0, low=spec_chi_sigma_clip, high=spec_chi_sigma_clip)
 
-		idx1 = np.where((chi_spec0>=lower) & (chi_spec0<=upper))
-		m_merge = conv_mod_spec_flux_clean[idx1[0]].tolist() + fluxes.tolist()
-		d_merge = spec_flux_clean[idx1[0]].tolist() + obs_fluxes.tolist()
-		derr_merge = spec_flux_err_clean[idx1[0]].tolist() + obs_flux_err.tolist()
-
-		ln_likeli = -0.5*calc_chi2(d_merge, derr_merge, m_merge)
+		ln_likeli = -0.5*np.sum(np.square(chi_spec))
 
 		return lp + ln_likeli
 
 
 """
-USAGE: mpirun -np [npros] python ./mcmc_pcmod_p1.py (1)filters (2)conf (3)inputSED_txt (4)data samplers hdf5 file (5)HDF5 file of model spectra
+USAGE: mpirun -np [npros] python ./mcmc_pcmod_p1.py (1)conf (2)inputSED_txt (3)data samplers hdf5 file (4)HDF5 file of model spectra
 """
 
 global comm, size, rank
@@ -340,16 +302,9 @@ temp_dir = PIXEDFIT_HOME+'/data/temp/'
 
 def_params_fsps, params_assoc_fsps, status_log = list_params_fsps()
 
-# get filters
-global filters, nbands
-filters = np.genfromtxt(temp_dir+str(sys.argv[1]), dtype=str)
-nbands = len(filters)
-
 # input SED
-global obs_fluxes, obs_flux_err, spec_wave, spec_flux, spec_flux_err
-f = h5py.File(temp_dir+str(sys.argv[3]), 'r')
-obs_fluxes = f['obs_flux'][:]
-obs_flux_err = f['obs_flux_err'][:]
+global spec_wave, spec_flux, spec_flux_err
+f = h5py.File(temp_dir+str(sys.argv[2]), 'r')
 spec_wave = f['spec_wave'][:]
 spec_flux = f['spec_flux'][:]
 spec_flux_err = f['spec_flux_err'][:]
@@ -369,11 +324,10 @@ max_spec_wave = max(spec_wave)
 
 # add systematic error accommodating various factors, including modeling uncertainty, assume systematic error of 0.1
 sys_err_frac = 0.1
-obs_flux_err = np.sqrt(np.square(obs_flux_err) + np.square(sys_err_frac*obs_fluxes))
 spec_flux_err = np.sqrt(np.square(spec_flux_err) + np.square(sys_err_frac*spec_flux))
 
 global models_spec
-models_spec = sys.argv[5]
+models_spec = sys.argv[4]
 
 # data of pre-calculated model SEDs for initial fitting
 f = h5py.File(models_spec, 'r')
@@ -390,11 +344,11 @@ add_agn = f['mod'].attrs['add_agn']
 nwaves_mod = len(f['mod/spec/wave'][:])
 
 # read configuration file
-global cosmo, H0, Om0, nmodels, params, nparams, priors_min, priors_max, params_priors, nrands_z
+global cosmo, H0, Om0, nmodels, params, nparams, priors_min, priors_max, params_priors, nrands_z, def_params_val
 global smooth_velocity, sigma_smooth, smooth_lsf, name_file_lsf, poly_order, del_wave_nebem, spec_chi_sigma_clip
 free_z_temp, free_gas_logz_temp = 1, 1
 params0, nparams0 = get_params(free_z_temp, sfh_form, duste_switch, dust_law, add_agn, free_gas_logz_temp)
-config_file = str(sys.argv[2])
+config_file = str(sys.argv[1])
 def_params_val, cosmo, H0, Om0, gal_z, free_z, DL_Gpc, params, fix_params, nparams, priors_min, priors_max, nmodels, params_priors, add_igm_absorption, igm_type, nwalkers, nsteps, nsteps_cut, nrands_z, pr_z_min, pr_z_max, free_gas_logz, smooth_velocity, sigma_smooth, smooth_lsf, name_file_lsf, poly_order, del_wave_nebem, spec_chi_sigma_clip = read_config_file_fit(temp_dir,config_file,params0)
 
 nfix_params = len(fix_params)
@@ -443,9 +397,6 @@ if rank == 0:
 	print ("Number of models for initial fitting: %d" % nmodels)
 f.close()
 
-global interp_filters_waves, interp_filters_trans
-interp_filters_waves,interp_filters_trans = interp_filters_curves(filters)
-
 global redcd_chi2
 redcd_chi2 = 3.0
 
@@ -478,8 +429,8 @@ params_fsps, nparams_fsps = get_params_fsps(params)
 
 # initial fitting
 if free_z == 0:
-	mod_params, mod_redcd_chi2 = initfit_fz(gal_z,DL_Gpc)
-	idx0, min_val = min(enumerate(mod_redcd_chi2), key=itemgetter(1))
+	mod_params, mod_redcd_chi2_spec = initfit_fz(gal_z,DL_Gpc)
+	idx0, min_val = min(enumerate(mod_redcd_chi2_spec), key=itemgetter(1))
 	minchi2_params_initfit = mod_params[:,idx0]
 
 elif free_z == 1:
@@ -488,16 +439,16 @@ elif free_z == 1:
 
 	nmodels_merge = int(nmodels*nrands_z)
 	mod_params_merge = np.zeros((nparams,nmodels_merge))
-	mod_redcd_chi2_merge = np.zeros(nmodels_merge)
+	mod_redcd_chi2_spec_merge = np.zeros(nmodels_merge)
 	for zz in range(0,nrands_z):
 		gal_z = rand_z[zz]
-		mod_params, mod_redcd_chi2 = initfit_vz(gal_z,DL_Gpc,zz,nrands_z)
+		mod_params, mod_redcd_chi2_spec = initfit_vz(gal_z,DL_Gpc,zz,nrands_z)
 
 		for pp in range(0,nparams):
 			mod_params_merge[pp,int(zz*nmodels):int((zz+1)*nmodels)] = mod_params[pp]
-		mod_redcd_chi2_merge[int(zz*nmodels):int((zz+1)*nmodels)] = mod_redcd_chi2[:]
+		mod_redcd_chi2_spec_merge[int(zz*nmodels):int((zz+1)*nmodels)] = mod_redcd_chi2_spec[:]
 
-	idx0, min_val = min(enumerate(mod_redcd_chi2_merge), key=itemgetter(1))
+	idx0, min_val = min(enumerate(mod_redcd_chi2_spec_merge), key=itemgetter(1))
 	minchi2_params_initfit = mod_params_merge[:,idx0]
 
 if rank == 0:
@@ -528,7 +479,7 @@ with MPIPool() as pool:
 	samples = sampler.get_chain(discard=nsteps_cut, flat=True)
 
 	# store samplers into HDF5 file
-	with h5py.File(sys.argv[4], 'w') as f:
+	with h5py.File(sys.argv[3], 'w') as f:
 		s = f.create_group('samplers')
 		# modeling configuration
 		s.attrs['imf'] = imf
@@ -569,10 +520,6 @@ with MPIPool() as pool:
 			for pp in range(0,nfix_params): 
 				s.attrs['fpar%d' % pp] = fix_params[pp] 
 				s.attrs['fpar%d_val' % pp] = def_params_val[fix_params[pp]]
-
-		o = f.create_group('sed')
-		o.create_dataset('flux', data=np.array(obs_fluxes))
-		o.create_dataset('flux_err', data=np.array(obs_flux_err))
 
 		sp = f.create_group('spec')
 		sp.create_dataset('wave', data=np.array(spec_wave))

@@ -3,25 +3,33 @@ import sys, os
 import fsps
 import emcee
 import h5py
-from math import log10
+from math import log10, pow, sqrt 
 from mpi4py import MPI
 from astropy.io import fits
+from scipy.interpolate import interp1d
 
 global PIXEDFIT_HOME
 PIXEDFIT_HOME = os.environ['PIXEDFIT_HOME']
 sys.path.insert(0, PIXEDFIT_HOME)
 
-from piXedfit.piXedfit_model import calc_mw_age, get_dust_mass_mainSFH_fit, get_dust_mass_fagnbol_mainSFH_fit
-from piXedfit.piXedfit_model import get_sfr_dust_mass_othSFH_fit, get_sfr_dust_mass_fagnbol_othSFH_fit, construct_SFH
-from piXedfit.piXedfit_model import generate_modelSED_spec_decompose, get_dust_mass_othSFH_fit
+from piXedfit.piXedfit_model import calc_mw_age, get_dust_mass_mainSFH_fit, get_dust_mass_fagnbol_mainSFH_fit 
+from piXedfit.piXedfit_model import get_dust_mass_othSFH_fit, get_sfr_dust_mass_othSFH_fit 
+from piXedfit.piXedfit_model import get_sfr_dust_mass_fagnbol_othSFH_fit, construct_SFH
+from piXedfit.piXedfit_model import get_no_nebem_wave_fit, generate_modelSED_spec_restframe_fit
+from piXedfit.piXedfit_model import generate_modelSED_spec_decompose
 from piXedfit.piXedfit_model import default_params_val, set_initial_fsps, get_params_fsps
-from piXedfit.utils.filtering import filtering, cwave_filters
+from piXedfit.utils.filtering import interp_filters_curves, filtering_interp_filters 
+from piXedfit.utils.posteriors import model_leastnorm
+from piXedfit.utils.redshifting import cosmo_redshifting
+from piXedfit.utils.igm_absorption import igm_att_madau, igm_att_inoue
+#from piXedfit.piXedfit_spectrophotometric import spec_smoothing
+
 
 # Function to store the sampler chains into output fits file:
 def store_to_fits(nsamples=None,sampler_params=None,sampler_log_sfr=None,sampler_log_mw_age=None,
 	sampler_logdustmass=None,sampler_log_fagn_bol=None,fits_name_out=None): 
 
-	#==> get median best-fit model SED
+	#==> get median best-fit model spectrophotometric SED
 	nchains = 200
 	idx_sel = np.where((sampler_log_sfr>-29.0) & (sampler_params['log_age']<1.2))
 	nchains = int(nchains/size)*size
@@ -32,12 +40,19 @@ def store_to_fits(nsamples=None,sampler_params=None,sampler_log_sfr=None,sampler
 	comm.Scatter(idx_mpi, recvbuf_idx, root=0)
 
 	bfit_photo_flux_temp = np.zeros((nbands,numDataPerRank))
+	bfit_spec_flux_temp = np.zeros((nwaves_spec,numDataPerRank))
+	bfit_corr_factor_temp = np.zeros((nwaves_spec,numDataPerRank))
+
+	# for best-fit model spectrum to the observed photometric SED
 	bfit_spec_tot_temp = np.zeros((nwaves_mod,numDataPerRank))
 	bfit_spec_stellar_temp = np.zeros((nwaves_mod,numDataPerRank))
 	bfit_spec_duste_temp = np.zeros((nwaves_mod,numDataPerRank))
 	bfit_spec_agn_temp = np.zeros((nwaves_mod,numDataPerRank))
 	bfit_spec_nebe_temp = np.zeros((nwaves_mod,numDataPerRank))
 	bfit_spec_wave = np.zeros(nwaves_mod)
+
+	# turn off nebular emission
+	sp.params["add_neb_emission"] = False
 
 	count = 0
 	for ii in recvbuf_idx:
@@ -50,27 +65,79 @@ def store_to_fits(nsamples=None,sampler_params=None,sampler_log_sfr=None,sampler
 				param_stat = param_stat + 1
 
 		if param_stat == nparams:
+			# get wavelength free of emission lines
+			spec_wave_clean,waveid_excld = get_no_nebem_wave_fit(params_val['z'],spec_wave,del_wave_nebem)
+			spec_flux_clean = np.delete(spec_flux, waveid_excld)
+			spec_flux_err_clean = np.delete(spec_flux_err, waveid_excld)
+
+			# generate CSP rest-frame spectrum
+			rest_wave, rest_flux = generate_modelSED_spec_restframe_fit(sp=sp,sfh_form=sfh_form,params_fsps=params_fsps,params_val=params_val)
+
+			# redshifting
+			redsh_wave,redsh_spec = cosmo_redshifting(cosmo=cosmo,H0=H0,Om0=Om0,z=params_val['z'],wave=rest_wave,spec=rest_flux)
+
+			# cut model spectrum to match range given by the observed spectrum
+			idx_mod_wave = np.where((redsh_wave>min_spec_wave-100) & (redsh_wave<max_spec_wave+100))
+
+			# IGM absorption:
+			if add_igm_absorption == 1:
+				if igm_type == 0:
+					trans = igm_att_madau(redsh_wave,params_val['z'])
+					redsh_spec = redsh_spec*trans
+				elif igm_type == 1:
+					trans = igm_att_inoue(redsh_wave,params_val['z'])
+					redsh_spec = redsh_spec*trans
+
+			# filtering
+			fluxes = filtering_interp_filters(redsh_wave,redsh_spec,interp_filters_waves,interp_filters_trans)
+			norm = model_leastnorm(obs_fluxes,obs_flux_err,fluxes)
+			norm_fluxes = norm*fluxes
+				
+			# cut and normalize model spectrum
+			# smoothing model spectrum to meet resolution of IFS
+			#conv_mod_spec_wave,conv_mod_spec_flux = spec_smoothing(redsh_wave[idx_mod_wave[0]],redsh_spec[idx_mod_wave[0]]*norm,spec_sigma)
+			conv_mod_spec_wave,conv_mod_spec_flux = redsh_wave[idx_mod_wave[0]],redsh_spec[idx_mod_wave[0]]*norm
+
+			# get model continuum
+			func = interp1d(conv_mod_spec_wave,conv_mod_spec_flux, fill_value='extrapolate')
+			conv_mod_spec_flux_clean = func(spec_wave_clean)
+
+			# get ratio of the obs and mod continuum
+			spec_flux_ratio = spec_flux_clean/conv_mod_spec_flux_clean
+
+			# fit with legendre polynomial
+			poly_legendre1 = np.polynomial.legendre.Legendre.fit(spec_wave_clean, spec_flux_ratio, poly_order)
+			poly_legendre2 = np.polynomial.legendre.Legendre.fit(spec_wave_clean, poly_legendre1(spec_wave_clean), 3)
+			corr_factor1 = poly_legendre1(spec_wave_clean)/poly_legendre2(spec_wave_clean)
+			conv_mod_spec_flux_clean = conv_mod_spec_flux_clean*corr_factor1
+			poly_legendre = np.polynomial.legendre.Legendre.fit(spec_wave_clean, spec_flux_clean/conv_mod_spec_flux_clean, poly_order)
+
+			corr_factor2 = poly_legendre(spec_wave)
+			bfit_photo_flux_temp[:,int(count)] = norm_fluxes
+			bfit_spec_flux_temp[:,int(count)] = corr_factor2*func(spec_wave)
+			bfit_corr_factor_temp[:,int(count)] = corr_factor2
+
+			#==> for best-fit model spectrum to the observed photometric SED
 			spec_SED = generate_modelSED_spec_decompose(sp=sp,params_val=params_val,imf=imf,duste_switch=duste_switch,
 							add_neb_emission=add_neb_emission,dust_law=dust_law,add_agn=add_agn,
 							add_igm_absorption=add_igm_absorption,igm_type=igm_type,cosmo=cosmo,H0=H0,
 							Om0=Om0,sfh_form=sfh_form,funit='erg/s/cm2/A')
-
-			bfit_photo_flux_temp[:,int(count)] = filtering(spec_SED['wave'],spec_SED['flux_total'],filters)
-
 			bfit_spec_wave = spec_SED['wave']
-			bfit_spec_tot_temp[:,int(count)] = spec_SED['flux_total']
-			bfit_spec_stellar_temp[:,int(count)] = spec_SED['flux_stellar']
-
+			bfit_spec_tot_temp[:,int(count)] = spec_SED['flux_total']*norm
+			bfit_spec_stellar_temp[:,int(count)] = spec_SED['flux_stellar']*norm
 			if add_neb_emission == 1:
-				bfit_spec_nebe_temp[:,int(count)] = spec_SED['flux_nebe']
+				bfit_spec_nebe_temp[:,int(count)] = spec_SED['flux_nebe']*norm
 			if duste_switch==1:
-				bfit_spec_duste_temp[:,int(count)] = spec_SED['flux_duste']
+				bfit_spec_duste_temp[:,int(count)] = spec_SED['flux_duste']*norm
 			if add_agn == 1:
-				bfit_spec_agn_temp[:,int(count)] = spec_SED['flux_agn']
+				bfit_spec_agn_temp[:,int(count)] = spec_SED['flux_agn']*norm
 
 		count = count + 1
 
 	bfit_photo_flux = np.zeros((nbands,nchains))
+	bfit_spec_flux = np.zeros((nwaves_spec,nchains))
+	bfit_corr_factor = np.zeros((nwaves_spec,nchains))
+
 	bfit_spec_tot = np.zeros((nwaves_mod,nchains))
 	bfit_spec_stellar = np.zeros((nwaves_mod,nchains))
 	bfit_spec_duste = np.zeros((nwaves_mod,nchains))
@@ -79,6 +146,9 @@ def store_to_fits(nsamples=None,sampler_params=None,sampler_log_sfr=None,sampler
 
 	for bb in range(0,nbands):
 		comm.Gather(bfit_photo_flux_temp[bb], bfit_photo_flux[bb], root=0)
+	for bb in range(0,nwaves_spec):
+		comm.Gather(bfit_spec_flux_temp[bb], bfit_spec_flux[bb], root=0)
+		comm.Gather(bfit_corr_factor_temp[bb], bfit_corr_factor[bb], root=0)
 
 	for bb in range(0,nwaves_mod):
 		comm.Gather(bfit_spec_tot_temp[bb], bfit_spec_tot[bb], root=0)
@@ -97,13 +167,18 @@ def store_to_fits(nsamples=None,sampler_params=None,sampler_log_sfr=None,sampler
 			comm.Gather(bfit_spec_agn_temp[bb], bfit_spec_agn[bb], root=0)
 
 	if rank == 0:
-		# get central wavelength of the filters
-		photo_cwave = cwave_filters(filters)
-
 		# get percentiles
 		p16_photo_flux = np.percentile(bfit_photo_flux,16,axis=1)
 		p50_photo_flux = np.percentile(bfit_photo_flux,50,axis=1)
 		p84_photo_flux = np.percentile(bfit_photo_flux,84,axis=1)
+
+		p16_spec_flux = np.percentile(bfit_spec_flux,16,axis=1)
+		p50_spec_flux = np.percentile(bfit_spec_flux,50,axis=1)
+		p84_spec_flux = np.percentile(bfit_spec_flux,84,axis=1)
+
+		p16_corr_factor = np.percentile(bfit_corr_factor,16,axis=1)
+		p50_corr_factor = np.percentile(bfit_corr_factor,50,axis=1)
+		p84_corr_factor = np.percentile(bfit_corr_factor,84,axis=1)
 
 		p16_spec_tot = np.percentile(bfit_spec_tot,16,axis=1)
 		p50_spec_tot = np.percentile(bfit_spec_tot,50,axis=1)
@@ -128,9 +203,10 @@ def store_to_fits(nsamples=None,sampler_params=None,sampler_log_sfr=None,sampler
 			p50_spec_agn = np.percentile(bfit_spec_agn,50,axis=1)
 			p84_spec_agn = np.percentile(bfit_spec_agn,84,axis=1)
 
-		#==> Header:
+		# sampler_id:
 		sampler_id = np.linspace(1, nsamples, nsamples)
 
+		# make header
 		hdr = fits.Header()
 		hdr['imf'] = imf
 		hdr['nparams'] = nparams
@@ -148,6 +224,9 @@ def store_to_fits(nsamples=None,sampler_params=None,sampler_log_sfr=None,sampler
 		hdr['smooth_velocity'] = smooth_velocity
 		hdr['sigma_smooth'] = sigma_smooth
 		hdr['smooth_lsf'] = smooth_lsf
+		hdr['poly_order'] = poly_order
+		hdr['del_wave_nebem'] = del_wave_nebem
+		hdr['spec_chi_sigma_clip'] = spec_chi_sigma_clip
 		if add_igm_absorption == 1:
 			hdr['igm_type'] = igm_type
 		for bb in range(0,nbands):
@@ -169,7 +248,7 @@ def store_to_fits(nsamples=None,sampler_params=None,sampler_log_sfr=None,sampler
 				hdr['fpar%d_val' % pp] = fix_params_val[pp]
 		hdr['fitmethod'] = 'mcmc'
 		hdr['storesamp'] = 1
-		hdr['specphot'] = 0
+		hdr['specphot'] = 1
 		primary_hdu = fits.PrimaryHDU(header=hdr)
 
 		#==> sampler chains
@@ -242,10 +321,19 @@ def store_to_fits(nsamples=None,sampler_params=None,sampler_log_sfr=None,sampler
 		cols = fits.ColDefs(cols0)
 		hdu3 = fits.BinTableHDU.from_columns(cols, name='obs_photo')
 
-		#==> best-fit model photometric SED
+		#==> observed spectrum
 		cols0 = []
-		col = fits.Column(name='wave', format='D', array=np.array(photo_cwave))
+		col = fits.Column(name='wave', format='D', array=np.array(spec_wave))
 		cols0.append(col)
+		col = fits.Column(name='flux', format='D', array=np.array(spec_flux))
+		cols0.append(col)
+		col = fits.Column(name='flux_err', format='D', array=np.array(spec_flux_err))
+		cols0.append(col)
+		cols = fits.ColDefs(cols0)
+		hdu4 = fits.BinTableHDU.from_columns(cols, name='obs_spec')
+
+		#==> best-fit photometric SED
+		cols0 = []
 		col = fits.Column(name='p16', format='D', array=np.array(p16_photo_flux))
 		cols0.append(col)
 		col = fits.Column(name='p50', format='D', array=np.array(p50_photo_flux))
@@ -253,9 +341,35 @@ def store_to_fits(nsamples=None,sampler_params=None,sampler_log_sfr=None,sampler
 		col = fits.Column(name='p84', format='D', array=np.array(p84_photo_flux))
 		cols0.append(col)
 		cols = fits.ColDefs(cols0)
-		hdu4 = fits.BinTableHDU.from_columns(cols, name='bfit_photo')
+		hdu5 = fits.BinTableHDU.from_columns(cols, name='bfit_photo')
 
-		#==> best-fit model spectrum
+		#==> best-fit spectrum
+		cols0 = []
+		col = fits.Column(name='wave', format='D', array=np.array(spec_wave))
+		cols0.append(col)
+		col = fits.Column(name='p16', format='D', array=np.array(p16_spec_flux))
+		cols0.append(col)
+		col = fits.Column(name='p50', format='D', array=np.array(p50_spec_flux))
+		cols0.append(col)
+		col = fits.Column(name='p84', format='D', array=np.array(p84_spec_flux))
+		cols0.append(col)
+		cols = fits.ColDefs(cols0)
+		hdu6 = fits.BinTableHDU.from_columns(cols, name='bfit_spec')
+
+		#==> best-fit correction factor
+		cols0 = []
+		col = fits.Column(name='wave', format='D', array=np.array(spec_wave))
+		cols0.append(col)
+		col = fits.Column(name='p16', format='D', array=np.array(p16_corr_factor))
+		cols0.append(col)
+		col = fits.Column(name='p50', format='D', array=np.array(p50_corr_factor))
+		cols0.append(col)
+		col = fits.Column(name='p84', format='D', array=np.array(p84_corr_factor))
+		cols0.append(col)
+		cols = fits.ColDefs(cols0)
+		hdu7 = fits.BinTableHDU.from_columns(cols, name='corr_factor')
+
+		#==> best-fit model spectrum to the observed photometric SED
 		cols0 = []
 		col = fits.Column(name='wave', format='D', array=np.array(bfit_spec_wave))
 		cols0.append(col)
@@ -299,9 +413,9 @@ def store_to_fits(nsamples=None,sampler_params=None,sampler_log_sfr=None,sampler
 			cols0.append(col)
 
 		cols = fits.ColDefs(cols0)
-		hdu5 = fits.BinTableHDU.from_columns(cols, name='bfit_mod_spec')
+		hdu8 = fits.BinTableHDU.from_columns(cols, name='bfit_mod_spec')
 
-		hdul = fits.HDUList([primary_hdu, hdu1, hdu2, hdu3, hdu4, hdu5])
+		hdul = fits.HDUList([primary_hdu, hdu1, hdu2, hdu3, hdu4, hdu5, hdu6, hdu7, hdu8])
 		hdul.writeto(fits_name_out, overwrite=True)	
 
 
@@ -600,7 +714,7 @@ global filters, nbands
 filters = np.genfromtxt(temp_dir+str(sys.argv[1]), dtype=str)
 nbands = len(filters)
 
-global gal_z, add_igm_absorption,igm_type, cosmo, cosmo_str, H0, Om0
+global gal_z, add_igm_absorption, igm_type, cosmo, cosmo_str, H0, Om0
 global imf, sfh_form, dust_law, duste_switch, add_neb_emission, add_agn, nwaves_mod, free_gas_logz
 
 # open results from mcmc fitting
@@ -653,6 +767,11 @@ if smooth_lsf == True or smooth_lsf == 1:
 else:
 	lsf_wave, lsf_sigma = None, None
 
+global poly_order, del_wave_nebem, spec_chi_sigma_clip
+poly_order = f['samplers'].attrs['poly_order']
+del_wave_nebem = f['samplers'].attrs['del_wave_nebem']
+spec_chi_sigma_clip = f['samplers'].attrs['spec_chi_sigma_clip']
+
 # get list of free parameters and their ranges
 global params, nparams, priors_min, priors_max
 nparams = int(f['samplers'].attrs['nparams'])
@@ -683,14 +802,17 @@ if nfix_params>0:
 		# modify default parameters for next FSPS call
 		def_params_val[fix_params[pp]] = float(f['samplers'].attrs['fpar%d_val' % pp])
 
-# get observed sed
-global obs_fluxes, obs_flux_err
+# get observed sed: photometry and spectroscopy
+global obs_fluxes, obs_flux_err, spec_wave, spec_flux, spec_flux_err, nwaves_spec
 obs_fluxes = f['sed/flux'][:]
 obs_flux_err = f['sed/flux_err'][:]
+spec_wave = f['spec/wave'][:]
+spec_flux = f['spec/flux'][:]
+spec_flux_err = f['spec/flux_err'][:]
+nwaves_spec = len(spec_wave)
 
 # get sampler chains
-str_temp = 'samplers/%s' % params[0]
-nsamples = len(f[str_temp][:])
+nsamples = len(f['samplers/logzsol'][:])
 
 sampler_params = {}
 for pp in range(0,nparams):
@@ -701,6 +823,14 @@ for pp in range(0,nparams):
 	sampler_params[params[pp]] = f[str_temp][:]
 f.close()
 
+# wavelength range of the observed spectrum
+global min_spec_wave, max_spec_wave
+nwaves = len(spec_wave)
+min_spec_wave = min(spec_wave)
+max_spec_wave = max(spec_wave)
+
+global interp_filters_waves, interp_filters_trans
+interp_filters_waves,interp_filters_trans = interp_filters_curves(filters)
 
 # call FSPS
 global sp 

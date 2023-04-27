@@ -10,13 +10,18 @@ warnings.filterwarnings('ignore')
 from ..utils.filtering import cwave_filters
 
 
-__all__ = ["sort_filters", "kpc_per_pixel", "k_lmbd_Fitz1986_LMC", "EBV_foreground_dust", "dwd_sdss", "dwd_2mass", 
-	   "dwd_wise", "dwd_galex", "dwd_hst", "dwd_spitzer","skybg_sdss", "get_gain_dark_variance", "var_img_sdss", "var_img_GALEX", 
-	   "var_img_2MASS", "var_img_WISE", "var_img_from_unc_img","var_img_from_weight_img", "mask_region_bgmodel", 
-	   "subtract_background", "get_psf_fwhm","get_largest_FWHM_PSF", "ellipse_fit", "draw_ellipse", "ellipse_sma", 
-	   "crop_ellipse_galregion","crop_ellipse_galregion_fits", "crop_stars", "crop_stars_galregion_fits", 
-	   "crop_image_given_radec", "segm_sep", "crop_image_given_xy", "check_avail_kernel", "create_kernel_gaussian",
-	   "raise_errors", "get_img_pixsizes", "in_kernels", "get_flux_or_sb", "crop_2D_data"]
+__all__ = ["sort_filters", "kpc_per_pixel", "k_lmbd_Fitz1986_LMC", "EBV_foreground_dust", "skybg_sdss", "get_gain_dark_variance", "var_img_sdss", 
+	   "var_img_GALEX", "var_img_2MASS", "var_img_WISE", "create_sci_var_HSC_images", "create_sci_var_VIRCAM_images",
+	   "var_img_from_unc_img","var_img_from_weight_img", "mask_region_bgmodel", "subtract_background", "get_psf_fwhm",
+	   "get_largest_FWHM_PSF", "ellipse_fit", "draw_ellipse", "ellipse_sma", "crop_ellipse_galregion", "crop_ellipse_galregion_fits", 
+	   "crop_stars", "crop_stars_galregion_fits", "crop_image_given_radec", "segm_sep", "crop_image_given_xy", "check_avail_kernel", 
+	   "create_kernel_gaussian", "crop_image", "create_psf_matching_kernel","raise_errors", "calc_pixsize", "get_img_pixsizes", 
+	   "in_kernels", "get_flux_or_sb", "crop_2D_data", "remove_naninf_image_2dinterpolation", "check_dir", "add_dir", 
+	   "check_name_remove_dir", "mapping_multiplots", "open_fluxmap_fits", "plot_maps_fluxes", "convert_flux_unit", 
+	   "get_pixels_SED_fluxmap", "plot_SED_pixels", "get_total_SED", "get_curve_of_growth", "get_SNR_radial_profile", 
+	   "plot_SNR_radial_profile", "get_flux_radial_profile", "photometry_within_aperture", "draw_aperture_on_maps_fluxes", 
+	   "central_brightest_pixel", "curve_of_growth_psf", "rotate_pixels", "get_rectangular_region", "radial_profile_psf", 
+	   "test_psfmatching_kernel", "remove_naninfzeroneg_image_2dinterpolation"]
 
 
 def sort_filters(filters):
@@ -161,222 +166,7 @@ def EBV_foreground_dust(ra, dec):
 	ebv_SDSS = Alambda_SDSS/k_lmbd_Fitz1986_LMC(wave_SDSS)
 	ebv = np.mean(ebv_SDSS)
 	return ebv
-
-
-def dwd_sdss(pos,bands = ['u','g','r','i','z'],size=20):
-	"""A tool to download images from SDSS.
-
-	:param pos: 
-		Target's coordinate, in the astropy.coordinates form.
-
-	:param bands: (defaults: ['u','g','r','i','z'])
-		Request image in which filter. Default to download every band
-
-	:param size:  (defaults: 20[arcsec])
-		Search cone size. Note that this size IS NOT image size.
-
-	"""
-	import astropy.units as u
-	from astroquery.sdss import SDSS
-	
-	# Query the region
-	xid = SDSS.query_region(pos, spectro=False,radius = size * u.arcsec)
-
-	# a to c are dummy variables to drop repeated images
-	a = xid.to_pandas()
-	b = a.drop_duplicates(subset=['run','rerun','camcol','field'])   # remove repeated images
-	c = Table([b.ra,b.dec,b.objid,b.run,b.rerun,b.camcol,b.field],names = ('ra','dec','objid','run','rerun','camcol','field'))
-
-	# Start downloading here
-	for band in bands:
-		im = SDSS.get_images(matches=c, band = band)
-		i = 0 # Numbering each file
-		for image in im:
-			image.writeto(f'SDSS_{band}_{i}.fits', overwrite = True)
-			print(f"{band} image downloaded")
-			i += 1
-
-
-def dwd_2mass(pos,size = 0.1):
-	"""A tool to download TwoMASS images from IRSA.
-
-	:param pos: 
-		Target's coordinate, in the astropy.coordinates form.
-
-	:param size:  (defaults: 0.1[deg])
-		Search cone size. Note that this size IS NOT image size.
-	"""
-	import urllib
-	import pyvo
-	import gzip, shutil, glob
-
-	# Connect to pyvo service
-	image_service = pyvo.regsearch(servicetype='image', keywords=['2mass'])
-	image_table = image_service[0].search(pos=pos, size=size) # index 0 is fixed according to regsearch result
-	im_table = image_table.to_table()
-
-	# Dummy variavles to remove repeat images
-	a = im_table.to_pandas()
-	b = a[a['format'].str.contains('fits')].drop_duplicates(subset=['band','hem','date','scan','image']) # filter for fits file, exclude html files
-
-	# Start downloading
-	for _, row in b.sort_values(['band','date']).iterrows(): # By sorting to couple same scan images
-		no = 0
-		while os.path.exists(f"{row.band}_{no}.fits.gz"): # file numbering
-			no += 1
-		urllib.request.urlretrieve(f"{row.download}", f"{row.band}_{no}.fits.gz") # Download images from IRSA
     
-    # Because images from IRSA are zipped, we need to unzip them
-	for file in glob.glob("*.gz"):
-		with gzip.open(file, 'r') as f_in, open(file.replace(".gz", ""), 'wb') as f_out:
-			shutil.copyfileobj(f_in, f_out)  # unzipped gz files
-		os.remove(file)   # delete .gz files 
-
-def dwd_wise(pos, size = 0.1, pix = 800):
-	"""A tool to download allwise images from IRSA.
-
-	:param pos:
-		Target's coordinate, in the astropy.coordinates form.
-
-	:param size: (defaults: 0.1[deg])
-		Search cone size. Note that this size IS NOT image size.
-
-	:param pix: (defaults to 800)
-		This does crop on the image. If you want to download the whole image from WISE, please set pix = 0
-		Recommend not to download the original image which is way too large (~60 MB).
-
-	"""
-	import urllib
-	import pyvo
-	import gzip, shutil, glob
-
-	# Connect to pyvo service
-	image_service = pyvo.regsearch(servicetype='image', keywords=['allwise'])
-	image_table = image_service[0].search(pos=pos, size=size) # index 0 is fixed according to regsearch result
-	im_table = image_table.to_table()
-
-	# Dummy variables to remove repeat images
-	a = im_table.to_pandas()
-	b = a[a['sia_fmt'].str.contains('fits')].drop_duplicates(subset=['sia_url']) # filter for fits file, exclude html files
-
-
-	for _, row in b.sort_values(['sia_bp_id','coadd_id']).iterrows():
-		no = 0
-
-		while os.path.exists(f"{row.sia_bp_id}_{no}.fits.gz"): # file numbering
-			no += 1
-
-		if pix != 0: # doing crop on the url
-
-			urllib.request.urlretrieve(f"{row.sia_url}?center={pos.ra.degree},{pos.dec.degree}&size={pix}pix", f"{row.sia_bp_id}_{no}.fits.gz") 
-			urllib.request.urlretrieve(f"{row.unc_url}?center={pos.ra.degree},{pos.dec.degree}&size={pix}pix", f"{row.sia_bp_id}_unc_{no}.fits.gz") 
-
-		elif pix == 0: # request original image
-			urllib.request.urlretrieve(f"{row.sia_url}", f"{row.sia_bp_id}_{no}.fits") 
-			urllib.request.urlretrieve(f"{row.unc_url}", f"{row.sia_bp_id}_unc_{no}.fits") 
-
-	# Unzip all the images
-	for file in glob.glob("*.gz"):
-		with gzip.open(file, 'r') as f_in, open(file.replace(".gz", ""), 'wb') as f_out:
-			shutil.copyfileobj(f_in, f_out)  # unzipped gz files
-		os.remove(file)   # delete gz files  
-
-
-def dwd_galex(pos, size = 0.1, unzip = True):
-	"""A tool to download allwise images from GALEX.
-
-	:param pos:
-		Target's coordinate, in the astropy.coordinates form.
-	:param size: (defaults to 0.1 [deg] )
-		Search cone size. Note that this size IS NOT image size.	
-	:param unzip: (defaults to True)
-		Whether to unzip the download file.
-	"""
-
-	from astroquery.mast import Observations
-	import gzip, shutil, glob
-
-	# Full list
-	obs_table = Observations.query_region(pos,radius= size)
-	data_products_by_obs = Observations.get_product_list(obs_table[:])
-	# query list
-	data_products = data_products_by_obs[(data_products_by_obs['obs_collection'] == 'GALEX')]
-
-	# Preventing from repeating download
-	# Here we only download three datatypes: intensity map, sky background map and background subtracted image
-	a = data_products.to_pandas()
-	b = a[a.productFilename.str.contains('int.fits|skybg.fits|intbgsub.fits')]
-
-	# Start downloading
-	for _, row in b.iterrows():
-		Observations.download_file(row.dataURI)
-
-	if unzip:
-		for file in glob.glob("*.gz"):
-			with gzip.open(file, 'r') as f_in, open(file.replace(".gz", ""), 'wb') as f_out:
-				shutil.copyfileobj(f_in, f_out)  # unzipped gz files
-			os.remove(file)   # delete gz files  
-	else:
-		pass
-
-
-def dwd_hst(pos,size = 1, save = True, output_fmt = 'csv'):
-	"""A tool to download allwise images from Hubble Space Telescope.
-
-	:param pos:
-		Target's coordinate, in the astropy.coordinates form.
-	:param size: (defaults to 1 [arcmin] )
-		Search cone size. Note that this size IS NOT image size.
-	:param save: (defaults to True)
-		Whether to save searching result.
-	:param output_fmt: (defaults to 'csv')
-		Search result file extension, by default 'csv'
-        Other formats: 'csv', 'votable', 'xml'
-	"""
-
-	from astroquery.esa.hubble import ESAHubble
-
-	if output_fmt not in ['csv','votable','xml']:
-		raise TypeError("output format is not supported. Please use one of these: csv, votable, xml")
-
-	# Start Hubble service
-	esahubble = ESAHubble()
-	table = esahubble.cone_search_criteria(radius = size , coordinates = pos , save = save, output_format= output_fmt ,obs_collection= "HST", filename = f'Search_Result_Table.{output_fmt}')
-
-	# Select HST images
-	a = table.to_pandas()
-	b = a[(a.collection == 'HST') & (a.data_product_type == 'image')]
-	b.to_csv("Download_Table.csv")
-
-	# Start downloading
-	for obs_id in b.observation_id.unique():
-		esahubble.download_product(observation_id= obs_id, filename = f"data_for_{obs_id}.tar")
-
-def dwd_spitzer(pos, size = 1/120):
-	"""A tool to download allwise images from Spitzer.
-
-	:param pos:
-		Target's coordinate, in the astropy.coordinates form.
-	:param size: (defaults to 1/120 [deg] )
-		Search cone size. Note that this size IS NOT image size.
-	"""
-
-	from astroquery.ipac.irsa import sha
-
-	# Start searching
-	table = sha.query(coord = pos , size = size)
-	
-	# Filtering images
-	table[table['filetype'] == 'Image']
-	# Save filtered result
-	table.write('Download_detail.csv', format='csv', overwrite = True)
-
-	# Start downloading
-	for url in table[table['filetype'] == b' Image   ']['accessUrl'][:2]:
-		sha.save_file(url.strip())
-    
-
-
 
 def skybg_sdss(fits_image):
 	"""A function for reconstructing background image of an SDSS image.
@@ -808,6 +598,107 @@ def var_img_WISE(sci_img,unc_img,filter_name,skyrms_img,name_out_fits=None):
 	return name_out_fits
 
 
+def create_sci_var_HSC_images(filters, images={}, dir_images=None):
+	# get number of filters
+	nbands = len(filters)
+
+	# get central wavelength of the filters
+	photo_wave = cwave_filters(filters)
+
+	# magnitude zero-point
+	magzp = 27.0
+
+	# directory of images
+	if dir_images is None:
+		dir_images = './'
+
+	for bb in range(0,nbands):
+		# open input image
+		hdu = fits.open(dir_images+images[filters[bb]])
+		sci_img_data0 = hdu[1].data
+		header_sci = hdu[1].header 
+		var_img_data0 = hdu[3].data 
+		header_var = hdu[3].header
+		hdu.close()
+
+		##=> convert the pixel values into erg/s/cm2/A
+		factor = np.power(10.0,-0.4*(48.6+magzp))*2.998e+18/photo_wave[bb]/photo_wave[bb]
+
+		# science image
+		sci_img_data = sci_img_data0*factor
+
+		# variance image
+		var_img_data = factor*factor*var_img_data0
+
+		# produce FITS file for science image
+		name_out_fits = 'sci_%s' % images[filters[bb]].replace('.gz','')
+		fits.writeto(name_out_fits, sci_img_data, header_sci, overwrite=True)
+		print ('produced '+name_out_fits)
+
+		# produce FITS file for variance image
+		name_out_fits = 'var_%s' % images[filters[bb]].replace('.gz','')
+		fits.writeto(name_out_fits, var_img_data, header_var, overwrite=True)
+		print ('produced '+name_out_fits)
+
+
+def create_sci_var_VIRCAM_images(filters, images={}, weights={}, dir_images=None):
+	# get number of filters
+	nbands = len(filters)
+
+	# get central wavelength of filters
+	photo_wave = cwave_filters(filters)
+
+	# directory of images
+	if dir_images is None:
+		dir_images = './'
+
+	for bb in range(0,nbands):
+		# AB vs Vega excess: based on information from http://casu.ast.cam.ac.uk/surveys-projects/vista/technical/filter-set
+		# and https://www.astronomy.ohio-state.edu/martini.10/usefuldata.html
+		if filters[bb] == 'vircam_z':
+			dmag = 0.502
+		elif filters[bb] == 'vircam_y':
+			dmag = 0.600
+		elif filters[bb] == 'vircam_j':
+			dmag = 0.916
+		elif filters[bb] == 'vircam_h':
+			dmag = 1.366
+		elif filters[bb] == 'vircam_ks':
+			dmag = 1.827
+
+		#==> open science image
+		hdu = fits.open(dir_images+images[filters[bb]])
+		sci_img_data0 = hdu[1].data
+		header_sci = hdu[1].header
+		magzp = float(hdu[1].header['MAGZPT'])
+		hdu.close()
+
+		# conversion to erg/s/cm2/A
+		factor = np.power(10.0,-0.4*(48.6+magzp+dmag))*2.998e+18/photo_wave[bb]/photo_wave[bb]
+		sci_img_data = sci_img_data0*factor
+
+		#==> open weight image (i.e., inverse variance)
+		hdu = fits.open(dir_images+weights[filters[bb]])
+		wht_img_data = hdu[1].data 
+		header_var = hdu[1].header
+		magzp = float(hdu[1].header['MAGZPT'])
+		hdu.close()
+
+		# Calculate variance image in units of erg/s/cm2/A square
+		factor = np.power(10.0,-0.4*(48.6+magzp+dmag))*2.998e+18/photo_wave[bb]/photo_wave[bb]
+		var_img_data = factor*factor/wht_img_data
+
+		# produce FITS file for science image
+		name_out_fits = 'sci_%s' % images[filters[bb]].replace('.gz','')
+		fits.writeto(name_out_fits, sci_img_data, header_sci, overwrite=True)
+		print ('produced '+name_out_fits)
+
+		# produce FITS file for variance image
+		name_out_fits = 'var_%s' % weights[filters[bb]].replace('.gz','')
+		fits.writeto(name_out_fits, var_img_data, header_var, overwrite=True)
+		print ('produced '+name_out_fits)
+
+
 def var_img_from_unc_img(unc_image, name_out_fits=None):
 	"""Function for constructing a variance image from an input of uncertainty image.
 	This function simply takes square of the uncertainty image and store it into a new FITS file while retaining the header information.
@@ -850,14 +741,14 @@ def var_img_from_weight_img(wht_image, name_out_fits=None):
 	data_image = hdu[0].data
 	hdu.close()
 
-	var_image = 1.0/data_image
+	var_data = 1.0/np.absolute(data_image)
+
 	# store into fits file:
 	if name_out_fits is None:
 		name_out_fits = "var_%s" % wht_image
-	fits.writeto(name_out_fits, var_image, header=header, overwrite=True)
+	fits.writeto(name_out_fits, var_data, header=header, overwrite=True)
 
 	return name_out_fits
-
 
 
 def segm_sep(fits_image=None, thresh=1.5, var=None, minarea=5, deblend_nthresh=32, deblend_cont=0.005):
@@ -901,7 +792,6 @@ def mask_region_bgmodel(fits_image=None, thresh=1.5, var=None, minarea=5, deblen
 	mask_region[rows,cols] = 1
 
 	return mask_region
-
 
 
 def subtract_background(fits_image, hdu_idx=0, sigma=3.0, box_size=None, mask_region=None, mask_sources=True, 
@@ -966,11 +856,7 @@ def subtract_background(fits_image, hdu_idx=0, sigma=3.0, box_size=None, mask_re
 	elif box_size != None:
 		box_size = box_size
 
-	if mask_sources==True or mask_sources==1: 
-		if var_image is None:
-			err = None 
-		else:
-			err = np.sqrt(var_image)
+	if mask_sources==True or mask_sources==1:
 		mask_region0 = mask_region_bgmodel(fits_image=fits_image, thresh=thresh, var=var_image, 
 											minarea=minarea, deblend_nthresh=deblend_nthresh, 
 											deblend_cont=deblend_cont)
@@ -1278,6 +1164,213 @@ def create_kernel_gaussian(psf_fwhm_init=None, psf_fwhm_final=None, alpha_cosbel
 	return kernel
 
 
+def crop_image(data, new_dimx, new_dimy):
+	dimy, dimx = data.shape[0], data.shape[1]
+	#x_cent, y_cent = (dimx-1)/2, (dimy-1)/2
+	y_cent, x_cent = np.unravel_index(data.argmax(), data.shape)
+
+	delx, dely = (new_dimx-1)/2, (new_dimy-1)/2
+
+	row_start, row_end = y_cent-dely, y_cent+dely+1
+	col_start, col_end = x_cent-delx, x_cent+delx+1
+
+	new_data = data[int(row_start):int(row_end), int(col_start):int(col_end)]
+
+	return new_data
+
+
+def create_psf_matching_kernel(init_PSF_name, target_PSF_name, pixscale_init_PSF, 
+	pixscale_target_PSF, window='top_hat', window_arg=1.0):
+	"""A function for creating convolution kernel for PSF matching given initial and target PSFs.
+
+	:param init_PSF:
+		Image of input/initial PSF.
+
+	:param target_PSF:
+		Image of target PSF.
+
+	:param pixscale_init_PSF:
+		Pixel size (in arcsec) of initial PSF.
+
+	:param pixscale_target_PSF:
+		Pixel size (in arcsec) of target PSF.
+
+	:param window:
+		Options are top_hat and cosine_bell.
+	
+	:param window_arg:
+		Coefficient value of the window function, following Photutils. 
+	"""
+
+	from photutils import CosineBellWindow, TopHatWindow, create_matching_kernel
+	from photutils.psf.matching import resize_psf
+
+	init_PSF = fits.open(init_PSF_name)[0].data
+	target_PSF = fits.open(target_PSF_name)[0].data
+
+	# resize PSFs
+	pixscale1 = 0
+	if pixscale_init_PSF>pixscale_target_PSF:
+		init_PSF = resize_psf(init_PSF, pixscale_init_PSF, pixscale_target_PSF, order=3)
+		pixscale1 = pixscale_target_PSF
+	elif pixscale_init_PSF<pixscale_target_PSF:
+		target_PSF = resize_psf(target_PSF, pixscale_target_PSF, pixscale_init_PSF, order=3)
+		pixscale1 = pixscale_init_PSF
+
+	if init_PSF.shape[0]>target_PSF.shape[0]:
+		init_PSF = crop_image(init_PSF, target_PSF.shape[1], target_PSF.shape[0])
+	elif init_PSF.shape[0]<target_PSF.shape[0]:
+		target_PSF = crop_image(target_PSF, init_PSF.shape[1], init_PSF.shape[0])
+	
+	if window == 'cosine_bell':
+		window = CosineBellWindow(alpha=window_arg)
+	elif window == 'top_hat':
+		window = TopHatWindow(window_arg)
+	else:
+		print ('Window type is not recognized!')
+		sys.exit()
+
+	kernel = create_matching_kernel(init_PSF, target_PSF, window=window)
+
+	if pixscale1 > 0:
+		kernel = resize_psf(kernel, pixscale1, pixscale_init_PSF, order=3)
+
+	return kernel
+
+
+def radial_profile_psf(psf, pixsize, e=0.0, pa=45.0, dr_arcsec=None):
+	"""
+	:param dr:
+		Radial increment in units of pixel.
+	"""
+
+	if dr_arcsec is None:
+		dr_arcsec = pixsize
+
+	if isinstance(psf, str) == True:
+		data_psf = fits.open(psf)[0].data
+	else:
+		data_psf = psf
+
+	dimy, dimx = data_psf.shape[0], data_psf.shape[1]
+
+	## normalize
+	data_psf = data_psf/np.sum(data_psf)
+
+	#x_cent, y_cent = (dimx-1.0)/2.0, (dimy-1.0)/2.0
+	y_cent, x_cent = np.unravel_index(data_psf.argmax(), data_psf.shape)
+
+	x = np.linspace(0,dimx-1,dimx)
+	y = np.linspace(0,dimy-1,dimy)
+	xx, yy = np.meshgrid(x,y)
+	xx_norm, yy_norm = xx-x_cent, yy-y_cent
+
+	data2D_sma = ellipse_sma(e,pa,xx_norm,yy_norm)*pixsize     # in unit of arcsec
+
+	for xx in range(0,round(x_cent)):
+		for yy in range(0,dimy):
+			data2D_sma[yy][xx] = -1.0*data2D_sma[yy][xx]
+
+	curve_rad = []
+	curve_val = []
+
+	r1 = np.min(data2D_sma)
+	r2 = r1 + dr_arcsec 
+	while r2<=np.max(data2D_sma):
+		rows, cols = np.where((data2D_sma>=r1) & (data2D_sma<r2))
+
+		curve_rad.append(0.5*(r1+r2))
+		curve_val.append(np.mean(data_psf[rows,cols]))
+
+		r1 = r2
+		r2 = r2 + dr_arcsec
+
+	curve_rad = np.asarray(curve_rad)
+	curve_val = np.asarray(curve_val)
+
+	# normalize
+	curve_val = curve_val/max(curve_val)
+	
+	return curve_rad, curve_val
+
+
+def curve_of_growth_psf(psf, e=0.0, pa=45.0, dr=1.0):
+	"""
+	:param dr:
+		Radial increment in units of pixel.
+	"""
+
+	hdu = fits.open(psf)
+	data_psf = hdu[0].data
+	dimy, dimx = data_psf.shape[0], data_psf.shape[1]
+	hdu.close()
+
+	## normalize
+	data_psf = data_psf/np.sum(data_psf)
+
+	#x_cent, y_cent = (dimx-1.0)/2.0, (dimy-1.0)/2.0
+	y_cent, x_cent = np.unravel_index(data_psf.argmax(), data_psf.shape)
+
+	x = np.linspace(0,dimx-1,dimx)
+	y = np.linspace(0,dimy-1,dimy)
+	xx, yy = np.meshgrid(x,y)
+	xx_norm, yy_norm = xx-x_cent, yy-y_cent
+
+	data2D_sma = ellipse_sma(e,pa,xx_norm,yy_norm)
+
+	curve_rad = []
+	curve_val = []
+
+	r1 = 0
+	r2 = r1 + dr 
+	cumul_val = 0
+	while r2<=np.max(data2D_sma):
+		rows, cols = np.where((data2D_sma>=r1) & (data2D_sma<r2))
+
+		curve_rad.append(0.5*(r1+r2))
+		cumul_val = cumul_val + np.sum(data_psf[rows,cols])
+		curve_val.append(cumul_val)
+
+		r1 = r2
+		r2 = r2 + dr
+
+	curve_rad = np.asarray(curve_rad)
+	curve_val = np.asarray(curve_val)
+	
+	return curve_rad, curve_val
+
+
+def test_psfmatching_kernel(init_PSF_name, target_PSF_name, kernel, pixscale_init_PSF, pixscale_target_PSF, 
+	dr_arcsec=None, xrange_arcsec=[-0.5,0.5], savefig=False, name_plot=None):
+
+	from astropy.convolution import convolve_fft
+	import matplotlib.pyplot as plt
+
+	psfmatch_init_psf = convolve_fft(fits.open(init_PSF_name)[0].data, kernel, allow_huge=True)
+
+
+	fig1 = plt.figure(figsize=(8,6))
+	f1 = plt.subplot()
+	plt.xlim(xrange_arcsec[0],xrange_arcsec[1])
+
+	curve_rad, curve_val = radial_profile_psf(init_PSF_name, pixscale_init_PSF, dr_arcsec=dr_arcsec)
+	plt.plot(curve_rad, curve_val, lw=2, label='initial PSF', color='black')
+
+	curve_rad, curve_val = radial_profile_psf(target_PSF_name, pixscale_target_PSF, dr_arcsec=dr_arcsec)
+	plt.plot(curve_rad, curve_val, lw=2, label='target PSF', color='red')
+
+	curve_rad, curve_val = radial_profile_psf(psfmatch_init_psf, pixscale_init_PSF, dr_arcsec=dr_arcsec)
+	plt.plot(curve_rad, curve_val, lw=2, label='test', color='blue')
+
+	plt.legend(fontsize=15)
+
+	if savefig is True:
+		if name_plot is None:
+			name_plot = 'test_psfmatching_kernel.png'
+		plt.savefig(name_plot)
+	else:
+		plt.show()
+
 
 def ellipse_fit(data=None, init_x0=None, init_y0=None, init_sma=10.0, 
 	init_ell=0.3, init_pa=45.0, rmax=30.0):
@@ -1429,9 +1522,10 @@ def ellipse_sma(ell,pa,x_norm,y_norm):
 	:returns sma:
 		Radii of the pixels (along the semi-major axis).  
 	"""
+	x_norm, y_norm = np.asarray(x_norm), np.asarray(y_norm)
 
-	x_norm_rot = np.asarray(x_norm)*cos(pa*pi/180.0) + np.asarray(y_norm)*sin(pa*pi/180.0)
-	y_norm_rot = -1.0*np.asarray(x_norm)*sin(pa*pi/180.0) + np.asarray(y_norm)*cos(pa*pi/180.0)
+	x_norm_rot = x_norm*np.cos(pa*np.pi/180.0) + y_norm*np.sin(pa*np.pi/180.0)
+	y_norm_rot = -1.0*x_norm*np.sin(pa*np.pi/180.0) + y_norm*np.cos(pa*np.pi/180.0)
 	sma = np.sqrt((y_norm_rot*y_norm_rot) + (x_norm_rot*x_norm_rot/(1.0-ell)/(1.0-ell)))
 
 	return sma
@@ -1481,7 +1575,6 @@ def crop_ellipse_galregion(gal_region0,x_cent,y_cent,ell,pa,rmax):
 	gal_region[rows,cols] = 1
 
 	return gal_region 
-
 
 
 def crop_ellipse_galregion_fits(input_fits,x_cent=None,y_cent=None,
@@ -1558,7 +1651,6 @@ def crop_ellipse_galregion_fits(input_fits,x_cent=None,y_cent=None,
 	hdul.writeto(name_out_fits, overwrite=True)
 
 	return name_out_fits
-
 
 
 def crop_stars(gal_region=[],x_cent=[],y_cent=[],radius=[]):
@@ -1660,14 +1752,32 @@ def crop_stars_galregion_fits(input_fits,x_cent,y_cent,radius,name_out_fits=None
 	return output_fits
 
 
-def crop_image_given_radec(img_name=None, ra=None, dec=None, stamp_size=[], name_out_fits=None):
-	"""Function for cropping an image around a given position (RA, DEC)
+def crop_image_given_radec(image, ra, dec, idx_hdu=0, stamp_size=[], name_out_fits=None):
+	"""Function for cropping an image around a given coordinate (RA, DEC).
+
+	:param image:
+		Input image.
+
+	:param ra:
+		Coordinate RA.
+
+	:param dec:
+		Coordinate DEC.
+
+	:param idx_hdu:
+		Index of the FITS file extension in which the image is stored.
+
+	:param stamp_size:
+		Size [ny,nx] of cropped image.
+
+	:param name_out_fits:
+		Name for output cropped image.
 	"""
 
 	from astropy.wcs import WCS
 	from astropy.nddata import Cutout2D
 
-	hdu = fits.open(img_name)[0]
+	hdu = fits.open(image)[int(idx_hdu)]
 	wcs = WCS(hdu.header)
 	gal_x, gal_y = wcs.wcs_world2pix(ra, dec, 1)
 	position = (gal_x,gal_y)
@@ -1676,10 +1786,10 @@ def crop_image_given_radec(img_name=None, ra=None, dec=None, stamp_size=[], name
 	hdu.header.update(cutout.wcs.to_header())
 
 	if name_out_fits is None:
-		name_out_fits = 'crop_%s' % img_name
+		name_out_fits = 'crop_%s' % image
 
 	hdu.writeto(name_out_fits, overwrite=True)
-	print ("[produce %s]" % name_out_fits)
+	return name_out_fits
 
 
 def crop_image_given_xy(img_name=None, x=None, y=None, stamp_size=[], name_out_fits=None):
@@ -1715,6 +1825,836 @@ def crop_2D_data(in_data=None, data_x_cent=None, data_y_cent=None, new_size_x=No
 	new_data = in_data[row_start:row_end, col_start:col_end]
 
 	return new_data
+
+
+def remove_naninf_image_2dinterpolation(data_image):
+	from scipy.interpolate import griddata
+
+	rows_nan, cols_nan = np.where((np.isnan(data_image)==True) | (np.isinf(data_image)==True))
+	if len(rows_nan)>0:
+		y = np.arange(0,data_image.shape[0])
+		x = np.arange(0,data_image.shape[1])
+		xx, yy = np.meshgrid(x, y)
+
+		rows, cols = np.where((np.isnan(data_image)==False) & (np.isinf(data_image)==False))
+		data_image_new = griddata((rows,cols), data_image[rows,cols], (yy, xx), method='cubic')
+
+		rows_nan, cols_nan = np.where((np.isnan(data_image_new)==True) | (np.isinf(data_image_new)==True))
+		if len(rows_nan)>0:
+			rows, cols = np.where((np.isnan(data_image_new)==False) & (np.isinf(data_image_new)==False))
+			#data_image_new = griddata((rows,cols), data_image_new[rows,cols], (yy, xx), method='cubic')
+			data_image_new[rows_nan,cols_nan] = np.percentile(data_image_new[rows,cols],50)
+
+		return data_image_new
+	else:
+		return data_image
+
+def remove_naninfzeroneg_image_2dinterpolation(data_image):
+	from scipy.interpolate import griddata
+
+	rows_nan, cols_nan = np.where((np.isnan(data_image)==True) | (np.isinf(data_image)==True) | (data_image<=0))
+	if len(rows_nan)>0:
+		y = np.arange(0,data_image.shape[0])
+		x = np.arange(0,data_image.shape[1])
+		xx, yy = np.meshgrid(x, y)
+
+		rows, cols = np.where((np.isnan(data_image)==False) & (np.isinf(data_image)==False) & (data_image>0))
+		data_image_new = griddata((rows,cols), data_image[rows,cols], (yy, xx), method='cubic')
+
+		rows_nan, cols_nan = np.where((np.isnan(data_image_new)==True) | (np.isinf(data_image_new)==True) | (data_image_new<=0))
+		if len(rows_nan)>0:
+			rows, cols = np.where((np.isnan(data_image_new)==False) & (np.isinf(data_image_new)==False) & (data_image_new>0))
+			#data_image_new = griddata((rows,cols), data_image_new[rows,cols], (yy, xx), method='cubic')
+			data_image_new[rows_nan,cols_nan] = np.percentile(data_image_new[rows,cols],50)
+
+		return data_image_new
+	else:
+		return data_image
+
+
+def check_dir(dir_file):
+	if dir_file is None:
+		dir_file = './'
+
+	if dir_file[len(dir_file)-1] != '/':
+		dir_file = dir_file + '/'
+
+	return dir_file
+
+
+def add_dir(sci_img, var_img, dir_images, filters):
+	nbands = len(filters)
+	for bb in range(nbands):
+		sci_img[filters[bb]] = dir_images + sci_img[filters[bb]]
+		var_img[filters[bb]] = dir_images + var_img[filters[bb]]
+
+	return sci_img, var_img
+
+
+def check_name_remove_dir(file_name, dir_images):
+	return file_name.replace(dir_images, '')
+
+
+def mapping_multiplots(nplots,ncols):
+	nrows = int(nplots/ncols)
+	if nplots % ncols > 0:
+		nrows = nrows + 1
+
+	map_plots = np.zeros((int(nrows)+2,int(ncols)+2))
+	count = 0
+	for yy in range(1,nrows+1):
+		for xx in range(1,ncols+1):
+			count = count + 1
+			if count <= nplots:
+				map_plots[yy][xx] = count
+	
+	return map_plots, nrows
+
+
+def open_fluxmap_fits(flux_maps_fits):
+	""" Funciton to open FITS file and get the data.
+	"""
+
+	hdu = fits.open(flux_maps_fits)
+	unit_flux = float(hdu[0].header['unit'])
+	gal_region = hdu['GALAXY_REGION'].data
+	flux_map = hdu['FLUX'].data*unit_flux 
+	flux_err_map = hdu['FLUX_ERR'].data*unit_flux
+	nbands = int(hdu[0].header['nfilters'])
+	filters = []
+	for bb in range(nbands):
+		filters.append(hdu[0].header['fil%d' % bb])
+	hdu.close()
+
+	return filters, gal_region, flux_map, flux_err_map, unit_flux
+
+
+def plot_maps_fluxes(flux_maps_fits, ncols=5, savefig=True, name_plot_mapflux=None, name_plot_mapfluxerr=None):
+	""" Function for plotting maps of multiband fluxes.
+
+	:param flux_maps_fits:
+		Input FITS file of multiband flux maps.
+
+	:param ncols:
+		Number of columns in the plots.
+
+	:param savefig:
+		Decide whether to save the plot or not.
+
+	:param name_plot_mapflux:
+		Name of the output plot for the maps of multiband fluxes.
+
+	:param name_plot_mapfluxerr:
+		Name of the output plot for the maps of multiband flux uncertainties.
+	"""
+
+	import matplotlib.pyplot as plt
+
+	filters, gal_region, flux_map, flux_err_map, unit_flux = open_fluxmap_fits(flux_maps_fits)
+	nbands = len(filters)
+
+	#=> plotting
+	map_plots, nrows = mapping_multiplots(nbands,ncols)
+
+	# plotting maps of fluxes
+	fig1 = plt.figure(figsize=(ncols*4,nrows*4))
+	for bb in range(0,nbands):
+		yy, xx = np.where(map_plots==bb+1)
+		f1 = fig1.add_subplot(nrows, ncols, bb+1)
+		if map_plots[yy[0]][xx[0]-1] == 0:
+			plt.ylabel('[pixel]', fontsize=15)
+		if map_plots[yy[0]+1][xx[0]] == 0:
+			plt.xlabel('[pixel]', fontsize=15)
+
+		im = plt.imshow(np.log10(flux_map[bb]), origin='lower', cmap='nipy_spectral')
+		f1.text(0.5, 0.93, '%s' % filters[bb], horizontalalignment='center', verticalalignment='center',
+			transform = f1.transAxes, fontsize=16, color='black')
+
+	cax = fig1.add_axes([0.3, 0.86, 0.4, 0.03])
+	cb = fig1.colorbar(im, cax=cax, orientation="horizontal")
+	cb.ax.tick_params(labelsize=14)
+	cax.xaxis.set_ticks_position("top")
+	cax.xaxis.set_label_position("top")
+	cb.set_label(r'log(Flux density [erg $\rm{ s}^{-1}\rm{cm}^{-2}\AA^{-1}$])', fontsize=22)
+
+	plt.subplots_adjust(left=0.05, right=0.95, bottom=0.05, top=0.85, hspace=0.1, wspace=0.05)
+
+	if savefig is True:
+		if name_plot_mapflux is None:
+			name_plot_mapflux = 'maps_fluxes.png'
+		plt.savefig(name_plot_mapflux)
+	else:
+		plt.show()
+
+	# plotting maps of flux uncertainties
+	fig1 = plt.figure(figsize=(ncols*4,nrows*4))
+	for bb in range(0,nbands):
+		yy, xx = np.where(map_plots==bb+1)
+		f1 = fig1.add_subplot(nrows, ncols, bb+1)
+		if map_plots[yy[0]][xx[0]-1] == 0:
+			plt.ylabel('[pixel]', fontsize=15)
+		if map_plots[yy[0]+1][xx[0]] == 0:
+			plt.xlabel('[pixel]', fontsize=15)
+
+		im = plt.imshow(np.log10(flux_err_map[bb]), origin='lower', cmap='nipy_spectral')
+		f1.text(0.5, 0.93, '%s' % filters[bb], horizontalalignment='center', verticalalignment='center',
+			transform = f1.transAxes, fontsize=16, color='black')
+
+	cax = fig1.add_axes([0.3, 0.86, 0.4, 0.03])
+	cb = fig1.colorbar(im, cax=cax, orientation="horizontal")
+	cb.ax.tick_params(labelsize=14)
+	cax.xaxis.set_ticks_position("top")
+	cax.xaxis.set_label_position("top")
+	cb.set_label(r'log(Flux uncertainty [erg $\rm{ s}^{-1}\rm{cm}^{-2}\AA^{-1}$])', fontsize=22)
+
+	plt.subplots_adjust(left=0.05, right=0.95, bottom=0.05, top=0.85, hspace=0.1, wspace=0.05)
+
+	if savefig is True:
+		if name_plot_mapfluxerr is None:
+			name_plot_mapfluxerr = 'maps_flux_errors.png'
+		plt.savefig(name_plot_mapfluxerr)
+	else:
+		plt.show()
+
+
+def convert_flux_unit(wave, flux, init_unit='erg/s/cm2/A', final_unit='Jy'):
+	""" Function for converting flux unit
+
+	:param wave:
+		Wavelength grids.
+
+	:param flux:
+		Flux grids.
+
+	:param init_unit:
+		Initial unit of the input fluxes. Options are: 'erg/s/cm2/A', 'erg/s/cm2', 'Jy', 'uJy'.
+
+	:param final_unit:
+		Final unit for conversion. Options are: 'erg/s/cm2/A', 'erg/s/cm2', 'Jy', 'uJy'.
+	"""
+
+	wave = np.asarray(wave)
+	flux = np.asarray(flux)
+
+	if init_unit == 'erg/s/cm2/A':
+		if final_unit == 'erg/s/cm2/A':
+			final_flux = flux
+		elif final_unit == 'erg/s/cm2':
+			final_flux = flux*wave
+		elif final_unit == 'Jy':
+			final_flux = flux*wave*wave/1.0e-23/2.998e+18
+		elif final_unit == 'uJy':
+			final_flux = flux*wave*wave/1.0e-6/1.0e-23/2.998e+18
+		else:
+			print ('The final_unit is not recognized!')
+			sys.exit()
+
+	elif init_unit == 'erg/s/cm2':
+		if final_unit == 'erg/s/cm2/A':
+			final_flux = flux/wave
+		elif final_unit == 'erg/s/cm2':
+			final_flux = flux
+		elif final_unit == 'Jy':
+			final_flux = flux*wave/1.0e-23/2.998e+18
+		elif final_unit == 'uJy':
+			final_flux = flux*wave/1.0e-6/1.0e-23/2.998e+18
+		else:
+			print ('The final_unit is not recognized!')
+			sys.exit()
+
+	elif init_unit == 'Jy':
+		if final_unit == 'erg/s/cm2/A':
+			final_flux = flux*1.0e-23*2.998e+18/wave/wave
+		elif final_unit == 'erg/s/cm2':
+			final_flux = flux*1.0e-23*2.998e+18/wave
+		elif final_unit == 'Jy':
+			final_flux = flux
+		elif final_unit == 'uJy':
+			final_flux = 1e+6*flux
+		else:
+			print ('The final_unit is not recognized!')
+			sys.exit()
+
+	elif init_unit == 'uJy':
+		if final_unit == 'erg/s/cm2/A':
+			final_flux = flux*1.0e-23*2.998e+18/wave/wave/1.0e+6
+		elif final_unit == 'erg/s/cm2':
+			final_flux = flux*1.0e-23*2.998e+18/wave/1.0e+6
+		elif final_unit == 'Jy':
+			final_flux = flux/1.0e+6
+		elif final_unit == 'uJy':
+			final_flux = flux
+		else:
+			print ('The final_unit is not recognized!')
+			sys.exit()
+	else:
+		print ('The init_unit is not recognized!')
+		sys.exit()
+
+	return final_flux
+
+
+def get_pixels_SED_fluxmap(flux_maps_fits, pix_x=None, pix_y=None, all_pixels=False):
+	""" Function to get SEDs of pixels.
+
+	:param flux_maps_fits:
+		Input FITS file of the multiband fluxes.
+
+	:param pix_x:
+		One dimensional array of x coordinates. Only relevant if all_pixels=False.
+
+	:param pix_y:
+		One dimensional array of the y coordinates. Only relevant if all_pixels=False.
+
+	:param all_pixels: (optional)
+		An option to get SEDs of all pixels.
+	"""
+
+	from ..utils.filtering import cwave_filters
+
+	filters, gal_region, flux_map, flux_err_map, unit_flux = open_fluxmap_fits(flux_maps_fits)
+
+	# get central wavelength of filters
+	photo_wave = cwave_filters(filters)
+
+	# transpose from (band,y,x) => (y,x,band)
+	flux_map_trans = np.transpose(flux_map, axes=(1,2,0))
+	flux_err_map_trans = np.transpose(flux_err_map, axes=(1,2,0))
+
+	if all_pixels == True:
+		rows, cols = np.where(gal_region == 1)
+		pix_y, pix_x = rows, cols
+	else:
+		if np.isscalar(pix_x) == True:
+			pix_x, pix_y = [round(pix_x)], [round(pix_y)]
+
+	pix_SED_flux = []
+	pix_SED_flux_err = []
+	for ii in range(0,len(pix_x)):
+		pix_SED_flux.append(flux_map_trans[int(pix_y[ii])][int(pix_x[ii])])
+		pix_SED_flux_err.append(flux_err_map_trans[int(pix_y[ii])][int(pix_x[ii])])
+
+	pix_SED_flux = np.asarray(pix_SED_flux)
+	pix_SED_flux_err = np.asarray(pix_SED_flux_err)
+
+	return pix_x, pix_y, pix_SED_flux, pix_SED_flux_err, photo_wave
+
+
+def plot_SED_pixels(flux_maps_fits, pix_x=None, pix_y=None, all_pixels=False, logscale_y=True, logscale_x=True, 
+	wunit='angstrom', yrange=None, xrange=None, savefig=True, name_plot=None):
+	""" Function for plotting SEDs of pixels.
+
+	:param flux_maps_fits:
+		Input FITS file of the multiband fluxes.
+
+	:param pix_x:
+		One dimensional array of x coordinates. Only relevant if all_pixels=False.
+
+	:param pix_y:
+		One dimensional array of the y coordinates. Only relevant if all_pixels=False.
+
+	:param all_pixels: (optional)
+		An option to get SEDs of all pixels.
+
+	:param logscale_y: (optional)
+		Option to set the y axis in logarithmic scale.
+
+	:param logscale_x: (optional)
+		Option to set the x axis in logarithmic scale.
+
+	:param wunit: (optional)
+		Wavelength unit. Options are 'angstrom' and 'micron'.
+
+	:param yrange: (optional)
+		Range in y axis.
+
+	:param xrange: (optional)
+		Range in x axis.
+
+	:param savefig: (optional)
+		Option to save the plot.
+
+	:param name_plot: (optional)
+		Name for the output plot.
+	"""
+
+	import matplotlib.pyplot as plt 
+
+	# get SEDs of pixels
+	pix_x, pix_y, pix_SED_flux, pix_SED_flux_err, photo_wave= get_pixels_SED_fluxmap(flux_maps_fits, pix_x, pix_y, all_pixels=all_pixels)
+
+	# Plotting:
+	fig1 = plt.figure(figsize=(12,6))
+	f1 = plt.subplot()
+	if logscale_y == True:
+		f1.set_yscale('log')
+	if logscale_x == True:
+		f1.set_xscale('log')
+
+	if wunit == 'micron':
+		plt.xlabel(r"Wavelength [$\mu$m]", fontsize=18)
+	elif wunit == 'angstrom':
+		plt.xlabel(r"Wavelength [$\AA$]", fontsize=18)
+	else:
+		print ('wunit is not recognized!')
+		sys.exit()
+
+	plt.ylabel(r"Flux density [erg $\rm{s}^{-1}\rm{cm}^{-2}\AA^{-1}$]", fontsize=18)
+	plt.setp(f1.get_xticklabels(), fontsize=12)
+	plt.setp(f1.get_yticklabels(), fontsize=12)
+
+	if yrange is not None:
+		plt.ylim(yrange[0],yrange[1])
+ 
+	if xrange is not None:
+		plt.xlim(xrange[0],xrange[1])
+
+	for ii in range(len(pix_SED_flux)):
+		if wunit == 'micron':
+			plt.errorbar(photo_wave/1e+4, pix_SED_flux[ii], yerr=pix_SED_flux_err[ii], fmt='-o', lw=2, alpha=0.5)
+		elif wunit == 'angstrom':
+			plt.errorbar(photo_wave, pix_SED_flux[ii], yerr=pix_SED_flux_err[ii], fmt='-o', lw=2, alpha=0.5)
+
+	if savefig is True:
+		if name_plot is None:
+			name_plot = 'plot_SED_pixels.png'
+		plt.savefig(name_plot)
+	else:
+		plt.show()
+
+
+def get_total_SED(flux_maps_fits):
+	""" Function to calculate total (i.e., integrated) SED from input maps of multiband fluxes.
+	"""
+
+	from ..utils.filtering import cwave_filters
+
+	filters, gal_region, flux_map, flux_err_map, unit_flux = open_fluxmap_fits(flux_maps_fits)
+	nbands = len(filters)
+
+	# get central wavelength of filters
+	photo_wave = cwave_filters(filters)
+
+	rows, cols = np.where(gal_region==1)
+	tot_SED_flux = np.zeros(nbands)
+	tot_SED_flux_err = np.zeros(nbands)
+	for bb in range(0,nbands):
+		tot_SED_flux[bb] = np.sum(flux_map[bb][rows,cols])
+		tot_SED_flux_err[bb] = np.sqrt(np.sum(np.square(flux_err_map[bb][rows,cols])))
+
+	return tot_SED_flux, tot_SED_flux_err, photo_wave
+
+
+def get_curve_of_growth(flux_maps_fits, filter_id, e=0.0, pa=45.0, cent_x=None, cent_y=None):
+	""" Function to calculate curve of growth of flux in a particular band.
+	"""
+
+	filters, gal_region, flux_map, flux_err_map, unit_flux = open_fluxmap_fits(flux_maps_fits)
+	nbands = len(filters)
+
+	rows, cols = np.where(gal_region==1)
+	dimy, dimx = gal_region.shape[0], gal_region.shape[1]
+
+	if cent_y is None:
+		cent_y = (dimy-1.0)/2.0
+	if cent_x is None:
+		cent_x = (dimx-1.0)/2.0
+
+	pix_x_norm, pix_y_norm = cols - cent_x, rows - cent_y
+
+	pix_sma = ellipse_sma(e,pa,pix_x_norm,pix_y_norm)
+
+	# sort the radius
+	sort_index = np.argsort(pix_sma)
+	curve_pix_rad = pix_sma[sort_index]
+
+	# get cumulative sum of fluxes
+	curve_pix_flux = flux_map[int(filter_id)][rows,cols]
+	curve_cumul_flux = np.cumsum(curve_pix_flux[sort_index])
+
+	return curve_pix_rad, curve_cumul_flux
+
+
+def get_flux_radial_profile(flux_maps_fits, filter_id, e=0.0, pa=45.0, cent_x=None, cent_y=None):
+	""" Function to calculate radial profile of flux in a particular band.
+	"""
+
+	filters, gal_region, flux_map, flux_err_map, unit_flux = open_fluxmap_fits(flux_maps_fits)
+	nbands = len(filters)
+
+	rows, cols = np.where(gal_region==1)
+	dimy, dimx = gal_region.shape[0], gal_region.shape[1]
+
+	if cent_y is None:
+		cent_y = (dimy-1.0)/2.0
+	if cent_x is None:
+		cent_x = (dimx-1.0)/2.0
+
+	pix_x_norm, pix_y_norm = cols - cent_x, rows - cent_y
+
+	pix_sma0 = ellipse_sma(e,pa,pix_x_norm,pix_y_norm)
+	sort_index = np.argsort(pix_sma0)
+	pix_sma = pix_sma0[sort_index]
+
+	pix_flux = flux_map[int(filter_id)][rows,cols][sort_index]
+
+	return pix_sma, pix_flux
+
+
+def get_SNR_radial_profile(flux_maps_fits, e=0.0, pa=45.0, cent_x=None, cent_y=None):
+	""" Function to get radial profile of S/N ratio in all filters
+	"""
+
+	filters, gal_region, flux_map, flux_err_map, unit_flux = open_fluxmap_fits(flux_maps_fits)
+	nbands = len(filters)
+
+	rows, cols = np.where(gal_region==1)
+	dimy, dimx = gal_region.shape[0], gal_region.shape[1]
+
+	if cent_y is None:
+		cent_y = (dimy-1.0)/2.0
+	if cent_x is None:
+		cent_x = (dimx-1.0)/2.0
+
+	pix_x_norm, pix_y_norm = cols - cent_x, rows - cent_y
+	pix_sma = ellipse_sma(e,pa,pix_x_norm,pix_y_norm)
+	pix_SNR = np.zeros((nbands,len(pix_sma)))
+
+	for bb in range(0,nbands):
+		pix_SNR[bb] = flux_map[bb][rows,cols]/flux_err_map[bb][rows,cols]
+
+	return pix_sma, pix_SNR, filters
+
+
+def plot_SNR_radial_profile(flux_maps_fits, e=0.0, pa=45.0, cent_x=None, cent_y=None, yrange=None, xrange=None, savefig=True, name_plot=None):
+	""" Function for plotting S/N ratios of pixels.
+	"""
+
+	import matplotlib.pyplot as plt
+
+	pix_sma, pix_SNR, filters = get_SNR_radial_profile(flux_maps_fits, e=e, pa=pa, cent_x=cent_x, cent_y=cent_y)
+	nbands = len(filters)
+
+	# plotting
+	fig1 = plt.figure(figsize=(10,6))
+	f1 = plt.subplot()
+
+	if yrange is not None:
+		plt.ylim(yrange[0],yrange[1])
+ 
+	if xrange is not None:
+		plt.xlim(xrange[0],xrange[1])
+
+	plt.setp(f1.get_yticklabels(), fontsize=13, visible=True)
+	plt.setp(f1.get_xticklabels(), fontsize=13, visible=True)
+	plt.xlabel(r"Radius [pixel]", fontsize=20)
+	plt.ylabel(r"log(S/N Ratio)", fontsize=20)
+
+	cmap = plt.get_cmap('jet', nbands)
+
+	for bb in range(0,nbands):
+		plt.scatter(pix_sma, np.log10(pix_SNR[bb]), s=10, alpha=0.5, color=cmap(bb), label='%s' % filters[bb])
+
+	plt.legend(fontsize=10, ncol=2)
+
+	if savefig is True:
+		if name_plot is None:
+			name_plot = 'plot_pixels_SNR.png'
+		plt.savefig(name_plot)
+	else:
+		plt.show()
+
+
+def photometry_within_aperture(flux_maps_fits, e=0.0, pa=45.0, cent_x=None, cent_y=None, radius=None):
+	""" Function to get photometry within a given aperture (elliptical/circular) from multiband fluxes maps 
+	"""
+
+	# get data from the input FITS file
+	filters, gal_region, flux_map, flux_err_map, unit_flux = open_fluxmap_fits(flux_maps_fits)
+	nbands = len(filters)
+
+	dimy, dimx = gal_region.shape[0], gal_region.shape[1]
+
+	# get pixels within the aperture
+	if cent_y is None:
+		cent_y = (dimy-1.0)/2.0
+	if cent_x is None:
+		cent_x = (dimx-1.0)/2.0
+
+	x = np.linspace(0,dimx-1,dimx)
+	y = np.linspace(0,dimy-1,dimy)
+	xx, yy = np.meshgrid(x,y)
+	xx_norm, yy_norm = xx - cent_x, yy - cent_y
+
+	data2D_sma = ellipse_sma(e,pa,xx_norm,yy_norm)
+	rows, cols = np.where((gal_region==1) & (data2D_sma<=radius))
+
+	pix_x, pix_y, pix_SED_flux, pix_SED_flux_err, photo_wave = get_pixels_SED_fluxmap(flux_maps_fits, pix_x=cols, pix_y=rows)
+
+	tot_fluxes = np.sum(pix_SED_flux, axis=0)
+	tot_flux_errors = np.sqrt(np.sum(np.square(pix_SED_flux_err), axis=0))
+
+	return tot_fluxes, tot_flux_errors
+
+
+def draw_aperture_on_maps_fluxes(flux_maps_fits, ncols=6, e=[0.0], pa=[45.0], cent_x=None, cent_y=None, radius=[5.0], 
+	colors=None, lw=3, savefig=True, name_plot=None):
+	""" Function for drawing aperture on top of the multiband fluxes maps
+	"""
+
+	import matplotlib.pyplot as plt
+	from piXedfit.piXedfit_images import draw_ellipse
+
+	filters, gal_region, flux_map, flux_err_map, unit_flux = open_fluxmap_fits(flux_maps_fits)
+	nbands = len(filters)
+
+	#=> plotting
+	map_plots, nrows = mapping_multiplots(nbands,ncols)
+
+	# plotting maps of fluxes
+	fig1 = plt.figure(figsize=(ncols*4,nrows*4))
+	for bb in range(0,nbands):
+		yy, xx = np.where(map_plots==bb+1)
+		f1 = fig1.add_subplot(nrows, ncols, bb+1)
+		if map_plots[yy[0]][xx[0]-1] == 0:
+			plt.ylabel('[pixel]', fontsize=15)
+		if map_plots[yy[0]+1][xx[0]] == 0:
+			plt.xlabel('[pixel]', fontsize=15)
+
+		plt.imshow(np.log10(flux_map[bb]), origin='lower', cmap='nipy_spectral')
+
+		for ii in range(0,len(e)):
+			ellipse_xy = draw_ellipse(cent_x[ii], cent_y[ii], radius[ii], e[ii], pa[ii])
+			if colors is None:
+				plt.plot(ellipse_xy[0], ellipse_xy[1], lw=lw)
+			else:
+				plt.plot(ellipse_xy[0], ellipse_xy[1], lw=lw, color=colors[ii])
+
+		f1.text(0.5, 0.93, '%s' % filters[bb], horizontalalignment='center', verticalalignment='center', transform = f1.transAxes, fontsize=16, color='black')
+
+	plt.subplots_adjust(left=0.05, right=0.95, bottom=0.05, top=0.95, hspace=0.1, wspace=0.1)
+
+	if savefig is True:
+		if name_plot is None:
+			name_plot = 'apertures.png'
+		plt.savefig(name_plot)
+	else:
+		plt.show()
+
+def rotate_pixels(x, y, x_cent, y_cent, theta):
+	x1 = (x-x_cent)*np.cos(theta*np.pi/180.0) - (y-y_cent)*np.sin(theta*np.pi/180.0) + x_cent
+	y1 = (x-x_cent)*np.sin(theta*np.pi/180.0) + (y-y_cent)*np.cos(theta*np.pi/180.0) + y_cent
+	return x1, y1
+
+
+def linear_func_of_twopoints(x1, x2, y1, y2):
+	gradient, intercept = (y2-y1)/(x2-x1), (x2*y1 - x1*y2)/(x2-x1)
+	return gradient, intercept 
+
+
+def get_rectangular_region(stamp_img, x=None, y=None, ra=None, dec=None):
+	from astropy.wcs import WCS
+
+	hdu = fits.open(stamp_img)
+	wcs = WCS(hdu[0].header)
+	data_img = hdu[0].data
+	dimy, dimx = data_img.shape[0], data_img.shape[1]
+	hdu.close()
+
+	if x is not None and y is not None:
+		x1, y1 = x[0], y[0]
+		x2, y2 = x[1], y[1]
+		x3, y3 = x[2], y[2]
+		x4, y4 = x[3], y[3]
+	else:
+		x1, y1 = wcs.wcs_world2pix(ra[0], dec[0], 1)
+		x2, y2 = wcs.wcs_world2pix(ra[1], dec[1], 1)
+		x3, y3 = wcs.wcs_world2pix(ra[2], dec[2], 1)
+		x4, y4 = wcs.wcs_world2pix(ra[3], dec[3], 1)
+
+	x, y = np.asarray([x1, x2, x3, x4]), np.asarray([y1, y2, y3, y4])
+
+	# find center
+	cent_x, cent_y = int((max(x)+min(x))/2.0), int((max(y)+min(y))/2.0)
+
+	idx_sort_x = np.argsort(x)
+
+	x1, y1 = x[idx_sort_x[0]], y[idx_sort_x[0]]
+	x2, y2 = x[idx_sort_x[1]], y[idx_sort_x[1]]
+	x3, y3 = x[idx_sort_x[2]], y[idx_sort_x[2]]
+	x4, y4 = x[idx_sort_x[3]], y[idx_sort_x[3]]
+
+	f12_m, f12_b = linear_func_of_twopoints(x1, x2, y1, y2)
+	f13_m, f13_b = linear_func_of_twopoints(x1, x3, y1, y3) 
+	f24_m, f24_b = linear_func_of_twopoints(x2, x4, y2, y4)
+	f34_m, f34_b = linear_func_of_twopoints(x3, x4, y3, y4)
+
+	gal_region0 = np.zeros((dimy,dimx))
+	rows, cols = np.where(gal_region0==0) 
+
+	map12_y, map12_fy = np.zeros((dimy,dimx)), np.zeros((dimy,dimx))
+	map12_y[rows,cols] = rows
+	map12_fy[rows,cols] = f12_m*cols + f12_b
+
+	map13_y, map13_fy = np.zeros((dimy,dimx)), np.zeros((dimy,dimx))
+	map13_y[rows,cols] = rows
+	map13_fy[rows,cols] = f13_m*cols + f13_b
+
+	map24_y, map24_fy = np.zeros((dimy,dimx)), np.zeros((dimy,dimx))
+	map24_y[rows,cols] = rows
+	map24_fy[rows,cols] = f24_m*cols + f24_b
+
+	map34_y, map34_fy = np.zeros((dimy,dimx)), np.zeros((dimy,dimx))
+	map34_y[rows,cols] = rows
+	map34_fy[rows,cols] = f34_m*cols + f34_b
+
+	### 12
+	if cent_y > f12_m*cent_x + f12_b:
+		rows1, cols1 = np.where(map12_y >= map12_fy - 1)
+		gal_region0[rows1,cols1] = 1
+	else:
+		rows1, cols1 = np.where(map12_y <= map12_fy + 1)
+		gal_region0[rows1,cols1] = 1
+
+	### 13
+	if cent_y > f13_m*cent_x + f13_b:
+		rows1, cols1 = np.where(map13_y >= map13_fy - 1)
+		temp = gal_region0[rows1,cols1]
+		gal_region0[rows1,cols1] = temp + 1
+	else:
+		rows1, cols1 = np.where(map13_y <= map13_fy + 1)
+		temp = gal_region0[rows1,cols1]
+		gal_region0[rows1,cols1] = temp + 1
+
+	### 24
+	if cent_y > f24_m*cent_x + f24_b:
+		rows1, cols1 = np.where(map24_y >= map24_fy - 1)
+		temp = gal_region0[rows1,cols1]
+		gal_region0[rows1,cols1] = temp + 1
+	else:
+		rows1, cols1 = np.where(map24_y <= map24_fy + 1)
+		temp = gal_region0[rows1,cols1]
+		gal_region0[rows1,cols1] = temp + 1
+
+	### 34
+	if cent_y > f34_m*cent_x + f34_b:
+		rows1, cols1 = np.where(map34_y >= map34_fy - 1)
+		temp = gal_region0[rows1,cols1]
+		gal_region0[rows1,cols1] = temp + 1
+	else:
+		rows1, cols1 = np.where(map34_y <= map34_fy + 1)
+		temp = gal_region0[rows1,cols1]
+		gal_region0[rows1,cols1] = temp + 1
+
+	gal_region = np.zeros((dimy,dimx))
+	rows2, cols2 = np.where(gal_region0 == 4)
+	gal_region[rows2,cols2] = 1
+
+	return gal_region, x1, x2, x3, x4, y1, y2, y3, y4
+
+
+def get_rectangular_region_old(stamp_img, x=None, y=None, ra=None, dec=None, theta=11.9):
+
+    from astropy.wcs import WCS
+    
+    hdu = fits.open(stamp_img)
+    wcs = WCS(hdu[0].header)
+    data_img = hdu[0].data
+    dimy, dimx = data_img.shape[0], data_img.shape[1]
+    hdu.close()
+    
+    if x is not None and y is not None:
+        x1, y1 = x[0], y[0]
+        x2, y2 = x[1], y[1]
+        x3, y3 = x[2], y[2]
+        x4, y4 = x[3], y[3]
+    else:
+        x1, y1 = wcs.wcs_world2pix(ra[0], dec[0], 1)
+        x2, y2 = wcs.wcs_world2pix(ra[1], dec[1], 1)
+        x3, y3 = wcs.wcs_world2pix(ra[2], dec[2], 1)
+        x4, y4 = wcs.wcs_world2pix(ra[3], dec[3], 1)
+
+    x_cent = 0.5*(x4+x2)
+    y_cent = 0.5*(y1+y3)
+
+    x1_rot, y1_rot = rotate_pixels(x1,y1,x_cent,y_cent,theta)
+    x2_rot, y2_rot = rotate_pixels(x2,y2,x_cent,y_cent,theta)
+    x3_rot, y3_rot = rotate_pixels(x3,y3,x_cent,y_cent,theta)
+    x4_rot, y4_rot = rotate_pixels(x4,y4,x_cent,y_cent,theta)
+    
+    xmin = round(0.5*(x3_rot+x4_rot))
+    xmax = round(0.5*(x1_rot+x2_rot))
+
+    ymin = round(0.5*(y1_rot+y4_rot))
+    ymax = round(0.5*(y2_rot+y3_rot))
+    
+    slit_region0 = np.zeros((dimy,dimx))
+    slit_region0[ymin:ymax, xmin:xmax] = 1
+    
+    ## rotate
+    rows, cols = np.where(slit_region0==1)
+    theta1 = -1.0*theta
+    cols1, rows1 = rotate_pixels(cols, rows, x_cent, y_cent, theta1)
+    cols_u = np.zeros(len(cols1)) + 0.5
+    rows_u = np.zeros(len(cols1)) + 0.5
+    cols_d = np.zeros(len(cols1)) - 0.5
+    rows_d = np.zeros(len(cols1)) - 0.5
+    
+    cols_temp, rows_temp = cols1+cols_u, rows1+rows_u
+    cols2, rows2 = cols1.tolist()+cols_temp.tolist(), rows1.tolist()+rows_temp.tolist()
+    
+    cols2, rows2 = np.asarray(cols2), np.asarray(rows2)
+    
+    cols_temp, rows_temp = cols1+cols_d, rows1+rows_d
+    cols3, rows3 = cols2.tolist()+cols_temp.tolist(), rows2.tolist()+rows_temp.tolist()
+    
+    cols3, rows3 = np.asarray(cols3), np.asarray(rows3)
+    
+    cols_temp, rows_temp = cols1+cols_u, rows1+rows_d
+    cols4, rows4 = cols3.tolist()+cols_temp.tolist(), rows3.tolist()+rows_temp.tolist()
+    
+    cols4, rows4 = np.asarray(cols4), np.asarray(rows4)
+    
+    cols_temp, rows_temp = cols1+cols_d, rows1+rows_u
+    cols5, rows5 = cols4.tolist()+cols_temp.tolist(), rows4.tolist()+rows_temp.tolist()
+    
+    cols5, rows5 = np.asarray(cols5), np.asarray(rows5)
+
+    slit_region = np.zeros((dimy,dimx))
+    slit_region[np.round_(rows5).astype(int), np.round_(cols5).astype(int)] = 1
+    
+    return slit_region, x1, x2, x3, x4, y1, y2, y3, y4
+
+
+def central_brightest_pixel(flux_maps_fits, filter_id, xrange=None, yrange=None):
+	""" Function for locating the central brightest pixel within a map of flux in a particular band.
+	"""
+
+	filters, gal_region, flux_map, flux_err_map, unit_flux = open_fluxmap_fits(flux_maps_fits)
+	nbands = len(filters)
+
+	if xrange is None:
+		xrange = [0,gal_region.shape[1]]
+	if yrange is None:
+		yrange = [0,gal_region.shape[0]]
+
+	cent_y, cent_x = np.unravel_index(flux_map[int(filter_id)][yrange[0]:yrange[1], xrange[0]:xrange[1]].argmax(), flux_map[int(filter_id)][yrange[0]:yrange[1], xrange[0]:xrange[1]].shape)
+	cent_x, cent_y = cent_x+xrange[0], cent_y+yrange[0]
+
+	return cent_x, cent_y	
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

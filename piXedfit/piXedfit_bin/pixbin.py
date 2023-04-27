@@ -4,7 +4,8 @@ import sys
 from operator import itemgetter
 from astropy.io import fits
 
-__all__ = ["pixel_binning", "pixel_binning_images"]
+__all__ = ["pixel_binning", "pixel_binning_images", "open_binmap_fits", "plot_binmap", 
+			"get_bins_SED_binmap", "plot_bins_SNR_radial_profile", "plot_bins_SED"]
 
 
 def redchi2_two_seds(sed1_f=[], sed1_ferr=[], sed2_f=[], sed2_ferr=[]):
@@ -422,6 +423,7 @@ def pixel_binning(fits_fluxmap, ref_band=None, Dmin_bin=4.0, SNR=None, redc_chi2
 			hdr[str_temp] = header[str_temp]
 
 		hdul.append(fits.ImageHDU(data=pixbin_map, header=hdr, name='photo_bin_map'))
+		hdul.append(fits.ImageHDU(spec_gal_region, name='spec_region'))
 		hdul.append(fits.ImageHDU(pixbin_map_specphoto, name='spec_bin_map'))
 		hdul.append(fits.ImageHDU(map_bin_flux_trans, name='bin_photo_flux'))
 		hdul.append(fits.ImageHDU(map_bin_flux_err_trans, name='bin_photo_fluxerr'))
@@ -769,4 +771,349 @@ def pixel_binning_images(images, var_images, ref_band=None, Dmin_bin=2.0, SNR=No
 	hdul.writeto(name_out_fits, overwrite=True)
 
 	return name_out_fits
+
+
+def open_binmap_fits(binmap_fits):
+	hdu = fits.open(binmap_fits)
+	header = hdu[0].header
+	unit_flux = float(hdu[0].header['unit'])
+	flag_specphoto = hdu[0].header['specphot']
+	
+	if flag_specphoto == 0:
+		nbins_photo = int(hdu[0].header['nbins'])
+		nbins_spec = 0
+
+		binmap_photo = hdu['BIN_MAP'].data 
+		spec_region = None
+		binmap_spec = None
+		map_photo_flux = hdu['BIN_FLUX'].data
+		map_photo_flux_err = hdu['BIN_FLUXERR'].data
+		spec_wave = None 
+		map_spec_flux = None 
+		map_spec_flux_err = None 
+
+	elif flag_specphoto == 1:
+		nbins_photo = int(hdu[0].header['nbinsph'])
+		nbins_spec = int(hdu[0].header['nbinssp'])
+
+		binmap_photo = hdu['PHOTO_BIN_MAP'].data
+		spec_region = hdu['SPEC_REGION'].data 
+		binmap_spec = hdu['SPEC_BIN_MAP'].data 
+		map_photo_flux = hdu['BIN_PHOTO_FLUX'].data 
+		map_photo_flux_err = hdu['BIN_PHOTO_FLUXERR'].data 
+		spec_wave = hdu['SPEC_WAVE'].data 
+		map_spec_flux = hdu['BIN_SPEC_FLUX'].data 
+		map_spec_flux_err = hdu['BIN_SPEC_FLUXERR'].data 
+
+	filters = []
+	for bb in range(int(hdu[0].header['nfilters'])):
+		filters.append(hdu[0].header['fil%d' % bb])
+
+	hdu.close()
+
+	return flag_specphoto, nbins_photo, nbins_spec, filters, unit_flux, binmap_photo, spec_region, binmap_spec, map_photo_flux, map_photo_flux_err, spec_wave, map_spec_flux, map_spec_flux_err
+
+
+def plot_binmap(binmap_fits, plot_binmap_spec=True, savefig=True, name_plot_binmap_photo=None, name_plot_binmap_spec=None):
+
+	import matplotlib.pyplot as plt
+	from mpl_toolkits.axes_grid1 import make_axes_locatable
+
+	flag_specphoto, nbins_photo, nbins_spec, filters, unit_flux, binmap_photo, spec_region, binmap_spec, map_photo_flux, map_photo_flux_err, spec_wave, map_spec_flux, map_spec_flux_err = open_binmap_fits(binmap_fits)
+
+	cmap = plt.get_cmap('nipy_spectral_r', nbins_photo)
+
+	##=> plot binning map of photometry
+	fig1 = plt.figure(figsize=(7,7))
+	f1 = plt.subplot()
+	plt.setp(f1.get_yticklabels(), fontsize=14)
+	plt.setp(f1.get_xticklabels(), fontsize=14)
+	plt.xlabel("[pixel]", fontsize=18)
+	plt.ylabel("[pixel]", fontsize=18)
+
+	rows, cols = np.where(binmap_photo<1)
+	binmap_photo1 = binmap_photo
+	binmap_photo1[rows,cols] = float('nan')
+
+	im = plt.imshow(binmap_photo1, origin='lower', cmap=cmap, vmin=0.5, vmax=nbins_photo+0.5)
+
+	divider = make_axes_locatable(f1)
+	cax2 = divider.append_axes("top", size="7%", pad="2%")
+	cb = fig1.colorbar(im, cax=cax2, orientation="horizontal")
+	cax2.xaxis.set_ticks_position("top")
+	cax2.xaxis.set_label_position("top")
+	cb.ax.tick_params(labelsize=14)
+	cb.set_label('Bin Index', fontsize=18)
+
+	if savefig is True:
+		if name_plot_binmap_photo is None:
+			name_plot_binmap_photo = 'binmap_photo.png'
+		plt.savefig(name_plot_binmap_photo)
+	else:
+		plt.show()
+
+	##=> plot binning map of spectrophotometry
+	if plot_binmap_spec==True and flag_specphoto == 1:
+		fig1 = plt.figure(figsize=(7,7))
+		f1 = plt.subplot()
+		plt.setp(f1.get_yticklabels(), fontsize=14)
+		plt.setp(f1.get_xticklabels(), fontsize=14)
+		plt.xlabel("[pixel]", fontsize=18)
+		plt.ylabel("[pixel]", fontsize=18)
+
+		rows, cols = np.where(spec_region == 0)
+		spec_region1 = spec_region
+		spec_region1[rows,cols] = float('nan')
+		plt.imshow(spec_region1, origin='lower', cmap='gray', alpha=0.5, zorder=1)
+
+		rows, cols = np.where(binmap_spec<1)
+		binmap_spec1 = binmap_spec
+		binmap_spec1[rows,cols] = float('nan')
+		im = plt.imshow(binmap_spec1, origin='lower', cmap=cmap, vmin=0.5, vmax=nbins_photo+0.5, zorder=2)
+
+		divider = make_axes_locatable(f1)
+		cax2 = divider.append_axes("top", size="7%", pad="2%")
+		cb = fig1.colorbar(im, cax=cax2, orientation="horizontal")
+		cax2.xaxis.set_ticks_position("top")
+		cax2.xaxis.set_label_position("top")
+		cb.ax.tick_params(labelsize=14)
+		cb.set_label('Bin Index', fontsize=18)
+
+		if savefig is True:
+			if name_plot_binmap_spec is None:
+				name_plot_binmap_spec = 'binmap_spec.png'
+			plt.savefig(name_plot_binmap_spec)
+		else:
+			plt.show()
+
+
+def get_bins_SED_binmap(binmap_fits):
+
+	flag_specphoto, nbins_photo, nbins_spec, filters, unit_flux, binmap_photo, spec_region, binmap_spec, map_photo_flux, map_photo_flux_err, spec_wave, map_spec_flux, map_spec_flux_err = open_binmap_fits(binmap_fits)
+
+	# get central wavelength of filters
+	from ..utils.filtering import cwave_filters
+
+	photo_wave = cwave_filters(filters)	
+
+	nbands = len(filters)
+
+	if flag_specphoto == 1:
+		nwaves = len(spec_wave)
+	else:
+		nwaves = 1
+		
+	bin_photo_flux = np.zeros((nbins_photo,nbands))
+	bin_photo_flux_err = np.zeros((nbins_photo,nbands))
+	bin_spec_flux = np.zeros((nbins_photo,nwaves))
+	bin_spec_flux_err = np.zeros((nbins_photo,nwaves))
+
+	bin_flag_specphoto = np.zeros(nbins_photo)
+
+	for bb in range(0,nbins_photo):
+		rows, cols = np.where(binmap_photo==bb+1)
+		bin_photo_flux[bb] = map_photo_flux[:,rows[0],cols[0]]*unit_flux
+		bin_photo_flux_err[bb] = map_photo_flux_err[:,rows[0],cols[0]]*unit_flux
+
+		if flag_specphoto == 1:
+			rows, cols = np.where(binmap_spec==bb+1)
+			if len(rows)>0:
+				bin_spec_flux[bb] = map_spec_flux[:,rows[0],cols[0]]*unit_flux
+				bin_spec_flux_err[bb] = map_spec_flux_err[:,rows[0],cols[0]]*unit_flux
+				bin_flag_specphoto[bb] = 1
+
+	return bin_photo_flux, bin_photo_flux_err, bin_spec_flux, bin_spec_flux_err, bin_flag_specphoto, filters, photo_wave, spec_wave
+
+
+def plot_bins_SNR_radial_profile(binmap_fits, xrange=None, yrange=None, savefig=True, name_plot=None):
+	""" Function for plotting S/N ratios of pixels.
+	"""
+
+	import matplotlib.pyplot as plt
+
+	flag_specphoto, nbins_photo, nbins_spec, filters, unit_flux, binmap_photo, spec_region, binmap_spec, map_photo_flux, map_photo_flux_err, spec_wave, map_spec_flux, map_spec_flux_err = open_binmap_fits(binmap_fits)
+
+	nbands = len(filters)
+	bin_photo_flux = np.zeros((nbins_photo,nbands))
+	bin_photo_flux_err = np.zeros((nbins_photo,nbands))
+	for bb in range(0,nbins_photo):
+		rows, cols = np.where(binmap_photo==bb+1)
+		bin_photo_flux[bb] = map_photo_flux[:,rows[0],cols[0]]
+		bin_photo_flux_err[bb] = map_photo_flux_err[:,rows[0],cols[0]]
+
+	bin_SNR = np.zeros((nbands,nbins_photo))
+	for bb in range(0,nbands):
+		bin_SNR[bb] = bin_photo_flux[:,bb]/bin_photo_flux_err[:,bb]
+
+	bin_ids = np.arange(1,nbins_photo+1)
+
+	# plotting
+	fig1 = plt.figure(figsize=(10,6))
+	f1 = plt.subplot()
+
+	if yrange is not None:
+		plt.ylim(yrange[0],yrange[1])
+ 
+	if xrange is not None:
+		plt.xlim(xrange[0],xrange[1])
+
+	plt.setp(f1.get_yticklabels(), fontsize=13, visible=True)
+	plt.setp(f1.get_xticklabels(), fontsize=13, visible=True)
+	plt.xlabel(r"Bin index", fontsize=20)
+	plt.ylabel(r"log(S/N Ratio)", fontsize=20)
+
+	cmap = plt.get_cmap('jet', nbands)
+
+	for bb in range(0,nbands):
+		plt.scatter(bin_ids, np.log10(bin_SNR[bb]), s=10, alpha=0.5, color=cmap(bb), label='%s' % filters[bb])
+
+	plt.legend(fontsize=10, ncol=2)
+
+	if savefig is True:
+		if name_plot is None:
+			name_plot = 'plot_bins_SNR.png'
+		plt.savefig(name_plot)
+	else:
+		plt.show()
+
+
+def plot_bins_SED(binmap_fits, bin_ids=None, logscale_y=True, logscale_x=True, 
+	wunit='angstrom', yrange=None, xrange=None, savefig=True, name_plot=None):
+	""" Function for plotting SEDs of pixels.
+
+	:param binmap_fits:
+		Input FITS file.
+
+	:param bin_ids:
+		Indexes of spatial bins which SEDs will be plotted. This index start from 0.
+
+	:param logscale_y: (optional)
+		Option to set the y axis in logarithmic scale.
+
+	:param logscale_x: (optional)
+		Option to set the x axis in logarithmic scale.
+
+	:param wunit: (optional)
+		Wavelength unit. Options are 'angstrom' and 'micron'.
+
+	:param yrange: (optional)
+		Range in y axis.
+
+	:param xrange: (optional)
+		Range in x axis.
+
+	:param savefig: (optional)
+		Option to save the plot.
+
+	:param name_plot: (optional)
+		Name for the output plot.
+	"""
+
+	import matplotlib.pyplot as plt 
+
+	bin_photo_flux, bin_photo_flux_err, bin_spec_flux, bin_spec_flux_err, bin_flag_specphoto, filters, photo_wave, spec_wave = get_bins_SED_binmap(binmap_fits)
+
+	if bin_ids is None:
+		bin_ids = np.arange(0,len(bin_photo_flux))
+
+	cmap = plt.get_cmap('jet', len(bin_ids))
+
+	# Plotting
+	fig1 = plt.figure(figsize=(12,6))
+	f1 = plt.subplot()
+	if logscale_y == True:
+		f1.set_yscale('log')
+	if logscale_x == True:
+		f1.set_xscale('log')
+
+	if wunit == 'micron':
+		plt.xlabel(r"Wavelength [$\mu$m]", fontsize=18)
+	elif wunit == 'angstrom':
+		plt.xlabel(r"Wavelength [$\AA$]", fontsize=18)
+	else:
+		print ('wunit is not recognized!')
+		sys.exit()
+
+	plt.ylabel(r"Flux [erg $\rm{s}^{-1}\rm{cm}^{-2}\AA^{-1}$]", fontsize=18)
+	plt.setp(f1.get_xticklabels(), fontsize=12)
+	plt.setp(f1.get_yticklabels(), fontsize=12)
+
+	if yrange is not None:
+		plt.ylim(yrange[0],yrange[1])
+ 
+	if xrange is not None:
+		plt.xlim(xrange[0],xrange[1])
+
+
+	for ii in range(len(bin_ids)):
+		bin_id = int(bin_ids[ii])
+
+		if wunit == 'micron':
+			if bin_flag_specphoto[bin_id] == 1:
+				plt.fill_between(spec_wave/1e+4, bin_spec_flux[bin_id]-bin_spec_flux_err[bin_id], 
+							bin_spec_flux[bin_id]+bin_spec_flux_err[bin_id], color=cmap(ii), alpha=0.3)
+				plt.plot(spec_wave/1e+4, bin_spec_flux[bin_id], lw=1, color=cmap(ii))
+
+			plt.errorbar(photo_wave/1e+4, bin_photo_flux[bin_id], yerr=bin_photo_flux_err[bin_id], fmt='-o', color=cmap(ii), alpha=0.5)
+
+		elif wunit == 'angstrom':
+			if bin_flag_specphoto[bin_id] == 1:
+				plt.fill_between(spec_wave, bin_spec_flux[bin_id]-bin_spec_flux_err[bin_id], 
+							bin_spec_flux[bin_id]+bin_spec_flux_err[bin_id], color=cmap(ii), alpha=0.3)
+				plt.plot(spec_wave, bin_spec_flux[bin_id], lw=1, color=cmap(ii))
+
+			plt.errorbar(photo_wave, bin_photo_flux[bin_id], yerr=bin_photo_flux_err[bin_id], fmt='-o', color=cmap(ii), alpha=0.5)
+
+	if savefig is True:
+		if name_plot is None:
+			name_plot = 'plot_bins_SED.png'
+		plt.savefig(name_plot)
+	else:
+		plt.show()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

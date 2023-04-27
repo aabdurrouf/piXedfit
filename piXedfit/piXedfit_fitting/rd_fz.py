@@ -17,7 +17,7 @@ from piXedfit.utils.posteriors import model_leastnorm, calc_chi2, ln_gauss_prob,
 from piXedfit.utils.filtering import interp_filters_curves, filtering_interp_filters, cwave_filters 
 from piXedfit.utils.redshifting import cosmo_redshifting
 from piXedfit.utils.igm_absorption import igm_att_madau, igm_att_inoue
-from piXedfit.piXedfit_fitting import params_log_flag
+from piXedfit.piXedfit_model import params_log_flag
 
 def bayesian_sedfit_gauss():
 	f = h5py.File(models_spec, 'r')

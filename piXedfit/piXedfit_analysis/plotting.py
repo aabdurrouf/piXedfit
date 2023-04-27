@@ -12,7 +12,8 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 from astropy.cosmology import *
 
-from ..piXedfit_model import generate_modelSED_spec_decompose, construct_SFH, convert_unit_spec_from_ergscm2A
+from ..piXedfit_model.model_utils import construct_SFH, convert_unit_spec_from_ergscm2A, list_default_params_fit, default_params_val
+from ..piXedfit_model.gen_models import generate_modelSED_spec_decompose
 from ..utils.filtering import cwave_filters, filtering
 from ..utils.posteriors import plot_triangle_posteriors
 
@@ -88,12 +89,8 @@ def plot_SED_rdsps_photo(filters=None,obs_photo=None,bfit_photo=None,bfit_mod_sp
 		plt.ylim(yrange[0],yrange[1])
 
 	if decompose==1 or decompose==True:
-		def_params = ['logzsol','log_tau','log_t0','log_alpha','log_beta', 'log_age','dust_index','dust1','dust2',
-						'log_gamma','log_umin', 'log_qpah', 'z', 'log_fagn','log_tauagn', 'log_mass']
-
-		def_params_val={'log_mass':0.0,'z':0.001,'log_fagn':-3.0,'log_tauagn':1.0,'log_qpah':0.54,'log_umin':0.0,
-						'log_gamma':-2.0,'dust1':0.5,'dust2':0.5,'dust_index':-0.7,'log_age':1.0,'log_alpha':0.1,
-						'log_beta':0.1,'log_t0':0.4,'log_tau':0.4,'logzsol':0.0}
+		def_params = list_default_params_fit()
+		def_params_val = default_params_val()
 
 		# modeling configuration 
 		imf = header_samplers['imf']
@@ -456,6 +453,7 @@ def plot_SED_specphoto(filters=None,obs_photo=None,obs_spec=None,bfit_photo=None
 	elif header_samplers['fitmethod'] == 'rdsps':
 		plt.plot(bfit_spec['wave'], bfit_spec['flux'], lw=1, color='red', zorder=5)
 
+	plt.subplots_adjust(bottom=0.2)
 	name_plot2 = 'sp_%s' % name_plot
 	plt.savefig(name_plot2)
 
@@ -539,6 +537,7 @@ def plot_SED_specphoto(filters=None,obs_photo=None,obs_spec=None,bfit_photo=None
 		plt.scatter(photo_cwave/1.0e+4, obs_fluxes, marker='o', s=markersize, color='blue', zorder=6)
 		plt.scatter(photo_cwave/1.0e+4, bfit_photo_flux, marker='o', s=0.7*markersize, color='gray', zorder=7)
 
+	plt.subplots_adjust(bottom=0.2)
 	name_plot3 = 'sph_%s' % name_plot
 	plt.savefig(name_plot3)
 
@@ -614,7 +613,7 @@ def plot_SED(name_sampler_fits,logscale_x=True,logscale_y=True,xrange=None,yrang
 	header_samplers = hdu[0].header
 	obs_photo = hdu['obs_photo'].data
 	bfit_photo = hdu['bfit_photo'].data
-	bfit_mod_spec = hdu['bfit_mod_spec'].data
+	bfit_mod_spec = hdu['bfit_mod_spec'].data 
 	if header_samplers['specphot'] == 1:
 		obs_spec = hdu['obs_spec'].data
 		bfit_spec = hdu['bfit_spec'].data
@@ -660,16 +659,17 @@ def plot_SED(name_sampler_fits,logscale_x=True,logscale_y=True,xrange=None,yrang
 
 def plot_corner(name_sampler_fits, params=['log_sfr','log_mass','log_dustmass','log_fagn','log_fagn_bol','log_tauagn',
 	'log_qpah','log_umin','log_gamma','dust1','dust2','dust_index','log_mw_age','log_age','log_t0','log_alpha','log_beta',
-	'log_tau','logzsol','z'], label_params={'log_sfr':'log(SFR)','log_mass':'log($M_{*}$)','log_dustmass':'log($M_{dust}$)',
+	'log_tau','logzsol','z','gas_logu','gas_logz'], label_params={'log_sfr':'log(SFR)','log_mass':'log($M_{*}$)','log_dustmass':'log($M_{dust}$)',
 	'log_fagn':'log($f_{AGN,*}$)','log_fagn_bol':'log($f_{AGN,bol}$)','log_tauagn':'log($\\tau_{AGN}$)','log_qpah':'log($Q_{PAH}$)',
 	'log_umin':'log($U_{min}$)','log_gamma':'log($\gamma_{e}$)','dust1':'$\hat \\tau_{1}$','dust2':'$\hat \\tau_{2}$', 'dust_index':'$n$', 
-	'log_mw_age':'log($\mathrm{age}_{\mathrm{MW}}$)','log_age':'log($\mathrm{age}_{\mathrm{sys}}$)','log_t0':'log($t_{0}$)',
-	'log_alpha':'log($\\alpha$)', 'log_beta':'log($\\beta$)','log_tau':'log($\\tau$)','logzsol':'log($Z/Z_{\odot}$)','z':'z'}, 
+	'log_mw_age':'log($\mathrm{age}_{\mathrm{M}}$)','log_age':'log($\mathrm{age}_{\mathrm{sys}}$)','log_t0':'log($t_{0}$)',
+	'log_alpha':'log($\\alpha$)', 'log_beta':'log($\\beta$)','log_tau':'log($\\tau$)','logzsol':'log($Z/Z_{\odot}$)','z':'z', 
+	'gas_logu':'log($U$)', 'gas_logz':'log($Z_{gas}/Z_{\odot}$)'}, 
 	params_ranges = {'log_sfr':[-99.0,-99.0],'log_mass':[-99.0,-99.0],'log_dustmass':[-99.0,-99.0],'log_fagn':[-5.0,0.48],
 	'log_fagn_bol':[-99.0,-99.0],'log_tauagn':[0.70,2.18],'log_qpah':[-1.0, 0.845],'log_umin':[-1.0, 1.176],'log_gamma':[-3.0,-0.824],
 	'dust1':[0.0,4.0],'dust2':[0.0,4.0], 'dust_index':[-2.2,0.4],'log_mw_age':[-99.0,-99.0],'log_age': [-3.0, 1.14],
 	'log_t0': [-2.0, 1.14],'log_alpha':[-2.5,2.5],'log_beta':[-2.5,2.5],'log_tau': [-2.5, 1.5], 'logzsol': [-2.0, 0.5], 
-	'z': [-99.0, -99.0]}, nbins=12, fontsize_label=20, fontsize_tick=14, name_plot=None):
+	'z': [-99.0, -99.0],'gas_logu':[-4.0,-1.0],'gas_logz':[-2.0,0.2]}, factor=1.0, nbins=12, fontsize_label=20, fontsize_tick=14, name_plot=None):
 	
 	"""Function for producing corner plot that shows 1D and joint 2D posterior probability distributions from a fitting result with the MCMC method.
 	
@@ -685,6 +685,9 @@ def plot_corner(name_sampler_fits, params=['log_sfr','log_mass','log_dustmass','
 
 	:param params_ranges: 
 		Desired ranges for the parameters.
+
+	:param factor:
+		Multiplication factor to be applied to stellar mass, SFR, and dust mass.
 
 	:param nbins: 
 		Number of binning in the parameter space when calculating the joint posteriors.
@@ -702,9 +705,8 @@ def plot_corner(name_sampler_fits, params=['log_sfr','log_mass','log_dustmass','
 		Desired name for the output plot. This is optional. If None, a default name will be used.
 	"""
 
-	def_params=['log_sfr','log_mass','log_dustmass','log_fagn','log_fagn_bol','log_tauagn','log_qpah','log_umin',
-				'log_gamma','dust1','dust2','dust_index','log_mw_age','log_age','log_t0','log_alpha','log_beta',
-				'log_tau','logzsol','z']
+	def_params0 = list_default_params_fit()
+	def_params = def_params0 + ['log_sfr', 'log_mass', 'log_mw_age', 'log_dustmass']
 
 	# open the input FITS file
 	hdu = fits.open(name_sampler_fits)
@@ -734,6 +736,12 @@ def plot_corner(name_sampler_fits, params=['log_sfr','log_mass','log_dustmass','
 		label_params_new = label_params
 		params_ranges_new = params_ranges
 
+	# apply multiplication factor 
+	data_samplers['log_mass'] = data_samplers['log_mass'] + np.log10(factor) 
+	data_samplers['log_sfr'] = data_samplers['log_sfr'] + np.log10(factor)
+	if 'log_dustmass' in params_new:
+		data_samplers['log_dustmass'] = data_samplers['log_dustmass'] + np.log10(factor)
+
 	## exclude saturated samplers: log(SFR)~-29.99..
 	idx_sel = np.where(data_samplers['log_sfr']>-29.0)
 
@@ -762,7 +770,7 @@ def plot_corner(name_sampler_fits, params=['log_sfr','log_mass','log_dustmass','
 	return name_plot
 
 
-def plot_sfh_mcmc(name_sampler_fits, nchains=200, del_t=0.05, lbacktime_max=None, yrange=None, loc_legend=2, fontsize_tick=18, 
+def plot_sfh_mcmc(name_sampler_fits, nchains=200, del_t=0.05, lbacktime_max=None, yrange=None, factor=1.0, loc_legend=2, fontsize_tick=18, 
 	fontsize_label=25, fontsize_legend=26, logscale_x=False, logscale_y=False, name_plot=None):
 	"""Function for producing SFH plot from a fitting result with the MCMC method. This is only applicable for fitting result 
 	that stores the full sampler chains, which is when we set store_full_samplers=1 in the SED fitting functions. 
@@ -781,6 +789,9 @@ def plot_sfh_mcmc(name_sampler_fits, nchains=200, del_t=0.05, lbacktime_max=None
 
 	:param yrange: 
 		Range in the y-axis.
+
+	:param factor:
+		Multiplication factor to be applied to the SFH.
 
 	:param loc_legend: 
 		Where to locate the legend. This is the same as in the `matplotlib`.
@@ -910,7 +921,7 @@ def plot_sfh_mcmc(name_sampler_fits, nchains=200, del_t=0.05, lbacktime_max=None
 		t,SFR_t = construct_SFH(sfh_form=sfh_form,t0=t0,tau=tau,alpha=alpha,beta=beta,age=age,formed_mass=formed_mass)
 		t_back = np.abs(t - age)
 
-		array_sfr_at_lbt[ii] = np.interp(grid_lbt,t_back[::-1],SFR_t[::-1],left=0,right=0)
+		array_sfr_at_lbt[ii] = np.interp(grid_lbt,t_back[::-1],SFR_t[::-1],left=0,right=0)*factor
 
 	array_sfr_at_lbt_trans = np.transpose(array_sfr_at_lbt, axes=(1,0))
 	grid_sfr_p16 = np.percentile(array_sfr_at_lbt_trans, 16, axis=1)

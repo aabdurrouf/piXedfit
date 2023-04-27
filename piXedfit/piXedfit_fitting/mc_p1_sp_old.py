@@ -8,6 +8,7 @@ from operator import itemgetter
 from mpi4py import MPI
 from astropy.io import fits
 from schwimmbad import MPIPool
+from astropy.cosmology import *
 from scipy.interpolate import interp1d
 from scipy.stats import sigmaclip
 from scipy.stats import norm as normal
@@ -18,14 +19,14 @@ PIXEDFIT_HOME = os.environ['PIXEDFIT_HOME']
 sys.path.insert(0, PIXEDFIT_HOME)
 
 from piXedfit.utils.filtering import interp_filters_curves, filtering_interp_filters 
-from piXedfit.utils.posteriors import model_leastnorm, ln_gauss_prob, calc_chi2
+from piXedfit.utils.posteriors import model_leastnorm, ln_gauss_prob
 from piXedfit.utils.redshifting import cosmo_redshifting
 from piXedfit.utils.igm_absorption import igm_att_madau, igm_att_inoue
 from piXedfit.utils.igm_absorption import igm_att_madau, igm_att_inoue
-from piXedfit.piXedfit_model import get_params, get_no_nebem_wave_fit, generate_modelSED_spec_restframe_fit
-from piXedfit.piXedfit_model import list_params_fsps, set_initial_fsps, get_params_fsps
-from piXedfit.piXedfit_fitting import read_config_file_fit
+from piXedfit.piXedfit_model import get_no_nebem_wave_fit, generate_modelSED_spec_restframe_fit
+from piXedfit.piXedfit_model import default_params_val, list_params_fsps, set_initial_fsps, get_params_fsps
 from piXedfit.piXedfit_spectrophotometric import spec_smoothing
+from piXedfit.piXedfit_fitting import get_params, read_config_file_fit
 
 
 def initfit_fz(gal_z,DL_Gpc):
@@ -52,7 +53,8 @@ def initfit_fz(gal_z,DL_Gpc):
 	comm.Scatter(idx_mpi, recvbuf_idx, root=0)
 
 	mod_params_temp = np.zeros((nparams,numDataPerRank))
-	mod_redcd_chi2_temp = np.zeros(numDataPerRank) 
+	mod_chi2_photo_temp = np.zeros(numDataPerRank)
+	mod_redcd_chi2_spec_temp = np.zeros(numDataPerRank)
 
 	count = 0
 	for ii in recvbuf_idx:
@@ -61,7 +63,7 @@ def initfit_fz(gal_z,DL_Gpc):
 		extnc_spec = f[str_temp][:]
 
 		# redshifting
-		redsh_wave, redsh_spec = cosmo_redshifting(DL_Gpc=DL_Gpc,cosmo=cosmo,H0=H0,Om0=Om0,z=gal_z,wave=wave,spec=extnc_spec)
+		redsh_wave,redsh_spec = cosmo_redshifting(DL_Gpc=DL_Gpc,cosmo=cosmo,H0=H0,Om0=Om0,z=gal_z,wave=wave,spec=extnc_spec)
 
 		# IGM absorption:
 		if add_igm_absorption == 1:
@@ -74,34 +76,37 @@ def initfit_fz(gal_z,DL_Gpc):
 
 		# filtering
 		fluxes = filtering_interp_filters(redsh_wave,redsh_spec,interp_filters_waves,interp_filters_trans)
+		norm = model_leastnorm(obs_fluxes,obs_flux_err,fluxes)
+		norm_fluxes = norm*fluxes
 
-		# cut the model spectrum
-		conv_mod_spec_wave,conv_mod_spec_flux = redsh_wave[idx_mod_wave[0]],redsh_spec[idx_mod_wave[0]]
+		chi_photo = (norm_fluxes-obs_fluxes)/obs_flux_err
+		chi2_photo = np.sum(np.square(chi_photo))
+		
+		# cut and normalize model spectrum
+		# smoothing model spectrum to meet resolution of IFS
+		#conv_mod_spec_wave,conv_mod_spec_flux = spec_smoothing(redsh_wave[idx_mod_wave[0]],redsh_spec[idx_mod_wave[0]]*norm,spec_sigma)
+		conv_mod_spec_wave,conv_mod_spec_flux = redsh_wave[idx_mod_wave[0]],redsh_spec[idx_mod_wave[0]]*norm
 
 		# get model continuum
-		func = interp1d(conv_mod_spec_wave, conv_mod_spec_flux, fill_value='extrapolate')
+		func = interp1d(conv_mod_spec_wave,conv_mod_spec_flux, fill_value='extrapolate')
 		conv_mod_spec_flux_clean = func(spec_wave_clean)
 
-		# estimate normalization
-		smooth_spec_wave, smooth_mod_spec_flux = spec_smoothing(spec_wave_clean,conv_mod_spec_flux_clean,med_del_wave_sigma)
-		smooth_spec_wave, smooth_obs_spec_flux = spec_smoothing(spec_wave_clean,spec_flux_clean,med_del_wave_sigma)
-		smooth_spec_wave, smooth_obs_spec_flux_err = spec_smoothing(spec_wave_clean,spec_flux_err_clean,med_del_wave_sigma)
-		d_merge = smooth_obs_spec_flux.tolist() + obs_fluxes.tolist()
-		derr_merge = smooth_obs_spec_flux_err.tolist() + obs_flux_err.tolist()
-		m_merge = smooth_mod_spec_flux.tolist() + fluxes.tolist()
-		norm = model_leastnorm(d_merge, derr_merge, m_merge)
-		fluxes = fluxes*norm
-		conv_mod_spec_flux_clean = conv_mod_spec_flux_clean*norm 
+		# get ratio of the obs and mod continuum
+		spec_flux_ratio = spec_flux_clean/conv_mod_spec_flux_clean
 
+		# fit with legendre polynomial
+		poly_legendre1 = np.polynomial.legendre.Legendre.fit(spec_wave_clean, spec_flux_ratio, poly_order)
+		poly_legendre2 = np.polynomial.legendre.Legendre.fit(spec_wave_clean, poly_legendre1(spec_wave_clean), 3)
+
+		# apply to the model
+		conv_mod_spec_flux_clean = poly_legendre1(spec_wave_clean)*conv_mod_spec_flux_clean/poly_legendre2(spec_wave_clean)
+		
 		chi_spec0 = (conv_mod_spec_flux_clean-spec_flux_clean)/spec_flux_err_clean
 		chi_spec,lower,upper = sigmaclip(chi_spec0, low=spec_chi_sigma_clip, high=spec_chi_sigma_clip)
+		chi2_spec = np.sum(np.square(chi_spec))
 
-		idx1 = np.where((chi_spec0>=lower) & (chi_spec0<=upper))
-		m_merge = conv_mod_spec_flux_clean[idx1[0]].tolist() + fluxes.tolist()
-		d_merge = spec_flux_clean[idx1[0]].tolist() + obs_fluxes.tolist()
-		derr_merge = spec_flux_err_clean[idx1[0]].tolist() + obs_flux_err.tolist()
-			
-		mod_redcd_chi2_temp[int(count)] = calc_chi2(d_merge, derr_merge, m_merge)/len(m_merge)
+		mod_chi2_photo_temp[int(count)] = chi2_photo
+		mod_redcd_chi2_spec_temp[int(count)] = chi2_spec/len(chi_spec)
 
 		# get parameters
 		for pp in range(0,nparams):
@@ -118,19 +123,23 @@ def initfit_fz(gal_z,DL_Gpc):
 		sys.stdout.flush()
 
 	mod_params = np.zeros((nparams,nmodels))
-	mod_redcd_chi2 = np.zeros(nmodels)
+	mod_chi2_photo = np.zeros(nmodels)
+	mod_redcd_chi2_spec = np.zeros(nmodels)
 
-	comm.Gather(mod_redcd_chi2_temp, mod_redcd_chi2, root=0)
+	# gather the scattered data and collect to rank=0
+	comm.Gather(mod_chi2_photo_temp, mod_chi2_photo, root=0)
+	comm.Gather(mod_redcd_chi2_spec_temp, mod_redcd_chi2_spec, root=0)
 	for pp in range(0,nparams):
 		comm.Gather(mod_params_temp[pp], mod_params[pp], root=0)
 
 	# Broadcast
-	comm.Bcast(mod_redcd_chi2, root=0)
+	comm.Bcast(mod_chi2_photo, root=0)
+	comm.Bcast(mod_redcd_chi2_spec, root=0)
 	comm.Bcast(mod_params, root=0)
 
 	f.close()
 
-	return mod_params, mod_redcd_chi2
+	return mod_params, mod_chi2_photo, mod_redcd_chi2_spec
 
 
 def initfit_vz(gal_z,DL_Gpc,zz,nrands_z):
@@ -188,6 +197,7 @@ def initfit_vz(gal_z,DL_Gpc,zz,nrands_z):
 		
 		# cut and normalize model spectrum
 		# smoothing model spectrum to meet resolution of IFS
+		#conv_mod_spec_wave,conv_mod_spec_flux = spec_smoothing(redsh_wave[idx_mod_wave[0]],redsh_spec[idx_mod_wave[0]]*norm,spec_sigma)
 		conv_mod_spec_wave,conv_mod_spec_flux = redsh_wave[idx_mod_wave[0]],redsh_spec[idx_mod_wave[0]]*norm
 
 		# get model continuum
@@ -306,23 +316,36 @@ def lnprob(theta):
 
 		# filtering
 		fluxes = filtering_interp_filters(redsh_wave,redsh_spec,interp_filters_waves,interp_filters_trans)
-
-		# cut the model spectrum
-		conv_mod_spec_wave,conv_mod_spec_flux = redsh_wave[idx_mod_wave[0]],redsh_spec[idx_mod_wave[0]]
+		norm = model_leastnorm(obs_fluxes,obs_flux_err,fluxes)
+		norm_fluxes = norm*fluxes
+			
+		# cut and normalize model spectrum
+		# smoothing model spectrum to meet resolution of IFS
+		#conv_mod_spec_wave,conv_mod_spec_flux = spec_smoothing(redsh_wave[idx_mod_wave[0]],redsh_spec[idx_mod_wave[0]]*norm,spec_sigma)
+		conv_mod_spec_wave,conv_mod_spec_flux = redsh_wave[idx_mod_wave[0]],redsh_spec[idx_mod_wave[0]]*norm
 
 		# get model continuum
-		func = interp1d(conv_mod_spec_wave, conv_mod_spec_flux, fill_value='extrapolate')
+		func = interp1d(conv_mod_spec_wave,conv_mod_spec_flux, fill_value='extrapolate')
 		conv_mod_spec_flux_clean = func(spec_wave_clean)
 
+		# get ratio of the obs and mod continuum
+		spec_flux_ratio = spec_flux_clean/conv_mod_spec_flux_clean
+
+		# fit with legendre polynomial
+		poly_legendre1 = np.polynomial.legendre.Legendre.fit(spec_wave_clean, spec_flux_ratio, poly_order)
+		poly_legendre2 = np.polynomial.legendre.Legendre.fit(spec_wave_clean, poly_legendre1(spec_wave_clean), 3)
+
+		# apply to the model
+		conv_mod_spec_flux_clean = poly_legendre1(spec_wave_clean)*conv_mod_spec_flux_clean/poly_legendre2(spec_wave_clean)
+			
 		chi_spec0 = (conv_mod_spec_flux_clean-spec_flux_clean)/spec_flux_err_clean
 		chi_spec,lower,upper = sigmaclip(chi_spec0, low=spec_chi_sigma_clip, high=spec_chi_sigma_clip)
 
 		idx1 = np.where((chi_spec0>=lower) & (chi_spec0<=upper))
-		m_merge = conv_mod_spec_flux_clean[idx1[0]].tolist() + fluxes.tolist()
+		m_merge = conv_mod_spec_flux_clean[idx1[0]].tolist() + norm_fluxes.tolist()
 		d_merge = spec_flux_clean[idx1[0]].tolist() + obs_fluxes.tolist()
 		derr_merge = spec_flux_err_clean[idx1[0]].tolist() + obs_flux_err.tolist()
-
-		ln_likeli = -0.5*calc_chi2(d_merge, derr_merge, m_merge)
+		ln_likeli = ln_gauss_prob(d_merge,derr_merge,m_merge)
 
 		return lp + ln_likeli
 
@@ -337,6 +360,10 @@ size = comm.Get_size()
 rank = comm.Get_rank()
 
 temp_dir = PIXEDFIT_HOME+'/data/temp/'
+
+# default parameter set
+global def_params_val
+def_params_val = default_params_val()
 
 def_params_fsps, params_assoc_fsps, status_log = list_params_fsps()
 
@@ -395,7 +422,10 @@ global smooth_velocity, sigma_smooth, smooth_lsf, name_file_lsf, poly_order, del
 free_z_temp, free_gas_logz_temp = 1, 1
 params0, nparams0 = get_params(free_z_temp, sfh_form, duste_switch, dust_law, add_agn, free_gas_logz_temp)
 config_file = str(sys.argv[2])
-def_params_val, cosmo, H0, Om0, gal_z, free_z, DL_Gpc, params, fix_params, nparams, priors_min, priors_max, nmodels, params_priors, add_igm_absorption, igm_type, nwalkers, nsteps, nsteps_cut, nrands_z, pr_z_min, pr_z_max, free_gas_logz, smooth_velocity, sigma_smooth, smooth_lsf, name_file_lsf, poly_order, del_wave_nebem, spec_chi_sigma_clip = read_config_file_fit(temp_dir,config_file,params0)
+cosmo, H0, Om0, gal_z, free_z, DL_Gpc, params, fix_params, nparams, priors_min, priors_max, nmodels, params_priors, add_igm_absorption, igm_type, nwalkers, nsteps, nsteps_cut, nrands_z, pr_z_min, pr_z_max, free_gas_logz, smooth_velocity, sigma_smooth, smooth_lsf, name_file_lsf, poly_order, del_wave_nebem, spec_chi_sigma_clip = read_config_file_fit(temp_dir,config_file,params0)
+
+if gal_z>0.0:
+	def_params_val['z'] = gal_z
 
 nfix_params = len(fix_params)
 if rank == 0:
@@ -456,17 +486,6 @@ if smooth_lsf == True or smooth_lsf == 1:
 else:
 	lsf_wave, lsf_sigma = None, None
 
-# get median spectral resolution (in wavelength space) to be used for smoothing model spectra in the estimation of model normalization
-global med_del_wave_sigma
-if smooth_lsf == True or smooth_lsf == 1:
-	med_del_wave_sigma = 10.0
-else:
-	if smooth_velocity == 1:
-		from astropy import constants as const
-		med_del_wave_sigma =  5*0.5*(min_spec_wave+max_spec_wave)*sigma_smooth*1e+3/const.c.value
-	else:
-		med_del_wave_sigma = 5*sigma_smooth
-
 # call FSPS
 global sp 
 sp = fsps.StellarPopulation(zcontinuous=1, imf_type=imf)
@@ -478,9 +497,11 @@ params_fsps, nparams_fsps = get_params_fsps(params)
 
 # initial fitting
 if free_z == 0:
-	mod_params, mod_redcd_chi2 = initfit_fz(gal_z,DL_Gpc)
-	idx0, min_val = min(enumerate(mod_redcd_chi2), key=itemgetter(1))
-	minchi2_params_initfit = mod_params[:,idx0]
+	mod_params, mod_chi2_photo, mod_redcd_chi2_spec = initfit_fz(gal_z,DL_Gpc)
+	sort_idx = np.argsort(mod_chi2_photo)
+	idx0, min_val = min(enumerate(mod_redcd_chi2_spec[sort_idx[0:100]]), key=itemgetter(1))
+	mod_id = sort_idx[0:100][idx0]
+	minchi2_params_initfit = mod_params[:,int(mod_id)]
 
 elif free_z == 1:
 	global rand_z
@@ -488,24 +509,28 @@ elif free_z == 1:
 
 	nmodels_merge = int(nmodels*nrands_z)
 	mod_params_merge = np.zeros((nparams,nmodels_merge))
-	mod_redcd_chi2_merge = np.zeros(nmodels_merge)
+	mod_chi2_photo_merge = np.zeros(nmodels_merge)
+	mod_redcd_chi2_spec_merge = np.zeros(nmodels_merge)
 	for zz in range(0,nrands_z):
 		gal_z = rand_z[zz]
-		mod_params, mod_redcd_chi2 = initfit_vz(gal_z,DL_Gpc,zz,nrands_z)
+		mod_params, mod_chi2_photo, mod_redcd_chi2_spec = initfit_vz(gal_z,DL_Gpc,zz,nrands_z)
 
 		for pp in range(0,nparams):
 			mod_params_merge[pp,int(zz*nmodels):int((zz+1)*nmodels)] = mod_params[pp]
-		mod_redcd_chi2_merge[int(zz*nmodels):int((zz+1)*nmodels)] = mod_redcd_chi2[:]
+		mod_chi2_photo_merge[int(zz*nmodels):int((zz+1)*nmodels)] = mod_chi2_photo[:]
+		mod_redcd_chi2_spec_merge[int(zz*nmodels):int((zz+1)*nmodels)] = mod_redcd_chi2_spec[:]
 
-	idx0, min_val = min(enumerate(mod_redcd_chi2_merge), key=itemgetter(1))
-	minchi2_params_initfit = mod_params_merge[:,idx0]
+	sort_idx = np.argsort(mod_chi2_photo_merge)
+	idx0, min_val = min(enumerate(mod_redcd_chi2_spec_merge[sort_idx[0:100]]), key=itemgetter(1))
+	mod_id = sort_idx[0:100][idx0]
+	minchi2_params_initfit = mod_params_merge[:,int(mod_id)]
 
 if rank == 0:
 	sys.stdout.write('\n')
 
 # add priors for normalization:
-priors_min[int(nparams)-1] = minchi2_params_initfit[int(nparams)-1] - 1.0
-priors_max[int(nparams)-1] = minchi2_params_initfit[int(nparams)-1] + 1.0
+priors_min[int(nparams)-1] = minchi2_params_initfit[int(nparams)-1] - 1.5
+priors_max[int(nparams)-1] = minchi2_params_initfit[int(nparams)-1] + 1.5
 
 init_pos = minchi2_params_initfit
 width_initpos = 0.08
