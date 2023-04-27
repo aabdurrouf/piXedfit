@@ -1192,23 +1192,26 @@ def create_psf_matching_kernel(init_PSF_name, target_PSF_name, pixscale_init_PSF
 	pixscale_target_PSF, window='top_hat', window_arg=1.0):
 	"""A function for creating convolution kernel for PSF matching given initial and target PSFs.
 
-	:param init_PSF:
+	:param init_PSF_name:
 		Image of input/initial PSF.
 
-	:param target_PSF:
+	:param target_PSF_name:
 		Image of target PSF.
 
 	:param pixscale_init_PSF:
-		Pixel size (in arcsec) of initial PSF.
+		Pixel size of the initial PSF in arcsec.
 
 	:param pixscale_target_PSF:
-		Pixel size (in arcsec) of target PSF.
+		Pixel size of the target PSF in arcsec.
 
 	:param window:
-		Options are top_hat and cosine_bell.
+		Options are 'top_hat' and 'cosine_bell'.
 	
 	:param window_arg:
 		Coefficient value of the window function, following Photutils. 
+
+	:param kernel:
+		The data of convolution kernel in 2D array. 
 	"""
 
 	from photutils import CosineBellWindow, TopHatWindow, create_matching_kernel
@@ -1371,6 +1374,36 @@ def curve_of_growth_psf(psf, e=0.0, pa=45.0, dr=1.0):
 
 def test_psfmatching_kernel(init_PSF_name, target_PSF_name, kernel, pixscale_init_PSF, pixscale_target_PSF, 
 	dr_arcsec=None, xrange_arcsec=[-0.5,0.5], savefig=False, name_plot=None):
+	""" Function for testing the convolution kernel. This includes convolving the initial PSF with the kernel,
+	comparing the radial profiles of the convolved initial PSF and the target PSF along with the original initial PSF.
+
+	:param init_PSF_name:
+		Image of the initial PSF.
+
+	:param target_PSF_name:
+		Image of the target PSF.
+
+	:param kernel:
+		The convolution kernel data (2D array).
+
+	:param pixscale_init_PSF:
+		Pixel size of the initial PSF in arcsec.
+
+	:param pixscale_target_PSF:
+		Pixel size of the target PSF in arcsec.
+
+	:param dr_arsec:
+		Radial increment for the radial profile in arcsec.
+
+	:param xrange_arcsec:
+		Range of x-axis in arsec.
+
+	:param savefig:
+		Decide whether to save the plot or not.
+
+	:param name_plot:
+		Name for the output plot.
+	"""
 
 	from astropy.convolution import convolve_fft
 	import matplotlib.pyplot as plt
@@ -2137,6 +2170,21 @@ def get_pixels_SED_fluxmap(flux_maps_fits, pix_x=None, pix_y=None, all_pixels=Fa
 
 	:param all_pixels: (optional)
 		An option to get SEDs of all pixels.
+
+	:returns pix_x:
+		x coordinates.
+
+	:returns pix_y:
+		y coordinates.
+
+	:returns pix_SED_flux:
+		Fluxes of the pixels: (npixs,nbands)
+
+	:returns pix_SED_flux_err:
+		Flux uncertainties of the pixels: (npixels,nbands)
+
+	:returns photo_wave:
+		Central wavelength of the filters.
 	"""
 
 	from ..utils.filtering import cwave_filters
@@ -2357,6 +2405,33 @@ def get_SNR_radial_profile(flux_maps_fits, e=0.0, pa=45.0, cent_x=None, cent_y=N
 
 def plot_SNR_radial_profile(flux_maps_fits, e=0.0, pa=45.0, cent_x=None, cent_y=None, yrange=None, xrange=None, savefig=True, name_plot=None):
 	""" Function for plotting S/N ratios of pixels.
+
+	:param flux_maps_fits:
+		Input FITS file produced from the image processing.
+
+	:param e:
+		Ellipticity of the elliptical apertures that will be used for deriving the S/N ratios.
+
+	:param pa:
+		The position angle of the elliptical apertures.
+
+	:param cent_x:
+		The x coordinate of the central pixel.
+
+	:param cent_y:
+		The y coordinate of the central pixel.
+
+	:param yrange:
+		Range in y-axis for the plot.
+
+	:param xrange:
+		Range in x-axis for the plot.
+
+	:param savefig:
+		Decide whether to save the plot or not.
+
+	:param name_plot:
+		Name for the output plot.
 	"""
 
 	import matplotlib.pyplot as plt
