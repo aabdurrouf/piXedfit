@@ -1249,8 +1249,28 @@ def create_psf_matching_kernel(init_PSF_name, target_PSF_name, pixscale_init_PSF
 
 def radial_profile_psf(psf, pixsize, e=0.0, pa=45.0, dr_arcsec=None):
 	"""
-	:param dr:
-		Radial increment in units of pixel.
+	Function to get the radial profile of PSF. 
+
+	:param psf:
+		Input PSF, either in a FITS file or the data array (2D).
+
+	:pixsize:
+		Pixel size in arc second.
+
+	:param e: (default = 0)
+		Ellipticity of the apertures. The default is zero (i.e., circular).
+
+	:param pa:
+		The position angle of the elliptical apertures.
+
+	:param dr_arsec:
+		Radial increment in units of arc second.
+
+	:returns curve_rad:
+		The radius array of the PSF radial profile.
+
+	:returns curve_val:
+		The normalized fluxes of the PSF radial profile.
 	"""
 
 	if dr_arcsec is None:
