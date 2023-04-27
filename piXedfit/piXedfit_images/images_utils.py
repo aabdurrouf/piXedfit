@@ -1028,6 +1028,15 @@ def get_largest_FWHM_PSF(filters=None):
 
 
 def calc_pixsize(fits_image):
+	""" Function to get pixel size of an image
+
+	:param fits_image:
+		Input image.
+
+	:returns pixsize_arcsec:
+		Pixel size in arc second.
+	"""
+
 	from astropy.wcs.utils import proj_plane_pixel_area
 	from astropy.wcs import WCS
 
