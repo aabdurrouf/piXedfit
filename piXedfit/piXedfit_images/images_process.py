@@ -514,6 +514,9 @@ class images_processing:
 				os.system("rm %s" % temp_file_names[zz])
 
 	def get_output_stamps(self):
+		""" Get the names of output stamp images in a dictionary format.
+		"""
+
 		if self.run_image_processing == False:
 			print ('run_image_processing=False, so output_stamps is not available from this function!')
 		else:
@@ -521,6 +524,9 @@ class images_processing:
 
 	def plot_image_stamps(self, output_stamps=None, ncols=6, savefig=True, name_plot_sci=None, name_plot_var=None):
 		""" Plotting resulted image stamps from the image processing. 
+
+		:param output_stamps: (optional)
+			Supply output_stamps dictionary input. This input is optional. If run_image_processing=False, this input is mandatory.
 
 		:param ncols:
 			Number of columns in the multipanel plots.
@@ -603,8 +609,8 @@ class images_processing:
 	def segmentation_sep(self, output_stamps=None, thresh=1.5, minarea=30, deblend_nthresh=32, deblend_cont=0.005):
 		"""Get segmentation maps of a galaxy in multiple bands using the SEP (a Python version of the SExtractor). 
 
-		:param output_stamps:
-			Stamp images output of image processing using the :func:`reduced_stamps`.
+		:param output_stamps: (optional)
+			Supply output_stamps dictionary input. This input is optional. If run_image_processing=False, this input is mandatory.
 
 		:param thresh:
 			Detection threshold for the source detection and segmentation.
@@ -804,6 +810,10 @@ class images_processing:
 	def rectangular_regions(self, output_stamps=None, x=None, y=None, ra=None, dec=None, make_plot=True, ncols=6, savefig=True, name_plot=None):
 
 		""" Define rectangular aperture and get pixels within it
+
+		:param output_stamps: (optional)
+			Supply output_stamps dictionary input. This input is optional. If run_image_processing=False, this input is mandatory.
+
 		:param x: 
 			x coordinates of the rectangular corners. The shape should be (n,4) with n is the number of rectangular apertures.
 
@@ -832,6 +842,9 @@ class images_processing:
 
 		:param name_plot: (optional)
 			Name for the output plot.
+
+		:returns rect_region:
+			Rectangular aperture region.
 
 		"""
 
@@ -942,6 +955,9 @@ class images_processing:
 		:param gal_region:
 			The defined galaxy's region.
 
+		:param output_stamps: (optional)
+			Supply output_stamps dictionary input. This input is optional. If run_image_processing=False, this input is mandatory.
+
 		:param ncols:
 			Number of columns
 			
@@ -1004,6 +1020,9 @@ class images_processing:
 			A 2D array containing the galaxy's region of interest. It is preferably the output of the :func:`gal_region`, but one can also 
 			make this input region. The 2D array should has the same size as that of the output stamps and the pixel value is 1 for 
 			the galaxy's region and 0 otherwise.
+
+		:param output_stamps: (optional)
+			Supply output_stamps dictionary input. This input is optional. If run_image_processing=False, this input is mandatory.
 
 		:param Gal_EBV:
 			The E(B-V) dust attenuation due to the foreground Galactic dust. This is optional parameter. 

@@ -2302,6 +2302,18 @@ def plot_SED_pixels(flux_maps_fits, pix_x=None, pix_y=None, all_pixels=False, lo
 
 def get_total_SED(flux_maps_fits):
 	""" Function to calculate total (i.e., integrated) SED from input maps of multiband fluxes.
+
+	:param flux_maps_fits:
+		Input FITS file containing maps of fluxes produced from the image processing.
+
+	:returns tot_SED_flux:
+		Total fluxes in multiple bands. The format is 1D array.
+
+	:returns tot_SED_flux_err:
+		Total flux uncertainties in multiple bands. The format is 1D array.
+
+	:returns photo_wave:
+		The central wavelength of the filters.
 	"""
 
 	from ..utils.filtering import cwave_filters
@@ -2470,7 +2482,32 @@ def plot_SNR_radial_profile(flux_maps_fits, e=0.0, pa=45.0, cent_x=None, cent_y=
 
 
 def photometry_within_aperture(flux_maps_fits, e=0.0, pa=45.0, cent_x=None, cent_y=None, radius=None):
-	""" Function to get photometry within a given aperture (elliptical/circular) from multiband fluxes maps 
+	""" Function to get photometry within a given aperture (elliptical/circular) from input flux maps
+
+	:param flux_maps_fits:
+		input FITS file containing the maps of fluxes produced from the image processing.
+
+	:param e:
+		Ellipticity of the apertures.
+
+	:param pa:
+		Position angle of the elliptical apertures.
+
+	:param cent_x:
+		The x coordinate of the central pixel.
+
+	:param cent_y:
+		The y coordinate of the central pixel.
+
+	:param radius:
+		The radius of the aperture.
+
+	:returns tot_fluxes:
+		Output total fluxes.
+
+	:returns tot_flux_errors:
+		Output total flux uncertainties.
+
 	"""
 
 	# get data from the input FITS file
@@ -2503,7 +2540,37 @@ def photometry_within_aperture(flux_maps_fits, e=0.0, pa=45.0, cent_x=None, cent
 
 def draw_aperture_on_maps_fluxes(flux_maps_fits, ncols=6, e=[0.0], pa=[45.0], cent_x=None, cent_y=None, radius=[5.0], 
 	colors=None, lw=3, savefig=True, name_plot=None):
-	""" Function for drawing aperture on top of the multiband fluxes maps
+	""" Function for drawing apertures on top of the multiband fluxes maps. This function can plot more than one aperture.
+
+	:param flux_maps_fits:
+		input FITS file containing the maps of fluxes produced from the image processing.
+
+	:param e:
+		Ellipticity of the apertures. Input in list format if want to make multiple apertures. 
+
+	:param pa:
+		Position angle of the elliptical apertures. Input in list format if want to make multiple apertures. 
+
+	:param cent_x:
+		The x coordinate of the central pixel. Input in list format if want to make multiple apertures. 
+
+	:param cent_y:
+		The y coordinate of the central pixel. Input in list format if want to make multiple apertures. 
+
+	:param radius:
+		The radius of the aperture. Input in list format if want to make multiple apertures. 
+
+	:param colors:
+		Colors of the apertures. Input in list format if want to make multiple apertures. 
+
+	:param lw:
+		Line width of the apertures in the plot.
+
+	:param savefig:
+		Decide whether to save the plot or not.
+
+	:param name_plot:
+		Name for the plot.
 	"""
 
 	import matplotlib.pyplot as plt
