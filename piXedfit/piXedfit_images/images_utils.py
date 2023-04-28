@@ -1974,7 +1974,25 @@ def mapping_multiplots(nplots,ncols):
 
 
 def open_fluxmap_fits(flux_maps_fits):
-	""" Funciton to open FITS file and get the data.
+	""" Function to extract data from the FITS file of fluxes maps produced from the image processing.
+
+	:param flux_maps_fits:
+		Input FITS file containing the flux maps.
+
+	:returns filters:
+		The set of filters.
+
+	:returns gal_region:
+		The galaxy's spatial region of interest.
+
+	:returns flux_map:
+		The data cube of flux maps: (nbands,ny,nx).
+
+	:returns flux_err_map:
+		The data cube of flux uncertainties maps: (nbands,ny,nx).
+
+	:returns unit_flux:
+		The flux unit. In this case, the scale factor to erg/s/cm^2/Angstrom.
 	"""
 
 	hdu = fits.open(flux_maps_fits)
