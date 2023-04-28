@@ -2798,7 +2798,19 @@ def get_rectangular_region_old(stamp_img, x=None, y=None, ra=None, dec=None, the
 
 
 def central_brightest_pixel(flux_maps_fits, filter_id, xrange=None, yrange=None):
-	""" Function for locating the central brightest pixel within a map of flux in a particular band.
+	""" Function to get the central brightest pixel within a map of flux in a particular band.
+
+	:param flux_maps_fits:
+		Input FITS file of the flux maps produced from the image processing.
+
+	:param filter_id:
+		The filter of the image where the central pixel is to be found.
+
+	:param xrange:
+		Range in x-axis for searching area.
+
+	:param yrange:
+		Range in y-axis for searching area.
 	"""
 
 	filters, gal_region, flux_map, flux_err_map, unit_flux = open_fluxmap_fits(flux_maps_fits)
