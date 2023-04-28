@@ -774,6 +774,51 @@ def pixel_binning_images(images, var_images, ref_band=None, Dmin_bin=2.0, SNR=No
 
 
 def open_binmap_fits(binmap_fits):
+	""" Function to get the data from binned flux maps.
+
+	:param binmap_fits:
+		Input FITS file containing binned flux maps.
+
+	:returns flag_specphoto:
+		A flag stating whether the data contains spectra (value=1) or not (value=0).
+
+	:returns nbins_photo:
+		Number of spatial bins with photometric data, which is also the total number of spatial bins.
+
+	:returns nbins_spec:
+		Number of spatial bins that have spectra.
+
+	:returns filters:
+		Set of the photometric filters.
+
+	:returns unit_flux:
+		The flux unit.
+
+	:returns binmap_photo:
+		The binning map of the photometric data.
+
+	:returns spec_region:
+		The spatial region that have spectroscopy.
+
+	:returns binmap_spec:
+		Number of spatial bins that have spectroscopy.
+
+	:returns map_photo_flux:
+		The data cube of the photometric fluxes: (nbands,ny,nx)
+
+	:returns map_photo_flux_err:
+		The data cube of the photometric flux uncertainties: (nbands,ny,nx)
+
+	:returns spec_wave:
+		Spectroscopic wavelength grids.
+
+	:returns map_spec_flux:
+		The data cube of the spectroscopic fluxes: (nwaves,ny,nx)
+
+	:returns map_spec_flux_err:
+		The data cube of the spectroscopic flux uncertainties: (nwaves,ny,nx)
+
+	"""
 	hdu = fits.open(binmap_fits)
 	header = hdu[0].header
 	unit_flux = float(hdu[0].header['unit'])
@@ -815,6 +860,23 @@ def open_binmap_fits(binmap_fits):
 
 
 def plot_binmap(binmap_fits, plot_binmap_spec=True, savefig=True, name_plot_binmap_photo=None, name_plot_binmap_spec=None):
+	""" Function for plotting the binning map.
+
+	:param binmap_fits:
+		Input FITS file of the binned flux maps.
+
+	:param plot_binmap_spec:
+		Decide to plot the binning map of pixels that have spectra. This input is only relevant if the data cube has both photometry and spectroscopy.
+
+	:param savefig:
+		Decide whether to save the plot of not.
+
+	:param name_plot_binmap_photo:
+		Name of the binning map of photometry.
+
+	:param name_plot_binmap_spec:
+		Name of the binning map of spectroscopy.
+	"""
 
 	import matplotlib.pyplot as plt
 	from mpl_toolkits.axes_grid1 import make_axes_locatable
@@ -888,6 +950,35 @@ def plot_binmap(binmap_fits, plot_binmap_spec=True, savefig=True, name_plot_binm
 
 
 def get_bins_SED_binmap(binmap_fits):
+	""" Function to extract SEDs of the spatial bins from the binned flux maps.
+
+	:param binmap_fits:
+		Input FITS file of binned flux maps.
+
+	:returns bin_photo_flux:
+		Photometric fluxes of the spatial bins: (nbins,nbands)
+
+	:returns bin_photo_flux_err:
+		Photometric flux uncertainties of the spatial bins: (nbins,nbands)
+
+	:returns bin_spec_flux:
+		Spectroscopic fluxes of the spatial bins: (nbins,nwaves)
+
+	:returns bin_spec_flux_err:
+		Spectroscopic flux uncertainties of the spatial bins: (nbins,nwaves)
+
+	:returns bin_flag_specphoto:
+		A flag stating whether a spatial bin has a spectroscopy (value=1) or not (value=0).
+
+	:returns filters:
+		The set of filters.
+
+	:returns photo_wave:
+		The central wavelength of the filters.
+
+	:returns spec_wave: 
+		The wavelength grids of the spectra.
+	"""
 
 	flag_specphoto, nbins_photo, nbins_spec, filters, unit_flux, binmap_photo, spec_region, binmap_spec, map_photo_flux, map_photo_flux_err, spec_wave, map_spec_flux, map_spec_flux_err = open_binmap_fits(binmap_fits)
 
@@ -926,7 +1017,22 @@ def get_bins_SED_binmap(binmap_fits):
 
 
 def plot_bins_SNR_radial_profile(binmap_fits, xrange=None, yrange=None, savefig=True, name_plot=None):
-	""" Function for plotting S/N ratios of pixels.
+	""" Function for plotting the S/N ratios of spatial bins.
+	
+	:param binmap_fits:
+		FITS file of binned flux maps produced by the pixel_binning function.
+
+	:param xrange:
+		Range in x-axis.
+
+	:param yrange:
+		Range in y-axis.
+
+	:param savefig:
+		Decide whether to save the plot or not.
+
+	:param name_plot:
+		Name of the output plot. 
 	"""
 
 	import matplotlib.pyplot as plt
@@ -1070,50 +1176,6 @@ def plot_bins_SED(binmap_fits, bin_ids=None, logscale_y=True, logscale_x=True,
 		plt.savefig(name_plot)
 	else:
 		plt.show()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
