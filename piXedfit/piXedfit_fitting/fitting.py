@@ -748,6 +748,18 @@ def maps_parameters(fits_binmap, bin_ids, name_sampler_fits, fits_fluxmap=None, 
 
 
 def get_bestfit_params(input_fits):
+	""" Function to get (i.e., read) best-fit parameters from the FITS file output of the fitting process.
+
+	:param input_fits:
+		Input FITS file, which is an output of the fitting process.
+
+	:returns params:
+		The list of parameters.
+
+	:returns bfit_params:
+		A dictionary containing the best-fit parameters. 
+	"""
+
 	hdu = fits.open(input_fits)
 	tfields = hdu['FIT_PARAMS'].header['TFIELDS']
 
