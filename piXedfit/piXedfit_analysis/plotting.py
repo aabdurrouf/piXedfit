@@ -12,7 +12,7 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 from astropy.cosmology import *
 
-from ..piXedfit_model.model_utils import construct_SFH, convert_unit_spec_from_ergscm2A, list_default_params_fit, default_params_val
+from ..piXedfit_model.model_utils import construct_SFH, convert_unit_spec_from_ergscm2A, list_default_params_fit, default_params_val, get_no_nebem_wave_fit
 from ..piXedfit_model.gen_models import generate_modelSED_spec_decompose
 from ..utils.filtering import cwave_filters, filtering
 from ..utils.posteriors import plot_triangle_posteriors
@@ -22,7 +22,7 @@ __all__ = ["plot_SED", "plot_corner", "plot_sfh_mcmc"]
 
 
 def plot_SED_rdsps_photo(filters=None,obs_photo=None,bfit_photo=None,bfit_mod_spec=None,minchi2_params=None,header_samplers=None,
-	logscale_x=True,logscale_y=True,xrange=None,yrange=None,wunit='micron',funit='erg/s/cm2/A',decompose=1,xticks=None,
+	logscale_x=True,logscale_y=True,xrange=None,yrange=None,wunit='micron',funit='erg/s/cm2/A',decompose=0,xticks=None,
 	photo_color='red',residual_range=[-1.0,1.0],fontsize_tick=18,fontsize_label=25,show_legend=True,loc_legend=4,
 	fontsize_legend=18,markersize=100,lw=2.0,name_plot=None):
 
@@ -105,6 +105,16 @@ def plot_SED_rdsps_photo(filters=None,obs_photo=None,bfit_photo=None,bfit_mod_sp
 		elif add_igm_absorption == 0:
 			igm_type = 0
 
+		smooth_velocity = header_samplers['smooth_velocity']
+		sigma_smooth = header_samplers['sigma_smooth']
+		smooth_lsf = header_samplers['smooth_lsf']
+		if smooth_lsf == 1 or smooth_lsf == True:
+			name_file_lsf = header_samplers['name_file_lsf']
+			data = np.loadtxt(temp_dir+name_file_lsf)
+			lsf_wave, lsf_sigma = data[:,0], data[:,1]
+		elif smooth_lsf == 0:
+			lsf_wave, lsf_sigma = None, None
+
 		if header_samplers['free_z'] == 0:
 			def_params_val['z'] = float(header_samplers['gal_z'])
 
@@ -122,7 +132,8 @@ def plot_SED_rdsps_photo(filters=None,obs_photo=None,bfit_photo=None,bfit_mod_sp
 		spec_SED = generate_modelSED_spec_decompose(params_val=params_val,imf=imf,duste_switch=duste_switch,
 										add_neb_emission=add_neb_emission,dust_law=dust_law,add_agn=add_agn,
 										add_igm_absorption=add_igm_absorption,igm_type=igm_type,cosmo=cosmo,
-										H0=H0,Om0=Om0,sfh_form=sfh_form,funit=funit)
+										H0=H0,Om0=Om0,sfh_form=sfh_form,funit=funit,smooth_velocity=smooth_velocity,
+										sigma_smooth=sigma_smooth,smooth_lsf=smooth_lsf,lsf_wave=lsf_wave,lsf_sigma=lsf_sigma)
 
 		bfit_photo_fluxes = filtering(spec_SED['wave'],spec_SED['flux_total'],filters)
 		bfit_spec_wave = spec_SED['wave']
@@ -401,7 +412,7 @@ def plot_SED_mcmc_photo(filters=None,obs_photo=None,bfit_photo=None,bfit_mod_spe
 
 	return name_plot
 
-def plot_SED_specphoto(filters=None,obs_photo=None,obs_spec=None,bfit_photo=None,bfit_spec=None,bfit_mod_spec=None,minchi2_params=None,
+def plot_SED_specphoto_old(filters=None,obs_photo=None,obs_spec=None,bfit_photo=None,bfit_spec=None,bfit_mod_spec=None,minchi2_params=None,
 	header_samplers=None,logscale_x=True, logscale_y=True, xrange=None, yrange=None, wunit='micron',funit='erg/s/cm2/A', 
 	decompose=1,xticks=None,photo_color='red',residual_range=[-1.0,1.0], fontsize_tick=18,fontsize_label=25,show_legend=True, 
 	loc_legend=4, fontsize_legend=18, markersize=100, lw=2.0, name_plot=None):
@@ -542,10 +553,181 @@ def plot_SED_specphoto(filters=None,obs_photo=None,obs_spec=None,bfit_photo=None
 	plt.savefig(name_plot3)
 
 
+def plot_SED_specphoto(filters=None,obs_photo=None,obs_spec=None,bfit_photo=None,bfit_spec=None,bfit_mod_spec=None,
+	corr_factor=None,minchi2_params=None,header_samplers=None,logscale_x=True, logscale_y=True, xrange=None, yrange=None, 
+	wunit='micron',funit='erg/s/cm2/A', xticks=None, photo_color='red',residual_range=[-1.0,1.0], show_original_spec=False,
+	fontsize_tick=18, fontsize_label=25, show_legend=True, loc_legend=4, fontsize_legend=18, markersize=100, lw=2.0, name_plot=None):
+	
+	from matplotlib.gridspec import GridSpec
+	from matplotlib.ticker import AutoMinorLocator
 
-def plot_SED(name_sampler_fits,logscale_x=True,logscale_y=True,xrange=None,yrange=None,wunit='micron',funit='erg/s/cm2/A', 
-	decompose=1,xticks=None,photo_color='red',residual_range=[-1.0,1.0],fontsize_tick=18,fontsize_label=25,show_legend=True, 
-	loc_legend=4, fontsize_legend=18, markersize=100, lw=2.0, name_plot=None):
+	gal_z = header_samplers['gal_z']
+	del_wave_nebem = header_samplers['del_wave_nebem']
+
+	photo_flux = obs_photo['flux']
+	photo_flux_err = obs_photo['flux_err']
+
+	photo_wave = bfit_photo['wave']
+	bfit_photo_flux = bfit_photo['p50']
+
+	obs_spec_wave = obs_spec['wave']
+	obs_spec_flux = obs_spec['flux']
+	obs_spec_flux_err = obs_spec['flux_err']
+
+	bfit_spec_wave = bfit_spec['wave']
+	bfit_spec_flux = bfit_spec['tot_p50']
+	bfit_spec_flux_nebe = bfit_spec['nebe_p50']
+	bfit_spec_flux_nebe_cont = bfit_spec['nebe_cont_p50']
+	bfit_spec_flux_nebe_lines = bfit_spec_flux_nebe - bfit_spec_flux_nebe_cont
+
+	bfit_mod_spec_wave = bfit_mod_spec['wave']
+	bfit_mod_spec_flux = bfit_mod_spec['tot_p50']
+	bfit_mod_spec_flux_nebe = bfit_mod_spec['nebe_p50']
+	bfit_mod_spec_flux_nebe_cont = bfit_mod_spec['nebe_cont_p50']
+	bfit_mod_spec_flux_nebe_lines = bfit_mod_spec_flux_nebe - bfit_mod_spec_flux_nebe_cont
+
+	idx_sel = np.where((bfit_mod_spec_wave>=min(obs_spec_wave)) & (bfit_mod_spec_wave<=max(obs_spec_wave)))
+	bfit_mod_spec_wave_cut = bfit_mod_spec_wave[idx_sel[0]]
+	bfit_mod_spec_flux_cut = bfit_mod_spec_flux[idx_sel[0]]
+	bfit_mod_spec_flux_nebe_cut = bfit_mod_spec_flux_nebe[idx_sel[0]]
+	bfit_mod_spec_flux_nebe_cont_cut = bfit_mod_spec_flux_nebe_cont[idx_sel[0]]
+	bfit_mod_spec_flux_nebe_lines_cut = bfit_mod_spec_flux_nebe_lines[idx_sel[0]]
+
+	corr_factor_wave = corr_factor['wave']
+	corr_factor_values = corr_factor['p50']
+
+	func = interp1d(corr_factor_wave, corr_factor_values, fill_value='extrapolate')
+	interp_corr_factor_values = func(bfit_mod_spec_wave_cut)
+
+	rescaled_bfit_mod_spec_wave_cut = bfit_mod_spec_wave_cut
+	rescaled_bfit_mod_spec_flux_cut = bfit_mod_spec_flux_cut*interp_corr_factor_values
+	rescaled_bfit_mod_spec_flux_nebe_cut = bfit_mod_spec_flux_nebe_cut*interp_corr_factor_values
+	rescaled_bfit_mod_spec_flux_nebe_cont_cut = bfit_mod_spec_flux_nebe_cont_cut*interp_corr_factor_values
+	rescaled_bfit_mod_spec_flux_nebe_lines_cut = bfit_mod_spec_flux_nebe_lines_cut*interp_corr_factor_values
+
+	rescaled_bfit_mod_spec_flux_no_lines_cut = rescaled_bfit_mod_spec_flux_cut-rescaled_bfit_mod_spec_flux_nebe_lines_cut
+
+	# Calculate residuals
+	obs_spec_wave_clean, waveid_excld = get_no_nebem_wave_fit(gal_z, obs_spec_wave, del_wave_nebem)
+	waveid_incld = np.delete(np.arange(0,len(obs_spec_wave)), waveid_excld)
+
+	photo_residuals = (photo_flux - bfit_photo_flux)/photo_flux
+	spec_residuals = (obs_spec_flux[waveid_incld] - bfit_spec_flux[waveid_incld])/obs_spec_flux[waveid_incld]
+
+	# flux unit:
+	if funit != 'erg/s/cm2/A':
+		if show_original_spec == True:
+			bfit_mod_spec_flux1 = convert_unit_spec_from_ergscm2A(bfit_mod_spec_wave,bfit_mod_spec_flux,funit=funit)
+		obs_spec_flux1 = convert_unit_spec_from_ergscm2A(obs_spec_wave,obs_spec_flux,funit=funit)
+		rescaled_bfit_mod_spec_flux_no_lines_cut1 = convert_unit_spec_from_ergscm2A(rescaled_bfit_mod_spec_wave_cut,rescaled_bfit_mod_spec_flux_no_lines_cut,funit=funit)
+		bfit_photo_flux1 = convert_unit_spec_from_ergscm2A(photo_wave,bfit_photo_flux,funit=funit)
+		photo_flux1 = convert_unit_spec_from_ergscm2A(photo_wave,photo_flux,funit=funit)
+		photo_flux_err1 = convert_unit_spec_from_ergscm2A(photo_wave,photo_flux_err,funit=funit)
+	else:
+		if show_original_spec == True:
+			bfit_mod_spec_flux1 = bfit_mod_spec_flux
+		obs_spec_flux1 = obs_spec_flux
+		rescaled_bfit_mod_spec_flux_no_lines_cut1 = rescaled_bfit_mod_spec_flux_no_lines_cut
+		bfit_photo_flux1 = bfit_photo_flux
+		photo_flux1 = photo_flux
+		photo_flux_err1 = photo_flux_err
+
+	# wavelength units:
+	if wunit==1 or wunit=='micron':
+		bfit_mod_spec_wave1 = bfit_mod_spec_wave/1e+4
+		obs_spec_wave1 = obs_spec_wave/1e+4
+		rescaled_bfit_mod_spec_wave_cut1 = rescaled_bfit_mod_spec_wave_cut/1e+4
+		photo_wave1 = photo_wave/1e+4
+	else:
+		bfit_mod_spec_wave1 = bfit_mod_spec_wave
+		obs_spec_wave1 = obs_spec_wave
+		rescaled_bfit_mod_spec_wave_cut1 = rescaled_bfit_mod_spec_wave_cut
+		photo_wave1 = photo_wave
+
+
+	###==> plotting
+	fig1 = plt.figure(figsize=(15,9))
+	gs = GridSpec(nrows=2, ncols=1, height_ratios=[3,1], left=0.1, right=0.96, top=0.92, bottom=0.13, hspace=0.001)
+
+	f1 = fig1.add_subplot(gs[0])
+	plt.setp(f1.get_xticklabels(), visible=False)
+	plt.setp(f1.get_yticklabels(), fontsize=15)
+
+	if xrange is None:
+		bulk_waves = photo_wave1.tolist() + obs_spec_wave1.tolist()
+		xmin, xmax = 0.7*min(bulk_waves), 1.1*max(bulk_waves)
+	else:
+		xmin, xmax = xrange[0], xrange[1]
+	plt.xlim(xmin, xmax)
+
+	if yrange is None:
+		bulk_fluxes = photo_flux1.tolist() + bfit_photo_flux1.tolist() + obs_spec_flux1.tolist() + rescaled_bfit_mod_spec_flux_no_lines_cut1.tolist()
+		ymin, ymax = 0.7*min(bulk_fluxes), 1.2*max(bulk_fluxes)
+	else:
+		ymin, ymax = yrange[0], yrange[1]
+	plt.ylim(ymin,ymax)
+
+	if logscale_y == True:
+		f1.set_yscale('log')
+	if logscale_x == True:
+		f1.set_xscale('log')
+
+	if funit=='erg/s/cm2/A' or funit==0:
+		plt.ylabel(r'$F_{\lambda}$ [erg $\rm{s}^{-1}\rm{cm}^{-2}\AA^{-1}$]', fontsize=int(fontsize_label))
+	elif funit=='erg/s/cm2' or funit==1:
+		plt.ylabel(r'$\lambda F_{\lambda}$ [erg $\rm{s}^{-1}\rm{cm}^{-2}$]', fontsize=int(fontsize_label))
+	elif funit=='Jy' or funit==2:
+		plt.ylabel(r'$F_{\nu}$ [Jy]', fontsize=int(fontsize_label))
+	else:
+		print ("The input funit is not recognized!")
+		sys.exit()
+
+	if show_original_spec == True:
+		plt.plot(bfit_mod_spec_wave1, bfit_mod_spec_flux1, lw=0.5, color='lightblue', zorder=0)
+	plt.plot(obs_spec_wave1, obs_spec_flux1, lw=1, color='black', zorder=1, label='Observed spectrum')
+	plt.plot(rescaled_bfit_mod_spec_wave_cut1, rescaled_bfit_mod_spec_flux_no_lines_cut1, lw=1, color='red', zorder=2, label='Model continuum')
+
+	plt.scatter(photo_wave1, bfit_photo_flux1, s=100, marker='s', edgecolor='blue', color='none', lw=3, zorder=3, label='Model photometry')
+	plt.errorbar(photo_wave1, photo_flux1, yerr=photo_flux_err1, fmt='o', color='green', markersize=10, lw=2, zorder=4, label='Observed photometry')
+
+	plt.legend(fontsize=17)
+
+	f2 = f1.twiny()
+	f2.set_xlabel(r'Rest-frame wavelength [$\AA$]', fontsize=18)
+	plt.setp(f2.get_xticklabels(), fontsize=14)
+	plt.xlim(xmin/(1.0+gal_z), xmax/(1.0+gal_z))
+	if logscale_x == True:
+		f2.set_xscale('log')
+	f2.xaxis.set_minor_locator(AutoMinorLocator())
+
+
+	### plot residual
+	f1 = fig1.add_subplot(gs[1])
+	plt.setp(f1.get_yticklabels(), fontsize=15)
+	plt.setp(f1.get_xticklabels(), fontsize=15)
+	plt.ylabel(r'residual', fontsize=22)
+	plt.xlabel(r'Observed wavelength [$\AA$]', fontsize=22)
+	plt.ylim(residual_range[0],residual_range[1])
+	plt.xlim(xmin,xmax)
+
+	if logscale_x == True:
+		f1.set_xscale('log')
+
+	f1.xaxis.set_minor_locator(AutoMinorLocator())
+
+	plt.plot(obs_spec_wave1[waveid_incld], spec_residuals, lw=1, color='gray', zorder=0)
+	plt.scatter(photo_wave1, photo_residuals, s=100, marker='s', edgecolor='black', color='none', lw=4, zorder=1)
+
+	x = np.linspace(xmin,xmax,200)
+	plt.plot(x,x-x,lw=1,color='black',linestyle='--')
+
+	plt.savefig(name_plot)
+	return name_plot
+
+
+def plot_SED(name_sampler_fits,logscale_x=False,logscale_y=True,xrange=None,yrange=None,wunit='micron',funit='erg/s/cm2/A', 
+	decompose=0,xticks=None,photo_color='red',residual_range=[-1.0,1.0],show_original_spec=False,fontsize_tick=18,fontsize_label=25,
+	show_legend=True, loc_legend=4, fontsize_legend=18, markersize=100, lw=2.0, name_plot=None):
 	"""Function for plotting best-fit (i.e., median posterior) model SED from a result of SED fitting. 
 
 	:param name_sampler_fits:
@@ -584,6 +766,9 @@ def plot_SED(name_sampler_fits,logscale_x=True,logscale_y=True,xrange=None,yrang
 		Residuals between observed SED and the median posterior model SED. 
 		The residual is defined as (D - M)/D, where D represents observed SED, while M is model SED.
 
+	:param show_original_spec: (default=False)
+		Show original best-fit model spectrum before rescaling with polnomial correction. This is only relevant if the data is spectrophotometric.
+
 	:param fontsize_tick: 
 		Fontsize for the ticks. 
 	
@@ -613,12 +798,15 @@ def plot_SED(name_sampler_fits,logscale_x=True,logscale_y=True,xrange=None,yrang
 	header_samplers = hdu[0].header
 	obs_photo = hdu['obs_photo'].data
 	bfit_photo = hdu['bfit_photo'].data
-	bfit_mod_spec = hdu['bfit_mod_spec'].data 
+	if header_samplers['fitmethod'] == 'rdsps':
+		minchi2_params = hdu['minchi2_params'].data
+	if header_samplers['specphot'] == 0:
+		bfit_mod_spec = hdu['bfit_mod_spec'].data 
 	if header_samplers['specphot'] == 1:
 		obs_spec = hdu['obs_spec'].data
 		bfit_spec = hdu['bfit_spec'].data
-	if header_samplers['fitmethod'] == 'rdsps':
-		minchi2_params = hdu['minchi2_params'].data
+		bfit_mod_spec = hdu['bfit_mod'].data
+		corr_factor = hdu['corr_factor'].data 
 	hdu.close()
 
 	# filters
@@ -629,17 +817,17 @@ def plot_SED(name_sampler_fits,logscale_x=True,logscale_y=True,xrange=None,yrang
 
 	if name_plot==None:
 		name_sampler_fits1 = name_sampler_fits.replace('.fits','')
-		name_plot = "sed_photo_%s.png" % (name_sampler_fits1)
+		name_plot = "sed_%s.png" % (name_sampler_fits1)
 
 	if header_samplers['specphot'] == 1:
 		if header_samplers['fitmethod'] == 'mcmc':
 			minchi2_params = None
 		plot_SED_specphoto(filters=filters,obs_photo=obs_photo,obs_spec=obs_spec,bfit_photo=bfit_photo,bfit_spec=bfit_spec,
-			bfit_mod_spec=bfit_mod_spec,minchi2_params=minchi2_params,header_samplers=header_samplers,logscale_x=logscale_x,
-			logscale_y=logscale_y,xrange=xrange,yrange=yrange,wunit=wunit,funit=funit,decompose=decompose,xticks=xticks,
-			photo_color=photo_color,residual_range=residual_range,fontsize_tick=fontsize_tick,fontsize_label=fontsize_label,
-			show_legend=show_legend,loc_legend=loc_legend,fontsize_legend=fontsize_legend,markersize=markersize,lw=lw,
-			name_plot=name_plot)
+			bfit_mod_spec=bfit_mod_spec,corr_factor=corr_factor,minchi2_params=minchi2_params,header_samplers=header_samplers,
+			logscale_x=logscale_x,logscale_y=logscale_y,xrange=xrange,yrange=yrange,wunit=wunit,funit=funit,xticks=xticks,
+			photo_color=photo_color,residual_range=residual_range,show_original_spec=show_original_spec,fontsize_tick=fontsize_tick,
+			fontsize_label=fontsize_label,show_legend=show_legend,loc_legend=loc_legend,fontsize_legend=fontsize_legend,
+			markersize=markersize,lw=lw,name_plot=name_plot)
 	elif header_samplers['specphot'] == 0:
 		if header_samplers['fitmethod'] == 'mcmc':
 			plot_SED_mcmc_photo(filters=filters,obs_photo=obs_photo,bfit_photo=bfit_photo,bfit_mod_spec=bfit_mod_spec,

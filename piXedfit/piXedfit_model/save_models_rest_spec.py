@@ -155,6 +155,8 @@ if rank == 0:
 		m.attrs['smooth_velocity'] = smooth_velocity
 		m.attrs['sigma_smooth'] = sigma_smooth
 		m.attrs['smooth_lsf'] = smooth_lsf
+		if smooth_lsf == True or smooth_lsf == 1:
+			m.attrs['name_file_lsf'] = name_file_lsf
 		m.attrs['funit'] = 'L_sun/A'
 		m.attrs['nmodels'] = nmodels
 		m.attrs['nparams'] = nparams

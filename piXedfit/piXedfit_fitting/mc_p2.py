@@ -148,6 +148,8 @@ def store_to_fits(nsamples=None,sampler_params=None,sampler_log_sfr=None,sampler
 		hdr['smooth_velocity'] = smooth_velocity
 		hdr['sigma_smooth'] = sigma_smooth
 		hdr['smooth_lsf'] = smooth_lsf
+		if smooth_lsf == 1:
+			hdr['name_file_lsf'] = name_file_lsf
 		if add_igm_absorption == 1:
 			hdr['igm_type'] = igm_type
 		for bb in range(0,nbands):
@@ -642,7 +644,7 @@ elif gal_z>0.0:
 	free_z = 0
 	def_params_val['z'] = gal_z
 
-global smooth_velocity, sigma_smooth, smooth_lsf
+global smooth_velocity, sigma_smooth, smooth_lsf, name_file_lsf
 smooth_velocity = f['samplers'].attrs['smooth_velocity']
 sigma_smooth = f['samplers'].attrs['sigma_smooth']
 smooth_lsf = f['samplers'].attrs['smooth_lsf']

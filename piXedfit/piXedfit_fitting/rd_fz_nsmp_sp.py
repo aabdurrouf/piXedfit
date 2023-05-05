@@ -558,7 +558,7 @@ def store_to_fits(sampler_params,mod_chi2,mod_chi2_photo,mod_redcd_chi2_spec,mod
 	params_val['z'] = gal_z
 	spec_SED = generate_modelSED_spec(imf_type=imf,duste_switch=duste_switch,add_neb_emission=0,
 						dust_law=dust_law,sfh_form=sfh_form,add_agn=add_agn,add_igm_absorption=add_igm_absorption,
-						igm_type=igm_type,cosmo=cosmo,H0=H0,Om0=Om0,gas_logu=gas_logu,params_val=params_val)
+						igm_type=igm_type,cosmo=cosmo,H0=H0,Om0=Om0,params_val=params_val)
 	redsh_wave1,redsh_spec1 = spec_SED['wave'], spec_SED['flux']
 		
 	# cut and normalize model spectrum
@@ -654,8 +654,6 @@ def store_to_fits(sampler_params,mod_chi2,mod_chi2_photo,mod_redcd_chi2_spec,mod
 	hdr['nfilters'] = nbands
 	hdr['duste_stat'] = duste_switch
 	hdr['add_neb_emission'] = add_neb_emission
-	if add_neb_emission == 1:
-		hdr['gas_logu'] = gas_logu
 	hdr['add_agn'] = add_agn
 	hdr['add_igm_absorption'] = add_igm_absorption
 	hdr['likelihood_form'] = likelihood_form
@@ -680,6 +678,11 @@ def store_to_fits(sampler_params,mod_chi2,mod_chi2_photo,mod_redcd_chi2_spec,mod
 	hdr['fitmethod'] = 'rdsps'
 	hdr['storesamp'] = 0
 	hdr['specphot'] = 1
+	hdr['smooth_velocity'] = smooth_velocity
+	hdr['sigma_smooth'] = sigma_smooth
+	hdr['smooth_lsf'] = smooth_lsf
+	if smooth_lsf == 1:
+		hdr['name_file_lsf'] = name_file_lsf
 	primary_hdu = fits.PrimaryHDU(header=hdr)
 
 	#=> parameters inferred from SED fitting with RDSPS method
@@ -761,7 +764,7 @@ def store_to_fits(sampler_params,mod_chi2,mod_chi2_photo,mod_redcd_chi2_spec,mod
 	hdul.writeto(fits_name_out, overwrite=True)
 
 """
-USAGE: mpirun -np [npros] python ./rdsps_pcmod.py (1)name_filters_list (2)name_config (3)name_SED_txt (4)name_out_fits
+USAGE: mpirun -np [npros] python ./rdsps_pcmod.py (1)name_filters_list (2)name_config (3)name_SED_txt (4)name_out_fits (5)HDF5 file of model spectra 
 """
 
 temp_dir = PIXEDFIT_HOME+'/data/temp/'
@@ -876,7 +879,7 @@ spec_chi_sigma_clip = float(config_data['spec_chi_sigma_clip'])
 
 # HDF5 file containing pre-calculated model SEDs
 global models_spec
-models_spec = config_data['models_spec']
+models_spec = sys.argv[5]
 
 # data of pre-calculated model SEDs
 f = h5py.File(models_spec, 'r')
@@ -939,14 +942,13 @@ if rank == 0:
 	print ("Number of models to be used for fitting: %d" % nmodels)
 
 # modeling configurations
-global imf, sfh_form, dust_law, duste_switch, add_neb_emission, add_agn, gas_logu
+global imf, sfh_form, dust_law, duste_switch, add_neb_emission, add_agn
 imf = f['mod'].attrs['imf_type']
 sfh_form = f['mod'].attrs['sfh_form']
 dust_law = f['mod'].attrs['dust_law']
 duste_switch = f['mod'].attrs['duste_switch']
 add_neb_emission = f['mod'].attrs['add_neb_emission']
 add_agn = f['mod'].attrs['add_agn']
-gas_logu = f['mod'].attrs['gas_logu']
 
 # cut model spectrum to match range given by the IFS spectra
 global idx_mod_wave, nwaves_model, redsh_mod_wave
@@ -955,6 +957,17 @@ redsh_mod_wave0 = (1.0+gal_z)*rest_wave
 idx_mod_wave = np.where((redsh_mod_wave0>min_spec_wave-30) & (redsh_mod_wave0<max_spec_wave+30))
 nwaves_model = len(idx_mod_wave[0])
 redsh_mod_wave = redsh_mod_wave0[idx_mod_wave[0]]
+
+# spectral smoothing parameters
+global smooth_velocity, sigma_smooth, smooth_lsf, name_file_lsf
+smooth_velocity = f['mod'].attrs['smooth_velocity']
+sigma_smooth = f['mod'].attrs['sigma_smooth']
+smooth_lsf = f['mod'].attrs['smooth_lsf']
+if smooth_lsf == 1 or smooth_lsf == True:
+	name_file_lsf = f['mod'].attrs['name_file_lsf']
+else:
+	name_file_lsf = 'None'
+
 f.close()
 
 # get preferred priors

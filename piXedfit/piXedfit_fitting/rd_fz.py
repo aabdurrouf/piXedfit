@@ -437,8 +437,6 @@ def store_to_fits(sampler_params,mod_chi2,mod_prob,fits_name_out):
 	hdr['nfilters'] = nbands
 	hdr['duste_stat'] = duste_switch
 	hdr['add_neb_emission'] = add_neb_emission
-	if add_neb_emission == 1:
-		hdr['gas_logu'] = gas_logu
 	hdr['add_agn'] = add_agn
 	hdr['add_igm_absorption'] = add_igm_absorption
 	hdr['likelihood_form'] = likelihood_form
@@ -462,6 +460,11 @@ def store_to_fits(sampler_params,mod_chi2,mod_prob,fits_name_out):
 	hdr['fitmethod'] = 'rdsps'
 	hdr['storesamp'] = 1
 	hdr['specphot'] = 0
+	hdr['smooth_velocity'] = smooth_velocity
+	hdr['sigma_smooth'] = sigma_smooth
+	hdr['smooth_lsf'] = smooth_lsf
+	if smooth_lsf == 1:
+		hdr['name_file_lsf'] = name_file_lsf
 	primary_hdu = fits.PrimaryHDU(header=hdr)
 
 	#==> samplers
@@ -527,15 +530,15 @@ def store_to_fits(sampler_params,mod_chi2,mod_prob,fits_name_out):
 
 
 """
-USAGE: mpirun -np [npros] python ./rdsps_pcmod.py (1)name_filters_list (2)name_config (3)name_SED_txt (4)name_out_fits
+USAGE: mpirun -np [npros] python ./rdsps_pcmod.py (1)name_filters_list (2)name_config (3)name_SED_txt (4)name_out_fits (5)HDF5 file of model spectra 
 """
-
-temp_dir = PIXEDFIT_HOME+'/data/temp/'
 
 global comm, size, rank
 comm = MPI.COMM_WORLD
 size = comm.Get_size() 
-rank = comm.Get_rank() 
+rank = comm.Get_rank()
+
+temp_dir = PIXEDFIT_HOME+'/data/temp/'
 
 # configuration file
 config_file = str(sys.argv[2])
@@ -601,7 +604,7 @@ DL_Gpc = DL_Gpc0.value/1.0e+3
 
 # HDF5 file containing pre-calculated model SEDs
 global models_spec
-models_spec = config_data['models_spec']
+models_spec = sys.argv[5]
 
 # data of pre-calculated model SEDs
 f = h5py.File(models_spec, 'r')
@@ -616,7 +619,6 @@ for pp in range(0,nparams):
 	if isinstance(attrs, str) == False:
 		attrs = attrs.decode()
 	params.append(attrs)
-
 if rank==0:
 	print ("Number of parameters: %d" % nparams)
 	print ("List of parameters: ")
@@ -664,14 +666,24 @@ if rank == 0:
 	print ("Number of models to be used for fitting: %d" % nmodels)
 
 # modeling configurations
-global imf, sfh_form, dust_law, duste_switch, add_neb_emission, add_agn, gas_logu
+global imf, sfh_form, dust_law, duste_switch, add_neb_emission, add_agn
 imf = f['mod'].attrs['imf_type']
 sfh_form = f['mod'].attrs['sfh_form']
 dust_law = f['mod'].attrs['dust_law']
 duste_switch = f['mod'].attrs['duste_switch']
 add_neb_emission = f['mod'].attrs['add_neb_emission']
 add_agn = f['mod'].attrs['add_agn']
-gas_logu = f['mod'].attrs['gas_logu']
+
+# spectral smoothing parameters
+global smooth_velocity, sigma_smooth, smooth_lsf, name_file_lsf
+smooth_velocity = f['mod'].attrs['smooth_velocity']
+sigma_smooth = f['mod'].attrs['sigma_smooth']
+smooth_lsf = f['mod'].attrs['smooth_lsf']
+if smooth_lsf == 1 or smooth_lsf == True:
+	name_file_lsf = f['mod'].attrs['name_file_lsf']
+else:
+	name_file_lsf = 'None'
+
 f.close()
 
 # get preferred priors

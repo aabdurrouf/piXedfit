@@ -151,7 +151,7 @@ def default_params_range(params_range=None):
 
 
 def set_initial_params_fsps(sp=None,imf_type=None,duste_switch=None,add_neb_emission=None,dust_law=None,add_agn=None,
-	smooth_velocity=True,sigma_smooth=0.0,smooth_lsf=False,lsf_wave=None,lsf_sigma=None,params_val=None):
+	smooth_velocity=True,sigma_smooth=0.0,smooth_lsf=False,lsf_wave=None,lsf_sigma=None,params_val=None,add_neb_continuum=1):
 
 	# input parameters:
 	formed_mass = pow(10.0,params_val['log_mass'])
@@ -180,6 +180,10 @@ def set_initial_params_fsps(sp=None,imf_type=None,duste_switch=None,add_neb_emis
 	if add_neb_emission == 1:
 		sp.params["add_neb_emission"] = True
 		sp.params['gas_logu'] = params_val['gas_logu']
+		if add_neb_continuum == 0:
+			sp.params["add_neb_continuum"] = False
+		else:
+			sp.params["add_neb_continuum"] = True
 	elif add_neb_emission == 0:
 		sp.params["add_neb_emission"] = False
 

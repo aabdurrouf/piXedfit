@@ -27,7 +27,7 @@ __all__ = ["generate_modelSED_propspecphoto", "generate_modelSED_spec", "generat
 def generate_modelSED_propspecphoto(sp=None,imf_type=1,duste_switch=1,add_neb_emission=1,dust_law=1,sfh_form=4,add_agn=0,filters=None,add_igm_absorption=0,igm_type=0,
 	smooth_velocity=True, sigma_smooth=0.0, smooth_lsf=False, lsf_wave=None, lsf_sigma=None, cosmo='flat_LCDM',H0=70.0,Om0=0.3,params_val={'log_mass':0.0,'z':0.001,
 	'log_fagn':-3.0,'log_tauagn':1.0,'log_qpah':0.54,'log_umin':0.0,'log_gamma':-2.0,'dust1':0.5,'dust2':0.5,'dust_index':-0.7,'log_age':1.0,'log_alpha':0.1,
-	'log_beta':0.1,'log_t0':0.4,'log_tau':0.4,'logzsol':0.0, 'gas_logu':-2.0,'gas_logz':None}):
+	'log_beta':0.1,'log_t0':0.4,'log_tau':0.4,'logzsol':0.0, 'gas_logu':-2.0,'gas_logz':None},add_neb_continuum=1):
 	"""A function to generate model SED in which the output includes: properties, spectrum, and photometric fluxes
 
 	:param sp:
@@ -96,7 +96,8 @@ def generate_modelSED_propspecphoto(sp=None,imf_type=1,duste_switch=1,add_neb_em
 	params_val = default_params(params_val)
 
 	sp, formed_mass, age, tau, t0, alpha, beta = set_initial_params_fsps(sp=sp,imf_type=imf_type,duste_switch=duste_switch,add_neb_emission=add_neb_emission,dust_law=dust_law,add_agn=add_agn,
-														smooth_velocity=smooth_velocity,sigma_smooth=sigma_smooth,smooth_lsf=smooth_lsf,lsf_wave=lsf_wave,lsf_sigma=lsf_sigma,params_val=params_val)
+														smooth_velocity=smooth_velocity,sigma_smooth=sigma_smooth,smooth_lsf=smooth_lsf,lsf_wave=lsf_wave,lsf_sigma=lsf_sigma,
+														params_val=params_val,add_neb_continuum=add_neb_continuum)
 
 	SFR_fSM = -99.0
 	if sfh_form==0 or sfh_form==1:
@@ -203,7 +204,7 @@ def generate_modelSED_spec(sp=None,imf_type=1,duste_switch=1,add_neb_emission=1,
 	smooth_velocity=True, sigma_smooth=0.0, smooth_lsf=False, lsf_wave=None, lsf_sigma=None, cosmo='flat_LCDM',H0=70.0,Om0=0.3, 
 	params_val={'log_mass':0.0,'z':0.001,'log_fagn':-3.0,'log_tauagn':1.0,'log_qpah':0.54,'log_umin':0.0,'log_gamma':-2.0,
 	'dust1':0.5,'dust2':0.5,'dust_index':-0.7,'log_age':1.0,'log_alpha':0.1,'log_beta':0.1,'log_t0':0.4,'log_tau':0.4,'logzsol':0.0, 
-	'gas_logu':-2.0,'gas_logz':None}):
+	'gas_logu':-2.0,'gas_logz':None},add_neb_continuum=1):
 
 	"""Function for generating a model spectrum given some parameters.
 
@@ -273,7 +274,8 @@ def generate_modelSED_spec(sp=None,imf_type=1,duste_switch=1,add_neb_emission=1,
 	params_val = default_params(params_val)
 
 	sp, formed_mass, age, tau, t0, alpha, beta = set_initial_params_fsps(sp=sp,imf_type=imf_type,duste_switch=duste_switch,add_neb_emission=add_neb_emission,dust_law=dust_law,add_agn=add_agn,
-															smooth_velocity=smooth_velocity,sigma_smooth=sigma_smooth,smooth_lsf=smooth_lsf,lsf_wave=lsf_wave,lsf_sigma=lsf_sigma,params_val=params_val)
+															smooth_velocity=smooth_velocity,sigma_smooth=sigma_smooth,smooth_lsf=smooth_lsf,lsf_wave=lsf_wave,lsf_sigma=lsf_sigma,
+															params_val=params_val,add_neb_continuum=add_neb_continuum)
 
 	if sfh_form==0 or sfh_form==1:
 		if sfh_form==0:
@@ -462,7 +464,7 @@ def generate_modelSED_specphoto(sp=None,imf_type=1,duste_switch=1,add_neb_emissi
 	smooth_velocity=True, sigma_smooth=0.0, smooth_lsf=False, lsf_wave=None, lsf_sigma=None,cosmo='flat_LCDM',H0=70.0,Om0=0.3,
 	params_val={'log_mass':0.0,'z':0.001,'log_fagn':-3.0,'log_tauagn':1.0,'log_qpah':0.54,'log_umin':0.0,'log_gamma':-2.0,
 	'dust1':0.5,'dust2':0.5,'dust_index':-0.7,'log_age':1.0,'log_alpha':0.1,'log_beta':0.1,'log_t0':0.4,'log_tau':0.4,'logzsol':0.0, 
-	'gas_logu':-2.0,'gas_logz':None}):
+	'gas_logu':-2.0,'gas_logz':None},add_neb_continuum=1):
 	"""A function to generate model spectrophotometric SED
 
 	:param sp:
@@ -528,7 +530,8 @@ def generate_modelSED_specphoto(sp=None,imf_type=1,duste_switch=1,add_neb_emissi
 	params_val = default_params(params_val)
 
 	sp, formed_mass, age, tau, t0, alpha, beta = set_initial_params_fsps(sp=sp,imf_type=imf_type,duste_switch=duste_switch,add_neb_emission=add_neb_emission,dust_law=dust_law,add_agn=add_agn,
-														smooth_velocity=smooth_velocity,sigma_smooth=sigma_smooth,smooth_lsf=smooth_lsf,lsf_wave=lsf_wave,lsf_sigma=lsf_sigma,params_val=params_val)
+														smooth_velocity=smooth_velocity,sigma_smooth=sigma_smooth,smooth_lsf=smooth_lsf,lsf_wave=lsf_wave,lsf_sigma=lsf_sigma,
+														params_val=params_val,add_neb_continuum=add_neb_continuum)
 
 	if sfh_form==0 or sfh_form==1:
 		if sfh_form==0:
@@ -603,6 +606,7 @@ def generate_modelSED_spec_decompose(sp=None,imf=1, duste_switch=1,add_neb_emiss
 	spec_SED['flux_total'] = []
 	spec_SED['flux_stellar'] = []
 	spec_SED['flux_nebe'] = []
+	spec_SED['flux_nebe_cont'] = []
 	spec_SED['flux_duste'] = []
 	spec_SED['flux_agn'] = []
 
@@ -621,18 +625,25 @@ def generate_modelSED_spec_decompose(sp=None,imf=1, duste_switch=1,add_neb_emiss
 
 	# get nebular emission:
 	if add_neb_emission == 1:
-		add_neb_emission_temp  = 1
-		spec_SED_temp1 = generate_modelSED_spec(sp=sp,imf_type=imf,duste_switch=0,add_neb_emission=add_neb_emission_temp,
+		spec_SED_temp1 = generate_modelSED_spec(sp=sp,imf_type=imf,duste_switch=0,add_neb_emission=1,
 							dust_law=dust_law,sfh_form=sfh_form,add_agn=0,add_igm_absorption=add_igm_absorption,igm_type=igm_type,
 							cosmo=cosmo,H0=H0,Om0=Om0,params_val=params_val,smooth_velocity=smooth_velocity,sigma_smooth=sigma_smooth,
-							smooth_lsf=smooth_lsf,lsf_wave=lsf_wave,lsf_sigma=lsf_sigma)
-		add_neb_emission_temp  = 0
-		spec_SED_temp2 = generate_modelSED_spec(sp=sp,imf_type=imf,duste_switch=0,add_neb_emission=add_neb_emission_temp,
+							smooth_lsf=smooth_lsf,lsf_wave=lsf_wave,lsf_sigma=lsf_sigma,add_neb_continuum=1)
+
+		spec_SED_temp2 = generate_modelSED_spec(sp=sp,imf_type=imf,duste_switch=0,add_neb_emission=0,
 							dust_law=dust_law,sfh_form=sfh_form,add_agn=0,add_igm_absorption=add_igm_absorption,igm_type=igm_type,
 							cosmo=cosmo,H0=H0,Om0=Om0,params_val=params_val,smooth_velocity=smooth_velocity,
 							sigma_smooth=sigma_smooth,smooth_lsf=smooth_lsf,lsf_wave=lsf_wave,lsf_sigma=lsf_sigma)
 		spec_flux_nebe = spec_SED_temp1['flux'] - spec_SED_temp2['flux']
 		spec_SED['flux_nebe'] = convert_unit_spec_from_ergscm2A(spec_SED_temp['wave'],spec_flux_nebe,funit=funit)
+
+		spec_SED_temp3 = generate_modelSED_spec(sp=sp,imf_type=imf,duste_switch=0,add_neb_emission=1,
+							dust_law=dust_law,sfh_form=sfh_form,add_agn=0,add_igm_absorption=add_igm_absorption,igm_type=igm_type,
+							cosmo=cosmo,H0=H0,Om0=Om0,params_val=params_val,smooth_velocity=smooth_velocity,sigma_smooth=sigma_smooth,
+							smooth_lsf=smooth_lsf,lsf_wave=lsf_wave,lsf_sigma=lsf_sigma,add_neb_continuum=0)
+		spec_flux_nebe_cont = spec_SED_temp1['flux'] - spec_SED_temp3['flux']
+		spec_SED['flux_nebe_cont'] = convert_unit_spec_from_ergscm2A(spec_SED_temp['wave'],spec_flux_nebe_cont,funit=funit)
+
 
 	# get dust emission:
 	if duste_switch == 1:
@@ -676,6 +687,7 @@ def generate_modelSED_specphoto_decompose(sp=None,imf=1,duste_switch=1,add_neb_e
 	spec_SED['flux_total'] = []
 	spec_SED['flux_stellar'] = []
 	spec_SED['flux_nebe'] = []
+	spec_SED['flux_nebe_cont'] = []
 	spec_SED['flux_duste'] = []
 	spec_SED['flux_agn'] = []
 
@@ -705,7 +717,8 @@ def generate_modelSED_specphoto_decompose(sp=None,imf=1,duste_switch=1,add_neb_e
 	if add_neb_emission == 1:
 		spec_SED_temp1 = generate_modelSED_spec(sp=sp,imf_type=imf,duste_switch=0,add_neb_emission=1,dust_law=dust_law,
 							sfh_form=sfh_form,add_agn=add_agn,add_igm_absorption=add_igm_absorption,igm_type=igm_type,cosmo=cosmo,H0=H0,Om0=Om0,
-							params_val=params_val,smooth_velocity=smooth_velocity,sigma_smooth=sigma_smooth,smooth_lsf=smooth_lsf,lsf_wave=lsf_wave,lsf_sigma=lsf_sigma)
+							params_val=params_val,smooth_velocity=smooth_velocity,sigma_smooth=sigma_smooth,smooth_lsf=smooth_lsf,
+							lsf_wave=lsf_wave,lsf_sigma=lsf_sigma,add_neb_continuum=1)
 
 		spec_SED_temp2 = generate_modelSED_spec(sp=sp,imf_type=imf,duste_switch=0,add_neb_emission=0,dust_law=dust_law,
 							sfh_form=sfh_form,add_agn=add_agn,add_igm_absorption=add_igm_absorption,igm_type=igm_type,cosmo=cosmo,H0=H0,Om0=Om0,
@@ -713,6 +726,14 @@ def generate_modelSED_specphoto_decompose(sp=None,imf=1,duste_switch=1,add_neb_e
 
 		spec_flux_nebe = spec_SED_temp1['flux'] - spec_SED_temp2['flux']
 		spec_SED['flux_nebe'] = convert_unit_spec_from_ergscm2A(spec_SED_temp['wave'],spec_flux_nebe,funit=funit)
+
+		spec_SED_temp3 = generate_modelSED_spec(sp=sp,imf_type=imf,duste_switch=0,add_neb_emission=1,dust_law=dust_law,
+							sfh_form=sfh_form,add_agn=add_agn,add_igm_absorption=add_igm_absorption,igm_type=igm_type,cosmo=cosmo,H0=H0,Om0=Om0,
+							params_val=params_val,smooth_velocity=smooth_velocity,sigma_smooth=sigma_smooth,smooth_lsf=smooth_lsf,
+							lsf_wave=lsf_wave,lsf_sigma=lsf_sigma,add_neb_continuum=0)
+		spec_flux_nebe_cont = spec_SED_temp1['flux'] - spec_SED_temp3['flux']
+		spec_SED['flux_nebe_cont'] = convert_unit_spec_from_ergscm2A(spec_SED_temp['wave'],spec_flux_nebe_cont,funit=funit)
+
 
 	# get dust emission:
 	if duste_switch == 1:

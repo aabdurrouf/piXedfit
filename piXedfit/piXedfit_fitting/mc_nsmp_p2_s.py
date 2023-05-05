@@ -43,6 +43,14 @@ def store_to_fits(nsamples=None,sampler_params=None,sampler_log_sfr=None,sampler
 	bfit_spec_nebe_temp = np.zeros((nwaves_spec,numDataPerRank))
 	bfit_spec_wave = np.zeros(nwaves_spec)
 
+	bfit_mod_spec_tot_temp = np.zeros((nwaves_mod,numDataPerRank))
+	bfit_mod_spec_stellar_temp = np.zeros((nwaves_mod,numDataPerRank))
+	bfit_mod_spec_duste_temp = np.zeros((nwaves_mod,numDataPerRank))
+	bfit_mod_spec_agn_temp = np.zeros((nwaves_mod,numDataPerRank))
+	bfit_mod_spec_nebe_temp = np.zeros((nwaves_mod,numDataPerRank))
+	bfit_mod_spec_nebe_cont_temp = np.zeros((nwaves_mod,numDataPerRank))
+	bfit_mod_spec_wave = np.zeros(nwaves_mod)
+
 	bfit_corr_factor_temp = np.zeros((nwaves_spec,numDataPerRank))
 	mod_chi2_temp = np.zeros(numDataPerRank)
 
@@ -65,6 +73,17 @@ def store_to_fits(nsamples=None,sampler_params=None,sampler_log_sfr=None,sampler
 			spec_SED = generate_modelSED_spec_decompose(sp=sp,params_val=params_val,imf=imf,duste_switch=duste_switch,
 							add_neb_emission=add_neb_emission,dust_law=dust_law,add_agn=add_agn,add_igm_absorption=add_igm_absorption,
 							igm_type=igm_type,cosmo=cosmo,H0=H0,Om0=Om0,sfh_form=sfh_form,funit='erg/s/cm2/A')
+
+			bfit_mod_spec_wave = spec_SED['wave']
+			bfit_mod_spec_tot_temp[:,int(count)] = spec_SED['flux_total']
+			bfit_mod_spec_stellar_temp[:,int(count)] = spec_SED['flux_stellar']
+			if add_neb_emission == 1:
+				bfit_mod_spec_nebe_temp[:,int(count)] = spec_SED['flux_nebe']
+				bfit_mod_spec_nebe_cont_temp[:,int(count)] = spec_SED['flux_nebe_cont']
+			if duste_switch==1:
+				bfit_mod_spec_duste_temp[:,int(count)] = spec_SED['flux_duste']
+			if add_agn == 1:
+				bfit_mod_spec_agn_temp[:,int(count)] = spec_SED['flux_agn']
 
 			idx_mod_wave = np.where((spec_SED['wave']>min_spec_wave-100) & (spec_SED['wave']<max_spec_wave+100))
 			conv_mod_spec_wave, conv_mod_spec_flux = spec_SED['wave'][idx_mod_wave[0]], spec_SED['flux_total'][idx_mod_wave[0]]
@@ -98,6 +117,9 @@ def store_to_fits(nsamples=None,sampler_params=None,sampler_log_sfr=None,sampler
 				func = interp1d(spec_SED['wave'],spec_SED['flux_nebe'], fill_value='extrapolate')
 				bfit_spec_nebe_temp[:,int(count)] = corr_factor*func(bfit_spec_wave)
 
+				func = interp1d(spec_SED['wave'],spec_SED['flux_nebe_cont'], fill_value='extrapolate')
+				bfit_spec_nebe_cont_temp[:,int(count)] = corr_factor*func(bfit_spec_wave)
+
 			if duste_switch==1:
 				if max_spec_wave/(params_val['z']+1.0) > 1e+4:
 					func = interp1d(spec_SED['wave'], spec_SED['flux_duste'], fill_value='extrapolate')
@@ -118,6 +140,14 @@ def store_to_fits(nsamples=None,sampler_params=None,sampler_log_sfr=None,sampler
 	bfit_spec_duste = np.zeros((nwaves_spec,nchains))
 	bfit_spec_agn = np.zeros((nwaves_spec,nchains))
 	bfit_spec_nebe = np.zeros((nwaves_spec,nchains))
+	bfit_spec_nebe_cont = np.zeros((nwaves_spec,nchains))
+
+	bfit_mod_spec_tot = np.zeros((nwaves_mod,nchains))
+	bfit_mod_spec_stellar = np.zeros((nwaves_mod,nchains))
+	bfit_mod_spec_duste = np.zeros((nwaves_mod,nchains))
+	bfit_mod_spec_agn = np.zeros((nwaves_mod,nchains))
+	bfit_mod_spec_nebe = np.zeros((nwaves_mod,nchains))
+	bfit_mod_spec_nebe_cont = np.zeros((nwaves_mod,nchains))
 
 	bfit_corr_factor = np.zeros((nwaves_spec,nchains))
 	mod_chi2 = np.zeros(nchains)
@@ -130,6 +160,7 @@ def store_to_fits(nsamples=None,sampler_params=None,sampler_log_sfr=None,sampler
 	if add_neb_emission == 1:
 		for bb in range(0,nwaves_spec):
 			comm.Gather(bfit_spec_nebe_temp[bb], bfit_spec_nebe[bb], root=0)
+			comm.Gather(bfit_spec_nebe_cont_temp[bb], bfit_spec_nebe_cont[bb], root=0)
 
 	if duste_switch == 1:
 		for bb in range(0,nwaves_spec):
@@ -139,7 +170,24 @@ def store_to_fits(nsamples=None,sampler_params=None,sampler_log_sfr=None,sampler
 		for bb in range(0,nwaves_spec):
 			comm.Gather(bfit_spec_agn_temp[bb], bfit_spec_agn[bb], root=0)
 
-	comm.Bcast(mod_chi2, root=0)
+	for bb in range(0,nwaves_mod):
+		comm.Gather(bfit_mod_spec_tot_temp[bb], bfit_mod_spec_tot[bb], root=0)
+		comm.Gather(bfit_mod_spec_stellar_temp[bb], bfit_mod_spec_stellar[bb], root=0)
+
+	if add_neb_emission == 1:
+		for bb in range(0,nwaves_mod):
+			comm.Gather(bfit_mod_spec_nebe_temp[bb], bfit_mod_spec_nebe[bb], root=0)
+			comm.Gather(bfit_mod_spec_nebe_cont_temp[bb], bfit_mod_spec_nebe_cont[bb], root=0)
+
+	if duste_switch == 1:
+		for bb in range(0,nwaves_mod):
+			comm.Gather(bfit_mod_spec_duste_temp[bb], bfit_mod_spec_duste[bb], root=0)
+
+	if add_agn == 1:
+		for bb in range(0,nwaves_mod):
+			comm.Gather(bfit_mod_spec_agn_temp[bb], bfit_mod_spec_agn[bb], root=0)
+
+	comm.Gather(mod_chi2_temp, mod_chi2, root=0)
 
 	if rank == 0:
 		# get percentiles
@@ -155,6 +203,14 @@ def store_to_fits(nsamples=None,sampler_params=None,sampler_log_sfr=None,sampler
 		p50_spec_stellar = np.percentile(bfit_spec_stellar,50,axis=1)
 		p84_spec_stellar = np.percentile(bfit_spec_stellar,84,axis=1)
 
+		p16_mod_spec_tot = np.percentile(bfit_mod_spec_tot,16,axis=1)
+		p50_mod_spec_tot = np.percentile(bfit_mod_spec_tot,50,axis=1)
+		p84_mod_spec_tot = np.percentile(bfit_mod_spec_tot,84,axis=1)
+
+		p16_mod_spec_stellar = np.percentile(bfit_mod_spec_stellar,16,axis=1)
+		p50_mod_spec_stellar = np.percentile(bfit_mod_spec_stellar,50,axis=1)
+		p84_mod_spec_stellar = np.percentile(bfit_mod_spec_stellar,84,axis=1)
+
 		# get best-fit model spectrum from chi-square minimization
 		idx_sel1 = np.where(mod_chi2>0) 
 		idx0, min_val = min(enumerate(mod_chi2[idx_sel1[0]]), key=itemgetter(1))
@@ -167,12 +223,29 @@ def store_to_fits(nsamples=None,sampler_params=None,sampler_log_sfr=None,sampler
 			p50_spec_nebe = np.percentile(bfit_spec_nebe,50,axis=1)
 			p84_spec_nebe = np.percentile(bfit_spec_nebe,84,axis=1)
 
+			p16_spec_nebe_cont = np.percentile(bfit_spec_nebe_cont,16,axis=1)
+			p50_spec_nebe_cont = np.percentile(bfit_spec_nebe_cont,50,axis=1)
+			p84_spec_nebe_cont = np.percentile(bfit_spec_nebe_cont,84,axis=1)
+
+			p16_mod_spec_nebe = np.percentile(bfit_mod_spec_nebe,16,axis=1)
+			p50_mod_spec_nebe = np.percentile(bfit_mod_spec_nebe,50,axis=1)
+			p84_mod_spec_nebe = np.percentile(bfit_mod_spec_nebe,84,axis=1)
+
+			p16_mod_spec_nebe_cont = np.percentile(bfit_mod_spec_nebe_cont,16,axis=1)
+			p50_mod_spec_nebe_cont = np.percentile(bfit_mod_spec_nebe_cont,50,axis=1)
+			p84_mod_spec_nebe_cont = np.percentile(bfit_mod_spec_nebe_cont,84,axis=1)
+
 			chimin_spec_nebe = bfit_spec_nebe[:,idx1]
+			chimin_spec_nebe_cont = bfit_spec_nebe_cont[:,idx1]
 
 		if duste_switch == 1:
 			p16_spec_duste = np.percentile(bfit_spec_duste,16,axis=1)
 			p50_spec_duste = np.percentile(bfit_spec_duste,50,axis=1)
 			p84_spec_duste = np.percentile(bfit_spec_duste,84,axis=1)
+
+			p16_mod_spec_duste = np.percentile(bfit_mod_spec_duste,16,axis=1)
+			p50_mod_spec_duste = np.percentile(bfit_mod_spec_duste,50,axis=1)
+			p84_mod_spec_duste = np.percentile(bfit_mod_spec_duste,84,axis=1)
 
 			chimin_spec_duste = bfit_spec_duste[:,idx1]
 
@@ -180,6 +253,10 @@ def store_to_fits(nsamples=None,sampler_params=None,sampler_log_sfr=None,sampler
 			p16_spec_agn = np.percentile(bfit_spec_agn,16,axis=1)
 			p50_spec_agn = np.percentile(bfit_spec_agn,50,axis=1)
 			p84_spec_agn = np.percentile(bfit_spec_agn,84,axis=1)
+
+			p16_mod_spec_agn = np.percentile(bfit_mod_spec_agn,16,axis=1)
+			p50_mod_spec_agn = np.percentile(bfit_mod_spec_agn,50,axis=1)
+			p84_mod_spec_agn = np.percentile(bfit_mod_spec_agn,84,axis=1)
 
 			chimin_spec_agn = bfit_spec_agn[:,idx1]
 
@@ -307,6 +384,13 @@ def store_to_fits(nsamples=None,sampler_params=None,sampler_log_sfr=None,sampler
 			col = fits.Column(name='nebe_p84', format='D', array=np.array(p84_spec_nebe))
 			cols0.append(col)
 
+			col = fits.Column(name='nebe_cont_p16', format='D', array=np.array(p16_spec_nebe_cont))
+			cols0.append(col)
+			col = fits.Column(name='nebe_cont_p50', format='D', array=np.array(p50_spec_nebe_cont))
+			cols0.append(col)
+			col = fits.Column(name='nebe_cont_p84', format='D', array=np.array(p84_spec_nebe_cont))
+			cols0.append(col)
+
 		if duste_switch == 1:
 			col = fits.Column(name='duste_p16', format='D', array=np.array(p16_spec_duste))
 			cols0.append(col)
@@ -339,6 +423,9 @@ def store_to_fits(nsamples=None,sampler_params=None,sampler_log_sfr=None,sampler
 			col = fits.Column(name='nebe', format='D', array=np.array(chimin_spec_nebe))
 			cols0.append(col)
 
+			col = fits.Column(name='nebe_cont', format='D', array=np.array(chimin_spec_nebe_cont))
+			cols0.append(col)
+
 		if duste_switch == 1:
 			col = fits.Column(name='duste', format='D', array=np.array(chimin_spec_duste))
 			cols0.append(col)
@@ -363,7 +450,60 @@ def store_to_fits(nsamples=None,sampler_params=None,sampler_log_sfr=None,sampler
 		cols = fits.ColDefs(cols0)
 		hdu5 = fits.BinTableHDU.from_columns(cols, name='corr_factor')
 
-		hdul = fits.HDUList([primary_hdu, hdu1, hdu2, hdu3, hdu4, hdu5])
+		#==> best-fit native model spectra
+		cols0 = []
+		col = fits.Column(name='wave', format='D', array=np.array(bfit_mod_spec_wave))
+		cols0.append(col)
+
+		col = fits.Column(name='tot_p16', format='D', array=np.array(p16_mod_spec_tot))
+		cols0.append(col)
+		col = fits.Column(name='tot_p50', format='D', array=np.array(p50_mod_spec_tot))
+		cols0.append(col)
+		col = fits.Column(name='tot_p84', format='D', array=np.array(p84_mod_spec_tot))
+		cols0.append(col)
+
+		col = fits.Column(name='stellar_p16', format='D', array=np.array(p16_mod_spec_stellar))
+		cols0.append(col)
+		col = fits.Column(name='stellar_p50', format='D', array=np.array(p50_mod_spec_stellar))
+		cols0.append(col)
+		col = fits.Column(name='stellar_p84', format='D', array=np.array(p84_mod_spec_stellar))
+		cols0.append(col)
+
+		if add_neb_emission == 1:
+			col = fits.Column(name='nebe_p16', format='D', array=np.array(p16_mod_spec_nebe))
+			cols0.append(col)
+			col = fits.Column(name='nebe_p50', format='D', array=np.array(p50_mod_spec_nebe))
+			cols0.append(col)
+			col = fits.Column(name='nebe_p84', format='D', array=np.array(p84_mod_spec_nebe))
+			cols0.append(col)
+
+			col = fits.Column(name='nebe_cont_p16', format='D', array=np.array(p16_mod_spec_nebe_cont))
+			cols0.append(col)
+			col = fits.Column(name='nebe_cont_p50', format='D', array=np.array(p50_mod_spec_nebe_cont))
+			cols0.append(col)
+			col = fits.Column(name='nebe_cont_p84', format='D', array=np.array(p84_mod_spec_nebe_cont))
+			cols0.append(col)
+
+		if duste_switch == 1:
+			col = fits.Column(name='duste_p16', format='D', array=np.array(p16_mod_spec_duste))
+			cols0.append(col)
+			col = fits.Column(name='duste_p50', format='D', array=np.array(p50_mod_spec_duste))
+			cols0.append(col)
+			col = fits.Column(name='duste_p84', format='D', array=np.array(p84_mod_spec_duste))
+			cols0.append(col)
+
+		if add_agn == 1:
+			col = fits.Column(name='agn_p16', format='D', array=np.array(p16_mod_spec_agn))
+			cols0.append(col)
+			col = fits.Column(name='agn_p50', format='D', array=np.array(p50_mod_spec_agn))
+			cols0.append(col)
+			col = fits.Column(name='agn_p84', format='D', array=np.array(p84_mod_spec_agn))
+			cols0.append(col)
+
+		cols = fits.ColDefs(cols0)
+		hdu6 = fits.BinTableHDU.from_columns(cols, name='bfit_mod')
+
+		hdul = fits.HDUList([primary_hdu, hdu1, hdu2, hdu3, hdu4, hdu5, hdu6])
 		hdul.writeto(fits_name_out, overwrite=True)	
 
 
