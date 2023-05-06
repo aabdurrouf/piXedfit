@@ -70,22 +70,25 @@ def plot_SED_rdsps_photo(filters=None,obs_photo=None,bfit_photo=None,bfit_mod_sp
 		print ("The input funit is not recognized!")
 		sys.exit()
 
-	if xticks != None:
-		plt.xticks(xticks)
+	#if xticks is not None:
+	#	plt.xticks(xticks)
+	#for axis in [f1.xaxis]:
+	#	axis.set_major_formatter(ScalarFormatter())
 
-	for axis in [f1.xaxis]:
-		axis.set_major_formatter(ScalarFormatter())
-	if xrange == None:
-		if wunit==0 or wunit=='angstrom':
-			plt.xlim(min(photo_cwave)*0.7,max(photo_cwave)*1.3)
-		elif wunit==1 or wunit=='micron':
-			plt.xlim(min(photo_cwave)*0.7/1e+4,max(photo_cwave)*1.3/1e+4)
-	elif xrange != None:
-		plt.xlim(xrange[0],xrange[1])
+	if xrange is None:
+		xmin, xmax = min(photo_cwave)*0.7, max(photo_cwave)*1.3
+	elif xrange is not None:
+		xmin, xmax = xrange[0], xrange[1]
 
-	if yrange == None:
+	if wunit==0 or wunit=='angstrom':
+		plt.xlim(xmin,xmax)
+	elif wunit==1 or wunit=='micron':
+		xmin, xmax = xmin/1e+4, xmax/1e+4
+		plt.xlim(xmin,xmax)
+
+	if yrange is None:
 		plt.ylim(min(obs_fluxes)*0.5,max(obs_fluxes)*1.8)
-	if yrange != None:
+	elif yrange is not None:
 		plt.ylim(yrange[0],yrange[1])
 
 	if decompose==1 or decompose==True:
@@ -196,24 +199,26 @@ def plot_SED_rdsps_photo(filters=None,obs_photo=None,bfit_photo=None,bfit_mod_sp
 	elif wunit==1 or wunit=='micron':
 		plt.xlabel(r'Wavelength [$\mu$m]', fontsize=int(fontsize_label))
 
-	if xticks != None:
+	if xticks is not None:
 		plt.xticks(xticks)
 	for axis in [f1.xaxis]:
 		axis.set_major_formatter(ScalarFormatter())
 
-	if xrange == None:
-		if wunit==0 or wunit=='angstrom':
-			plt.xlim(min(photo_cwave)*0.7,max(photo_cwave)*1.3)
-			xmin = min(photo_cwave)*0.7
-			xmax = max(photo_cwave)*1.3
-		elif wunit==1 or wunit=='micron':
-			plt.xlim(min(photo_cwave)*0.7/1e+4,max(photo_cwave)*1.3/1e+4)
-			xmin = min(photo_cwave)*0.7/1e+4
-			xmax = max(photo_cwave)*1.3/1e+4
-	elif xrange != None:
-		plt.xlim(xrange[0],xrange[1])
-		xmin = xrange[0]
-		xmax = xrange[1]
+	#if xrange is None:
+	#	if wunit==0 or wunit=='angstrom':
+	#		xmin = min(photo_cwave)*0.7
+	#		xmax = max(photo_cwave)*1.3
+	#		plt.xlim(min(photo_cwave)*0.7,max(photo_cwave)*1.3)
+	#	elif wunit==1 or wunit=='micron':
+	#		plt.xlim(min(photo_cwave)*0.7/1e+4,max(photo_cwave)*1.3/1e+4)
+	#		xmin = min(photo_cwave)*0.7/1e+4
+	#		xmax = max(photo_cwave)*1.3/1e+4
+	#elif xrange is not None:
+	#	plt.xlim(xrange[0],xrange[1])
+	#	xmin = xrange[0]
+	#	xmax = xrange[1]
+
+	plt.xlim(xmin,xmax)
 
 	# get residual:
 	residuals = (obs_fluxes - bfit_photo_fluxes)/obs_fluxes
@@ -275,24 +280,36 @@ def plot_SED_mcmc_photo(filters=None,obs_photo=None,bfit_photo=None,bfit_mod_spe
 		print ("The input funit is not recognized!")
 		sys.exit()
 
-	if yrange == None:
+	if yrange is None:
 		plt.ylim(min(obs_fluxes)*0.5,max(obs_fluxes)*1.8)
-	if yrange != None:
+	if yrange is not None:
 		plt.ylim(yrange[0],yrange[1])
 
-	if xrange == None:
-		if wunit==0 or wunit=='angstrom':
-			plt.xlim(min(photo_cwave)*0.7,max(photo_cwave)*1.3)
-			xmin = min(photo_cwave)*0.7
-			xmax = max(photo_cwave)*1.3
-		elif wunit==1 or wunit=='micron':
-			plt.xlim(min(photo_cwave)*0.7/1e+4,max(photo_cwave)*1.3/1e+4)
-			xmin = min(photo_cwave)*0.7/1e+4
-			xmax = max(photo_cwave)*1.3/1e+4
-	elif xrange != None:
-		plt.xlim(xrange[0],xrange[1])
-		xmin = xrange[0]
-		xmax = xrange[1]
+	#if xrange is None:
+	#	if wunit==0 or wunit=='angstrom':
+	#		plt.xlim(min(photo_cwave)*0.7,max(photo_cwave)*1.3)
+	#		xmin = min(photo_cwave)*0.7
+	#		xmax = max(photo_cwave)*1.3
+	#	elif wunit==1 or wunit=='micron':
+	#		plt.xlim(min(photo_cwave)*0.7/1e+4,max(photo_cwave)*1.3/1e+4)
+	#		xmin = min(photo_cwave)*0.7/1e+4
+	#		xmax = max(photo_cwave)*1.3/1e+4
+
+	#elif xrange is not None:
+	#	plt.xlim(xrange[0],xrange[1])
+	#	xmin = xrange[0]
+	#	xmax = xrange[1]
+
+	if xrange is None:
+		xmin, xmax = min(photo_cwave)*0.7, max(photo_cwave)*1.3
+	elif xrange is not None:
+		xmin, xmax = xrange[0], xrange[1]
+
+	if wunit==0 or wunit=='angstrom':
+		plt.xlim(xmin,xmax)
+	elif wunit==1 or wunit=='micron':
+		xmin, xmax = xmin/1e+4, xmax/1e+4
+		plt.xlim(xmin,xmax)
 
 	#==> best-fit model spectrum
 	if wunit==0 or wunit=='angstrom':
@@ -376,24 +393,26 @@ def plot_SED_mcmc_photo(filters=None,obs_photo=None,bfit_photo=None,bfit_mod_spe
 	elif wunit==1 or wunit=='micron':
 		plt.xlabel(r'Wavelength [$\mu$m]', fontsize=int(fontsize_label))
 
-	if xticks != None:
+	if xticks is not None:
 		plt.xticks(xticks)
 	for axis in [f1.xaxis]:
 		axis.set_major_formatter(ScalarFormatter())
 
-	if xrange == None:
-		if wunit==0 or wunit=='angstrom':
-			plt.xlim(min(photo_cwave)*0.7,max(photo_cwave)*1.3)
-			xmin = min(photo_cwave)*0.7
-			xmax = max(photo_cwave)*1.3
-		elif wunit==1 or wunit=='micron':
-			plt.xlim(min(photo_cwave)*0.7/1e+4,max(photo_cwave)*1.3/1e+4)
-			xmin = min(photo_cwave)*0.7/1e+4
-			xmax = max(photo_cwave)*1.3/1e+4
-	elif xrange != None:
-		plt.xlim(xrange[0],xrange[1])
-		xmin = xrange[0]
-		xmax = xrange[1]
+	#if xrange is None:
+	#	if wunit==0 or wunit=='angstrom':
+	#		plt.xlim(min(photo_cwave)*0.7,max(photo_cwave)*1.3)
+	#		xmin = min(photo_cwave)*0.7
+	#		xmax = max(photo_cwave)*1.3
+	#	elif wunit==1 or wunit=='micron':
+	#		plt.xlim(min(photo_cwave)*0.7/1e+4,max(photo_cwave)*1.3/1e+4)
+	#		xmin = min(photo_cwave)*0.7/1e+4
+	#		xmax = max(photo_cwave)*1.3/1e+4
+	#elif xrange is not None:
+	#	plt.xlim(xrange[0],xrange[1])
+	#	xmin = xrange[0]
+	#	xmax = xrange[1]
+
+	plt.xlim(xmin,xmax)
 
 	# get residual:
 	residuals = (obs_fluxes - p50_photo_flux)/obs_fluxes
@@ -497,12 +516,12 @@ def plot_SED_specphoto_old(filters=None,obs_photo=None,obs_spec=None,bfit_photo=
 		print ("The input funit is not recognized!")
 		sys.exit()
 
-	if yrange == None:
+	if yrange is None:
 		plt.ylim(min(obs_fluxes)*0.5,max(obs_fluxes)*1.8)
-	if yrange != None:
+	if yrange is not None:
 		plt.ylim(yrange[0],yrange[1])
 
-	if xrange == None:
+	if xrange is None:
 		if wunit==0 or wunit=='angstrom':
 			plt.xlim(min(photo_cwave)*0.7,max(photo_cwave)*1.3)
 			xmin = min(photo_cwave)*0.7
@@ -511,7 +530,7 @@ def plot_SED_specphoto_old(filters=None,obs_photo=None,obs_spec=None,bfit_photo=
 			plt.xlim(min(photo_cwave)*0.7/1e+4,max(photo_cwave)*1.3/1e+4)
 			xmin = min(photo_cwave)*0.7/1e+4
 			xmax = max(photo_cwave)*1.3/1e+4
-	elif xrange != None:
+	elif xrange is not None:
 		plt.xlim(xrange[0],xrange[1])
 		xmin = xrange[0]
 		xmax = xrange[1]
@@ -521,7 +540,7 @@ def plot_SED_specphoto_old(filters=None,obs_photo=None,obs_spec=None,bfit_photo=
 	elif wunit==1 or wunit=='micron':
 		plt.xlabel(r'Wavelength [$\mu$m]', fontsize=int(fontsize_label))
 
-	if xticks != None:
+	if xticks is not None:
 		plt.xticks(xticks)
 	for axis in [f1.xaxis]:
 		axis.set_major_formatter(ScalarFormatter())
@@ -658,7 +677,6 @@ def plot_SED_specphoto(filters=None,obs_photo=None,obs_spec=None,bfit_photo=None
 		xmin, xmax = 0.7*min(bulk_waves), 1.1*max(bulk_waves)
 	else:
 		xmin, xmax = xrange[0], xrange[1]
-	plt.xlim(xmin, xmax)
 
 	if yrange is None:
 		bulk_fluxes = photo_flux1.tolist() + bfit_photo_flux1.tolist() + obs_spec_flux1.tolist() + rescaled_bfit_mod_spec_flux_no_lines_cut1.tolist()
@@ -671,6 +689,13 @@ def plot_SED_specphoto(filters=None,obs_photo=None,obs_spec=None,bfit_photo=None
 		f1.set_yscale('log')
 	if logscale_x == True:
 		f1.set_xscale('log')
+
+	#if xticks is not None:
+	#	plt.xticks(xticks)
+	#for axis in [f1.xaxis]:
+	#	axis.set_major_formatter(ScalarFormatter())
+
+	plt.xlim(xmin, xmax)
 
 	if funit=='erg/s/cm2/A' or funit==0:
 		plt.ylabel(r'$F_{\lambda}$ [erg $\rm{s}^{-1}\rm{cm}^{-2}\AA^{-1}$]', fontsize=int(fontsize_label))
@@ -708,10 +733,15 @@ def plot_SED_specphoto(filters=None,obs_photo=None,obs_spec=None,bfit_photo=None
 	plt.ylabel(r'residual', fontsize=22)
 	plt.xlabel(r'Observed wavelength [$\AA$]', fontsize=22)
 	plt.ylim(residual_range[0],residual_range[1])
-	plt.xlim(xmin,xmax)
 
 	if logscale_x == True:
 		f1.set_xscale('log')
+
+	if xticks is not None:
+		plt.xticks(xticks)
+	for axis in [f1.xaxis]:
+		axis.set_major_formatter(ScalarFormatter())
+	plt.xlim(xmin,xmax)
 
 	f1.xaxis.set_minor_locator(AutoMinorLocator())
 
