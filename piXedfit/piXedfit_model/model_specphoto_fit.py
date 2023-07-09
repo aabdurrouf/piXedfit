@@ -283,6 +283,9 @@ def generate_modelSED_spec_restframe_props(sp=None,imf_type=1,sfh_form=4,add_agn
 		spec_flux = extnc_spec*norm0
 		dust_mass = dust_mass0*norm0
 
+		#spec_flux = extnc_spec*formed_mass
+		#dust_mass = dust_mass0*formed_mass
+
 	elif sfh_form==2 or sfh_form==3 or sfh_form==4:
 		SFR_fSM,mass,wave,spec_flux,dust_mass = csp_spec_restframe_fit(sp=sp,sfh_form=sfh_form,formed_mass=formed_mass,
 																age=age,tau=tau,t0=t0,alpha=alpha,beta=beta)

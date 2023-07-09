@@ -356,16 +356,11 @@ def store_to_fits(sampler_params,mod_chi2,mod_prob,fits_name_out):
 	mod_fluxes = norm*fluxes
 	redsh_spec = norm*redsh_spec
 
-	# get initial prediction for stellar mass
 	idx_sel = np.where((np.isnan(mod_prob)==False) & (np.isinf(mod_prob)==False))
 	array_lnprob = mod_prob[idx_sel[0]] - max(mod_prob[idx_sel[0]])  # normalize
 	array_prob = np.exp(array_lnprob)
 	array_prob = array_prob/np.sum(array_prob)						 # normalize
 	tot_prob = np.sum(array_prob)
-	#array_val = sampler_params['log_mass'][idx_sel[0]]
-	#mean_lmass = np.sum(array_val*array_prob)/tot_prob
-	#mean_lmass2 = np.sum(np.square(array_val)*array_prob)/tot_prob
-	#std_lmass = sqrt(abs(mean_lmass2 - (mean_lmass**2)))
 
 	array_val = np.power(10.0, sampler_params['log_mass'][idx_sel[0]])
 	mean_mass = np.sum(array_val*array_prob)/tot_prob

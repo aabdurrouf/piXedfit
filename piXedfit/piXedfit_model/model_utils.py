@@ -21,7 +21,7 @@ __all__ = ["tau_SFH", "delay_tau_SFH", "lognormal_SFH", "gaussian_SFH", "double_
 			"convert_unit_spec_from_ergscm2A", "get_no_nebem_wave_fit", "calc_bollum_from_spec", "calc_bollum_from_spec_rest", 
 			"get_emlines_luminosities", "remove_lyalpha_line", "default_params", "default_params_range", "random_name", "config_file_generate_models", 
 			"set_initial_params_fsps", "default_params_val", "list_default_params", "list_params_fsps", "set_initial_fsps", "read_config_file_genmodels", 
-			"get_params_fsps", "list_default_params_fit", "get_params", "params_log_flag"]
+			"get_params_fsps", "list_default_params_fit", "get_params", "params_log_flag", "get_survive_mass_model"]
 
 def list_default_params():
 	def_params = ['logzsol','log_tau','log_t0','log_alpha','log_beta','log_age','dust_index','dust1','dust2',
@@ -74,12 +74,12 @@ def get_params(free_z, sfh_form, duste_switch, dust_law, add_agn, free_gas_logz)
 		params.append('log_fagn')
 		params.append('log_tauagn')
 
+	if free_gas_logz == 1:
+		# gas-phas metallicity
+		params.append('gas_logz')
+
 	# ionization parameter
 	params.append('gas_logu')
-
-	# gas-phas metallicity
-	if free_gas_logz == 1:
-		params.append('gas_logz')
 
 	# redshift
 	if free_z == 1:
@@ -549,10 +549,57 @@ def csp_spec_restframe_fit(sp=None,sfh_form=4,formed_mass=1.0,age=0.0,tau=0.0,t0
 			spec = spec0*norm
 			dust_mass = dust_mass0*norm
 
+			#spec = spec0*formed_mass
+			#dust_mass = dust_mass0*formed_mass
+
 			SFR = sp.sfr
 			mass = formed_mass
 
-	return SFR,mass,wave,spec,dust_mass
+	return SFR, mass, wave, spec, dust_mass
+
+
+def get_survive_mass_model(sp=None,imf_type=1,duste_switch=1,add_neb_emission=1,dust_law=1,sfh_form=4,add_agn=0, 
+	params_val={'log_mass':0.0,'z':0.001,'log_fagn':-3.0,'log_tauagn':1.0,'log_qpah':0.54,'log_umin':0.0,'log_gamma':-2.0,
+	'dust1':0.5,'dust2':0.5,'dust_index':-0.7,'log_age':1.0,'log_alpha':0.1,'log_beta':0.1,'log_t0':0.4,'log_tau':0.4,'logzsol':0.0, 
+	'gas_logu':-2.0,'gas_logz':None}):
+
+	params_val = default_params(params_val)
+
+	sp, formed_mass, age, tau, t0, alpha, beta = set_initial_params_fsps(sp=sp,imf_type=imf_type,duste_switch=duste_switch,add_neb_emission=add_neb_emission,
+																			dust_law=dust_law,params_val=params_val)
+
+	if sfh_form==0 or sfh_form==1:
+		if sfh_form==0:
+			sp.params["sfh"] = 1
+		elif sfh_form==1:
+			sp.params["sfh"] = 4
+		sp.params["const"] = 0
+		sp.params["sf_start"] = 0
+		sp.params["sf_trunc"] = 0
+		sp.params["fburst"] = 0
+		sp.params["tburst"] = 30.0
+		sp.params["tau"] = tau
+		sp.params["tage"] = age
+		mass = sp.stellar_mass
+
+	elif sfh_form==2 or sfh_form==3 or sfh_form==4:
+		sp.params["sfh"] = 3
+
+		sfh_t, sfh_sfr = construct_SFH(sfh_form=sfh_form,t0=t0,tau=tau,alpha=alpha,beta=beta,age=age,formed_mass=formed_mass)
+
+		idx = np.where((np.isnan(sfh_sfr)==True) | (np.isinf(sfh_sfr)==True) | (sfh_sfr<0))
+		if len(idx[0]) == len(sfh_sfr):
+			mass = 1.0
+		else:
+			sfh_sfr[idx[0]] = 0
+			if np.any(sfh_sfr > 1.0e-33) == False:
+				mass = 1.0
+			else:
+				sp.set_tabular_sfh(sfh_t, sfh_sfr)
+				wave, spec0 = sp.get_spectrum(peraa=True,tage=age)         ## spectrum in L_sun/AA
+				mass = sp.stellar_mass/formed_mass
+
+	return mass
 
 
 def get_dust_mass_othSFH_fit(sp=None,imf_type=1,sfh_form=4,params_fsps=None, params_val=None):
@@ -1092,11 +1139,6 @@ def config_file_generate_models(gal_z=None,imf_type=1,sfh_form=4,dust_law=1,add_
 	file_out.write("add_agn %d\n" % add_agn)
 	file_out.write("nmodels %d\n" % nmodels)
 
-	if params_range['gas_logz'] is None:
-		file_out.write("free_gas_logz 0\n")
-	elif params_range['gas_logz'] is not None:
-		file_out.write("free_gas_logz 1\n")
-
 	if smooth_velocity == True or smooth_velocity == 1:
 		file_out.write("smooth_velocity 1\n")
 	elif smooth_velocity == False or smooth_velocity == 0:
@@ -1148,10 +1190,13 @@ def config_file_generate_models(gal_z=None,imf_type=1,sfh_form=4,dust_law=1,add_
 	file_out.write("pr_gas_logu_min %lf\n" % params_range['gas_logu'][0])
 	file_out.write("pr_gas_logu_max %lf\n" % params_range['gas_logu'][1])
 
-	if params_range['gas_logz'] is not None:
+	if params_range['gas_logz'] is None or add_neb_emission == 0 or add_neb_emission == False:
+		file_out.write("free_gas_logz 0\n")
+	else:
+		file_out.write("free_gas_logz 1\n")
 		file_out.write("pr_gas_logz_min %lf\n" % params_range['gas_logz'][0])
 		file_out.write("pr_gas_logz_max %lf\n" % params_range['gas_logz'][1])
-
+		
 	# cosmology
 	if cosmo=='flat_LCDM' or cosmo==0:
 		cosmo1 = 0
@@ -1227,6 +1272,8 @@ def read_config_file_genmodels(dir_file,config_file):
 	free_z = 0
 	params0, nparams0 = get_params(free_z, sfh_form, duste_switch, dust_law, add_agn, free_gas_logz)
 	params = params0[:int(nparams0-1)]   # exclude log_mass because models are normalized to solar mass
+	if float(config_data['pr_gas_logu_min']) == float(config_data['pr_gas_logu_max']):
+		params.remove('gas_logu')
 	nparams = len(params) 
 
 	# get ranges of parameters
@@ -1266,16 +1313,6 @@ def read_config_file_genmodels(dir_file,config_file):
 		gal_z = 0.0
 
 	return imf, add_neb_emission, add_igm_absorption, igm_type, sfh_form, dust_law, duste_switch, add_agn, nmodels, free_gas_logz, smooth_velocity, sigma_smooth, smooth_lsf, name_file_lsf, name_out, params, nparams, priors_min, priors_max, cosmo_str, cosmo, H0, Om0, gal_z
-
-
-
-
-
-
-
-
-
-
 
 
 

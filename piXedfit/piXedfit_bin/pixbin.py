@@ -79,10 +79,11 @@ def pixel_binning(fits_fluxmap, ref_band=None, Dmin_bin=4.0, SNR=None, redc_chi2
 	map_flux_corr = map_flux
 	for bb in range(0,nbands):
 		rows, cols = np.where((map_flux[bb]>0) & (gal_region==1))
-		lowest = np.min(map_flux[bb][rows,cols])
+		if len(rows) > 0:
+			lowest = np.min(map_flux[bb][rows,cols])
 
-		rows, cols = np.where((map_flux[bb]<0) & (gal_region==1))
-		map_flux_corr[bb][rows,cols] = lowest
+			rows, cols = np.where((map_flux[bb]<0) & (gal_region==1))
+			map_flux_corr[bb][rows,cols] = lowest
 
 	# find systematic error factor
 	rows, cols = np.where(gal_region==1)

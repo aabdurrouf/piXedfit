@@ -300,6 +300,8 @@ def generate_modelSED_spec(sp=None,imf_type=1,duste_switch=1,add_neb_emission=1,
 		norm0 = formed_mass/mass
 		extnc_spec = extnc_spec*norm0
 
+		#extnc_spec = extnc_spec*formed_mass
+
 	elif sfh_form==2 or sfh_form==3 or sfh_form==4:
 		sp.params["sfh"] = 3
 		SFR_fSM,mass,wave,extnc_spec,dust_mass = csp_spec_restframe_fit(sp=sp,sfh_form=sfh_form,formed_mass=formed_mass,age=age,tau=tau,t0=t0,alpha=alpha,beta=beta)
@@ -425,6 +427,8 @@ def generate_modelSED_photo(filters,sp=None,imf_type=1,duste_switch=0,add_neb_em
 		# normalization:
 		norm0 = formed_mass/mass
 		extnc_spec = extnc_spec*norm0
+
+		#extnc_spec = extnc_spec*formed_mass
 
 	elif sfh_form==2 or sfh_form==3 or sfh_form==4:
 		sp.params["sfh"] = 3
@@ -555,6 +559,7 @@ def generate_modelSED_specphoto(sp=None,imf_type=1,duste_switch=1,add_neb_emissi
 		# normalization:
 		norm0 = formed_mass/mass
 		extnc_spec = extnc_spec*norm0
+		
 	elif sfh_form==2 or sfh_form==3 or sfh_form==4:
 		sp.params["sfh"] = 3
 		SFR_fSM,mass,wave,extnc_spec,dust_mass = csp_spec_restframe_fit(sp=sp,sfh_form=sfh_form,formed_mass=formed_mass,

@@ -52,6 +52,12 @@ sp = set_initial_fsps(sp,duste_switch,add_neb_emission,add_agn,sfh_form,dust_law
 rand_params = np.zeros((nparams,nmodels))
 for pp in range(nparams):
 	rand_params[pp] = np.random.uniform(priors_min[pp],priors_max[pp],nmodels)
+	
+#for pp in range(nparams):
+#	if params[pp] == 'logzsol':
+#		rand_params[pp] = np.random.normal(-0.3,0.3,nmodels)
+#	else:
+#		rand_params[pp] = np.random.uniform(priors_min[pp],priors_max[pp],nmodels)
 
 # scattering the multiple processes
 numDataPerRank = int(nmodels/size)

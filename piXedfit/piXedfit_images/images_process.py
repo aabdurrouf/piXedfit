@@ -77,11 +77,9 @@ class images_processing:
 
 	:param kernels: (optional)
 		Dictionary containing names of FITS files for the kernels to be used for the PSF matching process. 
-		If None, internal convolution kernels in piXedfit will be used, given that the imaging data is recognized by piXedfit. 
-		Otherwise, input kernels should be supplied.  
-		If external kerenels are avaiable, the kernel images should have the same pixel size as the corresponding input images and 
-		the this input should be in a dictionary format, which is similar to the input sci_img, 
-		but the number of element should be Nb-1, where Nb is the number of photometric bands.   
+		If None, the code will first look for kernels inside piXedfit/data/kernels directory. If an appropriate kernel is not found, the kernel input remain None and PSF matching will 
+		not be done for the corresponding image. If external kerenels are avaiable, the kernel images should have the same pixel size as the corresponding input images and 
+		the this input should be in a dictionary format, which is similar to the input sci_img and var_img.   
 
 	:param gal_z:
 		Galaxy's redshift. This information will not be used in the image processing and only intended to be saved in the heder of a produced FITS file. 
@@ -280,11 +278,12 @@ class images_processing:
 							kernel_data[filters[bb]] = hdu[0].data/hdu[0].data.sum()
 							hdu.close()
 
-							status_kernel_resize = 1   # the kernels are has a pixel size of 0.25", so need to be adjusted with the pixel size of the input science image 
+							status_kernel_resize = 1   # the kernels has a pixel size of 0.25", so need to be adjusted with the pixel size of the input science image 
 
 						elif status_kernel == 0:
-							print ("Kernel for PSF matching %s--%s is not available by default, so the input kernels is required for this!")
-							sys.exit()
+							#print ("Kernel for PSF matching %s--%s is not available by default, so the input kernels is required for this!")
+							#sys.exit()
+							kernel_data[filters[bb]] = None
 
 			##==> (c) PSF matching:
 			# allocate
@@ -295,13 +294,10 @@ class images_processing:
 				psfmatch_var_img_name[filters[bb]] = None
 
 			for bb in range(0,nbands):
-				# for filter that has largest PSF
-				if bb == idfil_psfmatch:
+				if bb == idfil_psfmatch or kernel_data[filters[bb]] is None:
 					psfmatch_sci_img_name[filters[bb]] = sci_img_name[filters[bb]]
 					psfmatch_var_img_name[filters[bb]] = var_img_name[filters[bb]]
-				# for others
-				elif bb != idfil_psfmatch:
-
+				else:
 					# resize/resampling kernel image to match the sampling of the image
 					if status_kernel_resize == 1:
 						kernel_resize0 = resize_psf(kernel_data[filters[bb]], 0.250, img_pixsizes[filters[bb]], order=3)

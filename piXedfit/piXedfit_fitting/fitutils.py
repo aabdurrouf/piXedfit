@@ -340,6 +340,9 @@ def read_config_file_fit(temp_dir,config_file,params0):
 	if free_gas_logz == 0:
 		params0.remove('gas_logz')
 
+	if float(config_data['pr_gas_logu_min']) == float(config_data['pr_gas_logu_max']):
+		params0.remove('gas_logu')
+
 	nparams0 = len(params0)
 	params, fix_params, priors_min0, priors_max0 = [], [], [], []
 	for pp in range(0,nparams0-1): 						# without log_mass
