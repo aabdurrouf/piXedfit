@@ -4,9 +4,6 @@
 * `FUVtoNIR_MaNGA`: analysis of 12-band imaging data ranging from FUV to near-infrared (NIR), combined with IFS data from MaNGA survey
 * `FUVtoNIR_CALIFA`: analysis of 12-band imaging data ranging from FUV to near-infrared (NIR), combined with IFS data from CALIFA survey --> target galaxy NGC 309
 * Tutorial of automatically downloading images from the servers of GALEX, SDSS, 2MASS, WISE, and Spitzer surveys
-* Tutorial of generating model spectra at rest-frame 
+* Tutorial of generating model spectra at rest-frame
 
-
-To do list:
-* Upload tutorial on SED fitting with varius forms of priors, including joint priors such as mass-metallicity and mass-age priors.
-* Upload tutorial on SED fitting in which redshift is free (i.e., photometric redshift).
+A recent tutorial on resolved SED fitting analysis with **JWST + HST imaging data** can be found [here](https://github.com/aabdurrouf/JWST-HST_resolvedSEDfits).
