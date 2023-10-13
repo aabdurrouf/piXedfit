@@ -8,7 +8,7 @@ from ..piXedfit_model.model_utils import default_params_val
 __all__ = ["nproc_reduced", "randname", "write_filters_list", "write_input_singleSED_photo", "write_input_specphoto_hdf5", 
 			"write_arbitprior", "write_joint_prior", "write_conf_file", "read_config_file_fit", "get_nproc", 
 			"define_free_z", "get_name_out_fits", "remove_files", "run_fitting", "write_input_spec_hdf5", 
-			"make_bins_name_out_fits", "define_free_z_bins_fits"]
+			"make_bins_name_out_fits", "define_free_z_bins_fits", "save_fitting_results_db"]
 
 def nproc_reduced(nproc,nwalkers,nsteps,nsteps_cut):
 	ngrids2 = (nwalkers*nsteps) - (nwalkers*nsteps_cut)        
@@ -289,6 +289,11 @@ def write_conf_file(temp_dir,params_ranges=None,params_priors=None,nwalkers=None
 		elif form == 'joint_with_mass':
 			file_out.write("pr_form_%s_jtmass_name %s\n" % (param,priors[2]))
 			file_out.write("pr_form_%s_jtmass_scale %s\n" % (param,priors[3]))
+			# Whether the stellar mass is in surface density or not
+			if priors[4]==True or priors[4]==1:
+				file_out.write("pr_form_%s_jtmass_sd 1\n" % param)
+			else:
+				file_out.write("pr_form_%s_jtmass_sd 0\n" % param)
 	file_out.close()
 	os.system('mv %s %s' % (name_config,temp_dir))
 
@@ -379,25 +384,26 @@ def read_config_file_fit(temp_dir,config_file,params0):
 		if params[pp] in params_in_prior:
 			params_priors[params[pp]]['form'] = config_data['pr_form_%s' % params[pp]]
 			if params_priors[params[pp]]['form'] == 'gaussian':
-				params_priors[params[pp]]['loc'] = float(config_data['pr_form_%s_gauss_loc' % params[pp]])
-				params_priors[params[pp]]['scale'] = float(config_data['pr_form_%s_gauss_scale' % params[pp]])
+				params_priors[params[pp]]['loc'] = float(config_data['pr_form_'+params[pp]+'_gauss_loc'])
+				params_priors[params[pp]]['scale'] = float(config_data['pr_form_'+params[pp]+'_gauss_scale'])
 			elif params_priors[params[pp]]['form'] == 'studentt':
-				params_priors[params[pp]]['df'] = float(config_data['pr_form_%s_stdt_df' % params[pp]])
-				params_priors[params[pp]]['loc'] = float(config_data['pr_form_%s_stdt_loc' % params[pp]])
-				params_priors[params[pp]]['scale'] = float(config_data['pr_form_%s_stdt_scale' % params[pp]])
+				params_priors[params[pp]]['df'] = float(config_data['pr_form_'+params[pp]+'_stdt_df'])
+				params_priors[params[pp]]['loc'] = float(config_data['pr_form_'+params[pp]+'_stdt_loc'])
+				params_priors[params[pp]]['scale'] = float(config_data['pr_form_'+params[pp]+'_stdt_scale'])
 			elif params_priors[params[pp]]['form'] == 'gamma':
-				params_priors[params[pp]]['a'] = float(config_data['pr_form_%s_gamma_a' % params[pp]])
-				params_priors[params[pp]]['loc'] = float(config_data['pr_form_%s_gamma_loc' % params[pp]])
-				params_priors[params[pp]]['scale'] = float(config_data['pr_form_%s_gamma_scale' % params[pp]])
+				params_priors[params[pp]]['a'] = float(config_data['pr_form_'+params[pp]+'_gamma_a'])
+				params_priors[params[pp]]['loc'] = float(config_data['pr_form_'+params[pp]+'_gamma_loc'])
+				params_priors[params[pp]]['scale'] = float(config_data['pr_form_'+params[pp]+'_gamma_scale'])
 			elif params_priors[params[pp]]['form'] == 'arbitrary':
-				data = np.loadtxt(temp_dir+config_data['pr_form_%s_arbit_name' % params[pp]])
+				data = np.loadtxt(temp_dir+config_data['pr_form_'+params[pp]+'_arbit_name'])
 				params_priors[params[pp]]['values'] = data[:,0]
 				params_priors[params[pp]]['prob'] = data[:,1]
 			elif params_priors[params[pp]]['form'] == 'joint_with_mass':
-				data = np.loadtxt(temp_dir+config_data['pr_form_%s_jtmass_name' % params[pp]])
+				data = np.loadtxt(temp_dir+config_data['pr_form_'+params[pp]+'_jtmass_name'])
 				params_priors[params[pp]]['lmass'] = data[:,0]
 				params_priors[params[pp]]['pval'] = data[:,1]
-				params_priors[params[pp]]['scale'] = float(config_data['pr_form_%s_jtmass_scale' % params[pp]])
+				params_priors[params[pp]]['scale'] = float(config_data['pr_form_'+params[pp]+'_jtmass_scale'])
+				params_priors[params[pp]]['mass_sd'] = int(config_data['pr_form_'+params[pp]+'_jtmass_sd'])
 		else:
 			params_priors[params[pp]]['form'] = 'uniform'
 
@@ -448,7 +454,7 @@ def read_config_file_fit(temp_dir,config_file,params0):
 
 
 def run_fitting(temp_dir,obs_flux,obs_flux_err,filters,spec_wave,spec_flux,spec_flux_err,wavelength_range,fit_method,free_z,
-	nproc,nproc_new,CODE_dir,name_config,models_spec,store_full_samplers,name_out_fits):
+	nproc,nproc_new,CODE_dir,name_config,models_spec,store_full_samplers,name_out_fits,bin_area=1.0):
 
 	name_out_fits = get_name_out_fits(name_out_fits,fit_method)
 
@@ -460,7 +466,7 @@ def run_fitting(temp_dir,obs_flux,obs_flux_err,filters,spec_wave,spec_flux,spec_
 		if fit_method=='mcmc' or fit_method=='MCMC':
 			name_samplers_hdf5 = randname("samplers_",".hdf5")
 
-			os.system("mpirun -n %d python %s./mc_p1_s.py %s %s %s %s" % (nproc,CODE_dir,name_config,inputSED_file,name_samplers_hdf5,models_spec))
+			os.system("mpirun -n %d python %s./mc_p1_s.py %s %s %s %s %lf" % (nproc,CODE_dir,name_config,inputSED_file,name_samplers_hdf5,models_spec,bin_area))
 			os.system('mv %s %s' % (name_samplers_hdf5,temp_dir))
 			
 			if store_full_samplers==1 or store_full_samplers==True:
@@ -476,14 +482,14 @@ def run_fitting(temp_dir,obs_flux,obs_flux_err,filters,spec_wave,spec_flux,spec_
 			
 			if store_full_samplers==1 or store_full_samplers==True:
 				if free_z==0:
-					os.system("mpirun -n %d python %s./rd_fz_s.py %s %s %s %s %s" % (nproc_new,CODE_dir,name_filters_list,name_config,inputSED_file,name_out_fits,models_spec))
+					os.system("mpirun -n %d python %s./rd_fz_s.py %s %s %s %s %s %lf" % (nproc_new,CODE_dir,name_filters_list,name_config,inputSED_file,name_out_fits,models_spec,bin_area))
 				elif free_z==1:
-					os.system("mpirun -n %d python %s./rd_vz_s.py %s %s %s %s %s" % (nproc_new,CODE_dir,name_filters_list,name_config,inputSED_file,name_out_fits,models_spec))
+					os.system("mpirun -n %d python %s./rd_vz_s.py %s %s %s %s %s %lf" % (nproc_new,CODE_dir,name_filters_list,name_config,inputSED_file,name_out_fits,models_spec,bin_area))
 			elif store_full_samplers==0 or store_full_samplers==False:
 				if free_z==0:
-					os.system("mpirun -n %d python %s./rd_fz_nsmp_s.py %s %s %s %s %s" % (nproc_new,CODE_dir,name_filters_list,name_config,inputSED_file,name_out_fits,models_spec))
+					os.system("mpirun -n %d python %s./rd_fz_nsmp_s.py %s %s %s %s %s %lf" % (nproc_new,CODE_dir,name_filters_list,name_config,inputSED_file,name_out_fits,models_spec,bin_area))
 				elif free_z==1:
-					os.system("mpirun -n %d python %s./rd_vz_nsmp_s.py %s %s %s %s %s" % (nproc_new,CODE_dir,name_filters_list,name_config,inputSED_file,name_out_fits,models_spec))
+					os.system("mpirun -n %d python %s./rd_vz_nsmp_s.py %s %s %s %s %s %lf" % (nproc_new,CODE_dir,name_filters_list,name_config,inputSED_file,name_out_fits,models_spec,bin_area))
 			else:
 				print ("Input store_full_samplers not recognized!")
 				sys.exit()
@@ -501,7 +507,7 @@ def run_fitting(temp_dir,obs_flux,obs_flux_err,filters,spec_wave,spec_flux,spec_
 			if fit_method=='mcmc' or fit_method=='MCMC':
 				name_samplers_hdf5 = randname("samplers_",".hdf5")
 
-				os.system("mpirun -n %d python %s./mc_p1.py %s %s %s %s %s" % (nproc,CODE_dir,name_filters_list,name_config,inputSED_file,name_samplers_hdf5,models_spec))
+				os.system("mpirun -n %d python %s./mc_p1.py %s %s %s %s %s %lf" % (nproc,CODE_dir,name_filters_list,name_config,inputSED_file,name_samplers_hdf5,models_spec,bin_area))
 				os.system('mv %s %s' % (name_samplers_hdf5,temp_dir))
 				
 				if store_full_samplers==1 or store_full_samplers==True:
@@ -517,14 +523,14 @@ def run_fitting(temp_dir,obs_flux,obs_flux_err,filters,spec_wave,spec_flux,spec_
 				
 				if store_full_samplers==1 or store_full_samplers==True:
 					if free_z==0:
-						os.system("mpirun -n %d python %s./rd_fz.py %s %s %s %s %s" % (nproc_new,CODE_dir,name_filters_list,name_config,inputSED_file,name_out_fits,models_spec))
+						os.system("mpirun -n %d python %s./rd_fz.py %s %s %s %s %s %lf" % (nproc_new,CODE_dir,name_filters_list,name_config,inputSED_file,name_out_fits,models_spec,bin_area))
 					elif free_z==1:
-						os.system("mpirun -n %d python %s./rd_vz.py %s %s %s %s %s" % (nproc_new,CODE_dir,name_filters_list,name_config,inputSED_file,name_out_fits,models_spec))
+						os.system("mpirun -n %d python %s./rd_vz.py %s %s %s %s %s %lf" % (nproc_new,CODE_dir,name_filters_list,name_config,inputSED_file,name_out_fits,models_spec,bin_area))
 				elif store_full_samplers==0 or store_full_samplers==False:
 					if free_z==0:
-						os.system("mpirun -n %d python %s./rd_fz_nsmp.py %s %s %s %s %s" % (nproc_new,CODE_dir,name_filters_list,name_config,inputSED_file,name_out_fits,models_spec))
+						os.system("mpirun -n %d python %s./rd_fz_nsmp.py %s %s %s %s %s %lf" % (nproc_new,CODE_dir,name_filters_list,name_config,inputSED_file,name_out_fits,models_spec,bin_area))
 					elif free_z==1:
-						os.system("mpirun -n %d python %s./rd_vz_nsmp.py %s %s %s %s %s" % (nproc_new,CODE_dir,name_filters_list,name_config,inputSED_file,name_out_fits,models_spec))
+						os.system("mpirun -n %d python %s./rd_vz_nsmp.py %s %s %s %s %s %lf" % (nproc_new,CODE_dir,name_filters_list,name_config,inputSED_file,name_out_fits,models_spec,bin_area))
 				else:
 					print ("Input store_full_samplers not recognized!")
 					sys.exit()
@@ -540,7 +546,7 @@ def run_fitting(temp_dir,obs_flux,obs_flux_err,filters,spec_wave,spec_flux,spec_
 			if fit_method=='mcmc' or fit_method=='MCMC':
 				name_samplers_hdf5 = randname("samplers_",".hdf5")
 
-				os.system("mpirun -n %d python %s./mc_p1_sp.py %s %s %s %s %s" % (nproc,CODE_dir,name_filters_list,name_config,inputSED_file,name_samplers_hdf5,models_spec))
+				os.system("mpirun -n %d python %s./mc_p1_sp.py %s %s %s %s %s %lf" % (nproc,CODE_dir,name_filters_list,name_config,inputSED_file,name_samplers_hdf5,models_spec,bin_area))
 				os.system('mv %s %s' % (name_samplers_hdf5,temp_dir))
 				
 				if store_full_samplers==1 or store_full_samplers==True:
@@ -556,14 +562,14 @@ def run_fitting(temp_dir,obs_flux,obs_flux_err,filters,spec_wave,spec_flux,spec_
 				
 				if store_full_samplers==1 or store_full_samplers==True:
 					if free_z==0:
-						os.system("mpirun -n %d python %s./rd_fz_sp.py %s %s %s %s %s" % (nproc_new,CODE_dir,name_filters_list,name_config,inputSED_file,name_out_fits,models_spec))
+						os.system("mpirun -n %d python %s./rd_fz_sp.py %s %s %s %s %s %lf" % (nproc_new,CODE_dir,name_filters_list,name_config,inputSED_file,name_out_fits,models_spec,bin_area))
 					elif free_z==1:
-						os.system("mpirun -n %d python %s./rd_vz_sp.py %s %s %s %s %s" % (nproc_new,CODE_dir,name_filters_list,name_config,inputSED_file,name_out_fits,models_spec))
+						os.system("mpirun -n %d python %s./rd_vz_sp.py %s %s %s %s %s %lf" % (nproc_new,CODE_dir,name_filters_list,name_config,inputSED_file,name_out_fits,models_spec,bin_area))
 				elif store_full_samplers==0 or store_full_samplers==False:
 					if free_z==0:
-						os.system("mpirun -n %d python %s./rd_fz_nsmp_sp.py %s %s %s %s %s" % (nproc_new,CODE_dir,name_filters_list,name_config,inputSED_file,name_out_fits,models_spec))
+						os.system("mpirun -n %d python %s./rd_fz_nsmp_sp.py %s %s %s %s %s %lf" % (nproc_new,CODE_dir,name_filters_list,name_config,inputSED_file,name_out_fits,models_spec,bin_area))
 					elif free_z==1:
-						os.system("mpirun -n %d python %s./rd_vz_nsmp_sp.py %s %s %s %s %s" % (nproc_new,CODE_dir,name_filters_list,name_config,inputSED_file,name_out_fits,models_spec))
+						os.system("mpirun -n %d python %s./rd_vz_nsmp_sp.py %s %s %s %s %s %lf" % (nproc_new,CODE_dir,name_filters_list,name_config,inputSED_file,name_out_fits,models_spec,bin_area))
 				else:
 					print ("Input store_full_samplers not recognized!")
 					sys.exit()
@@ -597,6 +603,111 @@ def make_bins_name_out_fits(name_out_fits,bin_ids,fit_method):
 
 	return name_out_fits1
 		
+
+def save_fitting_results_db(sedfit,priors,name_out_fits):
+
+	from ..piXedfit_model import calc_mw_age
+
+	sfh_50, sfh_16, sfh_84, common_time = sedfit.evaluate_posterior_SFH(sedfit.z[1])
+	common_time_lbt = np.flip(common_time,0)
+	mw_age = np.zeros(3)
+	mw_age[0] = calc_mw_age(sfh_form='arbitrary_sfh',age=max(common_time),sfh_t=common_time,sfh_sfr=sfh_16)
+	mw_age[1] = calc_mw_age(sfh_form='arbitrary_sfh',age=max(common_time),sfh_t=common_time,sfh_sfr=sfh_50)
+	mw_age[2] = calc_mw_age(sfh_form='arbitrary_sfh',age=max(common_time),sfh_t=common_time,sfh_sfr=sfh_84)
+	mw_age_sort = np.sort(mw_age)
+
+	dt = 100/(priors.Nparam+1)
+	t_names = []
+	for ii in range(priors.Nparam):
+		t_names.append('t%d' % round((ii+1)*dt))
+	
+	hdr = fits.Header()
+	hdr['Nparam'] = priors.Nparam
+	hdr['mass_min'] = priors.mass_min
+	hdr['mass_max'] = priors.mass_max
+	hdr['sfr_prior_type'] = priors.sfr_prior_type
+	hdr['met_treatment'] = priors.met_treatment
+	hdr['met_min'] = priors.Z_min 
+	hdr['met_max'] = priors.Z_max 
+	hdr['dust_prior'] = priors.dust_prior
+	hdr['Av_min'] = priors.Av_min
+	hdr['Av_max'] = priors.Av_max
+	hdr['z_min'] = priors.z_min 
+	hdr['z_max'] = priors.z_max 
+	for ii in range(priors.Nparam):
+		hdr['sfh_t%d' % ii] = t_names[ii] 
+	primary_hdu = fits.PrimaryHDU(header=hdr)
+
+	## fitting parameters
+	cols0 = []
+	col = fits.Column(name='rows', format='3A', array=['p16','p50','p84'])
+	cols0.append(col)
+	col = fits.Column(name='log_mass', format='D', array=np.array(sedfit.mstar))
+	cols0.append(col)
+	col = fits.Column(name='log_sfr', format='D', array=np.array(sedfit.sfr))
+	cols0.append(col)
+	col = fits.Column(name='Av', format='D', array=np.array(sedfit.Av))
+	cols0.append(col)
+	col = fits.Column(name='logzsol', format='D', array=np.array(sedfit.Z))
+	cols0.append(col)
+	col = fits.Column(name='z', format='D', array=np.array(sedfit.z))
+	cols0.append(col)
+	col = fits.Column(name='log_mw_age', format='D', array=np.array(np.log10(mw_age_sort)))
+	cols0.append(col)
+
+	sfh_tuple = np.asarray(sedfit.sfh_tuple)
+	sfh_tuple_t = np.transpose(sfh_tuple, axes=(1,0))
+
+	col = fits.Column(name='log_mass_form', format='D', array=np.array(sfh_tuple_t[0]))
+	cols0.append(col)
+
+	for ii in range(priors.Nparam):
+		col = fits.Column(name=t_names[ii], format='D', array=np.array(sfh_tuple_t[ii+3]))
+		cols0.append(col)
+
+	cols = fits.ColDefs(cols0)
+	hdu1 = fits.BinTableHDU.from_columns(cols, name='fit_params')
+
+	## SFH
+	cols0 = []
+	col = fits.Column(name='lbt', format='D', array=np.array(common_time_lbt))
+	cols0.append(col)
+	col = fits.Column(name='sfh_16', format='D', array=np.array(sfh_16))
+	cols0.append(col)
+	col = fits.Column(name='sfh_50', format='D', array=np.array(sfh_50))
+	cols0.append(col)
+	col = fits.Column(name='sfh_84', format='D', array=np.array(sfh_84))
+	cols0.append(col)
+	cols = fits.ColDefs(cols0)
+	hdu2 = fits.BinTableHDU.from_columns(cols, name='sfh')
+
+	hdul = fits.HDUList([primary_hdu, hdu1, hdu2])
+	hdul.writeto(name_out_fits, overwrite=True)	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

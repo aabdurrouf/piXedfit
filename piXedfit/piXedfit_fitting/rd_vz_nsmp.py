@@ -225,7 +225,12 @@ def store_to_fits(sampler_params,mod_chi2,mod_prob,fits_name_out):
 	# add more if parameters are joint with mass
 	if len(params_prior_jtmass)>0:
 		for pp in range(0,len(params_prior_jtmass)):
-			loc = np.interp(mean_lmass,params_priors[params_prior_jtmass[pp]]['lmass'],params_priors[params_prior_jtmass[pp]]['pval'])
+			if params_priors[params_prior_jtmass[pp]]['mass_sd'] == 1:
+				bin_area = float(sys.argv[6])
+				mean_lmass_sd = np.log10(np.power(10.0,mean_lmass)/bin_area)     # in surface density unit
+				loc = np.interp(mean_lmass_sd,params_priors[params_prior_jtmass[pp]]['lmass'],params_priors[params_prior_jtmass[pp]]['pval'])
+			else:
+				loc = np.interp(mean_lmass,params_priors[params_prior_jtmass[pp]]['lmass'],params_priors[params_prior_jtmass[pp]]['pval'])
 			scale = params_priors[params_prior_jtmass[pp]]['scale']
 			mod_prob += np.log(normal.pdf(sampler_params[params_prior_jtmass[pp]],loc=loc,scale=scale))
 
@@ -349,7 +354,7 @@ def store_to_fits(sampler_params,mod_chi2,mod_prob,fits_name_out):
 
 
 """
-USAGE: mpirun -np [npros] python ./rdsps_pcmod.py (1)name_filters_list (2)name_config (3)name_SED_txt (4)name_out_fits (5)HDF5 file of model spectra
+USAGE: mpirun -np [npros] python ./rdsps_pcmod.py (1)name_filters_list (2)name_config (3)name_SED_txt (4)name_out_fits (5)HDF5 file of model spectra (6)bin area (only relevant if prior joint-mass is used and it's in mass surface density)
 """
 
 temp_dir = PIXEDFIT_HOME+'/data/temp/'
@@ -496,27 +501,28 @@ params_prior_jtmass = []
 for pp in range(0,nparams):
 	params_priors[params[pp]] = {}
 	if params[pp] in params_in_prior:
-		params_priors[params[pp]]['form'] = config_data['pr_form_%s' % params[pp]]
+		params_priors[params[pp]]['form'] = config_data['pr_form_'+params[pp]]
 		if params_priors[params[pp]]['form'] == 'gaussian':
-			params_priors[params[pp]]['loc'] = float(config_data['pr_form_%s_gauss_loc' % params[pp]])
-			params_priors[params[pp]]['scale'] = float(config_data['pr_form_%s_gauss_scale' % params[pp]])
+			params_priors[params[pp]]['loc'] = float(config_data['pr_form_'+params[pp]+'_gauss_loc'])
+			params_priors[params[pp]]['scale'] = float(config_data['pr_form_'+params[pp]+'_gauss_scale'])
 		elif params_priors[params[pp]]['form'] == 'studentt':
-			params_priors[params[pp]]['df'] = float(config_data['pr_form_%s_stdt_df' % params[pp]])
-			params_priors[params[pp]]['loc'] = float(config_data['pr_form_%s_stdt_loc' % params[pp]])
-			params_priors[params[pp]]['scale'] = float(config_data['pr_form_%s_stdt_scale' % params[pp]])
+			params_priors[params[pp]]['df'] = float(config_data['pr_form_'+params[pp]+'_stdt_df'])
+			params_priors[params[pp]]['loc'] = float(config_data['pr_form_'+params[pp]+'_stdt_loc'])
+			params_priors[params[pp]]['scale'] = float(config_data['pr_form_'+params[pp]+'_stdt_scale'])
 		elif params_priors[params[pp]]['form'] == 'gamma':
-			params_priors[params[pp]]['a'] = float(config_data['pr_form_%s_gamma_a' % params[pp]])
-			params_priors[params[pp]]['loc'] = float(config_data['pr_form_%s_gamma_loc' % params[pp]])
-			params_priors[params[pp]]['scale'] = float(config_data['pr_form_%s_gamma_scale' % params[pp]])
+			params_priors[params[pp]]['a'] = float(config_data['pr_form_'+params[pp]+'_gamma_a'])
+			params_priors[params[pp]]['loc'] = float(config_data['pr_form_'+params[pp]+'_gamma_loc'])
+			params_priors[params[pp]]['scale'] = float(config_data['pr_form_'+params[pp]+'_gamma_scale'])
 		elif params_priors[params[pp]]['form'] == 'arbitrary':
-			data = np.loadtxt(temp_dir+config_data['pr_form_%s_arbit_name' % params[pp]])
+			data = np.loadtxt(temp_dir+config_data['pr_form_'+params[pp]+'_arbit_name'])
 			params_priors[params[pp]]['values'] = data[:,0]
 			params_priors[params[pp]]['prob'] = data[:,1]
 		elif params_priors[params[pp]]['form'] == 'joint_with_mass':
-			data = np.loadtxt(temp_dir+config_data['pr_form_%s_jtmass_name' % params[pp]])
+			data = np.loadtxt(temp_dir+config_data['pr_form_'+params[pp]+'_jtmass_name'])
 			params_priors[params[pp]]['lmass'] = data[:,0]
 			params_priors[params[pp]]['pval'] = data[:,1]
-			params_priors[params[pp]]['scale'] = float(config_data['pr_form_%s_jtmass_scale' % params[pp]])
+			params_priors[params[pp]]['scale'] = float(config_data['pr_form_'+params[pp]+'_jtmass_scale'])
+			params_priors[params[pp]]['mass_sd'] = int(config_data['pr_form_'+params[pp]+'_jtmass_sd'])
 			params_prior_jtmass.append(params[pp])
 	else:
 		params_priors[params[pp]]['form'] = 'uniform'

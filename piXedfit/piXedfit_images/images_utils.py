@@ -431,7 +431,42 @@ def var_img_sdss(fits_image,filter_name,name_out_fits=None):
 	return name_out_fits
 
 
-def var_img_GALEX(sci_img,skybg_img,filter_name,name_out_fits=None):
+def var_img_GALEX(sci_img,filter_name,name_out_fits=None):
+	"""Function for calculating variance image from an input GALEX image
+
+	:param sci_img:
+		Input GALEX science image (i.e., background subtracted). 
+		This type of image is provided in the GALEX website as indicated with "-intbgsub" (i.e., background subtracted intensity map).
+
+	:param filter_name:
+		A string of filter name. Options are: 'galex_fuv' and 'galex_nuv'.
+
+	:param name_out_fits:
+		Desired name for the output variance image. If None, a generic name will be used.
+	"""
+
+	# get science image:
+	hdu = fits.open(sci_img)
+	sci_img_data = hdu[0].data
+	sci_img_header = hdu[0].header
+	hdu.close()
+
+	# get exposure time:
+	exp_time = float(sci_img_header['EXPTIME'])
+
+	if filter_name == 'galex_fuv':
+		var_img_data = (0.05*0.05*sci_img_data*sci_img_data) + (np.absolute(sci_img_data)/exp_time)
+	elif filter_name == 'galex_nuv':
+		var_img_data = (0.027*0.027*sci_img_data*sci_img_data) + (np.absolute(sci_img_data)/exp_time)
+
+	if name_out_fits is None:
+		name_out_fits = 'var_%s' % sci_img
+	fits.writeto(name_out_fits, var_img_data, sci_img_header, overwrite=True)
+
+	return name_out_fits
+
+
+def old_var_img_GALEX(sci_img,skybg_img,filter_name,name_out_fits=None):
 	"""Function for calculating variance image from an input GALEX image
 
 	:param sci_img:

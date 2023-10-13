@@ -718,7 +718,10 @@ def plot_SED_specphoto(filters=None,obs_photo=None,obs_spec=None,bfit_photo=None
 	plt.legend(fontsize=17)
 
 	f2 = f1.twiny()
-	f2.set_xlabel(r'Rest-frame wavelength [$\AA$]', fontsize=18)
+	if wunit==1 or wunit=='micron':
+		f2.set_xlabel(r'Rest-frame wavelength [$\mu$m]', fontsize=18)
+	else:
+		f2.set_xlabel(r'Rest-frame wavelength [$\AA$]', fontsize=18)
 	plt.setp(f2.get_xticklabels(), fontsize=14)
 	plt.xlim(xmin/(1.0+gal_z), xmax/(1.0+gal_z))
 	if logscale_x == True:
@@ -731,7 +734,10 @@ def plot_SED_specphoto(filters=None,obs_photo=None,obs_spec=None,bfit_photo=None
 	plt.setp(f1.get_yticklabels(), fontsize=15)
 	plt.setp(f1.get_xticklabels(), fontsize=15)
 	plt.ylabel(r'residual', fontsize=22)
-	plt.xlabel(r'Observed wavelength [$\AA$]', fontsize=22)
+	if wunit==1 or wunit=='micron':
+		f1.set_xlabel(r'Observed wavelength [$\mu$m]', fontsize=22)
+	else:
+		f1.set_xlabel(r'Observed wavelength [$\AA$]', fontsize=22)
 	plt.ylim(residual_range[0],residual_range[1])
 
 	if logscale_x == True:

@@ -231,7 +231,11 @@ def lnprior(theta):
 			elif params_priors[params[pp]]['form'] == 'arbitrary':
 				lnprior += np.log(np.interp(theta[pp],params_priors[params[pp]]['values'],params_priors[params[pp]]['prob']))
 			elif params_priors[params[pp]]['form'] == 'joint_with_mass':
-				loc = np.interp(theta[nparams-1],params_priors[params[pp]]['lmass'],params_priors[params[pp]]['pval'])
+				if params_priors[params[pp]]['mass_sd'] == 1:
+					bin_area = float(sys.argv[6])
+					loc = np.interp(np.log10(np.power(10.0,theta[nparams-1])/bin_area),params_priors[params[pp]]['lmass'],params_priors[params[pp]]['pval'])
+				else:
+					loc = np.interp(theta[nparams-1],params_priors[params[pp]]['lmass'],params_priors[params[pp]]['pval'])
 				scale = params_priors[params[pp]]['scale']
 				lnprior += np.log(normal.pdf(theta[pp],loc=loc,scale=scale))
 			
@@ -290,7 +294,7 @@ def lnprob(theta):
 
 
 """
-USAGE: mpirun -np [npros] python ./mcmc_pcmod_p1.py (1)conf (2)inputSED_txt (3)data samplers hdf5 file (4)HDF5 file of model spectra
+USAGE: mpirun -np [npros] python ./mcmc_pcmod_p1.py (1)conf (2)inputSED_txt (3)data samplers hdf5 file (4)HDF5 file of model spectra (6)bin area (only relevant if prior joint-mass is used and it's in mass surface density)
 """
 
 global comm, size, rank

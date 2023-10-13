@@ -1272,7 +1272,7 @@ def read_config_file_genmodels(dir_file,config_file):
 	free_z = 0
 	params0, nparams0 = get_params(free_z, sfh_form, duste_switch, dust_law, add_agn, free_gas_logz)
 	params = params0[:int(nparams0-1)]   # exclude log_mass because models are normalized to solar mass
-	if float(config_data['pr_gas_logu_min']) == float(config_data['pr_gas_logu_max']):
+	if add_neb_emission == 0 or float(config_data['pr_gas_logu_min']) == float(config_data['pr_gas_logu_max']):
 		params.remove('gas_logu')
 	nparams = len(params) 
 

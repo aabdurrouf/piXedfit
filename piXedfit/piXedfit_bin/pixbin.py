@@ -5,7 +5,8 @@ from operator import itemgetter
 from astropy.io import fits
 
 __all__ = ["pixel_binning", "pixel_binning_images", "open_binmap_fits", "plot_binmap", 
-			"get_bins_SED_binmap", "plot_bins_SNR_radial_profile", "plot_bins_SED"]
+			"get_bins_SED_binmap", "plot_bins_SNR_radial_profile", "plot_bins_SED", 
+			"get_bins_area"]
 
 
 def redchi2_two_seds(sed1_f=[], sed1_ferr=[], sed2_f=[], sed2_ferr=[]):
@@ -948,6 +949,45 @@ def plot_binmap(binmap_fits, plot_binmap_spec=True, savefig=True, name_plot_binm
 			plt.savefig(name_plot_binmap_spec)
 		else:
 			plt.show()
+
+
+def get_bins_area(binmap_fits):
+	""" Function to get area of spatial bins
+	
+	:param binmap_fits:
+		Input FITS file of binned flux maps.
+
+	:returns bin_area_pix:
+		Bin area in pixels unit.
+
+	:returns bin_area_kpc2:
+		Bin area in square of kpc. 
+	"""
+
+	hdu = fits.open(binmap_fits)
+	pixsize = hdu[0].header['pixsize']   ## in arcsec
+	z = hdu[0].header['z']
+	if hdu[0].header['specphot'] == 0:
+		nbins_photo = int(hdu[0].header['nbins'])
+		binmap_photo = hdu['BIN_MAP'].data 
+	elif hdu[0].header['specphot'] == 1:
+		nbins_photo = int(hdu[0].header['nbinsph'])
+		binmap_photo = hdu['PHOTO_BIN_MAP'].data
+	hdu.close()
+
+	from ..piXedfit_images.images_utils import kpc_per_pixel
+
+	kpc_per_pix = kpc_per_pixel(z,pixsize)
+	pix_area_kpc2 = kpc_per_pix*kpc_per_pix
+
+	bin_area_pix = np.zeros(nbins_photo)
+	bin_area_kpc2 = np.zeros(nbins_photo)
+	for bb in range(nbins_photo):
+		rows, cols = np.where(binmap_photo==bb+1)
+		bin_area_pix[bb] = len(rows)
+		bin_area_kpc2[bb] = len(rows)*pix_area_kpc2
+
+	return bin_area_pix, bin_area_kpc2
 
 
 def get_bins_SED_binmap(binmap_fits):
