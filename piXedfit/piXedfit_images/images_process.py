@@ -215,24 +215,25 @@ class images_processing:
 				print ("produce %s" % name_out)
 				temp_file_names.append(name_out)
 		else:
-			#++> science image
-			hdu = fits.open(sci_img_name[filters[bb]])
-			header = hdu[0].header
-			#new_data = remove_naninf_image_2dinterpolation(hdu[0].data)
-			new_data = hdu[0].data
-			hdu.close()
-			name_out = "crop_%s" % check_name_remove_dir(sci_img_name[filters[bb]],dir_images)
-			fits.writeto(name_out,new_data,header, overwrite=True)
-			sci_img_name[filters[bb]] = name_out
+			for bb in range(0,nbands):
+				#++> science image
+				hdu = fits.open(sci_img_name[filters[bb]])
+				header = hdu[0].header
+				#new_data = remove_naninf_image_2dinterpolation(hdu[0].data)
+				new_data = hdu[0].data
+				hdu.close()
+				name_out = "crop_%s" % check_name_remove_dir(sci_img_name[filters[bb]],dir_images)
+				fits.writeto(name_out,new_data,header, overwrite=True)
+				sci_img_name[filters[bb]] = name_out
 
-			#++> variance image
-			hdu = fits.open(var_img_name[filters[bb]])
-			header = hdu[0].header
-			new_data = remove_naninfzeroneg_image_2dinterpolation(hdu[0].data)
-			hdu.close()
-			name_out = "crop_%s" % check_name_remove_dir(var_img_name[filters[bb]],dir_images)
-			fits.writeto(name_out,new_data,header, overwrite=True)
-			var_img_name[filters[bb]] = name_out
+				#++> variance image
+				hdu = fits.open(var_img_name[filters[bb]])
+				header = hdu[0].header
+				new_data = remove_naninfzeroneg_image_2dinterpolation(hdu[0].data)
+				hdu.close()
+				name_out = "crop_%s" % check_name_remove_dir(var_img_name[filters[bb]],dir_images)
+				fits.writeto(name_out,new_data,header, overwrite=True)
+				var_img_name[filters[bb]] = name_out
 
 
 		if flag_psfmatch == 1:
