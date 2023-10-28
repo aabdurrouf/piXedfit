@@ -1989,7 +1989,8 @@ def add_dir(sci_img, var_img, dir_images, filters):
 
 
 def check_name_remove_dir(file_name, dir_images):
-	return file_name.replace(dir_images, '')
+	# keep only the file name without the directory
+	return file_name.split('/')[-1]
 
 
 def mapping_multiplots(nplots,ncols):

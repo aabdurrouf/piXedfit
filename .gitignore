@@ -1,0 +1,4 @@
+build/
+temp/
+pixedfit.egg-info/
+__pycache__/
