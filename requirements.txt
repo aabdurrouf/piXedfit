@@ -1,6 +1,6 @@
 numpy
 scipy
-astropy
+astropy==5.3
 photutils==1.1.0
 matplotlib
 reproject >= 0.7
