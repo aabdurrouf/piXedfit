@@ -1846,7 +1846,7 @@ def crop_stars_galregion_fits(input_fits,x_cent,y_cent,radius,name_out_fits=None
 		name_out_fits = 'crop_%s' % input_fits
 	hdul.writeto(name_out_fits, overwrite=True)
 
-	return output_fits
+	#return output_fits
 
 
 def crop_image_given_radec(image, ra, dec, idx_hdu=0, stamp_size=[], name_out_fits=None):
