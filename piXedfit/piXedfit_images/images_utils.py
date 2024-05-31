@@ -2045,7 +2045,7 @@ def open_fluxmap_fits(flux_maps_fits):
 	return filters, gal_region, flux_map, flux_err_map, unit_flux
 
 
-def plot_maps_fluxes(flux_maps_fits, ncols=5, savefig=True, name_plot_mapflux=None, name_plot_mapfluxerr=None):
+def plot_maps_fluxes(flux_maps_fits, ncols=5, savefig=True, name_plot_mapflux=None, vmin=-22, vmax=-15, name_plot_mapfluxerr=None):
 	""" Function for plotting maps of multiband fluxes.
 
 	:param flux_maps_fits:
@@ -2059,6 +2059,12 @@ def plot_maps_fluxes(flux_maps_fits, ncols=5, savefig=True, name_plot_mapflux=No
 
 	:param name_plot_mapflux:
 		Name of the output plot for the maps of multiband fluxes.
+
+   	:param vmin:
+    		Minimum flux limit for the color bar in logarithmic scale.
+
+      	:param vmax:
+       		Maximum flux limit for the color bar in logarithmic scale.
 
 	:param name_plot_mapfluxerr:
 		Name of the output plot for the maps of multiband flux uncertainties.
@@ -2082,7 +2088,7 @@ def plot_maps_fluxes(flux_maps_fits, ncols=5, savefig=True, name_plot_mapflux=No
 		if map_plots[yy[0]+1][xx[0]] == 0:
 			plt.xlabel('[pixel]', fontsize=15)
 
-		im = plt.imshow(np.log10(flux_map[bb]), origin='lower', cmap='nipy_spectral')
+		im = plt.imshow(np.log10(flux_map[bb]), origin='lower', cmap='nipy_spectral', vmin=vmin, vmax=vmax)
 		f1.text(0.5, 0.93, '%s' % filters[bb], horizontalalignment='center', verticalalignment='center',
 			transform = f1.transAxes, fontsize=16, color='black')
 
@@ -2112,7 +2118,7 @@ def plot_maps_fluxes(flux_maps_fits, ncols=5, savefig=True, name_plot_mapflux=No
 		if map_plots[yy[0]+1][xx[0]] == 0:
 			plt.xlabel('[pixel]', fontsize=15)
 
-		im = plt.imshow(np.log10(flux_err_map[bb]), origin='lower', cmap='nipy_spectral')
+		im = plt.imshow(np.log10(flux_err_map[bb]), origin='lower', cmap='nipy_spectral', vmin=vmin, vmax=vmax)
 		f1.text(0.5, 0.93, '%s' % filters[bb], horizontalalignment='center', verticalalignment='center',
 			transform = f1.transAxes, fontsize=16, color='black')
 
