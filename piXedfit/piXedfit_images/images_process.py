@@ -1157,7 +1157,7 @@ class images_processing:
 				elif filters[bb]=='wise_w2':
 					DN_to_Jy = 2.7048E-06
 				elif filters[bb]=='wise_w3':
-					DN_to_Jy = 2.9045e-06
+					DN_to_Jy = 1.8326E-06
 				elif filters[bb]=='wise_w4':
 					DN_to_Jy = 5.2269E-05
 

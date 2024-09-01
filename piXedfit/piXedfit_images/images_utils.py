@@ -624,7 +624,7 @@ def var_img_WISE(sci_img,unc_img,filter_name,skyrms_img,name_out_fits=None):
 	sigma_B = skyrms_img_data
 	#sigma_conf = 0.0
 	sigma_src = np.sqrt(Fcorr*(np.square(sigma_i) + (0.5*pi*sigma_B*sigma_B)))
-	sigma_sq_img_data = np.square(sci_img_data)*((sigma_0*sigma_0/f_0/f_0) + (0.8483*sigma_magzp*sigma_magzp) + np.square(sigma_src)) ## in unit of DN
+	sigma_sq_img_data = np.square(sci_img_data)*((sigma_0*sigma_0/f_0/f_0) + (0.8483*sigma_magzp*sigma_magzp)) + np.square(sigma_src) ## in unit of DN
 
 	if name_out_fits is None:
 		name_out_fits = 'var_%s' % unc_img
