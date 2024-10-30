@@ -604,22 +604,84 @@ def make_bins_name_out_fits(name_out_fits,bin_ids,fit_method):
 	return name_out_fits1
 		
 
-def save_fitting_results_db(sedfit,priors,name_out_fits):
+def save_fitting_results_db(sedfit,priors,name_out_fits,mocksp,filters):
 
 	from ..piXedfit_model import calc_mw_age
+	from dense_basis.pre_grid import makespec_atlas
+	from ..piXedfit_images import convert_flux_unit
+	from scipy.interpolate import interp1d
+	from piXedfit.utils.filtering import filtering, cwave_filters
 
-	sfh_50, sfh_16, sfh_84, common_time = sedfit.evaluate_posterior_SFH(sedfit.z[1])
+	from astropy.cosmology import FlatLambdaCDM
+	cosmo = FlatLambdaCDM(H0=70, Om0=0.3)
+
+	sfh_500, sfh_160, sfh_840, common_time0 = sedfit.evaluate_posterior_SFH(sedfit.z[1])
+	idx_sel = np.where((np.isnan(common_time0)==False) & (np.isinf(common_time0)==False) & (np.isnan(sfh_500)==False) & (np.isinf(sfh_500)==False))
+	sfh_50, sfh_16, sfh_84, common_time = sfh_500[idx_sel[0]], sfh_160[idx_sel[0]], sfh_840[idx_sel[0]], common_time0[idx_sel[0]]
+
 	common_time_lbt = np.flip(common_time,0)
+	
 	mw_age = np.zeros(3)
-	mw_age[0] = calc_mw_age(sfh_form='arbitrary_sfh',age=max(common_time),sfh_t=common_time,sfh_sfr=sfh_16)
-	mw_age[1] = calc_mw_age(sfh_form='arbitrary_sfh',age=max(common_time),sfh_t=common_time,sfh_sfr=sfh_50)
-	mw_age[2] = calc_mw_age(sfh_form='arbitrary_sfh',age=max(common_time),sfh_t=common_time,sfh_sfr=sfh_84)
-	mw_age_sort = np.sort(mw_age)
+	if len(common_time)>0:
+		mw_age[0] = calc_mw_age(sfh_form='arbitrary_sfh',age=max(common_time),sfh_t=common_time,sfh_sfr=sfh_16)
+		mw_age[1] = calc_mw_age(sfh_form='arbitrary_sfh',age=max(common_time),sfh_t=common_time,sfh_sfr=sfh_50)
+		mw_age[2] = calc_mw_age(sfh_form='arbitrary_sfh',age=max(common_time),sfh_t=common_time,sfh_sfr=sfh_84)
+		mw_age_sort = np.sort(mw_age)
+	else:
+		mw_age_sort = mw_age
 
 	dt = 100/(priors.Nparam+1)
 	t_names = []
 	for ii in range(priors.Nparam):
 		t_names.append('t%d' % round((ii+1)*dt))
+
+	## retrive best-fit model SEDs
+	nmods = 100
+
+	mod_spec_flam = []
+	mod_photo_flam = []
+
+	mod_spec_flam_fz = []
+	mod_photo_flam_fz = []
+
+	mod_chi2 = []
+	
+	sort_idx_likelihood = np.argsort(sedfit.likelihood)
+
+	lam, spec_fnu =  makespec_atlas(sedfit.atlas, sort_idx_likelihood[-1], priors, mocksp, cosmo, filter_list=[], filt_dir=[], return_spec=True)
+	ref_spec_wave = lam*(1.0 + sedfit.atlas['zval'][sort_idx_likelihood[-1]])
+	bfit_spec_flam = convert_flux_unit(ref_spec_wave, spec_fnu*sedfit.norm_fac, init_unit='uJy', final_unit='erg/s/cm2/A')
+	mod_spec_flam.append(bfit_spec_flam)
+
+	bfit_photo_flam = filtering(ref_spec_wave, bfit_spec_flam, filters)
+	mod_photo_flam.append(bfit_photo_flam)
+
+	for ii in range(nmods):
+		lam, spec_fnu =  makespec_atlas(sedfit.atlas, sort_idx_likelihood[-(ii+1)], priors, mocksp, cosmo, filter_list=[], filt_dir=[], return_spec=True)
+		
+		redshifted_lam = lam*(1.0 + sedfit.atlas['zval'][sort_idx_likelihood[-(ii+1)]])
+		spec_flam = convert_flux_unit(redshifted_lam, spec_fnu*sedfit.norm_fac, init_unit='uJy', final_unit='erg/s/cm2/A')
+		f = interp1d(redshifted_lam, spec_flam, fill_value="extrapolate")
+		mod_spec_flam.append(f(ref_spec_wave))
+		mod_photo_flam.append(filtering(redshifted_lam, spec_flam, filters))
+
+		mod_chi2.append(sedfit.chi2_array[sort_idx_likelihood[-(ii+1)]])
+
+	mod_spec_flam = np.asarray(mod_spec_flam)
+	mod_photo_flam = np.asarray(mod_photo_flam)
+
+	p16_mod_spec_flam = np.percentile(mod_spec_flam, 16, axis=0)
+	p50_mod_spec_flam = np.percentile(mod_spec_flam, 50, axis=0)
+	p84_mod_spec_flam = np.percentile(mod_spec_flam, 84, axis=0)
+
+	p16_mod_photo_flam = np.percentile(mod_photo_flam, 16, axis=0)
+	p50_mod_photo_flam = np.percentile(mod_photo_flam, 50, axis=0)
+	p84_mod_photo_flam = np.percentile(mod_photo_flam, 84, axis=0)
+
+	photo_cwave = cwave_filters(filters)
+
+	obs_sed_flam = convert_flux_unit(photo_cwave, sedfit.sed, init_unit='uJy', final_unit='erg/s/cm2/A')
+	obs_sed_err_flam = convert_flux_unit(photo_cwave, sedfit.sed_err, init_unit='uJy', final_unit='erg/s/cm2/A')
 	
 	hdr = fits.Header()
 	hdr['Nparam'] = priors.Nparam
@@ -634,6 +696,7 @@ def save_fitting_results_db(sedfit,priors,name_out_fits):
 	hdr['Av_max'] = priors.Av_max
 	hdr['z_min'] = priors.z_min 
 	hdr['z_max'] = priors.z_max 
+	hdr['min_chi2'] = mod_chi2[0]
 	for ii in range(priors.Nparam):
 		hdr['sfh_t%d' % ii] = t_names[ii] 
 	primary_hdu = fits.PrimaryHDU(header=hdr)
@@ -681,7 +744,49 @@ def save_fitting_results_db(sedfit,priors,name_out_fits):
 	cols = fits.ColDefs(cols0)
 	hdu2 = fits.BinTableHDU.from_columns(cols, name='sfh')
 
-	hdul = fits.HDUList([primary_hdu, hdu1, hdu2])
+	## median of posterior model spectrum: with varying z
+	cols0 = []
+	col = fits.Column(name='spec_wave', format='D', array=np.array(ref_spec_wave))
+	cols0.append(col)
+	col = fits.Column(name='spec_p16', format='D', array=np.array(p16_mod_spec_flam))
+	cols0.append(col)
+	col = fits.Column(name='spec_p50', format='D', array=np.array(p50_mod_spec_flam))
+	cols0.append(col)
+	col = fits.Column(name='spec_p84', format='D', array=np.array(p84_mod_spec_flam))
+	cols0.append(col)
+	cols = fits.ColDefs(cols0)
+	hdu3 = fits.BinTableHDU.from_columns(cols, name='spec')
+
+	## best-fit model spectrum
+	cols0 = []
+	col = fits.Column(name='wave', format='D', array=np.array(ref_spec_wave))
+	cols0.append(col)
+	col = fits.Column(name='spec', format='D', array=np.array(bfit_spec_flam))
+	cols0.append(col)
+	cols = fits.ColDefs(cols0)
+	hdu4 = fits.BinTableHDU.from_columns(cols, name='bfit_spec')
+
+	## observed and best-fit photometric SEDs
+	cols0 = []
+	col = fits.Column(name='photo_wave', format='D', array=np.array(photo_cwave))
+	cols0.append(col)
+	col = fits.Column(name='sed', format='D', array=np.array(obs_sed_flam))
+	cols0.append(col)
+	col = fits.Column(name='sed_err', format='D', array=np.array(obs_sed_err_flam))
+	cols0.append(col)	
+	col = fits.Column(name='photo_p16', format='D', array=np.array(p16_mod_photo_flam))
+	cols0.append(col)
+	col = fits.Column(name='photo_p50', format='D', array=np.array(p50_mod_photo_flam))
+	cols0.append(col)
+	col = fits.Column(name='photo_p84', format='D', array=np.array(p84_mod_photo_flam))
+	cols0.append(col)
+	col = fits.Column(name='bfit_photo', format='D', array=np.array(bfit_photo_flam))
+	cols0.append(col)
+	cols = fits.ColDefs(cols0)
+	hdu5 = fits.BinTableHDU.from_columns(cols, name='photo')
+
+
+	hdul = fits.HDUList([primary_hdu, hdu1, hdu2, hdu3, hdu4, hdu5])
 	hdul.writeto(name_out_fits, overwrite=True)	
 
 

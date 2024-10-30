@@ -543,22 +543,27 @@ class dense_basis_SEDfit:
 		
 		self.fits_binmap = fits_binmap
 
-	def filter_curves_txt_from_binmap(self,filter_list=None,filt_dir=None):
+	def filter_curves_txt_from_binmap(self,filters=None,filter_list=None,filt_dir=None):
 		from ..utils.filtering import get_filter_curve
 
 		fits_binmap = self.fits_binmap
 
 		hdu = fits.open(fits_binmap)
-		nbands = hdu[0].header['nfilters']
+		#nbands = hdu[0].header['nfilters']
 		gal_z = hdu[0].header['z']
+		
 		if hdu[0].header['SPECPHOT'] == 0:
 			nbins = int(hdu[0].header['nbins'])
 		elif hdu[0].header['SPECPHOT'] == 1:
 			nbins = int(hdu[0].header['NBINSPH'])
-		filters = []
-		for ii in range(nbands):
-			filters.append(hdu[0].header['fil%d' % ii])
+
+		if filters is None:
+			filters = []
+			for ii in range(hdu[0].header['nfilters']):
+				filters.append(hdu[0].header['fil%d' % ii])
 		hdu.close()
+
+		nbands = len(filters)
 
 		if filter_list is None:
 			filter_list = 'filter_list.txt'
@@ -567,7 +572,6 @@ class dense_basis_SEDfit:
 			filt_dir = 'filters'
 			if os.path.exists('filters/') == False:
 				os.system('mkdir filters')
-
 		
 		file_out1 = open(filt_dir+'/'+filter_list,'w')
 		for bb in range(nbands):
@@ -586,8 +590,10 @@ class dense_basis_SEDfit:
 
 		return filter_list, filt_dir, gal_z, nbins
 
-
-	def SEDfit_bins(self,priors,fname,N_pregrid=50000,path=None,binid_range=None,bin_ids=None,make_plots=True,fits_dir=None):
+	def SEDfit_single(self, obs_flux, obs_flux_err, filters, priors, fname, N_pregrid=50000, path=None, zbest=None, deltaz=None,
+		sys_err_frac=0.05, name_out_fits='fits_db.fits', make_plot_sed=False, make_plot_sfh=False, make_plot_corner=False, 
+		name_plot_sed='plot_sed_db.png', name_plot_corner='plot_corner_db.png', name_plot_sfh='plot_sfh_db.png'):
+		# obs_flux and obs_flux_err are assumed to have 2D shape of (nseds, nbands)
 
 		fits_binmap = self.fits_binmap
 	
@@ -603,7 +609,130 @@ class dense_basis_SEDfit:
 
 		atlas = db.load_atlas(fname, N_pregrid=N_pregrid, N_param=priors.Nparam, path=path)
 
-		bin_photo_flux, bin_photo_flux_err, bin_spec_flux, bin_spec_flux_err, bin_flag_specphoto, filters, photo_wave, spec_wave = get_bins_SED_binmap(fits_binmap)
+		photo_wave = cwave_filters(filters)
+
+		if make_plot_sed == True or make_plot_corner == True or make_plot_sfh == True:
+			import matplotlib.pyplot as plt
+			plt.ioff()
+
+			if os.path.exists('plots/') == False:
+				os.system('mkdir plots')
+
+		# convert from erg/s/cm^2/A to microjansky
+		obs_flux, obs_flux_err = convert_flux_unit(photo_wave,obs_flux,final_unit='uJy'), convert_flux_unit(photo_wave,obs_flux_err,final_unit='uJy')
+
+		# add systematic error accommodating various factors, including modeling uncertainty, assume systematic error of 0.1
+		obs_flux_err = np.sqrt(np.square(obs_flux_err) + np.square(sys_err_frac*obs_flux))
+
+		sedfit = db.SedFit(obs_flux, obs_flux_err, atlas, fit_mask=[], zbest=zbest, deltaz=deltaz)
+		sedfit.evaluate_likelihood()
+		sedfit.evaluate_posterior_percentiles(percentile_values=[16.,50.,84.])
+
+		save_fitting_results_db(sedfit,priors,name_out_fits,db.mocksp,filters)
+
+		if make_plot_corner == True:
+			sedfit.plot_posteriors()
+			plt.savefig('plots/%s' % name_plot_corner, bbox_inches = 'tight')
+
+		if make_plot_sed == True:
+			sedfit.plot_posterior_spec(photo_wave, priors)
+			plt.savefig('plots/%s' % name_plot_sed, bbox_inches = 'tight')
+
+		if make_plot_sfh == True:
+			sedfit.plot_posterior_SFH(sedfit.z[1])
+			plt.savefig('plots/%s' % name_plot_sfh, bbox_inches = 'tight')
+
+
+	def SEDfit_bath(self, obs_flux, obs_flux_err, filters, priors, fname, N_pregrid=50000, path=None, zbest=None, deltaz=None,
+		sys_err_frac=0.05, name_out_fits=None, make_plots_sed=False, make_plots_sfh=False, make_plots_corner=False, 
+		name_plots_sed=None, name_plots_corner=None, name_plots_sfh=None):
+		# obs_flux and obs_flux_err are assumed to have 2D shape of (nseds, nbands)
+
+		fits_binmap = self.fits_binmap
+	
+		import dense_basis as db
+		from ..piXedfit_bin import get_bins_SED_binmap
+		from ..piXedfit_images import convert_flux_unit
+		from ..utils.filtering import cwave_filters
+
+		obs_flux, obs_flux_err = np.asarray(obs_flux), np.asarray(obs_flux_err)
+		# add systematic error accommodating various factors, including modeling uncertainty
+		obs_flux_err = np.sqrt(np.square(obs_flux_err) + np.square(sys_err_frac*obs_flux))
+		nseds = obs_flux.shape[0]
+
+		if path is None:
+			path = 'pregrids/'
+			if os.path.exists('pregrids/') == False:
+				os.system('mkdir pregrids')
+
+		atlas = db.load_atlas(fname, N_pregrid=N_pregrid, N_param=priors.Nparam, path=path)
+
+		photo_wave = cwave_filters(filters)
+
+		if make_plots_sed == True or make_plots_corner == True or make_plots_sfh == True:
+			import matplotlib.pyplot as plt
+			plt.ioff()
+
+			if os.path.exists('plots/') == False:
+				os.system('mkdir plots')
+
+		if name_out_fits is None:
+			name_out_fits = []
+			for ii in range(nseds):
+				name_out_fits.append('fits_db_'+str(ii+1)+'.fits')
+
+		for ii in range(nseds):
+			# convert from erg/s/cm^2/A to microjansky
+			obs_flux0, obs_flux_err0 = convert_flux_unit(photo_wave,obs_flux[ii],final_unit='uJy'), convert_flux_unit(photo_wave,obs_flux_err[ii],final_unit='uJy')
+
+			sedfit = db.SedFit(obs_flux0, obs_flux_err0, atlas, fit_mask=[], zbest=zbest, deltaz=deltaz)
+			sedfit.evaluate_likelihood()
+			sedfit.evaluate_posterior_percentiles(percentile_values=[16.,50.,84.])
+
+			save_fitting_results_db(sedfit, priors, name_out_fits[ii], db.mocksp, filters)
+
+			if make_plots_corner == True:
+				sedfit.plot_posteriors()
+				plt.savefig('plots/%s' % name_plots_corner[ii], bbox_inches = 'tight')
+
+			if make_plots_sed == True:
+				sedfit.plot_posterior_spec(photo_wave, priors)
+				plt.savefig('plots/%s' % name_plots_sed[ii], bbox_inches = 'tight')
+
+			if make_plots_sfh == True:
+				sedfit.plot_posterior_SFH(sedfit.z[1])
+				plt.savefig('plots/%s' % name_plots_sfh[ii], bbox_inches = 'tight')
+
+
+	def SEDfit_bins(self, priors, fname, filters=None, N_pregrid=50000, path=None, binid_range=None, bin_ids=None, fits_dir=None, 
+		zbest=None, deltaz=None, make_plots_sed=False, make_plots_sfh=False, make_plots_corner=False):
+
+		fits_binmap = self.fits_binmap
+	
+		import dense_basis as db
+		from ..piXedfit_bin import get_bins_SED_binmap
+		from ..piXedfit_images import convert_flux_unit
+		from ..utils.filtering import cwave_filters
+
+		if path is None:
+			path = 'pregrids/'
+			if os.path.exists('pregrids/') == False:
+				os.system('mkdir pregrids')
+
+		atlas = db.load_atlas(fname, N_pregrid=N_pregrid, N_param=priors.Nparam, path=path)
+
+		bin_photo_flux0, bin_photo_flux_err0, bin_spec_flux, bin_spec_flux_err, bin_flag_specphoto, filters0, photo_wave, spec_wave = get_bins_SED_binmap(fits_binmap)
+		if filters is None:
+			filters = filters0
+			bin_photo_flux = bin_photo_flux0
+			bin_photo_flux_err = bin_photo_flux_err0
+		else:
+			idxfil = np.zeros(len(filters))
+			for bb in range(len(filters)):
+				idxfil[bb] = filters0.index(filters[bb])
+			bin_photo_flux = bin_photo_flux0[:,idxfil]
+			bin_photo_flux_err = bin_photo_flux_err0[:,idxfil]
+
 		nbins_photo = bin_photo_flux.shape[0]
 
 		if bin_ids is not None:
@@ -621,7 +750,7 @@ class dense_basis_SEDfit:
 
 		photo_wave = cwave_filters(filters)
 
-		if make_plots == True:
+		if make_plots_sed == True or make_plots_corner == True or make_plots_sfh == True:
 			import matplotlib.pyplot as plt
 			plt.ioff()
 
@@ -640,20 +769,26 @@ class dense_basis_SEDfit:
 			# convert from erg/s/cm^2/A to microjansky
 			obs_flux, obs_flux_err = convert_flux_unit(photo_wave,bin_photo_flux[bin_id],final_unit='uJy'), convert_flux_unit(photo_wave,bin_photo_flux_err[bin_id],final_unit='uJy')
 
-			sedfit = db.SedFit(obs_flux, obs_flux_err, atlas, fit_mask=[])
+			# add systematic error accommodating various factors, including modeling uncertainty, assume systematic error of 0.1
+			sys_err_frac = 0.1
+			obs_flux_err = np.sqrt(np.square(obs_flux_err) + np.square(sys_err_frac*obs_flux))
+
+			sedfit = db.SedFit(obs_flux, obs_flux_err, atlas, fit_mask=[], zbest=zbest, deltaz=deltaz)
 			sedfit.evaluate_likelihood()
 			sedfit.evaluate_posterior_percentiles(percentile_values=[16.,50.,84.])
 
 			name_out_fits = fits_dir+'/'+'db_bin%d.fits' % (bin_id+1)
-			save_fitting_results_db(sedfit,priors,name_out_fits)
+			save_fitting_results_db(sedfit,priors,name_out_fits,db.mocksp,filters)
 
-			if make_plots == True:
+			if make_plots_corner == True:
 				sedfit.plot_posteriors()
 				plt.savefig('plots/corner_db_bin%d.png' % (bin_id+1), bbox_inches = 'tight')
 
+			if make_plots_sed == True:
 				sedfit.plot_posterior_spec(photo_wave, priors)
 				plt.savefig('plots/sed_db_bin%d.png' % (bin_id+1), bbox_inches = 'tight')
 
+			if make_plots_sfh == True:
 				sedfit.plot_posterior_SFH(sedfit.z[1])
 				plt.savefig('plots/sfh_db_bin%d.png' % (bin_id+1), bbox_inches = 'tight')
 
