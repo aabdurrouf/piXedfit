@@ -385,10 +385,10 @@ def calc_mw_age(sfh_form=4,tau=0,t0=0,alpha=0,beta=0,age=0,formed_mass=0,sfh_t=[
 		print ("SFH choice is not recognized!")
 		sys.exit()
 
-	mod_mw_age = np.sum(sfh_mass*sfh_age)/np.sum(sfh_mass)
+	mod_mw_age = np.nansum(sfh_mass*sfh_age)/np.nansum(sfh_mass)
 
-	if np.isnan(mod_mw_age)==True or np.isinf(mod_mw_age)==True or mod_mw_age==0.0:
-		return age
+	#if np.isnan(mod_mw_age)==True or np.isinf(mod_mw_age)==True or mod_mw_age==0.0:
+	#	return age
 
 	return mod_mw_age
 
@@ -918,7 +918,7 @@ def calc_bollum_from_spec_rest(spec_wave=[],spec_lum=[]):
 
 	areas = 0.5*(lum_left+lum_right)*(wave_right-wave_left)
 
-	bol_lum = np.sum(areas)										# in L_sun
+	bol_lum = np.nansum(areas)										# in L_sun
 
 	l_sun = 3.826e+33      										# in erg/s
 	bol_lum = bol_lum*l_sun
