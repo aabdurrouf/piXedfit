@@ -903,7 +903,7 @@ def subtract_background(fits_image, hdu_idx=0, sigma=3.0, box_size=None, mask_re
 				print ("dimension of mask_region should be the same with the dimension of fits_image!")
 				sys.exit()
 			else:
-				mask_region1 = np.zeros((dim_y,dim_x))
+				mask_region1 = np.zeros((dim_y,dim_x)).astype(int)
 				rows, cols = np.where((mask_region0==1) | (mask_region==1))
 				mask_region1[rows,cols] = 1
 
