@@ -904,7 +904,7 @@ def subtract_background(fits_image, hdu_idx=0, sigma=3.0, box_size=None, mask_re
 				sys.exit()
 			else:
 				mask_region1 = np.zeros((dim_y,dim_x))
-				rows, cols = np.where((mask_region0==1) or (mask_region==1))
+				rows, cols = np.where((mask_region0==1) | (mask_region==1))
 				mask_region1[rows,cols] = 1
 
 		sigma_clip = SigmaClip(sigma=sigma)
