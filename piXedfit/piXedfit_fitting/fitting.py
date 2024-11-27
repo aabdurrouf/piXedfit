@@ -480,7 +480,7 @@ def SEDfit_from_binmap(fits_binmap,binid_range=None,bin_ids=None,models_spec=Non
 	from ..piXedfit_bin.pixbin import get_bins_area
 
 	params_ranges, params_priors = define_priors(params_ranges, params_priors)
-	gal_z = define_free_z_bins_fits(free_z, gal_z)
+	gal_z = define_free_z_bins_fits(fits_binmap, free_z, gal_z)
 
 	flg_write, name_config, name_file_lsf = write_conf_file(temp_dir,params_ranges=params_ranges,params_priors=params_priors,nwalkers=nwalkers,
 												nsteps=nsteps,nsteps_cut=nsteps_cut,nproc=nproc,cosmo=cosmo,H0=H0,Om0=Om0,fit_method=fit_method,
