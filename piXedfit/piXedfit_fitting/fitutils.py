@@ -104,10 +104,12 @@ def define_free_z(gal_z):
 
 	return gal_z, free_z
 
-def define_free_z_bins_fits(free_z, gal_z):
+def define_free_z_bins_fits(fits_binmap, free_z, gal_z):
 	if free_z == 0:
 		if gal_z is None or gal_z<=0.0:
-			gal_z = float(header['z'])
+			hdu = fits.open(fits_binmap)
+			gal_z = float(hdu[0].header['z'])
+			hdu.close()
 	elif free_z == 1:
 		gal_z = -99.0
 
