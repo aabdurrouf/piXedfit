@@ -1885,7 +1885,8 @@ def crop_image_given_radec(image, ra, dec, idx_hdu=0, stamp_size=[], name_out_fi
 	if name_out_fits is None:
 		name_out_fits = 'crop_%s' % image
 
-	hdu.writeto(name_out_fits, overwrite=True)
+	#hdu.writeto(name_out_fits, overwrite=True)
+	fits.writeto(name_out_fits, cutout.data, cutout.wcs.to_header(), overwrite=True)
 	return name_out_fits
 
 
