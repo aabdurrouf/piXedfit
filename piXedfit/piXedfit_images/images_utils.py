@@ -1907,7 +1907,8 @@ def crop_image_given_xy(img_name=None, x=None, y=None, stamp_size=[], name_out_f
 	if name_out_fits is None:
 		name_out_fits = 'crop_%s' % img_name
 
-	hdu.writeto(name_out_fits, overwrite=True)
+	#hdu.writeto(name_out_fits, overwrite=True)
+	fits.writeto(name_out_fits, cutout.data, cutout.wcs.to_header(), overwrite=True)
 	print ("[produce %s]" % name_out_fits)
 
 
