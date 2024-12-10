@@ -1464,7 +1464,7 @@ def test_psfmatching_kernel(init_PSF_name, target_PSF_name, kernel, pixscale_ini
 	if savefig is True:
 		if name_plot is None:
 			name_plot = 'test_psfmatching_kernel.png'
-		plt.savefig(name_plot)
+		plt.savefig(name_plot, bbox_inches='tight')
 	else:
 		plt.show()
 
@@ -2106,7 +2106,7 @@ def plot_maps_fluxes(flux_maps_fits, ncols=5, savefig=True, name_plot_mapflux=No
 	if savefig is True:
 		if name_plot_mapflux is None:
 			name_plot_mapflux = 'maps_fluxes.png'
-		plt.savefig(name_plot_mapflux)
+		plt.savefig(name_plot_mapflux, bbox_inches='tight')
 	else:
 		plt.show()
 
@@ -2136,7 +2136,7 @@ def plot_maps_fluxes(flux_maps_fits, ncols=5, savefig=True, name_plot_mapflux=No
 	if savefig is True:
 		if name_plot_mapfluxerr is None:
 			name_plot_mapfluxerr = 'maps_flux_errors.png'
-		plt.savefig(name_plot_mapfluxerr)
+		plt.savefig(name_plot_mapfluxerr, bbox_inches='tight')
 	else:
 		plt.show()
 
@@ -2357,7 +2357,7 @@ def plot_SED_pixels(flux_maps_fits, pix_x=None, pix_y=None, all_pixels=False, lo
 	if savefig is True:
 		if name_plot is None:
 			name_plot = 'plot_SED_pixels.png'
-		plt.savefig(name_plot)
+		plt.savefig(name_plot, bbox_inches='tight')
 	else:
 		plt.show()
 
@@ -2538,7 +2538,7 @@ def plot_SNR_radial_profile(flux_maps_fits, e=0.0, pa=45.0, cent_x=None, cent_y=
 	if savefig is True:
 		if name_plot is None:
 			name_plot = 'plot_pixels_SNR.png'
-		plt.savefig(name_plot)
+		plt.savefig(name_plot, bbox_inches='tight')
 	else:
 		plt.show()
 
@@ -2670,7 +2670,7 @@ def draw_aperture_on_maps_fluxes(flux_maps_fits, ncols=6, e=[0.0], pa=[45.0], ce
 	if savefig is True:
 		if name_plot is None:
 			name_plot = 'apertures.png'
-		plt.savefig(name_plot)
+		plt.savefig(name_plot, bbox_inches='tight')
 	else:
 		plt.show()
 
