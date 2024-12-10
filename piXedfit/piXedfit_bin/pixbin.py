@@ -912,7 +912,7 @@ def plot_binmap(binmap_fits, plot_binmap_spec=True, savefig=True, name_plot_binm
 	if savefig is True:
 		if name_plot_binmap_photo is None:
 			name_plot_binmap_photo = 'binmap_photo.png'
-		plt.savefig(name_plot_binmap_photo)
+		plt.savefig(name_plot_binmap_photo, bbox_inches='tight')
 	else:
 		plt.show()
 
@@ -946,7 +946,7 @@ def plot_binmap(binmap_fits, plot_binmap_spec=True, savefig=True, name_plot_binm
 		if savefig is True:
 			if name_plot_binmap_spec is None:
 				name_plot_binmap_spec = 'binmap_spec.png'
-			plt.savefig(name_plot_binmap_spec)
+			plt.savefig(name_plot_binmap_spec, bbox_inches='tight')
 		else:
 			plt.show()
 
@@ -1119,7 +1119,7 @@ def plot_bins_SNR_radial_profile(binmap_fits, xrange=None, yrange=None, savefig=
 	if savefig is True:
 		if name_plot is None:
 			name_plot = 'plot_bins_SNR.png'
-		plt.savefig(name_plot)
+		plt.savefig(name_plot, bbox_inches='tight')
 	else:
 		plt.show()
 
@@ -1214,7 +1214,7 @@ def plot_bins_SED(binmap_fits, bin_ids=None, logscale_y=True, logscale_x=True,
 	if savefig is True:
 		if name_plot is None:
 			name_plot = 'plot_bins_SED.png'
-		plt.savefig(name_plot)
+		plt.savefig(name_plot, bbox_inches='tight')
 	else:
 		plt.show()
 
