@@ -579,7 +579,7 @@ class images_processing:
 		if savefig is True:
 			if name_plot_sci is None:
 				name_plot_sci = 'stamp_science_images.png'
-			plt.savefig(name_plot_sci)
+			plt.savefig(name_plot_sci, bbox_inches='tight')
 		else:
 			plt.show()
 
@@ -604,7 +604,7 @@ class images_processing:
 		if savefig is True:
 			if name_plot_var is None:
 				name_plot_var = 'stamp_variance_images.png'
-			plt.savefig(name_plot_var)
+			plt.savefig(name_plot_var, bbox_inches='tight')
 		else:
 			plt.show()
 
@@ -727,7 +727,7 @@ class images_processing:
 		if savefig is True:
 			if name_plot is None:
 				name_plot = 'segm_maps.png'
-			plt.savefig(name_plot)
+			plt.savefig(name_plot, bbox_inches='tight')
 		else:
 			plt.show()
 
@@ -944,7 +944,7 @@ class images_processing:
 			if savefig is True:
 				if name_plot is None:
 					name_plot = 'rectangular_regions.png'
-				plt.savefig(name_plot)
+				plt.savefig(name_plot, bbox_inches='tight')
 			else:
 				plt.show()
 
@@ -1010,7 +1010,7 @@ class images_processing:
 		if savefig is True:
 			if name_plot is None:
 				name_plot = 'gal_region.png'
-			plt.savefig(name_plot)
+			plt.savefig(name_plot, bbox_inches='tight')
 		else:
 			plt.show()
 
