@@ -232,7 +232,7 @@ def plot_SED_rdsps_photo(filters=None,obs_photo=None,bfit_photo=None,bfit_mod_sp
 	y = x-x
 	plt.plot(x,y,lw=2,color='black',linestyle='--')
 		
-	plt.savefig(name_plot)
+	plt.savefig(name_plot, bbox_inches='tight')
 
 	return name_plot
 
@@ -427,7 +427,7 @@ def plot_SED_mcmc_photo(filters=None,obs_photo=None,bfit_photo=None,bfit_mod_spe
 	plt.plot(x,y,lw=2,color='black',linestyle='--')
 		
 	plt.subplots_adjust(left=0.25, right=0.98, bottom=0.25, top=0.98)
-	plt.savefig(name_plot)
+	plt.savefig(name_plot, bbox_inches='tight')
 
 	return name_plot
 
@@ -485,7 +485,7 @@ def plot_SED_specphoto_old(filters=None,obs_photo=None,obs_spec=None,bfit_photo=
 
 	plt.subplots_adjust(bottom=0.2)
 	name_plot2 = 'sp_%s' % name_plot
-	plt.savefig(name_plot2)
+	plt.savefig(name_plot2, bbox_inches='tight')
 
 
 	# plot 3: photometry + spectroscopy
@@ -569,7 +569,7 @@ def plot_SED_specphoto_old(filters=None,obs_photo=None,obs_spec=None,bfit_photo=
 
 	plt.subplots_adjust(bottom=0.2)
 	name_plot3 = 'sph_%s' % name_plot
-	plt.savefig(name_plot3)
+	plt.savefig(name_plot3, bbox_inches='tight')
 
 
 def plot_SED_specphoto(filters=None,obs_photo=None,obs_spec=None,bfit_photo=None,bfit_spec=None,bfit_mod_spec=None,
@@ -757,7 +757,7 @@ def plot_SED_specphoto(filters=None,obs_photo=None,obs_spec=None,bfit_photo=None
 	x = np.linspace(xmin,xmax,200)
 	plt.plot(x,x-x,lw=1,color='black',linestyle='--')
 
-	plt.savefig(name_plot)
+	plt.savefig(name_plot, bbox_inches='tight')
 	return name_plot
 
 
@@ -1190,7 +1190,7 @@ def plot_sfh_mcmc(name_sampler_fits, nchains=200, del_t=0.05, lbacktime_max=None
 		name_sampler_fits1 = name_sampler_fits.replace('.fits','')
 		name_plot = "sfh_%s.png" % (name_sampler_fits1)
 	
-	plt.savefig(name_plot)
+	plt.savefig(name_plot, bbox_inches='tight')
 
 	return name_plot, grid_lbt, grid_sfr_p16, grid_sfr_p50, grid_sfr_p84
 
