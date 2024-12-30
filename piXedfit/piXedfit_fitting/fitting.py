@@ -643,7 +643,7 @@ class dense_basis_SEDfit:
 			plt.savefig('plots/%s' % name_plot_sfh, bbox_inches = 'tight')
 
 
-	def SEDfit_bath(self, obs_flux, obs_flux_err, filters, priors, fname, N_pregrid=50000, path=None, zbest=None, deltaz=None,
+	def SEDfit_batch(self, obs_flux, obs_flux_err, filters, priors, fname, N_pregrid=50000, path=None, zbest=None, deltaz=None,
 		sys_err_frac=0.05, name_out_fits=None, make_plots_sed=False, make_plots_sfh=False, make_plots_corner=False, 
 		name_plots_sed=None, name_plots_corner=None, name_plots_sfh=None):
 		# obs_flux and obs_flux_err are assumed to have 2D shape of (nseds, nbands)
