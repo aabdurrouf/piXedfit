@@ -2376,6 +2376,9 @@ def get_total_SED(flux_maps_fits):
 
 	:returns photo_wave:
 		The central wavelength of the filters.
+
+   	:returns filters:
+    		List of filters.
 	"""
 
 	from ..utils.filtering import cwave_filters
@@ -2393,7 +2396,7 @@ def get_total_SED(flux_maps_fits):
 		tot_SED_flux[bb] = np.nansum(flux_map[bb][rows,cols])
 		tot_SED_flux_err[bb] = np.sqrt(np.nansum(np.square(flux_err_map[bb][rows,cols])))
 
-	return tot_SED_flux, tot_SED_flux_err, photo_wave
+	return tot_SED_flux, tot_SED_flux_err, photo_wave, filters
 
 
 def get_curve_of_growth(flux_maps_fits, filter_id, e=0.0, pa=45.0, cent_x=None, cent_y=None):
