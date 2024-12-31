@@ -1322,7 +1322,7 @@ def radial_profile_psf(psf, pixsize, e=0.0, pa=45.0, dr_arcsec=None):
 	dimy, dimx = data_psf.shape[0], data_psf.shape[1]
 
 	## normalize
-	data_psf = data_psf/np.sum(data_psf)
+	data_psf = data_psf/np.nansum(data_psf)
 
 	#x_cent, y_cent = (dimx-1.0)/2.0, (dimy-1.0)/2.0
 	y_cent, x_cent = np.unravel_index(data_psf.argmax(), data_psf.shape)
@@ -1373,7 +1373,7 @@ def curve_of_growth_psf(psf, e=0.0, pa=45.0, dr=1.0):
 	hdu.close()
 
 	## normalize
-	data_psf = data_psf/np.sum(data_psf)
+	data_psf = data_psf/np.nansum(data_psf)
 
 	#x_cent, y_cent = (dimx-1.0)/2.0, (dimy-1.0)/2.0
 	y_cent, x_cent = np.unravel_index(data_psf.argmax(), data_psf.shape)
@@ -1395,7 +1395,7 @@ def curve_of_growth_psf(psf, e=0.0, pa=45.0, dr=1.0):
 		rows, cols = np.where((data2D_sma>=r1) & (data2D_sma<r2))
 
 		curve_rad.append(0.5*(r1+r2))
-		cumul_val = cumul_val + np.sum(data_psf[rows,cols])
+		cumul_val = cumul_val + np.nansum(data_psf[rows,cols])
 		curve_val.append(cumul_val)
 
 		r1 = r2
@@ -2390,8 +2390,8 @@ def get_total_SED(flux_maps_fits):
 	tot_SED_flux = np.zeros(nbands)
 	tot_SED_flux_err = np.zeros(nbands)
 	for bb in range(0,nbands):
-		tot_SED_flux[bb] = np.sum(flux_map[bb][rows,cols])
-		tot_SED_flux_err[bb] = np.sqrt(np.sum(np.square(flux_err_map[bb][rows,cols])))
+		tot_SED_flux[bb] = np.nansum(flux_map[bb][rows,cols])
+		tot_SED_flux_err[bb] = np.sqrt(np.nansum(np.square(flux_err_map[bb][rows,cols])))
 
 	return tot_SED_flux, tot_SED_flux_err, photo_wave
 
@@ -2594,8 +2594,8 @@ def photometry_within_aperture(flux_maps_fits, e=0.0, pa=45.0, cent_x=None, cent
 
 	pix_x, pix_y, pix_SED_flux, pix_SED_flux_err, photo_wave = get_pixels_SED_fluxmap(flux_maps_fits, pix_x=cols, pix_y=rows)
 
-	tot_fluxes = np.sum(pix_SED_flux, axis=0)
-	tot_flux_errors = np.sqrt(np.sum(np.square(pix_SED_flux_err), axis=0))
+	tot_fluxes = np.nansum(pix_SED_flux, axis=0)
+	tot_flux_errors = np.sqrt(np.nansum(np.square(pix_SED_flux_err), axis=0))
 
 	return tot_fluxes, tot_flux_errors
 
