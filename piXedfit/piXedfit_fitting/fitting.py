@@ -705,7 +705,7 @@ class dense_basis_SEDfit:
 
 
 	def SEDfit_bins(self, priors, fname, filters=None, N_pregrid=50000, path=None, binid_range=None, bin_ids=None, fits_dir=None, 
-		zbest=None, deltaz=None, make_plots_sed=False, make_plots_sfh=False, make_plots_corner=False):
+		zbest=None, deltaz=None, sys_err_frac=0.05, make_plots_sed=False, make_plots_sfh=False, make_plots_corner=False):
 
 		fits_binmap = self.fits_binmap
 	
@@ -770,7 +770,7 @@ class dense_basis_SEDfit:
 			obs_flux, obs_flux_err = convert_flux_unit(photo_wave,bin_photo_flux[bin_id],final_unit='uJy'), convert_flux_unit(photo_wave,bin_photo_flux_err[bin_id],final_unit='uJy')
 
 			# add systematic error accommodating various factors, including modeling uncertainty, assume systematic error of 0.1
-			sys_err_frac = 0.1
+			#sys_err_frac = 0.1
 			obs_flux_err = np.sqrt(np.square(obs_flux_err) + np.square(sys_err_frac*obs_flux))
 
 			sedfit = db.SedFit(obs_flux, obs_flux_err, atlas, fit_mask=[], zbest=zbest, deltaz=deltaz)
