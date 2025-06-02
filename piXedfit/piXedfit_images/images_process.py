@@ -196,8 +196,7 @@ class images_processing:
 				hdu.data = cutout.data
 				hdu.header.update(cutout.wcs.to_header())
 				name_out = "crop_%s" % check_name_remove_dir(sci_img_name[filters[bb]],dir_images) 
-				#hdu.writeto(name_out, overwrite=True)
-				fits.writeto(name_out, cutout.data, cutout.wcs.to_header(), overwrite=True)
+				hdu.writeto(name_out, overwrite=True)
 				sci_img_name[filters[bb]] = name_out
 				print ("produce %s" % name_out)
 				temp_file_names.append(name_out)
@@ -211,8 +210,7 @@ class images_processing:
 				hdu.data = remove_naninfzeroneg_image_2dinterpolation(cutout.data) 
 				hdu.header.update(cutout.wcs.to_header())
 				name_out = "crop_%s" % check_name_remove_dir(var_img_name[filters[bb]],dir_images)
-				#hdu.writeto(name_out, overwrite=True)
-				fits.writeto(name_out, cutout.data, cutout.wcs.to_header(), overwrite=True)
+				hdu.writeto(name_out, overwrite=True)
 				var_img_name[filters[bb]] = name_out
 				print ("produce %s" % name_out)
 				temp_file_names.append(name_out)
@@ -378,8 +376,7 @@ class images_processing:
 				hdu.data = cutout.data
 				hdu.header.update(cutout.wcs.to_header())
 				name_out = 'stamp_%s' % check_name_remove_dir(psfmatch_sci_img_name[filters[bb]],dir_images)
-				#hdu.writeto(name_out, overwrite=True)
-				fits.writeto(name_out, cutout.data, cutout.wcs.to_header(), overwrite=True)
+				hdu.writeto(name_out, overwrite=True)
 				align_psfmatch_sci_img_name[filters[bb]] = name_out
 				print ("produce %s" % name_out)
 
@@ -392,8 +389,7 @@ class images_processing:
 				hdu.data = cutout.data
 				hdu.header.update(cutout.wcs.to_header())
 				name_out = 'stamp_%s' % check_name_remove_dir(psfmatch_var_img_name[filters[bb]],dir_images)
-				#hdu.writeto(name_out, overwrite=True)
-				fits.writeto(name_out, cutout.data, cutout.wcs.to_header(), overwrite=True)
+				hdu.writeto(name_out, overwrite=True)
 				align_psfmatch_var_img_name[filters[bb]] = name_out
 				print ("produce %s" % name_out)
 
@@ -439,8 +435,7 @@ class images_processing:
 			hdu.data = cutout.data
 			hdu.header.update(cutout.wcs.to_header())
 			name_out = 'stamp_%s' % check_name_remove_dir(psfmatch_sci_img_name[filters[idfil_align]],dir_images)
-			#hdu.writeto(name_out, overwrite=True)
-			fits.writeto(name_out, cutout.data, cutout.wcs.to_header(), overwrite=True)
+			hdu.writeto(name_out, overwrite=True)
 			align_psfmatch_sci_img_name[filters[idfil_align]] = name_out
 			print ("produce %s" % name_out)
 
@@ -453,8 +448,7 @@ class images_processing:
 			hdu.data = cutout.data
 			hdu.header.update(cutout.wcs.to_header())
 			name_out = 'stamp_%s' % check_name_remove_dir(psfmatch_var_img_name[filters[idfil_align]],dir_images)
-			#hdu.writeto(name_out, overwrite=True)
-			fits.writeto(name_out, cutout.data, cutout.wcs.to_header(), overwrite=True)
+			hdu.writeto(name_out, overwrite=True)
 			align_psfmatch_var_img_name[filters[idfil_align]] = name_out
 			print ("produce %s" % name_out)
 
@@ -515,6 +509,11 @@ class images_processing:
 		if self.remove_files==True:
 			for zz in range(0,len(temp_file_names)):
 				os.system("rm %s" % temp_file_names[zz])
+
+		# update stamp_size
+		hdu1 = fits.open(align_psfmatch_sci_img_name[filters[0]])
+		self.stamp_size = [hdu1[0].data.shape[0], hdu1[0].data.shape[1]]
+		hdu1.close()
 
 	def get_output_stamps(self):
 		""" Get the names of output stamp images in a dictionary format.
@@ -1163,7 +1162,7 @@ class images_processing:
 				elif filters[bb]=='wise_w2':
 					DN_to_Jy = 2.7048E-06
 				elif filters[bb]=='wise_w3':
-					DN_to_Jy = 1.8326E-06
+					DN_to_Jy = 2.9045e-06
 				elif filters[bb]=='wise_w4':
 					DN_to_Jy = 5.2269E-05
 
