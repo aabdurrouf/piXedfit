@@ -81,14 +81,4 @@ archivePrefix = {arXiv},
 If you use the pixel binning module (`piXedfit_bin`), please also reference [Abdurro'uf & Akiyama (2017)](https://ui.adsabs.harvard.edu/abs/2017MNRAS.469.2806A/abstract).
 
 
-## Reference
-A list of some projects **piXedfit** is benefitted from:
-*  [Astropy](https://www.astropy.org/)
-*  [Photutils](https://photutils.readthedocs.io/en/stable/)
-*  [Aniano et al. (2011)](https://ui.adsabs.harvard.edu/abs/2011PASP..123.1218A/abstract) who provides convolution [kernels](https://www.astro.princeton.edu/~draine/Kernels.html)
-*  [FSPS](https://github.com/cconroy20/fsps) and [Python-FSPS](http://dfm.io/python-fsps/current/) stellar population synthesis model
-*  [emcee](https://emcee.readthedocs.io/en/stable/) package for the Affine Invariant Markov Chain Monte Carlo (MCMC) Ensemble sampler
-
-
-
 
