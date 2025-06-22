@@ -113,7 +113,7 @@ def add_filter(filter_name,filter_wave,filter_transmission,filter_cwave):
 	f.create_dataset(filter_name, data=np.array(filter_transmission), compression="gzip")
 	f.close()
 
-	os.system('mv filters_w.hdf5 filters_t.hdf5 %s' % dir_file)
+	#os.system('mv filters_w.hdf5 filters_t.hdf5 %s' % dir_file)
 
 
 def remove_filter(filter_name):
