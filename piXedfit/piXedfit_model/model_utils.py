@@ -4,7 +4,8 @@ import sys, os
 from operator import itemgetter
 from astropy.io import fits
 from scipy.interpolate import interp1d
-from scipy.integrate import simps
+#from scipy.integrate import simps
+from scipy.integrate import simpson as simps
 
 from ..utils.redshifting import cosmo_redshifting
 from ..utils.filtering import filtering, cwave_filters
