@@ -7,6 +7,7 @@ from astropy.constants import L_sun
 __all__ = ["cosmo_redshifting"]
 
 def cosmo_redshifting(wave=[], spec=[], z=0.01, cosmo='flat_LCDM', H0=70.0, Om0=0.3, DL_Gpc=0.0):
+    
     if DL_Gpc > 0.0:
         D_L_cm = DL_Gpc*3.08568e+27    # in cm
     else:
@@ -28,18 +29,11 @@ def cosmo_redshifting(wave=[], spec=[], z=0.01, cosmo='flat_LCDM', H0=70.0, Om0=
 
     # Observed wavelength (redshifted)
     wave_obs = wave * (1 + z)
-
-    # Convert luminosity to erg/s/Angstrom
     L_lambda_erg = spec * L_sun.to('erg/s').value  # Now in erg/s/Angstrom
-
-    # Get luminosity distance in cm
-    D_L_cm = cosmo.luminosity_distance(z).to('cm').value
-
-    # Compute observed flux density using:
-    # F_lambda = (1 / (4 * pi * D_L^2)) * (1 / (1 + z)) * L_lambda_rest
     F_lambda_obs = (L_lambda_erg / (4 * np.pi * D_L_cm**2)) / (1 + z)  # in erg/s/cm^2/Angstrom
 
     return wave_obs, F_lambda_obs
+
 
 def cosmo_redshifting_old(DL_Gpc=0.0,cosmo='flat_LCDM',H0=70.0,Om0=0.3,z=0.01,wave=[],spec=[]):
     """
