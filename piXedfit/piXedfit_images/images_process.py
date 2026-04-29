@@ -95,7 +95,7 @@ class images_processing:
 	"""
 
 	def __init__(self, filters, sci_img, var_img, gal_ra, gal_dec, dir_images=None, img_unit=None, img_scale=None, img_pixsizes=None, run_image_processing=True,
-		flag_psfmatch=0, flag_reproject=0, flag_crop=0, kernels=None, gal_z=None, stamp_size=[101,101], remove_files=True, idfil_align=None):
+		flag_psfmatch=0, flag_reproject=0, flag_crop=0, kernels=None, gal_z=None, stamp_size=[101,101], remove_files=True, idfil_align=None, verbose=False):
 
 		raise_errors(filters, kernels, flag_psfmatch, img_unit, img_scale)
 
@@ -125,6 +125,7 @@ class images_processing:
 		self.kernels = kernels
 		self.idfil_align = idfil_align
 		self.run_image_processing = run_image_processing
+		self.verbose = verbose
 
 		if run_image_processing == True:
 			self.reduced_stamps()
@@ -165,6 +166,7 @@ class images_processing:
 		dir_images = self.dir_images
 		stamp_size = self.stamp_size
 		idfil_align = self.idfil_align
+		verbose = self.verbose
 
 		# check directory
 		dir_images = check_dir(dir_images)
@@ -198,7 +200,8 @@ class images_processing:
 				name_out = "crop_%s" % check_name_remove_dir(sci_img_name[filters[bb]],dir_images) 
 				hdu.writeto(name_out, overwrite=True)
 				sci_img_name[filters[bb]] = name_out
-				print ("produce %s" % name_out)
+				if verbose:
+					print ("produce %s" % name_out)
 				temp_file_names.append(name_out)
 
 				#++> variance image
@@ -212,7 +215,8 @@ class images_processing:
 				name_out = "crop_%s" % check_name_remove_dir(var_img_name[filters[bb]],dir_images)
 				hdu.writeto(name_out, overwrite=True)
 				var_img_name[filters[bb]] = name_out
-				print ("produce %s" % name_out)
+				if verbose:
+					print ("produce %s" % name_out)
 				temp_file_names.append(name_out)
 		else:
 			for bb in range(0,nbands):
@@ -254,7 +258,8 @@ class images_processing:
 			else:
 				idfil_psfmatch = get_largest_FWHM_PSF(filters=filters)
 
-			print ("=> PSF matching to %s" % filters[idfil_psfmatch])
+			if verbose:
+				print ("=> PSF matching to %s" % filters[idfil_psfmatch])
 
 			##==> (b) Get Kernels:
 			status_kernel_resize = 1
@@ -345,7 +350,8 @@ class images_processing:
 					psfmatch_sci_img_name[filters[bb]] = name_out
 					fits.writeto(name_out,psfmatch_data,hdu[0].header, overwrite=True)
 					hdu.close()
-					print ("produce %s" % name_out)
+					if verbose:
+						print ("produce %s" % name_out)
 					temp_file_names.append(name_out)
 
 					#++> variance image
@@ -357,7 +363,8 @@ class images_processing:
 					psfmatch_var_img_name[filters[bb]] = name_out
 					fits.writeto(name_out,psfmatch_data,hdu[0].header,overwrite=True)
 					hdu.close()
-					print ("produce %s" % name_out)
+					if verbose:
+						print ("produce %s" % name_out)
 					temp_file_names.append(name_out)
 
 			####============== End of (c) PSF matching ============#####
@@ -378,7 +385,8 @@ class images_processing:
 				name_out = 'stamp_%s' % check_name_remove_dir(psfmatch_sci_img_name[filters[bb]],dir_images)
 				hdu.writeto(name_out, overwrite=True)
 				align_psfmatch_sci_img_name[filters[bb]] = name_out
-				print ("produce %s" % name_out)
+				if verbose:
+					print ("produce %s" % name_out)
 
 				#++> variance image
 				hdu = fits.open(psfmatch_var_img_name[filters[bb]])[0]
@@ -391,7 +399,8 @@ class images_processing:
 				name_out = 'stamp_%s' % check_name_remove_dir(psfmatch_var_img_name[filters[bb]],dir_images)
 				hdu.writeto(name_out, overwrite=True)
 				align_psfmatch_var_img_name[filters[bb]] = name_out
-				print ("produce %s" % name_out)
+				if verbose:
+					print ("produce %s" % name_out)
 
 
 		if flag_reproject==1 and flag_crop==1:
@@ -403,7 +412,8 @@ class images_processing:
 				name_out = 'stamp_%s' % check_name_remove_dir(psfmatch_sci_img_name[filters[bb]], dir_images)
 				fits.writeto(name_out, hdu[0].data, header=hdu[0].header, overwrite=True)
 				align_psfmatch_sci_img_name[filters[bb]] = name_out
-				print ("produce %s" % name_out)
+				if verbose:
+					print ("produce %s" % name_out)
 				hdu.close()
 
 				#++> variance image
@@ -411,14 +421,16 @@ class images_processing:
 				name_out = 'stamp_%s' % check_name_remove_dir(psfmatch_var_img_name[filters[bb]], dir_images)
 				fits.writeto(name_out, hdu[0].data, header=hdu[0].header, overwrite=True)
 				align_psfmatch_var_img_name[filters[bb]] = name_out
-				print ("produce %s" % name_out)
+				if verbose:
+					print ("produce %s" % name_out)
 				hdu.close()
 
 
 		if flag_reproject==0:
 			####============== (3) Spatial reprojection and resampling ============#####
-			print ("=> images reprojection and resampling")
-			print ("=> align images to match the projection and spatial sampling of %s: %lf arcsec/pixel" % (filters[idfil_align],img_pixsizes[filters[idfil_align]]))
+			if verbose:
+				print ("=> images reprojection and resampling")
+				print ("=> align images to match the projection and spatial sampling of %s: %lf arcsec/pixel" % (filters[idfil_align],img_pixsizes[filters[idfil_align]]))
 			align_psfmatch_sci_img_name = {}
 			align_psfmatch_var_img_name = {}
 			for bb in range(0,nbands):
@@ -437,7 +449,8 @@ class images_processing:
 			name_out = 'stamp_%s' % check_name_remove_dir(psfmatch_sci_img_name[filters[idfil_align]],dir_images)
 			hdu.writeto(name_out, overwrite=True)
 			align_psfmatch_sci_img_name[filters[idfil_align]] = name_out
-			print ("produce %s" % name_out)
+			if verbose:
+				print ("produce %s" % name_out)
 
 			#++> variance image
 			hdu = fits.open(psfmatch_var_img_name[filters[idfil_align]])[0]
@@ -450,7 +463,8 @@ class images_processing:
 			name_out = 'stamp_%s' % check_name_remove_dir(psfmatch_var_img_name[filters[idfil_align]],dir_images)
 			hdu.writeto(name_out, overwrite=True)
 			align_psfmatch_var_img_name[filters[idfil_align]] = name_out
-			print ("produce %s" % name_out)
+			if verbose:
+				print ("produce %s" % name_out)
 
 			# for other filters:
 			# get header of stamp image that has largest pixel scale
@@ -473,7 +487,8 @@ class images_processing:
 					fits.writeto(name_out,align_data_image,header_for_align,overwrite=True)
 					hdu.close()
 					align_psfmatch_sci_img_name[filters[bb]] = name_out
-					print ("produce %s" % name_out)
+					if verbose:
+						print ("produce %s" % name_out)
 
 					#++> variance image
 					hdu = fits.open(psfmatch_var_img_name[filters[bb]])
@@ -488,7 +503,8 @@ class images_processing:
 					fits.writeto(name_out,align_data_image,header_for_align,overwrite=True)
 					hdu.close()
 					align_psfmatch_var_img_name[filters[bb]] = name_out
-					print ("produce %s" % name_out)
+					if verbose:
+						print ("produce %s" % name_out)
 
 			####============== (End of 3) Reprojection and resampling ============#####
 
@@ -1336,7 +1352,9 @@ class images_processing:
 			str_temp = 'fil%d' % bb
 			hdr[str_temp] = filters[bb]
 
-		hdul.append(fits.ImageHDU(data=map_flux, header=hdr, name='flux'))
+		#hdul.append(fits.ImageHDU(data=map_flux, header=hdr, name='flux'))
+		hdul.append(fits.PrimaryHDU(header=hdr))
+		hdul.append(fits.ImageHDU(map_flux, name='flux'))
 		hdul.append(fits.ImageHDU(map_flux_err, name='flux_err'))
 		hdul.append(fits.ImageHDU(gal_region, name='galaxy_region'))
 		hdul.append(fits.ImageHDU(data=stamp_img, header=stamp_hdr, name='stamp_image'))

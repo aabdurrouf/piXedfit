@@ -195,17 +195,14 @@ def initfit_vz(gal_z,DL_Gpc,zz,nrands_z):
 		conv_mod_spec_flux_clean = func(spec_wave_clean)
 
 		# get ratio of the obs and mod continuum
-		#spec_flux_ratio = spec_flux_clean/conv_mod_spec_flux_clean
-		# get difference of the obs and mod continuum
-		spec_flux_ratio = spec_flux_clean - conv_mod_spec_flux_clean
+		spec_flux_ratio = spec_flux_clean/conv_mod_spec_flux_clean
 
 		# fit with legendre polynomial
 		poly_legendre1 = np.polynomial.legendre.Legendre.fit(spec_wave_clean, spec_flux_ratio, poly_order)
-		#poly_legendre2 = np.polynomial.legendre.Legendre.fit(spec_wave_clean, poly_legendre1(spec_wave_clean), 3)
+		poly_legendre2 = np.polynomial.legendre.Legendre.fit(spec_wave_clean, poly_legendre1(spec_wave_clean), 3)
 
 		# apply to the model
-		#conv_mod_spec_flux_clean = poly_legendre1(spec_wave_clean)*conv_mod_spec_flux_clean/poly_legendre2(spec_wave_clean)
-		conv_mod_spec_flux_clean = conv_mod_spec_flux_clean + poly_legendre1(spec_wave_clean)
+		conv_mod_spec_flux_clean = poly_legendre1(spec_wave_clean)*conv_mod_spec_flux_clean/poly_legendre2(spec_wave_clean)
 		
 		chi_spec0 = (conv_mod_spec_flux_clean-spec_flux_clean)/spec_flux_err_clean
 		chi_spec,lower,upper = sigmaclip(chi_spec0, low=spec_chi_sigma_clip, high=spec_chi_sigma_clip)
@@ -363,8 +360,7 @@ spec_flux_err = f['spec_flux_err'][:]
 f.close()
 
 # remove bad spectral fluxes
-#idx0 = np.where((np.isnan(spec_flux)==False) & (np.isnan(spec_flux_err)==False) & (spec_flux>0) & (spec_flux_err>0))
-idx0 = np.where((np.isnan(spec_flux)==False) & (np.isnan(spec_flux_err)==False) & (spec_flux_err>0))
+idx0 = np.where((np.isnan(spec_flux)==False) & (np.isnan(spec_flux_err)==False) & (spec_flux>0) & (spec_flux_err>0))
 spec_wave = spec_wave[idx0[0]]
 spec_flux = spec_flux[idx0[0]]
 spec_flux_err = spec_flux_err[idx0[0]]

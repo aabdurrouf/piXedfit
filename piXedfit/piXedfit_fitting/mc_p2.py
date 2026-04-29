@@ -37,6 +37,7 @@ def store_to_fits(nsamples=None,sampler_params=None,sampler_log_sfr=None,sampler
 	bfit_spec_duste_temp = np.zeros((nwaves_mod,numDataPerRank))
 	bfit_spec_agn_temp = np.zeros((nwaves_mod,numDataPerRank))
 	bfit_spec_nebe_temp = np.zeros((nwaves_mod,numDataPerRank))
+	bfit_spec_nebe_cont_temp = np.zeros((nwaves_mod,numDataPerRank))
 	bfit_spec_wave = np.zeros(nwaves_mod)
 
 	count = 0
@@ -53,7 +54,8 @@ def store_to_fits(nsamples=None,sampler_params=None,sampler_log_sfr=None,sampler
 			spec_SED = generate_modelSED_spec_decompose(sp=sp,params_val=params_val,imf=imf,duste_switch=duste_switch,
 							add_neb_emission=add_neb_emission,dust_law=dust_law,add_agn=add_agn,
 							add_igm_absorption=add_igm_absorption,igm_type=igm_type,cosmo=cosmo,H0=H0,
-							Om0=Om0,sfh_form=sfh_form,funit='erg/s/cm2/A')
+							Om0=Om0,sfh_form=sfh_form,funit='erg/s/cm2/A',smooth_velocity=smooth_velocity,
+						    sigma_smooth=sigma_smooth,smooth_lsf=smooth_lsf,lsf_wave=lsf_wave,lsf_sigma=lsf_sigma)
 
 			bfit_photo_flux_temp[:,int(count)] = filtering(spec_SED['wave'],spec_SED['flux_total'],filters)
 
@@ -63,6 +65,7 @@ def store_to_fits(nsamples=None,sampler_params=None,sampler_log_sfr=None,sampler
 
 			if add_neb_emission == 1:
 				bfit_spec_nebe_temp[:,int(count)] = spec_SED['flux_nebe']
+				bfit_spec_nebe_cont_temp[:,int(count)] = spec_SED['flux_nebe_cont']
 			if duste_switch==1:
 				bfit_spec_duste_temp[:,int(count)] = spec_SED['flux_duste']
 			if add_agn == 1:
@@ -76,6 +79,7 @@ def store_to_fits(nsamples=None,sampler_params=None,sampler_log_sfr=None,sampler
 	bfit_spec_duste = np.zeros((nwaves_mod,nchains))
 	bfit_spec_agn = np.zeros((nwaves_mod,nchains))
 	bfit_spec_nebe = np.zeros((nwaves_mod,nchains))
+	bfit_spec_nebe_cont = np.zeros((nwaves_mod,nchains))
 
 	for bb in range(0,nbands):
 		comm.Gather(bfit_photo_flux_temp[bb], bfit_photo_flux[bb], root=0)
@@ -87,6 +91,7 @@ def store_to_fits(nsamples=None,sampler_params=None,sampler_log_sfr=None,sampler
 	if add_neb_emission == 1:
 		for bb in range(0,nwaves_mod):
 			comm.Gather(bfit_spec_nebe_temp[bb], bfit_spec_nebe[bb], root=0)
+			comm.Gather(bfit_spec_nebe_cont_temp[bb], bfit_spec_nebe_cont[bb], root=0)
 
 	if duste_switch == 1:
 		for bb in range(0,nwaves_mod):
@@ -117,6 +122,10 @@ def store_to_fits(nsamples=None,sampler_params=None,sampler_log_sfr=None,sampler
 			p16_spec_nebe = np.percentile(bfit_spec_nebe,16,axis=1)
 			p50_spec_nebe = np.percentile(bfit_spec_nebe,50,axis=1)
 			p84_spec_nebe = np.percentile(bfit_spec_nebe,84,axis=1)
+
+			p16_spec_nebe_cont = np.percentile(bfit_spec_nebe_cont,16,axis=1)
+			p50_spec_nebe_cont = np.percentile(bfit_spec_nebe_cont,50,axis=1)
+			p84_spec_nebe_cont = np.percentile(bfit_spec_nebe_cont,84,axis=1)
 
 		if duste_switch == 1:
 			p16_spec_duste = np.percentile(bfit_spec_duste,16,axis=1)
@@ -282,6 +291,13 @@ def store_to_fits(nsamples=None,sampler_params=None,sampler_log_sfr=None,sampler
 			col = fits.Column(name='nebe_p50', format='D', array=np.array(p50_spec_nebe))
 			cols0.append(col)
 			col = fits.Column(name='nebe_p84', format='D', array=np.array(p84_spec_nebe))
+			cols0.append(col)
+
+			col = fits.Column(name='nebe_cont_p16', format='D', array=np.array(p16_spec_nebe_cont))
+			cols0.append(col)
+			col = fits.Column(name='nebe_cont_p50', format='D', array=np.array(p50_spec_nebe_cont))
+			cols0.append(col)
+			col = fits.Column(name='nebe_cont_p84', format='D', array=np.array(p84_spec_nebe_cont))
 			cols0.append(col)
 
 		if duste_switch == 1:
@@ -644,7 +660,7 @@ elif gal_z>0.0:
 	free_z = 0
 	def_params_val['z'] = gal_z
 
-global smooth_velocity, sigma_smooth, smooth_lsf, name_file_lsf
+global smooth_velocity, sigma_smooth, smooth_lsf, name_file_lsf, lsf_wave, lsf_sigma
 smooth_velocity = f['samplers'].attrs['smooth_velocity']
 sigma_smooth = f['samplers'].attrs['sigma_smooth']
 smooth_lsf = f['samplers'].attrs['smooth_lsf']

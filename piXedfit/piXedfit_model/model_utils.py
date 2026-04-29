@@ -4,7 +4,6 @@ import sys, os
 from operator import itemgetter
 from astropy.io import fits
 from scipy.interpolate import interp1d
-#from scipy.integrate import simps
 from scipy.integrate import simpson as simps
 
 from ..utils.redshifting import cosmo_redshifting
@@ -152,7 +151,8 @@ def default_params_range(params_range=None):
 
 
 def set_initial_params_fsps(sp=None,imf_type=None,duste_switch=None,add_neb_emission=None,dust_law=None,add_agn=None,
-	smooth_velocity=True,sigma_smooth=0.0,smooth_lsf=False,lsf_wave=None,lsf_sigma=None,params_val=None,add_neb_continuum=1):
+	smooth_velocity=True,sigma_smooth=0.0,spec_resolution=2000,smooth_lsf=False,lsf_wave=None,lsf_sigma=None,
+	params_val=None,add_neb_continuum=1):
 
 	# input parameters:
 	formed_mass = pow(10.0,params_val['log_mass'])
@@ -222,6 +222,15 @@ def set_initial_params_fsps(sp=None,imf_type=None,duste_switch=None,add_neb_emis
 	elif smooth_velocity == False or smooth_velocity == 0:
 		sp.params['smooth_velocity'] = False
 
+	if smooth_velocity is True or smooth_velocity == 1:
+		if sigma_smooth is None:
+			if spec_resolution is None:
+				print ('spec_resolution is required parameter if smooth_velocity=True and sigma_smooth=None!')
+				sys.exit()
+			else:
+				from astropy import constants as const
+				sigma_smooth = const.c.value/1e+3/spec_resolution
+
 	sp.params['sigma_smooth'] = sigma_smooth
 
 	if smooth_lsf is True:
@@ -238,6 +247,7 @@ def set_initial_fsps(sp,duste_switch,add_neb_emission,add_agn,sfh_form,dust_law,
 
 	if add_neb_emission == 1:
 		sp.params["add_neb_emission"] = True
+		sp.params["add_neb_continuum"] = True
 	elif add_neb_emission == 0:
 		sp.params["add_neb_emission"] = False
 
@@ -835,6 +845,8 @@ def convert_unit_spec_from_ergscm2A(wave,spec,funit='Jy'):
 		spec_new = np.asarray(spec)*np.asarray(wave)
 	elif funit=='Jy' or funit==2:
 		spec_new = np.asarray(spec)*np.asarray(wave)*np.asarray(wave)/1.0e-23/2.998e+18
+	elif funit=='uJy' or funit==3:
+		spec_new = 1e+6*np.asarray(spec)*np.asarray(wave)*np.asarray(wave)/1.0e-23/2.998e+18
 	else:
 		print ("The input funit is not recognized!")
 		sys.exit()

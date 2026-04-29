@@ -18,16 +18,67 @@ def redchi2_two_seds(sed1_f=[], sed1_ferr=[], sed2_f=[], sed2_ferr=[]):
 
 	return red_chi2
 
-def pixel_binning_from_flux_map(map_flux, map_flux_err, gal_region, ref_band, Dmin_bin, SNR, redc_chi2_limit, del_r):
 
-	nbands = map_flux.shape[0]
-	
+def pixel_binning(fits_fluxmap, ref_band=None, Dmin_bin=4.0, SNR=None, redc_chi2_limit=4.0, del_r=2.0, name_out_fits=None):
+	"""Function for pixel binning, a proses of combining neighboring pixels to optimize the signal-to-noise ratios of the spatially resolved SEDs. 
+	Input of this function is a data cube obtained from the image processing or spectrophotometric processing.  
+
+	:param fits_fluxmap:
+		Input FITS file containing the photometric or spectrophotometric data cube. The photometric data cube is obtained from the image processing with the :func:`images_processing` function, 
+		while the spectrophotmetric data cube is the output of function :func:`match_imgifs_spectral`.
+
+	:param ref_band: 
+		Index of the reference band (filter) for sorting pixels based on the brightness. The central pixel of a bin is the brightest pixel in this reference band.
+		If ref_band=None, the ref_band is chosen to be around the middle of the wavelength covered by the observed SEDs.
+
+	:param Dmin_bin:
+		Minimum diameter of a bin in unit of pixel.
+
+	:param SNR:
+		S/N thresholds in all bands. The length of this array should be the same as the number of bands in the fits_fluxmap. 
+		S/N threshold can vary across the filters. If SNR is None, the S/N is set as 5.0 to all the filters. 
+
+	:param redc_chi2_limit:
+		A maximum reduced chi-square value for a pair of two SEDs to be considered as having a similar shape. 
+
+	:param del_r:
+		Increment of circular radius (in unit of pixel) adopted in the pixel binning process.
+
+	:param name_out_fits: 
+		Desired name for the output FITS file. If None, a default name is adopted.
+	"""
+
+	hdu = fits.open(fits_fluxmap)
+	header = hdu[0].header
+	if header['specphot'] == 0:
+		gal_region = hdu['GALAXY_REGION'].data
+		map_flux = hdu['FLUX'].data
+		map_flux_err = hdu['FLUX_ERR'].data 
+	elif header['specphot'] == 1:
+		gal_region = hdu['PHOTO_REGION'].data
+		spec_gal_region = hdu['SPEC_REGION'].data 
+		map_flux = hdu['PHOTO_FLUX'].data 
+		map_flux_err = hdu['PHOTO_FLUXERR'].data
+		spec_wave = hdu['WAVE'].data 
+		map_spec_flux = hdu['SPEC_FLUX'].data 
+		map_spec_flux_err = hdu['SPEC_FLUXERR'].data
+		nwaves = len(spec_wave) 
+		# transpose from (wave,y,x) -> (y,x,wave)
+		map_spec_flux_trans = np.transpose(map_spec_flux, axes=(1,2,0))
+		map_spec_flux_err_trans = np.transpose(map_spec_flux_err, axes=(1,2,0))
+	hdu.close()
+
+	# number of filters
+	nbands = int(header['nfilters'])
+
 	# transpose from (wave,y,x) -> (y,x,wave)
 	map_flux_trans = np.transpose(map_flux, axes=(1,2,0))
 	map_flux_err_trans = np.transpose(map_flux_err, axes=(1,2,0))
-  
+
+	# modify negative fluxes in a given band with the minimum flux in that band
+	# this is only used in calculating chi-square for the evaluation of the SED shape similarity  
 	map_flux_corr = map_flux
-	for bb in range(nbands):
+	for bb in range(0,nbands):
 		rows, cols = np.where((map_flux[bb]>0) & (gal_region==1))
 		if len(rows) > 0:
 			lowest = np.min(map_flux[bb][rows,cols])
@@ -35,6 +86,7 @@ def pixel_binning_from_flux_map(map_flux, map_flux_err, gal_region, ref_band, Dm
 			rows, cols = np.where((map_flux[bb]<0) & (gal_region==1))
 			map_flux_corr[bb][rows,cols] = lowest
 
+	# find systematic error factor
 	rows, cols = np.where(gal_region==1)
 	idx = np.unravel_index(map_flux[ref_band][rows,cols].argmax(), map_flux[ref_band][rows,cols].shape)
 	yc, xc = rows[idx[0]], cols[idx[0]]
@@ -55,8 +107,9 @@ def pixel_binning_from_flux_map(map_flux, map_flux_err, gal_region, ref_band, Dm
 		pix_chi2 = np.asarray(pix_chi2)
 		if np.median(pix_chi2)<=2.0:
 			status_add = 0
+
 		factor = factor + 0.01
-	
+	# apply the factor
 	map_flux_err_corr = np.sqrt( np.square(map_flux_err) + np.square(factor*map_flux))
 
 	# transpose from (band,y,x) -> (y,x,band)
@@ -270,161 +323,116 @@ def pixel_binning_from_flux_map(map_flux, map_flux_err, gal_region, ref_band, Dm
 		sys.stdout.flush()
 	sys.stdout.write('\n')
 
+
 	# transpose from (y,x,wave) => (wave,y,x)
 	map_bin_flux_trans = np.transpose(map_bin_flux, axes=(2,0,1))
 	map_bin_flux_err_trans = np.transpose(map_bin_flux_err, axes=(2,0,1))
 
-	output = {}
-	output['pixbin_map'] = pixbin_map
-	output['map_bin_flux_trans'] = map_bin_flux_trans
-	output['map_bin_flux_err_trans'] = map_bin_flux_err_trans
+	if header['specphot'] == 0:
+		print ("Number of bins: %d" % count_bin)
 
-	return output
+	# In case of specphoto input file: bin the IFS spectra
+	elif header['specphot'] == 1:
+		pixbin_map_specphoto = np.zeros((dim_y,dim_x))
+		map_bin_spec_flux = np.zeros((dim_y,dim_x,nwaves))
+		map_bin_spec_flux_err = np.zeros((dim_y,dim_x,nwaves))
+
+		count_bin_specphoto = 0
+		for bb in range(0,count_bin):
+			rows1, cols1 = np.where(pixbin_map==bb+1)
+			if np.sum(spec_gal_region[rows1,cols1])==len(rows1):
+				count_bin_specphoto = count_bin_specphoto + 1
+				pixbin_map_specphoto[rows1,cols1] = bb+1
+
+				map_bin_spec_flux[rows1,cols1] = np.sum(map_spec_flux_trans[rows1,cols1], axis=0)
+				map_bin_spec_flux_err[rows1,cols1] = np.sqrt(np.sum(np.square(map_spec_flux_err_trans[rows1,cols1]), axis=0))
+
+		# transpose from (y,x,wave) -> (wave,y,x)
+		map_bin_spec_flux_trans = np.transpose(map_bin_spec_flux, axes=(2,0,1))
+		map_bin_spec_flux_err_trans = np.transpose(map_bin_spec_flux_err, axes=(2,0,1))
+
+		print ("Number of bins in the photometric data cube: %d" % count_bin)
+		print ("Number of bins in the spectroscopic data cube: %d" % count_bin_specphoto)
 
 
+	## store into FITS file
+	if header['specphot'] == 0:
+		hdul = fits.HDUList()
+		hdr = fits.Header()
+		hdr['nfilters'] = nbands
+		hdr['refband'] = ref_band
+		if 'RA' in header:
+			hdr['RA'] = header['RA']
+		if 'DEC' in header:
+			hdr['DEC'] = header['DEC']
+		hdr['z'] = header['z']
+		if 'GalEBV' in header:
+			hdr['GalEBV'] = header['GalEBV']
+		hdr['nbins'] = count_bin
+		hdr['unit'] = header['unit']
+		hdr['bunit'] = 'erg/s/cm^2/A'
+		hdr['struct'] = '(band,y,x)'
+		if 'fsamp' in header:
+			hdr['fsamp'] = header['fsamp']
+		if 'pixsize' in header:
+			hdr['pixsize'] = header['pixsize']
+		if 'fpsfmtch' in header:
+			hdr['fpsfmtch'] = header['fpsfmtch']
+		if 'psffwhm' in header:
+			hdr['psffwhm'] = header['psffwhm']
+		if 'specphot' in header:
+			hdr['specphot'] = header['specphot']
 
-def pixel_binning(fits_fluxmap, ref_band=None, Dmin_bin=4.0, SNR=None, redc_chi2_limit=4.0, del_r=2.0, pixbin_map=None, name_out_fits=None):
-	"""Function for pixel binning, a proses of combining neighboring pixels to optimize the signal-to-noise ratios of the spatially resolved SEDs. 
-	Input of this function is a data cube obtained from the image processing or spectrophotometric processing.  
+		for bb in range(0,nbands):
+			str_temp = 'fil%d' % bb
+			hdr[str_temp] = header[str_temp]
 
-	:param fits_fluxmap:
-		Input FITS file containing the photometric or spectrophotometric data cube. The photometric data cube is obtained from the image processing with the :func:`images_processing` function, 
-		while the spectrophotmetric data cube is the output of function :func:`match_imgifs_spectral`.
+		hdul.append(fits.ImageHDU(data=pixbin_map, header=hdr, name='bin_map'))
+		hdul.append(fits.ImageHDU(map_bin_flux_trans, name='bin_flux'))
+		hdul.append(fits.ImageHDU(map_bin_flux_err_trans, name='bin_fluxerr'))
 
-	:param ref_band: 
-		Index of the reference band (filter) for sorting pixels based on the brightness. The central pixel of a bin is the brightest pixel in this reference band.
-		If ref_band=None, the ref_band is chosen to be around the middle of the wavelength covered by the observed SEDs.
+	elif header['specphot'] == 1:
+		hdul = fits.HDUList()
+		hdr = fits.Header()
+		hdr['nfilters'] = nbands
+		hdr['refband'] = ref_band
+		if 'RA' in header:
+			hdr['RA'] = header['RA']
+		if 'DEC' in header:
+			hdr['DEC'] = header['DEC']
+		hdr['z'] = header['z']
+		if 'GalEBV' in header:
+			hdr['GalEBV'] = header['GalEBV']
+		hdr['nbinsph'] = count_bin
+		hdr['nbinssp'] = count_bin_specphoto
+		hdr['unit'] = header['unit']
+		hdr['bunit'] = 'erg/s/cm^2/A'
+		hdr['structph'] = '(band,y,x)'
+		hdr['structsp'] = '(wavelength,y,x)'
+		if 'fsamp' in header:
+			hdr['fsamp'] = header['fsamp']
+		if 'pixsize' in header:    
+			hdr['pixsize'] = header['pixsize']       
+		if 'fpsfmtch' in header:
+			hdr['fpsfmtch'] = header['fpsfmtch']
+		if 'psffwhm' in header:
+			hdr['psffwhm'] = header['psffwhm']
+		if 'specphot' in header:
+			hdr['specphot'] = header['specphot']
 
-	:param Dmin_bin:
-		Minimum diameter of a bin in unit of pixel.
+		for bb in range(0,nbands):
+			str_temp = 'fil%d' % bb
+			hdr[str_temp] = header[str_temp]
 
-	:param SNR:
-		S/N thresholds in all bands. The length of this array should be the same as the number of bands in the fits_fluxmap. 
-		S/N threshold can vary across the filters. If SNR is None, the S/N is set as 5.0 to all the filters. 
+		hdul.append(fits.ImageHDU(data=pixbin_map, header=hdr, name='photo_bin_map'))
+		hdul.append(fits.ImageHDU(spec_gal_region, name='spec_region'))
+		hdul.append(fits.ImageHDU(pixbin_map_specphoto, name='spec_bin_map'))
+		hdul.append(fits.ImageHDU(map_bin_flux_trans, name='bin_photo_flux'))
+		hdul.append(fits.ImageHDU(map_bin_flux_err_trans, name='bin_photo_fluxerr'))
+		hdul.append(fits.ImageHDU(spec_wave, name='spec_wave'))
+		hdul.append(fits.ImageHDU(map_bin_spec_flux_trans, name='bin_spec_flux'))
+		hdul.append(fits.ImageHDU(map_bin_spec_flux_err_trans, name='bin_spec_fluxerr'))
 
-	:param redc_chi2_limit:
-		A maximum reduced chi-square value for a pair of two SEDs to be considered as having a similar shape. 
-
-	:param del_r:
-		Increment of circular radius (in unit of pixel) adopted in the pixel binning process.
-
-	:param name_out_fits: 
-		Desired name for the output FITS file. If None, a default name is adopted.
-	"""
-
-	# extensions to be ignored in binning
-	ignore_exts = ['PRIMARY', 'STAMP_IMAGE', 'CORR_FACTOR']
-
-	cube = fits.open(fits_fluxmap)
-
-	if 'FLUX' in cube:
-		map_flux = cube['FLUX'].data
-		map_flux_err = cube['FLUX_ERR'].data
-	elif 'PHOTO_FLUX' in cube:
-		map_flux = cube['PHOTO_FLUX'].data
-		map_flux_err = cube['PHOTO_FLUXERR'].data
-	else:
-		print ("Input fits_fluxmap should contain either FLUX or PHOTO_FLUX extension!")
-		sys.exit() 
-	
-	if 'GALAXY_REGION' in cube:
-		gal_region = cube['GALAXY_REGION'].data
-	elif 'GALAXY_REGION' not in cube and 'SPEC_REGION' in cube:
-		gal_region = cube['SPEC_REGION'].data
-	else:
-		gal_region = np.zeros(map_flux[0].shape) + 1
-	
-	if pixbin_map is None: 
-		# perform pixel binning if it is not provided
-		output = pixel_binning_from_flux_map(map_flux, map_flux_err, gal_region, ref_band, Dmin_bin, SNR, redc_chi2_limit, del_r)
-		pixbin_map = output['pixbin_map']
-		map_bin_flux_trans = output['map_bin_flux_trans']
-		map_bin_flux_err_trans = output['map_bin_flux_err_trans']
-	
-	# number of spatial bins
-	nbins = int(np.max(pixbin_map))
-
-	# if there is spectrophotometric data, get binning map for spectroscopy
-	# only bins that entirelly within the spec_region is considered
-	if 'SPEC_REGION' in cube:
-		spec_region = cube['SPEC_REGION'].data
-		pixbin_map_spec = np.zeros(spec_region.shape)
-		nbins_spec = 0
-		for bb in range(nbins):
-			pix_rows, pix_cols = np.where(pixbin_map==bb+1)
-			if np.nansum(spec_region[pix_rows,pix_cols]) == len(pix_rows):
-				pixbin_map_spec[pix_rows,pix_cols] = bb + 1
-				nbins_spec = nbins_spec + 1
-
-	# make new fits file
-	hdul = fits.HDUList()
-	
-	if 'PRIMARY' in cube:
-		header = cube['PRIMARY'].header
-		old_name = 'PRIMARY'
-	else:
-		header = cube[0].header
-		old_name = cube[0].name
-	
-	#old_name = header['EXTNAME']
-	header['EXTNAME'] = 'PRIMARY'
-	header['refband'] = ref_band
-	header['nbins'] = nbins 
-	header['nbinsph'] = nbins
-
-	if 'SPEC_REGION' in cube:
-		header['nbinssp'] = nbins_spec
-		if 'specphot' not in header:
-			header['specphot'] = 1
-	else:
-		if 'specphot' not in header:
-			header['specphot'] = 0
-	hdul.append(fits.PrimaryHDU(header=header))
-
-	for ii in range(len(cube)):
-
-		if ii == 0:
-			name_check = old_name
-		else:
-			name_check = cube[ii].name
-
-		#if cube[ii].name not in ignore_exts:
-		if name_check not in ignore_exts:
-			if len(cube[ii].data.shape) <= 2:  # 1D or 2D data
-				hdul.append(fits.ImageHDU(data=cube[ii].data, name=name_check))
-
-			else: # 3D data 
-				temp_cube_data = np.zeros((cube[ii].data.shape[1],cube[ii].data.shape[2],cube[ii].data.shape[0]))   # (y, x, wave)
-
-				if cube[ii].data.shape[0] > 50:   # spectrophotometric data
-					for bb in range(nbins):
-						pix_rows1, pix_cols1 = np.where(pixbin_map==bb+1)
-						if pixbin_map_spec[pix_rows1[0], pix_cols1[0]] > 0:
-							if "ERR" in name_check:  # uncertainty data
-								temp_cube_data[pix_rows1,pix_cols1] = np.sqrt(np.nansum(np.square(cube[ii].data[:,pix_rows1,pix_cols1]), axis=1))
-							else:   # science data
-								temp_cube_data[pix_rows1,pix_cols1] = np.nansum(cube[ii].data[:,pix_rows1,pix_cols1], axis=1)
-
-				else: # photometric data
-					for bb in range(nbins):
-						pix_rows1, pix_cols1 = np.where(pixbin_map==bb+1)
-						if "ERR" in name_check:  # uncertainty data
-							temp_cube_data[pix_rows1,pix_cols1] = np.sqrt(np.nansum(np.square(cube[ii].data[:,pix_rows1,pix_cols1]), axis=1))
-						else:   # science data
-							temp_cube_data[pix_rows1,pix_cols1] = np.nansum(cube[ii].data[:,pix_rows1,pix_cols1], axis=1)
-
-				# transpose from (y,x,wave) -> (wave,y,x)
-				temp_cube_data_trans = np.transpose(temp_cube_data, axes=(2,0,1))
-
-				hdul.append(fits.ImageHDU(data=temp_cube_data_trans, name=name_check))
-				
-	# add binning map
-	hdul.append(fits.ImageHDU(data=pixbin_map, name='photo_bin_map'))
-
-	if 'SPEC_REGION' in cube:
-		hdul.append(fits.ImageHDU(data=pixbin_map_spec, name='spec_bin_map'))
-
-	cube.close()
 
 	if name_out_fits is None:
 		name_out_fits = "pixbin_%s" % fits_fluxmap
@@ -432,6 +440,7 @@ def pixel_binning(fits_fluxmap, ref_band=None, Dmin_bin=4.0, SNR=None, redc_chi2
 	hdul.writeto(name_out_fits, overwrite=True)
 
 	return name_out_fits
+
 
 
 def pixel_binning_images(images, var_images, ref_band=None, Dmin_bin=2.0, SNR=None, redc_chi2_limit=4.0, del_r=2.0, name_out_fits=None):
@@ -816,68 +825,32 @@ def open_binmap_fits(binmap_fits):
 	header = hdu[0].header
 	unit_flux = float(hdu[0].header['unit'])
 	flag_specphoto = hdu[0].header['specphot']
-	nbins_photo = int(hdu[0].header['nbins'])
-
-	if 'nbinssp' in hdu[0].header:
-		int(hdu[0].header['nbinssp'])
-	else:
+	
+	if flag_specphoto == 0:
+		nbins_photo = int(hdu[0].header['nbins'])
 		nbins_spec = 0
 
-	if 'BIN_MAP' in hdu:
-		binmap_photo = hdu['BIN_MAP'].data
-	elif 'PHOTO_BIN_MAP' in hdu:
-		binmap_photo = hdu['PHOTO_BIN_MAP'].data
-	else:
-		binmap_photo = None
-
-	if 'SPEC_REGION' in hdu:
-		spec_region = hdu['SPEC_REGION'].data
-	else:
+		binmap_photo = hdu['BIN_MAP'].data 
 		spec_region = None
-
-	if 'SPEC_BIN_MAP' in hdu:
-		binmap_spec = hdu['SPEC_BIN_MAP'].data
-	else:
 		binmap_spec = None
-
-	if 'BIN_FLUX' in hdu:
 		map_photo_flux = hdu['BIN_FLUX'].data
-	elif 'BIN_PHOTO_FLUX' in hdu:
-		map_photo_flux = hdu['BIN_PHOTO_FLUX'].data 
-	elif 'FLUX' in hdu:
-		map_photo_flux = hdu['FLUX'].data
-	else:
-		map_photo_flux = None
-
-	if 'BIN_FLUXERR' in hdu:
 		map_photo_flux_err = hdu['BIN_FLUXERR'].data
-	elif 'BIN_PHOTO_FLUXERR' in hdu:
-		map_photo_flux_err = hdu['BIN_PHOTO_FLUXERR'].data
-	elif 'FLUX_ERR' in hdu:
-		map_photo_flux_err = hdu['FLUX_ERR'].data
-	else:
-		map_photo_flux_err = None
-
-	if 'SPEC_WAVE' in hdu:
-		spec_wave = hdu['SPEC_WAVE'].data
-	else:
 		spec_wave = None 
-
-	if 'BIN_SPEC_FLUX' in hdu:
-		map_spec_flux = hdu['BIN_SPEC_FLUX'].data
-	elif 'SPEC_FLUX_CORR' in hdu:
-		map_spec_flux = hdu['SPEC_FLUX_CORR'].data
-	elif 'SPEC_FLUX' in hdu:
-		map_spec_flux = hdu['SPEC_FLUX'].data
-	else:
 		map_spec_flux = None 
-	
-	if 'BIN_SPEC_FLUXERR' in hdu:
-		map_spec_flux_err = hdu['BIN_SPEC_FLUXERR'].data
-	elif 'SPEC_FLUXERR' in hdu:
-		map_spec_flux = hdu['SPEC_FLUXERR'].data
-	else:
 		map_spec_flux_err = None 
+
+	elif flag_specphoto == 1:
+		nbins_photo = int(hdu[0].header['nbinsph'])
+		nbins_spec = int(hdu[0].header['nbinssp'])
+
+		binmap_photo = hdu['PHOTO_BIN_MAP'].data
+		spec_region = hdu['SPEC_REGION'].data 
+		binmap_spec = hdu['SPEC_BIN_MAP'].data 
+		map_photo_flux = hdu['BIN_PHOTO_FLUX'].data 
+		map_photo_flux_err = hdu['BIN_PHOTO_FLUXERR'].data 
+		spec_wave = hdu['SPEC_WAVE'].data 
+		map_spec_flux = hdu['BIN_SPEC_FLUX'].data 
+		map_spec_flux_err = hdu['BIN_SPEC_FLUXERR'].data 
 
 	filters = []
 	for bb in range(int(hdu[0].header['nfilters'])):
@@ -925,12 +898,6 @@ def plot_binmap(binmap_fits, plot_binmap_spec=True, savefig=True, name_plot_binm
 	if 'SPEC_REGION' in hdu:
 		binmap_spec = hdu['SPEC_BIN_MAP'].data
 		spec_region = hdu['SPEC_REGION'].data
-		flag_specphoto = 1
-	else:
-		flag_specphoto = 0
-
-	hdu.close()
-
 
 	cmap = plt.get_cmap('nipy_spectral_r', nbins_photo)
 
@@ -1014,22 +981,12 @@ def get_bins_area(binmap_fits):
 	hdu = fits.open(binmap_fits)
 	pixsize = hdu[0].header['pixsize']   ## in arcsec
 	z = hdu[0].header['z']
-	if 'nbins' in hdu[0].header:
+	if hdu[0].header['specphot'] == 0:
 		nbins_photo = int(hdu[0].header['nbins'])
-	elif 'nbinsph' in hdu[0].header:
+		binmap_photo = hdu['BIN_MAP'].data 
+	elif hdu[0].header['specphot'] == 1:
 		nbins_photo = int(hdu[0].header['nbinsph'])
-
-	if 'BIN_MAP' in hdu:
-		binmap_photo = hdu['BIN_MAP'].data
-	elif 'PHOTO_BIN_MAP' in hdu:
 		binmap_photo = hdu['PHOTO_BIN_MAP'].data
-
-	#if hdu[0].header['specphot'] == 0:
-	#	nbins_photo = int(hdu[0].header['nbins'])
-	#	binmap_photo = hdu['BIN_MAP'].data 
-	#elif hdu[0].header['specphot'] == 1:
-	#	nbins_photo = int(hdu[0].header['nbinsph'])
-	#	binmap_photo = hdu['PHOTO_BIN_MAP'].data
 	hdu.close()
 
 	from ..piXedfit_images.images_utils import kpc_per_pixel

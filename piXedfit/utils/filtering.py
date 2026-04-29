@@ -238,6 +238,36 @@ def get_filter_curve(filter_name):
 
 
 def cwave_filters(filters):
+    """Function for retrieving central wavelengths of a set of filters
+
+    :param filters:
+        A single filter name (string) or a list of filter names (strings)
+
+    :returns cwaves:
+        A single central wavelength (float) or a list of central wavelengths (numpy array)
+    """
+    # Convert to list if a single string is given
+    if isinstance(filters, str):
+        filters = [filters]
+        single_input = True
+    else:
+        single_input = False
+
+    f = h5py.File(dir_file + 'filters_w.hdf5', 'r')
+    cwaves = np.zeros(len(filters))
+    
+    for i, filt in enumerate(filters):
+        attr_name = f'cw_{filt}'
+        cwaves[i] = f[filt].attrs[attr_name]
+    f.close()
+
+    if single_input:
+        return cwaves[0]  # Return a float
+    else:
+        return cwaves  # Return an array
+	
+
+def cwave_filters_old(filters):
 	"""Function for retrieving central wavelengths of a set of filters
 
 	:param filters:

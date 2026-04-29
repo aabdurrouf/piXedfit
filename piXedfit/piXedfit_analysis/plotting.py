@@ -17,8 +17,7 @@ from ..piXedfit_model.gen_models import generate_modelSED_spec_decompose
 from ..utils.filtering import cwave_filters, filtering
 from ..utils.posteriors import plot_triangle_posteriors
 
-
-__all__ = ["plot_SED", "plot_corner", "plot_sfh_mcmc"]
+__all__ = ["plot_SED", "plot_corner", "plot_sfh_mcmc", "plot_SED_specphoto"]
 
 
 def plot_SED_rdsps_photo(filters=None,obs_photo=None,bfit_photo=None,bfit_mod_spec=None,minchi2_params=None,header_samplers=None,
@@ -431,148 +430,8 @@ def plot_SED_mcmc_photo(filters=None,obs_photo=None,bfit_photo=None,bfit_mod_spe
 
 	return name_plot
 
-def plot_SED_specphoto_old(filters=None,obs_photo=None,obs_spec=None,bfit_photo=None,bfit_spec=None,bfit_mod_spec=None,minchi2_params=None,
-	header_samplers=None,logscale_x=True, logscale_y=True, xrange=None, yrange=None, wunit='micron',funit='erg/s/cm2/A', 
-	decompose=1,xticks=None,photo_color='red',residual_range=[-1.0,1.0], fontsize_tick=18,fontsize_label=25,show_legend=True, 
-	loc_legend=4, fontsize_legend=18, markersize=100, lw=2.0, name_plot=None):
 
-	# plot 1: photometry
-	name_plot1 = 'ph_%s' % name_plot
-	if header_samplers['fitmethod'] == 'mcmc':
-		plot_SED_mcmc_photo(filters=filters,obs_photo=obs_photo,bfit_photo=bfit_photo,bfit_mod_spec=bfit_mod_spec,header_samplers=header_samplers,
-				logscale_x=logscale_x,logscale_y=logscale_y,xrange=xrange,yrange=yrange,wunit=wunit,funit=funit,decompose=decompose,
-				xticks=xticks,photo_color=photo_color,residual_range=residual_range,fontsize_tick=fontsize_tick,fontsize_label=fontsize_label, 
-				show_legend=show_legend,loc_legend=loc_legend,fontsize_legend=fontsize_legend,markersize=markersize,lw=lw,name_plot=name_plot1)
-
-	elif header_samplers['fitmethod'] == 'rdsps':
-		plot_SED_rdsps_photo(filters=filters,obs_photo=obs_photo,bfit_photo=bfit_photo,bfit_mod_spec=bfit_mod_spec,minchi2_params=minchi2_params,
-				header_samplers=header_samplers,logscale_x=logscale_x,logscale_y=logscale_y,xrange=xrange,yrange=yrange,wunit=wunit,funit=funit,
-				decompose=decompose,xticks=xticks,photo_color=photo_color,residual_range=residual_range,fontsize_tick=fontsize_tick,
-				fontsize_label=fontsize_label,show_legend=show_legend,loc_legend=loc_legend,fontsize_legend=fontsize_legend,
-				markersize=markersize,lw=lw,name_plot=name_plot1)
-
-	# plot 2: spectroscopy
-	fig1 = plt.figure(figsize=(18,6))
-	f1 = plt.subplot()
-	plt.setp(f1.get_yticklabels(), fontsize=int(fontsize_tick))
-	plt.setp(f1.get_xticklabels(), fontsize=int(fontsize_tick))
-	
-	plt.ylim(min(obs_spec['flux'])*0.4,max(obs_spec['flux'])*1.8)
-	xmin, xmax = min(obs_spec['wave'])-200, max(obs_spec['wave'])+200
-	plt.xlim(xmin,xmax)
-
-	plt.ylabel(r'$F_{\lambda}$ [erg $s^{-1}cm^{-2}\AA^{-1}$]', fontsize=int(fontsize_label))
-	plt.xlabel(r'Wavelength $[\AA]$', fontsize=int(fontsize_label))
-
-	if logscale_y == True:
-		f1.set_yscale('log')
-	if logscale_x == True:
-		f1.set_xscale('log')
-
-	for axis in [f1.xaxis]:
-		axis.set_major_formatter(ScalarFormatter())
-
-	f1.fill_between(obs_spec['wave'],obs_spec['flux']-obs_spec['flux_err'],obs_spec['flux']+obs_spec['flux_err'], 
-					color='gray', alpha=0.2, edgecolor='none', zorder=3)
-	plt.plot(obs_spec['wave'], obs_spec['flux'], lw=lw, color='black', label='Observed spectrum', zorder=4)
-
-	if header_samplers['fitmethod'] == 'mcmc':
-		f1.fill_between(bfit_spec['wave'], bfit_spec['p16'], bfit_spec['p84'], color='pink', alpha=0.2, edgecolor='none', zorder=5)
-		plt.plot(bfit_spec['wave'], bfit_spec['p50'], lw=1, color='red', zorder=6)
-
-	elif header_samplers['fitmethod'] == 'rdsps':
-		plt.plot(bfit_spec['wave'], bfit_spec['flux'], lw=1, color='red', zorder=5)
-
-	plt.subplots_adjust(bottom=0.2)
-	name_plot2 = 'sp_%s' % name_plot
-	plt.savefig(name_plot2, bbox_inches='tight')
-
-
-	# plot 3: photometry + spectroscopy
-	# observed SEDs
-	nbands = len(filters)
-	photo_cwave = cwave_filters(filters)
-	obs_fluxes = convert_unit_spec_from_ergscm2A(photo_cwave,obs_photo['flux'],funit=funit)
-	obs_flux_err = convert_unit_spec_from_ergscm2A(photo_cwave,obs_photo['flux_err'],funit=funit)
-	obs_spec_flux = convert_unit_spec_from_ergscm2A(obs_spec['wave'],obs_spec['flux'],funit=funit)
-
-	fig1 = plt.figure(figsize=(18,6))
-	f1 = plt.subplot()
-	plt.setp(f1.get_yticklabels(), fontsize=int(fontsize_tick))
-	plt.setp(f1.get_xticklabels(), fontsize=int(fontsize_tick))
-
-	if logscale_y == True:
-		f1.set_yscale('log')
-	if logscale_x == True:
-		f1.set_xscale('log')
-
-	if funit=='erg/s/cm2/A' or funit==0:
-		plt.ylabel(r'$F_{\lambda}$ [erg $s^{-1}cm^{-2}\AA^{-1}$]', fontsize=int(fontsize_label))
-	elif funit=='erg/s/cm2' or funit==1:
-		plt.ylabel(r'$\lambda F_{\lambda}$ [erg $s^{-1}cm^{-2}$]', fontsize=int(fontsize_label))
-	elif funit=='Jy' or funit==2:
-		plt.ylabel(r'$F_{\nu}$ [Jy]', fontsize=int(fontsize_label))
-	else:
-		print ("The input funit is not recognized!")
-		sys.exit()
-
-	if yrange is None:
-		plt.ylim(min(obs_fluxes)*0.5,max(obs_fluxes)*1.8)
-	if yrange is not None:
-		plt.ylim(yrange[0],yrange[1])
-
-	if xrange is None:
-		if wunit==0 or wunit=='angstrom':
-			plt.xlim(min(photo_cwave)*0.7,max(photo_cwave)*1.3)
-			xmin = min(photo_cwave)*0.7
-			xmax = max(photo_cwave)*1.3
-		elif wunit==1 or wunit=='micron':
-			plt.xlim(min(photo_cwave)*0.7/1e+4,max(photo_cwave)*1.3/1e+4)
-			xmin = min(photo_cwave)*0.7/1e+4
-			xmax = max(photo_cwave)*1.3/1e+4
-	elif xrange is not None:
-		plt.xlim(xrange[0],xrange[1])
-		xmin = xrange[0]
-		xmax = xrange[1]
-
-	if wunit==0 or wunit=='angstrom':
-		plt.xlabel(r'Wavelength $[\AA]$', fontsize=int(fontsize_label))
-	elif wunit==1 or wunit=='micron':
-		plt.xlabel(r'Wavelength [$\mu$m]', fontsize=int(fontsize_label))
-
-	if xticks is not None:
-		plt.xticks(xticks)
-	for axis in [f1.xaxis]:
-		axis.set_major_formatter(ScalarFormatter())
-
-	#==> best-fit model spectrum
-	if header_samplers['fitmethod'] == 'mcmc': 
-		bfit_spec_flux = convert_unit_spec_from_ergscm2A(bfit_spec['wave'],bfit_spec['p50'],funit=funit)
-		bfit_photo_flux = convert_unit_spec_from_ergscm2A(photo_cwave,bfit_photo['p50'],funit=funit)
-	elif header_samplers['fitmethod'] == 'rdsps':
-		bfit_spec_flux = convert_unit_spec_from_ergscm2A(bfit_spec['wave'],bfit_spec['flux'],funit=funit)
-		bfit_photo_flux = convert_unit_spec_from_ergscm2A(photo_cwave,bfit_photo['flux'],funit=funit)
-
-	if wunit==0 or wunit=='angstrom':
-		plt.plot(obs_spec['wave'], obs_spec_flux, lw=lw, color='black', zorder=4)
-		plt.plot(bfit_spec['wave'], bfit_spec_flux, lw=1, color='red', zorder=5)
-
-		plt.scatter(photo_cwave, obs_fluxes, marker='o', s=markersize, color='blue', zorder=6)
-		plt.scatter(photo_cwave, bfit_photo_flux, marker='o', s=0.7*markersize, color='gray', zorder=7)
-
-	elif wunit==1 or wunit=='micron':
-		plt.plot(obs_spec['wave']/1.0e+4, obs_spec_flux, lw=lw, color='black', zorder=4)
-		plt.plot(bfit_spec['wave']/1.0e+4, bfit_spec_flux, lw=1, color='red', zorder=5)
-
-		plt.scatter(photo_cwave/1.0e+4, obs_fluxes, marker='o', s=markersize, color='blue', zorder=6)
-		plt.scatter(photo_cwave/1.0e+4, bfit_photo_flux, marker='o', s=0.7*markersize, color='gray', zorder=7)
-
-	plt.subplots_adjust(bottom=0.2)
-	name_plot3 = 'sph_%s' % name_plot
-	plt.savefig(name_plot3, bbox_inches='tight')
-
-
-def plot_SED_specphoto(filters=None,obs_photo=None,obs_spec=None,bfit_photo=None,bfit_spec=None,bfit_mod_spec=None,
+def plot_SED_specphoto_old(filters=None,obs_photo=None,obs_spec=None,bfit_photo=None,bfit_spec=None,bfit_mod_spec=None,
 	corr_factor=None,minchi2_params=None,header_samplers=None,logscale_x=True, logscale_y=True, xrange=None, yrange=None, 
 	wunit='micron',funit='erg/s/cm2/A', xticks=None, photo_color='red',residual_range=[-1.0,1.0], show_original_spec=False,
 	fontsize_tick=18, fontsize_label=25, show_legend=True, loc_legend=4, fontsize_legend=18, markersize=100, lw=2.0, name_plot=None):
@@ -858,7 +717,7 @@ def plot_SED(name_sampler_fits,logscale_x=False,logscale_y=True,xrange=None,yran
 	if header_samplers['specphot'] == 1:
 		if header_samplers['fitmethod'] == 'mcmc':
 			minchi2_params = None
-		plot_SED_specphoto(filters=filters,obs_photo=obs_photo,obs_spec=obs_spec,bfit_photo=bfit_photo,bfit_spec=bfit_spec,
+		plot_SED_specphoto_old(filters=filters,obs_photo=obs_photo,obs_spec=obs_spec,bfit_photo=bfit_photo,bfit_spec=bfit_spec,
 			bfit_mod_spec=bfit_mod_spec,corr_factor=corr_factor,minchi2_params=minchi2_params,header_samplers=header_samplers,
 			logscale_x=logscale_x,logscale_y=logscale_y,xrange=xrange,yrange=yrange,wunit=wunit,funit=funit,xticks=xticks,
 			photo_color=photo_color,residual_range=residual_range,show_original_spec=show_original_spec,fontsize_tick=fontsize_tick,
@@ -1193,4 +1052,506 @@ def plot_sfh_mcmc(name_sampler_fits, nchains=200, del_t=0.05, lbacktime_max=None
 	plt.savefig(name_plot, bbox_inches='tight')
 
 	return name_plot, grid_lbt, grid_sfr_p16, grid_sfr_p50, grid_sfr_p84
+
+
+def gaussian(x, amp, mu, sigma):
+    """Standard Gaussian function."""
+    return amp * np.exp(-(x - mu)**2 / (2 * sigma**2))
+
+def fit_emission_lines(wavelength, flux, line_estimates, window=40, sigma_guess = 50.0, 
+                       return_model=True, wavelength_highres=None):
+    
+    from scipy.optimize import curve_fit
+
+    fits = []
+    if return_model:
+        model_flux = np.zeros_like(wavelength_highres if wavelength_highres is not None else wavelength)
+
+    for center in line_estimates:
+        # Select region around the line
+        mask = (wavelength > center - window) & (wavelength < center + window)
+        x = wavelength[mask]
+        y = flux[mask]
+
+        if x.size == 0 or y.size == 0:
+            fits.append({
+                'amp': np.nan, 'mu': center, 'sigma': np.nan,
+                'amp_err': np.nan, 'mu_err': np.nan, 'sigma_err': np.nan,
+                'flux_integrated': np.nan,
+                'flux_integrated_err': np.nan,
+                'success': False,
+                'error': 'No data in fitting window'
+            })
+            continue
+
+        # Initial guess
+        amp_guess = y.max()
+        mu_guess = center
+        sigma_guess = sigma_guess  # Å
+
+        try:
+            popt, pcov = curve_fit(gaussian, x, y, p0=[amp_guess, mu_guess, sigma_guess])
+            perr = np.sqrt(np.diag(pcov))
+            amp, mu, sigma = popt
+            amp_err, mu_err, sigma_err = perr
+
+            # Integrated flux = A * sigma * sqrt(2π)
+            flux_integrated = amp * sigma * np.sqrt(2 * np.pi)
+            # Error propagation
+            flux_integrated_err = flux_integrated * np.sqrt((amp_err / amp)**2 + (sigma_err / sigma)**2)
+
+            fit_result = {
+                'amp': amp, 'mu': mu, 'sigma': sigma,
+                'amp_err': amp_err, 'mu_err': mu_err, 'sigma_err': sigma_err,
+                'flux_integrated': flux_integrated,
+                'flux_integrated_err': flux_integrated_err,
+                'success': True
+            }
+
+            # Add to model
+            if return_model==True and amp>0 and fit_result['success']==True:
+                x_eval = wavelength_highres if wavelength_highres is not None else wavelength
+                model_flux += gaussian(x_eval, *popt)
+
+        except Exception as e:
+            fit_result = {
+                'amp': np.nan, 'mu': center, 'sigma': np.nan,
+                'amp_err': np.nan, 'mu_err': np.nan, 'sigma_err': np.nan,
+                'flux_integrated': np.nan,
+                'flux_integrated_err': np.nan,
+                'success': False,
+                'error': str(e)
+            }
+
+        fits.append(fit_result)
+
+    return (fits, model_flux) if return_model else fits
+
+
+def rest_frame_lines(include_lines=None):
+    """
+    Returns rest-frame wavelengths and labels for UV and optical emission lines.
+    
+    Parameters:
+    include_lines (list of str): Optional list of labels to return. 
+                                 If None, returns all available lines.
+    """
+    # Comprehensive dictionary of all requested lines
+    line_dict = {
+        'Lyα λ1216': 1215.67,
+        'CIV λ1549': 1549.48,
+        'HeII λ1640': 1640.42,
+        'OIII] λ1663': 1663.48,
+        'CIII] λ1908': 1907.71,
+        'CII] λ2325': 2324.74,
+        '[OII] λ3727': 3727.09,
+        '[NeIII] λ3870': 3869.83,
+        'CaII λ3935': 3934.75,
+        '[NeIII] λ3969': 3968.57,
+        'Hδ λ4103': 4102.88,
+        'Hγ λ4342': 4341.67,
+        '[OIII] λ4364': 4364.42,
+        'Hβ λ4863': 4862.67,
+        '[OIII] λ4960': 4960.28,
+        '[OIII] λ5008': 5008.22,
+        'HeI λ5877': 5877.24,
+        '[NII] λ6549': 6549.86,
+        'Hα λ6565': 6564.62,
+        '[NII] λ6585': 6585.27,
+        '[SII] λ6718': 6718.29,
+        '[SII] λ6733': 6733.00,
+        '[SIII] λ9069': 9068.60,
+        '[SIII] λ9531': 9531.10,
+        'Paδ λ10052': 10052.1,
+        'HeI λ10833': 10833.31
+    }
+    
+    if include_lines is None:
+        # Return everything if no specific selection is made
+        labels = list(line_dict.keys())
+        wavelengths = list(line_dict.values())
+    else:
+        # Filter based on user input
+        labels = []
+        wavelengths = []
+        for label in include_lines:
+            if label in line_dict:
+                labels.append(label)
+                wavelengths.append(line_dict[label])
+            else:
+                print(f"Warning: Line '{label}' not found in the line database.")
+
+    return np.array(wavelengths), labels
+
+
+def plot_SED_specphoto(name_sampler_fits, gal_z=None, logscale_x=True, logscale_y=True, xrange=None, 
+            yrange=None, wunit='micron', funit='erg/s/cm2/A', xticks=None, photo_color='red', 
+            show_original_spec=False, fontsize_tick=18, fontsize_label=25, show_legend=True, 
+            loc_legend=4, fontsize_legend=18, fitting_emission_lines=True, include_lines=None, 
+            markersize=100, lw=2.0, window=80, sigma_guess=30.0, fit_wave_range=None, name_plot=None):
+    
+    from matplotlib.gridspec import GridSpec
+    from matplotlib.ticker import AutoMinorLocator
+	
+    hdu = fits.open(name_sampler_fits)
+    header = hdu[0].header
+
+    if 'obs_photo' in hdu:
+        photo_flag = 1
+        obs_photo = hdu['obs_photo'].data
+        bfit_photo = hdu['bfit_photo'].data
+    else:
+        photo_flag = 0
+
+    obs_spec = hdu['obs_spec'].data
+    #bfit_spec = hdu['bfit_spec'].data
+    #bfit_mod_spec = hdu['bfit_mod'].data
+    bfit_mod_spec = hdu['bfit_spec'].data
+    corr_factor = hdu['corr_factor'].data 
+    hdu.close()
+	
+    # filters
+    if photo_flag == 1:
+        nbands = int(header['nfilters'])
+        filters = []
+        for bb in range(0,nbands):
+            filters.append(header['fil%d' % bb])
+
+    if gal_z is None:
+        gal_z = header['gal_z']
+    del_wave_nebem = header['del_wave_nebem']
+
+    if photo_flag == 1:
+        photo_flux = obs_photo['flux']
+        photo_flux_err = obs_photo['flux_err']
+
+        photo_wave = bfit_photo['wave']
+        bfit_photo_flux = bfit_photo['p50']
+
+    obs_spec_wave = obs_spec['wave']
+    obs_spec_flux = obs_spec['flux']
+    obs_spec_flux_err = obs_spec['flux_err']
+
+    bfit_mod_spec_wave = bfit_mod_spec['wave']
+    bfit_mod_spec_flux = bfit_mod_spec['tot_p50']
+    bfit_mod_spec_flux_nebe = bfit_mod_spec['nebe_p50']
+    bfit_mod_spec_flux_nebe_cont = bfit_mod_spec['nebe_cont_p50']
+    bfit_mod_spec_flux_nebe_lines = bfit_mod_spec_flux_nebe - bfit_mod_spec_flux_nebe_cont
+
+    idx_sel = np.where((bfit_mod_spec_wave>=min(obs_spec_wave)) & (bfit_mod_spec_wave<=max(obs_spec_wave)))
+    bfit_mod_spec_wave_cut = bfit_mod_spec_wave[idx_sel[0]]
+    bfit_mod_spec_flux_cut = bfit_mod_spec_flux[idx_sel[0]]
+    bfit_mod_spec_flux_nebe_cut = bfit_mod_spec_flux_nebe[idx_sel[0]]
+    bfit_mod_spec_flux_nebe_cont_cut = bfit_mod_spec_flux_nebe_cont[idx_sel[0]]
+    bfit_mod_spec_flux_nebe_lines_cut = bfit_mod_spec_flux_nebe_lines[idx_sel[0]]
+
+    corr_factor_wave = corr_factor['wave']
+    corr_factor_values = corr_factor['p50']
+
+    func = interp1d(corr_factor_wave, corr_factor_values, fill_value='extrapolate')
+    interp_corr_factor_values = func(bfit_mod_spec_wave_cut)
+
+    rescaled_bfit_mod_spec_wave_cut = bfit_mod_spec_wave_cut
+
+    rescaled_bfit_mod_spec_flux_cut = bfit_mod_spec_flux_cut + interp_corr_factor_values
+    rescaled_bfit_mod_spec_flux_nebe_cut = bfit_mod_spec_flux_nebe_cut + interp_corr_factor_values
+    rescaled_bfit_mod_spec_flux_nebe_cont_cut = bfit_mod_spec_flux_nebe_cont_cut + interp_corr_factor_values
+    rescaled_bfit_mod_spec_flux_nebe_lines_cut = bfit_mod_spec_flux_nebe_lines_cut + interp_corr_factor_values
+
+    rescaled_bfit_mod_spec_flux_no_lines_cut = rescaled_bfit_mod_spec_flux_cut - rescaled_bfit_mod_spec_flux_nebe_lines_cut
+
+    # Calculate residuals
+    obs_spec_wave_clean, waveid_excld = get_no_nebem_wave_fit(gal_z, obs_spec_wave, del_wave_nebem)
+    waveid_incld = np.delete(np.arange(0,len(obs_spec_wave)), waveid_excld)
+
+    if photo_flag == 1:
+        photo_residuals = (photo_flux - bfit_photo_flux)/photo_flux
+
+	# flux unit:
+    if funit != 'erg/s/cm2/A':
+        if show_original_spec == True:
+            bfit_mod_spec_flux1 = convert_unit_spec_from_ergscm2A(bfit_mod_spec_wave,bfit_mod_spec_flux,funit=funit)
+        obs_spec_flux1 = convert_unit_spec_from_ergscm2A(obs_spec_wave,obs_spec_flux,funit=funit)
+        obs_spec_flux_err1 = convert_unit_spec_from_ergscm2A(obs_spec_wave,obs_spec_flux_err,funit=funit)
+        rescaled_bfit_mod_spec_flux_no_lines_cut1 = convert_unit_spec_from_ergscm2A(rescaled_bfit_mod_spec_wave_cut,rescaled_bfit_mod_spec_flux_no_lines_cut,funit=funit)
+
+        if photo_flag == 1:
+            bfit_photo_flux1 = convert_unit_spec_from_ergscm2A(photo_wave,bfit_photo_flux,funit=funit)
+            photo_flux1 = convert_unit_spec_from_ergscm2A(photo_wave,photo_flux,funit=funit)
+            photo_flux_err1 = convert_unit_spec_from_ergscm2A(photo_wave,photo_flux_err,funit=funit)
+
+    else:
+        if show_original_spec == True:
+            bfit_mod_spec_flux1 = bfit_mod_spec_flux
+        obs_spec_flux1 = obs_spec_flux
+        obs_spec_flux_err1 = obs_spec_flux_err
+        rescaled_bfit_mod_spec_flux_no_lines_cut1 = rescaled_bfit_mod_spec_flux_no_lines_cut
+
+        if photo_flag == 1:
+            bfit_photo_flux1 = bfit_photo_flux
+            photo_flux1 = photo_flux
+            photo_flux_err1 = photo_flux_err
+
+    # wavelength units:
+    if wunit==1 or wunit=='micron':
+        bfit_mod_spec_wave1 = bfit_mod_spec_wave/1e+4
+        obs_spec_wave1 = obs_spec_wave/1e+4
+        rescaled_bfit_mod_spec_wave_cut1 = rescaled_bfit_mod_spec_wave_cut/1e+4
+
+        if photo_flag == 1:
+            photo_wave1 = photo_wave/1e+4
+    else:
+        bfit_mod_spec_wave1 = bfit_mod_spec_wave
+        obs_spec_wave1 = obs_spec_wave
+        rescaled_bfit_mod_spec_wave_cut1 = rescaled_bfit_mod_spec_wave_cut
+
+        if photo_flag == 1:
+            photo_wave1 = photo_wave
+	
+    func = interp1d(rescaled_bfit_mod_spec_wave_cut1, rescaled_bfit_mod_spec_flux_no_lines_cut1, fill_value="extrapolate")
+    spec_residuals = obs_spec_flux1 - func(obs_spec_wave1)
+
+    # Use the include_lines parameter here
+    line_rest_wave, line_labels = rest_frame_lines(include_lines=include_lines)
+    line_obs_wave = line_rest_wave * (1.0 + gal_z)
+
+    ## fit emission lines:
+    if fitting_emission_lines == True:
+        # Use the filtered lines for fitting
+        fit_line_wave, fit_line_labels = rest_frame_lines(include_lines=include_lines)
+        estimated_lines = np.asarray(fit_line_wave) * (1.0 + gal_z)
+    
+        if fit_wave_range is None:
+            wavelength_highres = np.linspace(obs_spec_wave1.min()*1e+4, obs_spec_wave1.max()*1e+4, len(obs_spec_wave1)*5)
+            line_fits, model_flux = fit_emission_lines(obs_spec_wave1*1e+4, spec_residuals, estimated_lines, window=window, 
+                                        sigma_guess=sigma_guess, return_model=True, wavelength_highres=wavelength_highres)
+        else:
+            idsin = np.where((obs_spec_wave1 >= fit_wave_range[0]) & (obs_spec_wave1 <= fit_wave_range[1]))[0]
+            wavelength_highres = np.linspace(obs_spec_wave1[idsin].min()*1e+4, obs_spec_wave1[idsin].max()*1e+4, len(obs_spec_wave1[idsin])*5)
+            line_fits, model_flux = fit_emission_lines(obs_spec_wave1[idsin]*1e+4, spec_residuals[idsin], estimated_lines, window=window, 
+                                        sigma_guess=sigma_guess, return_model=True, wavelength_highres=wavelength_highres)
+
+        for line_label, line_fit, line in zip(fit_line_labels, line_fits, estimated_lines):
+            if line_fit['success']:
+                flux = line_fit['flux_integrated']
+                flux_err = line_fit['flux_integrated_err']
+                print(f"{line_label:>12s}: Flux = {flux:.3e} ± {flux_err:.3e} erg/s/cm²")
+            else:
+                print(f"{line_label:>12s}: Fit failed ({line_fit.get('error', 'unknown error')})")
+        
+    ###==> plotting
+    fig1 = plt.figure(figsize=(12,7), dpi=150)
+    gs = GridSpec(nrows=2, ncols=1, height_ratios=[3,1], left=0.1, right=0.96, top=0.92, bottom=0.13, hspace=0.001)
+    f1 = fig1.add_subplot(gs[0])
+	
+    #f1 = plt.subplot()
+    plt.setp(f1.get_xticklabels(), fontsize=fontsize_tick, visible=True)
+    plt.setp(f1.get_yticklabels(), fontsize=fontsize_tick)
+    f1.xaxis.set_minor_locator(AutoMinorLocator())
+
+    if wunit==1 or wunit=='micron':
+        f1.set_xlabel(r'Observed wavelength [$\mu$m]', fontsize=int(fontsize_label))
+    else:
+        f1.set_xlabel(r'Observed wavelength [$\AA$]', fontsize=int(fontsize_label))
+
+    if xrange is None:
+        if photo_flag == 1:
+            bulk_waves = photo_wave1.tolist() + obs_spec_wave1.tolist()
+        else:
+            bulk_waves = obs_spec_wave1.tolist()
+
+        xmin, xmax = 0.7*min(bulk_waves), 1.1*max(bulk_waves)
+    else:
+        xmin, xmax = xrange[0], xrange[1]
+
+    if yrange is None:
+        if photo_flag == 1:
+            bulk_fluxes = photo_flux1.tolist() + bfit_photo_flux1.tolist() + obs_spec_flux1.tolist() + rescaled_bfit_mod_spec_flux_no_lines_cut1.tolist()
+        else:
+            bulk_fluxes = obs_spec_flux1.tolist() + rescaled_bfit_mod_spec_flux_no_lines_cut1.tolist()
+
+        bulk_fluxes = np.asarray(bulk_fluxes)
+        ymin, ymax = min(bulk_fluxes), 1.1*max(bulk_fluxes)
+    else:
+        ymin, ymax = yrange[0], yrange[1]
+    plt.ylim(ymin,ymax)
+
+    if logscale_y == True:
+        f1.set_yscale('log')
+    if logscale_x == True:
+        f1.set_xscale('log')
+
+    plt.xlim(xmin, xmax)
+
+    if funit=='erg/s/cm2/A' or funit==0:
+        plt.ylabel(r'$F_{\lambda}$ [erg $\rm{s}^{-1}\rm{cm}^{-2}\AA^{-1}$]', fontsize=int(fontsize_label))
+    elif funit=='erg/s/cm2' or funit==1:
+        plt.ylabel(r'$\lambda F_{\lambda}$ [erg $\rm{s}^{-1}\rm{cm}^{-2}$]', fontsize=int(fontsize_label))
+    elif funit=='Jy' or funit==2:
+        plt.ylabel(r'$F_{\nu}$ [Jy]', fontsize=int(fontsize_label))
+    elif funit=='uJy' or funit==3:
+        plt.ylabel(r'$F_{\nu}$ [$\mu$Jy]', fontsize=int(fontsize_label))
+    else:
+        print ("The input funit is not recognized!")
+        sys.exit()
+
+    if show_original_spec == True:
+        plt.plot(bfit_mod_spec_wave1, bfit_mod_spec_flux1, lw=0.5, color='lightblue', zorder=0)
+
+    plt.plot(obs_spec_wave1, obs_spec_flux1, lw=1.5, color='black', zorder=1, label='Observed spectrum')
+
+    if fitting_emission_lines == True:
+        func1 = interp1d(rescaled_bfit_mod_spec_wave_cut1, rescaled_bfit_mod_spec_flux_no_lines_cut1, fill_value='extrapolate')
+        plt.plot(wavelength_highres/1e+4, model_flux + func1(wavelength_highres/1e+4), label='Emission lines', color='blue', lw=0.8)
+	
+    plt.plot(rescaled_bfit_mod_spec_wave_cut1, rescaled_bfit_mod_spec_flux_no_lines_cut1, lw=1, color='red', zorder=2, label='Model continuum')
+
+    if photo_flag == 1:
+        plt.scatter(photo_wave1, bfit_photo_flux1, s=100, marker='s', edgecolor='blue', color='none', lw=2, zorder=3, label='Model photometry')
+        plt.errorbar(photo_wave1, photo_flux1, yerr=photo_flux_err1, fmt='o', color='green', markersize=10, lw=2, zorder=4, label='Observed photometry')
+
+	# make vertical lines indicating emission lines:
+    if len(line_obs_wave)>0:
+        for ll in range(len(line_obs_wave)):
+            plt.axvline(x=line_obs_wave[ll]/1e+4, color='darkcyan', linestyle='--', lw=1.0, alpha=0.7, zorder=0)
+            plt.text(line_obs_wave[ll]/1e+4 + 0.01, 0.5*ymax, line_labels[ll], rotation=90, verticalalignment='bottom', fontsize=9, color='darkcyan', zorder=0) 
+
+    plt.legend(fontsize=fontsize_legend, frameon=False, loc=1)
+
+    f2 = f1.twiny()
+    if wunit==1 or wunit=='micron':
+        f2.set_xlabel(r'Rest-frame wavelength [$\mu$m]', fontsize=int(fontsize_label))
+    else:
+        f2.set_xlabel(r'Rest-frame wavelength [$\AA$]', fontsize=int(fontsize_label))
+    plt.setp(f2.get_xticklabels(), fontsize=fontsize_tick)
+    plt.xlim(xmin/(1.0+gal_z), xmax/(1.0+gal_z))
+    if logscale_x == True:
+        f2.set_xscale('log')
+    f2.xaxis.set_minor_locator(AutoMinorLocator())
+
+    ### plot residual
+    f1 = fig1.add_subplot(gs[1])
+    plt.setp(f1.get_yticklabels(), fontsize=15)
+    plt.setp(f1.get_xticklabels(), fontsize=15)
+    #plt.ylabel(r'residual', fontsize=22)
+    if wunit==1 or wunit=='micron':
+        f1.set_xlabel(r'Observed wavelength [$\mu$m]', fontsize=int(fontsize_label))
+    else:
+        f1.set_xlabel(r'Observed wavelength [$\AA$]', fontsize=int(fontsize_label))
+    #plt.ylim(residual_range[0],residual_range[1])
+
+    if logscale_x == True:
+        f1.set_xscale('log')
+
+    if xticks is not None:
+        plt.xticks(xticks)
+    for axis in [f1.xaxis]:
+        axis.set_major_formatter(ScalarFormatter())
+    plt.xlim(xmin,xmax)
+
+    f1.xaxis.set_minor_locator(AutoMinorLocator())
+
+    ### plot residual
+    f1 = fig1.add_subplot(gs[1])
+    plt.setp(f1.get_yticklabels(), fontsize=15)
+    plt.setp(f1.get_xticklabels(), fontsize=15)
+    #plt.ylabel(r'residual', fontsize=22)
+    if wunit==1 or wunit=='micron':
+        f1.set_xlabel(r'Observed wavelength [$\mu$m]', fontsize=int(fontsize_label))
+    else:
+        f1.set_xlabel(r'Observed wavelength [$\AA$]', fontsize=int(fontsize_label))
+    #plt.ylim(residual_range[0],residual_range[1])
+
+    if logscale_x == True:
+        f1.set_xscale('log')
+
+    if xticks is not None:
+        plt.xticks(xticks)
+    for axis in [f1.xaxis]:
+        axis.set_major_formatter(ScalarFormatter())
+    plt.xlim(xmin,xmax)
+
+    f1.xaxis.set_minor_locator(AutoMinorLocator())
+
+    ### plot residual
+    f1 = fig1.add_subplot(gs[1])
+    plt.setp(f1.get_yticklabels(), fontsize=15)
+    plt.setp(f1.get_xticklabels(), fontsize=15)
+    #plt.ylabel(r'residual', fontsize=22)
+    if wunit==1 or wunit=='micron':
+        f1.set_xlabel(r'Observed wavelength [$\mu$m]', fontsize=int(fontsize_label))
+    else:
+        f1.set_xlabel(r'Observed wavelength [$\AA$]', fontsize=int(fontsize_label))
+    #plt.ylim(residual_range[0],residual_range[1])
+
+    if logscale_x == True:
+        f1.set_xscale('log')
+
+    if xticks is not None:
+        plt.xticks(xticks)
+    for axis in [f1.xaxis]:
+        axis.set_major_formatter(ScalarFormatter())
+    plt.xlim(xmin,xmax)
+
+    f1.xaxis.set_minor_locator(AutoMinorLocator())
+
+
+    ### plot residual
+    f1 = fig1.add_subplot(gs[1])
+    plt.setp(f1.get_yticklabels(), fontsize=15)
+    plt.setp(f1.get_xticklabels(), fontsize=15)
+    #plt.ylabel(r'residual', fontsize=22)
+    if wunit==1 or wunit=='micron':
+        f1.set_xlabel(r'Observed wavelength [$\mu$m]', fontsize=int(fontsize_label))
+    else:
+        f1.set_xlabel(r'Observed wavelength [$\AA$]', fontsize=int(fontsize_label))
+    #plt.ylim(residual_range[0],residual_range[1])
+
+    if logscale_x == True:
+        f1.set_xscale('log')
+
+    if xticks is not None:
+        plt.xticks(xticks)
+    for axis in [f1.xaxis]:
+        axis.set_major_formatter(ScalarFormatter())
+    plt.xlim(xmin,xmax)
+
+    f1.xaxis.set_minor_locator(AutoMinorLocator())
+
+    plt.plot(obs_spec_wave1, spec_residuals, lw=1.5, color='black', zorder=1)
+
+    if fitting_emission_lines == True:
+        plt.plot(wavelength_highres/1e+4, model_flux, label='Emission lines', color='blue', lw=0.8)
+
+    # make vertical lines indicating emission lines:
+    for ll in range(len(line_obs_wave)):
+        plt.axvline(x=line_obs_wave[ll]/1e+4, color='darkcyan', linestyle='--', lw=1.0, alpha=0.7, zorder=0)
+
+    plt.axhline(y=0.0, lw=1, color='gray', linestyle='--', zorder=0)
+
+    if name_plot is None:
+        name_plot = 'plot_sed.png'
+		
+    plt.savefig(name_plot, bbox_inches='tight')
+
+    output = {}
+    output['obs_wave'] = obs_spec_wave1
+    output['obs_spec'] = obs_spec_flux1 
+    output['obs_spec_err'] = obs_spec_flux_err1 
+    output['spec_res'] = spec_residuals
+    output['fit_line_wave'] = estimated_lines 
+    output['fit_line_labels'] = fit_line_labels 
+    output['line_fits'] = line_fits
+    output['model_wave'] = wavelength_highres 
+    output['model_flux'] = model_flux
+    output['cont_wave'] = rescaled_bfit_mod_spec_wave_cut1 
+    output['cont_spec'] = rescaled_bfit_mod_spec_flux_no_lines_cut1
+
+    if photo_flag == 1:
+        output['photo_wave'] = photo_wave1
+        output['obs_photo_flux'] = photo_flux1
+        output['obs_photo_flux_err'] = photo_flux_err1
+        output['mod_photo_flux'] = bfit_photo_flux1
+
+    return output # [and the rest of the existing return dictionary]
 

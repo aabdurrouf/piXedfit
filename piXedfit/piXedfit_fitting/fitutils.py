@@ -2,13 +2,17 @@ import h5py
 import sys, os
 import numpy as np
 from astropy.io import fits
+from joblib import Parallel, delayed
+from tqdm import tqdm
+from math import gamma
 
-from ..piXedfit_model.model_utils import default_params_val
+from ..piXedfit_model.model_utils import default_params_val, calc_mw_age, construct_SFH
+
 
 __all__ = ["nproc_reduced", "randname", "write_filters_list", "write_input_singleSED_photo", "write_input_specphoto_hdf5", 
-			"write_arbitprior", "write_joint_prior", "write_conf_file", "read_config_file_fit", "get_nproc", 
-			"define_free_z", "get_name_out_fits", "remove_files", "run_fitting", "write_input_spec_hdf5", 
-			"make_bins_name_out_fits", "define_free_z_bins_fits", "save_fitting_results_db"]
+			"write_arbitprior", "write_joint_prior", "write_conf_file", "read_config_file_fit", "get_nproc", "define_free_z",
+			"get_name_out_fits", "remove_files", "run_fitting", "write_input_spec_hdf5", "make_bins_name_out_fits", 
+			"define_free_z_bins_fits", "save_fitting_results_db", "compute_chisq", "fit_sed_chisq", "fit_sed_batch", "bayesian_fit_sed_batch"]
 
 def nproc_reduced(nproc,nwalkers,nsteps,nsteps_cut):
 	ngrids2 = (nwalkers*nsteps) - (nwalkers*nsteps_cut)        
@@ -792,37 +796,759 @@ def save_fitting_results_db(sedfit,priors,name_out_fits,mocksp,filters):
 	hdul.writeto(name_out_fits, overwrite=True)	
 
 
+def compute_chisq(i_model, model_flux, obs_flux, obs_flux_err):
+    w = 1.0 / (obs_flux_err**2)
+    numerator = np.sum(w * obs_flux * model_flux)
+    denominator = np.sum(w * model_flux**2)
+
+    if denominator == 0:
+        norm = 0.0
+        chi_sq = np.inf
+    else:
+        norm = numerator / denominator
+        chi_sq = np.sum(((obs_flux - norm * model_flux) / obs_flux_err)**2)
+
+    return i_model, chi_sq, norm
+
+def fit_sed_chisq(obs_flux, obs_flux_err, model_seds, n_cpu=None):
+    if n_cpu is None:
+        from joblib import cpu_count
+        n_cpu = cpu_count()
+
+    results = Parallel(n_jobs=n_cpu)(
+        delayed(compute_chisq)(i, model_seds[i], obs_flux, obs_flux_err)
+        for i in range(model_seds.shape[0])
+    )
+
+    return min(results, key=lambda x: x[1])  # (idx, chi², norm)
+
+def fit_sed_batch_old(obs_fluxes, obs_flux_errs, model_seds, n_cpu=None):
+    return [
+        fit_sed_chisq(obs_flux, obs_flux_err, model_seds, n_cpu=n_cpu)
+        for obs_flux, obs_flux_err in zip(obs_fluxes, obs_flux_errs)
+    ]
+
+def fit_sed_batch(obs_fluxes, obs_flux_errs, model_seds, n_cpu=None):
+    """
+    Batch fitting multiple observed SEDs with tqdm progress bar.
+    """
+    results = []
+    for i in tqdm(range(len(obs_fluxes)), desc="Batch fitting"):
+        result = fit_sed_chisq(obs_fluxes[i], obs_flux_errs[i], model_seds, n_cpu=n_cpu)
+        results.append(result)
+    return results
+
+
+def calculate_likelihood(obs_flux, obs_flux_err, model_seds, chi_sq_list, likelihood_type='gauss', dof=2.0):
+    """
+    Calculates the likelihood for each model SED based on the chi-square.
+    
+    :param obs_flux: 1D array of observed fluxes.
+    :param obs_flux_err: 1D array of observed flux uncertainties.
+    :param model_seds: 2D array of model fluxes (N_models x N_bands).
+    :param chi_sq_list: 1D array of chi-square values for each model.
+    :param likelihood_type: 'gauss' for Gaussian, 'student_t' for Student's t.
+    :param dof: Degree of freedom for Student's t distribution.
+    
+    :returns likelihood_list: 1D array of likelihoods.
+    :returns chi_sq_list: 1D array of chi-square values.
+    """
+    
+    likelihood_list = np.zeros(len(chi_sq_list))
+    
+    if likelihood_type.lower() == 'gauss':
+        # Likelihood L is proportional to exp(-chi^2 / 2) for Gaussian noise
+        likelihood_list = np.exp(-0.5 * np.asarray(chi_sq_list))
+    
+    elif likelihood_type.lower() == 'student_t':
+        # Likelihood for Student's t distribution (see pixedfit docs or reference)
+        
+        # We need the number of data points
+        N_data = len(obs_flux)
+        nu = dof
+        
+        # T_nu = (Gamma((nu + 1)/2) / (Gamma(nu/2) * sqrt(nu*pi))) * (1 + (x^2)/nu)^(-(nu+1)/2)
+        # For simplicity in relative likelihoods, we can use the part dependent on chi^2
+        # Likelihood L is proportional to (1 + chi^2 / nu)^(-(nu+1)/2)
+        
+        # Calculate log-likelihood
+        log_term = (1.0 + np.asarray(chi_sq_list) / nu)
+        log_likelihood_list = -0.5 * (nu + N_data) * np.log(log_term)
+        
+        # Scale to avoid underflow: normalize by max log-likelihood
+        max_log_like = np.max(log_likelihood_list[np.isfinite(log_likelihood_list)])
+        likelihood_list = np.exp(log_likelihood_list - max_log_like)
+
+    else:
+        raise ValueError("Unknown likelihood type: choose 'gauss' or 'student_t'")
+
+    # Set NaN/Inf likelihoods to zero for robust parameter weighting
+    likelihood_list[~np.isfinite(likelihood_list)] = 0.0
+    
+    # Normalize likelihoods so their sum is 1 (effectively a normalized posterior
+    # since we assume a uniform prior on the models, which is true for RDSPS/initial MCMC steps)
+    if np.sum(likelihood_list) > 0:
+        likelihood_list = likelihood_list / np.sum(likelihood_list)
+
+    return likelihood_list, chi_sq_list
+
+
+def calculate_priors(params_val_list, param_priors, normalized_params_val_list):
+    """
+    Calculates the prior probability (or un-normalized prior PDF value) for each model.
+    
+    :param params_val_list: Original list of model parameter dictionaries.
+    :param param_priors: Dictionary defining the priors.
+    :param normalized_params_val_list: List of model parameter dictionaries AFTER log_mass normalization.
+    
+    :returns prior_list: 1D array of multiplicative prior probability factor for each model.
+    """
+    N_models = len(params_val_list)
+    prior_list = np.ones(N_models)
+    
+    # We must iterate over models and apply each prior sequentially as a multiplicative factor
+    for i in range(N_models):
+        current_prior = 1.0
+        
+        # Determine the current (normalized) log_mass
+        log_mass = normalized_params_val_list[i].get('log_mass')
+        
+        # Check if log_mass is a valid number (i.e., this model survived the normalization check)
+        if np.isnan(log_mass) or log_mass is None:
+             # If log_mass is invalid, this model is essentially rejected (prior = 0)
+             prior_list[i] = 0.0
+             continue
+
+        for param, prior_def in param_priors.items():
+            param_val = params_val_list[i].get(param)
+            
+            # Skip if parameter is not in the model or has an invalid value
+            if param_val is None or np.isnan(param_val):
+                continue
+                
+            form = prior_def['form']
+            
+            if form == 'gaussian':
+                loc = prior_def['loc']
+                scale = prior_def['scale']
+                
+                # Calculate PDF value for a Gaussian distribution: 
+                # P(x) = 1 / (sigma * sqrt(2*pi)) * exp(-0.5 * ((x-mu)/sigma)^2)
+                # Since we care about relative probabilities, we can drop the constant factor 1 / (sigma * sqrt(2*pi))
+                term = (param_val - loc) / scale
+                prior_prob = np.exp(-0.5 * term**2)
+                
+            elif form == 'joint_with_mass':
+                # Allowed only for 'log_mw_age' and 'logzsol'
+                if param not in ['log_mw_age', 'logzsol']:
+                    continue
+                    
+                corr_log_mass = prior_def['corr_log_mass']
+                corr_pval = prior_def['corr_pval']
+                scale = prior_def['scale'] # Scatter (sigma)
+                
+                # Interpolate the median relation: find the expected 'loc' for the current log_mass
+                from scipy.interpolate import interp1d
+                median_relation_func = interp1d(corr_log_mass, corr_pval, kind='linear', fill_value='extrapolate')
+                loc_from_mass = median_relation_func(log_mass)
+
+                # The prior is a Gaussian centered at this interpolated 'loc' with the input 'scale'
+                term = (param_val - loc_from_mass) / scale
+                prior_prob = np.exp(-0.5 * term**2)
+                
+            else:
+                # 'uniform' or any other unsupported explicit form -> effectively a constant (1.0)
+                prior_prob = 1.0
+                
+            # Multiply the prior probabilities
+            current_prior *= prior_prob
+        
+        prior_list[i] = current_prior
+        
+    # Scale final list to prevent numerical underflow if values are very small
+    # Note: We apply this normalization to the prior values, not the likelihood
+    max_prior = np.max(prior_list[prior_list > 0])
+    if max_prior > 0.0:
+        prior_list[prior_list > 0] /= max_prior
+
+    return prior_list
+
+
+def bayesian_inference_parameters(normalized_params_val_list, total_posterior_list, perc_chi2=90.0):
+    """
+    Calculates the inferred (best-fit) parameters using posterior-weighted statistics.
+    
+    :param normalized_params_val_list: List of dictionaries, each containing parameters for a model,
+                                       with log_mass, log_sfr_inst, and log_sfr_100 already scaled by norm.
+    :param total_posterior_list: 1D array of normalized posterior probability (Likelihood * Prior)
+                                 for each model.
+    :param perc_chi2: Percentile of models based on likelihood mass to consider.
+    
+    :returns inferred_params: Dictionary of inferred parameters (median, p16, p84).
+    """
+    
+    # 1. Prepare parameter arrays
+    if len(normalized_params_val_list) == 0:
+        return {}
+        
+    param_names = list(normalized_params_val_list[0].keys())
+    
+    model_params_all = {}
+    for param_name in param_names:
+        # Convert list to array, replacing 'None' with 'np.nan'
+        raw_values = [p.get(param_name) for p in normalized_params_val_list]
+        clean_values = np.array([v if v is not None else np.nan for v in raw_values])
+        model_params_all[param_name] = clean_values
+
+    # 2. Filter models based on posterior mass (Bayesian method)
+    # Sort models by posterior (descending)
+    posterior_arr = np.asarray(total_posterior_list)
+    sort_idx = np.argsort(posterior_arr)[::-1]
+    sorted_posteriors = posterior_arr[sort_idx]
+    
+    # Cumulative sum of sorted posteriors
+    cumulative_posterior = np.cumsum(sorted_posteriors)
+    
+    # Determine which models to keep based on the percentile cut.
+    target_cumulative_mass = perc_chi2 / 100.0
+    
+    if cumulative_posterior[-1] == 0:
+        models_to_keep_indices = []
+    else:
+        normalized_cumulative = cumulative_posterior / cumulative_posterior[-1]
+        last_index_to_keep = np.searchsorted(normalized_cumulative, target_cumulative_mass)
+        models_to_keep_indices = sort_idx[:last_index_to_keep + 1]
+
+    # Fallback/Edge Case Handling
+    if len(models_to_keep_indices) == 0:
+        if len(sort_idx) > 0 and sorted_posteriors[0] > 0:
+             models_to_keep_indices = [sort_idx[0]]
+        else:
+             inferred_params = {}
+             for param_name in param_names:
+                  inferred_params[param_name] = [np.nan, np.nan, np.nan] # p16, p50, p84
+             return inferred_params
+
+    # Filter the parameters and posteriors
+    filtered_params = {p: model_params_all[p][models_to_keep_indices] for p in param_names}
+    filtered_posteriors = posterior_arr[models_to_keep_indices]
+    
+    # Re-normalize posteriors of the kept models
+    total_posterior_mass = np.sum(filtered_posteriors)
+    if total_posterior_mass == 0:
+        weights = np.ones(len(filtered_posteriors)) / len(filtered_posteriors)
+    else:
+        weights = filtered_posteriors / total_posterior_mass
+
+    # 3. Calculate posterior-weighted percentiles (P16, P50, P84)
+    inferred_params = {}
+    
+    for param_name in param_names:
+        param_values = filtered_params[param_name]
+        
+        # Remove NaN values from the slice and adjust weights accordingly
+        valid_mask = ~np.isnan(param_values)
+        if np.sum(valid_mask) == 0:
+            inferred_params[param_name] = [np.nan, np.nan, np.nan]
+            continue
+            
+        param_values = param_values[valid_mask]
+        current_weights = weights[valid_mask]
+        
+        # Re-normalize weights if some points were removed
+        if np.sum(current_weights) > 0:
+             current_weights /= np.sum(current_weights)
+        else:
+             inferred_params[param_name] = [np.nan, np.nan, np.nan]
+             continue
+
+        # Sort values and align weights
+        sort_idx = np.argsort(param_values)
+        sorted_values = param_values[sort_idx]
+        sorted_weights = current_weights[sort_idx]
+        
+        # Calculate cumulative distribution function (CDF)
+        cumulative_weights = np.cumsum(sorted_weights)
+        
+        # Find the values corresponding to P16, P50, and P84
+        p16 = np.interp(0.16, cumulative_weights, sorted_values)
+        p50 = np.interp(0.50, cumulative_weights, sorted_values)
+        p84 = np.interp(0.84, cumulative_weights, sorted_values)
+        
+        inferred_params[param_name] = [p16, p50, p84]
+
+    return inferred_params
+
+
+def calculate_log_mw_age_and_sfr_for_models(params_val_list, sfh_form=4):
+    """
+    Calculates log10(mass-weighted age) for a list of model parameters.
+    This function parallels the logic inside piXedfit_model.
+    """
+    log_mw_ages = []
+    log_sfrs_inst = []
+    log_sfrs_100 = []
+    
+    # Use single-threaded loop for simplicity, parallelization can be added if performance is critical
+    for params_val in params_val_list:
+        try:
+            # 1. Convert log-params to linear scale (as expected by SFH functions)
+            age = np.power(10.0, params_val['log_age'])
+            tau = np.power(10.0, params_val.get('log_tau', 0.0))
+            t0 = np.power(10.0, params_val.get('log_t0', 0.0))
+            alpha = np.power(10.0, params_val.get('log_alpha', 0.0))
+            beta = np.power(10.0, params_val.get('log_beta', 0.0))
+            formed_mass = np.power(10.0, params_val.get('log_mass', 0.0))
+            
+            mw_age = calc_mw_age(sfh_form=sfh_form, age=age, tau=tau, t0=t0, alpha=alpha, beta=beta, formed_mass=formed_mass)
+            sfh_t, sfh_sfr = construct_SFH(sfh_form=sfh_form, t0=t0, tau=tau, alpha=alpha, beta=beta, age=age, formed_mass=formed_mass, del_t=0.001)
+            
+            log_mw_ages.append(np.log10(mw_age))
+            log_sfrs_inst.append(np.log10(sfh_sfr[-1]))
+            log_sfrs_100.append(np.log10(np.mean(sfh_sfr[-1-100:-1])))
+            
+        except Exception as e:
+            # If calculation fails (e.g., math domain error, zero mass), use NaN
+            log_mw_ages.append(np.nan)
+            log_sfrs_inst.append(np.nan)
+            log_sfrs_100.append(np.nan)
+            
+    return log_mw_ages, log_sfrs_inst, log_sfrs_100
 
 
 
+def bayesian_fit_sed_batch(obs_fluxes, obs_flux_errs, model_seds, params_val_list, param_priors=None, 
+						likelihood_type='gauss', dof=2.0, perc_chi2=90.0, n_cpu=None, sfh_form=4):
+    """
+    Batch fitting multiple observed SEDs using the Bayesian likelihood-weighted method.
+    
+    Optimized: Priors independent of normalization (Gaussian/Uniform) are pre-calculated 
+    *for each SED* if the priors change. Joint priors are calculated in-batch using 
+    the best-fit normalized mass as the anchor.
+    
+    :param param_priors: Can be a single dictionary (same priors for all SEDs) or 
+                         a list of dictionaries (one prior set per SED).
+    """
+    
+    if n_cpu is None:
+        from joblib import cpu_count
+        n_cpu = cpu_count()
+        
+    if param_priors is None:
+        param_priors = {}
+    
+    N_models = len(params_val_list)
+    N_obs = len(obs_fluxes)
+    
+    # --- HANDLE PARAM_PRIORS INPUT TYPE ---
+    if isinstance(param_priors, dict):
+        # Convert a single dict to a list of N_obs identical dicts
+        priors_list = [param_priors] * N_obs
+    elif isinstance(param_priors, list):
+        if len(param_priors) != N_obs:
+            raise ValueError(f"When param_priors is a list, its length ({len(param_priors)}) must match the number of SEDs ({N_obs}).")
+        priors_list = param_priors
+    else:
+        raise TypeError("param_priors must be a single dictionary or a list of dictionaries.")
+
+
+    # 1. --- PRE-CALCULATE log_mw_age AND SFRs FOR ALL MODELS (UN-NORMALIZED) ---
+    print("Pre-calculating model-dependent parameters (log_mw_age, log_sfr) once...")
+    log_mw_ages, log_sfrs_inst, log_sfrs_100 = calculate_log_mw_age_and_sfr_for_models(params_val_list, sfh_form)
+    
+    # --- AUGMENT params_val_list INTO A RAW DICTIONARY OF ARRAYS ---
+    model_params_raw = {}
+    if N_models > 0:
+        for k in params_val_list[0].keys():
+            model_params_raw[k] = np.array([p.get(k) for p in params_val_list])
+    
+        # Add calculated parameters
+        model_params_raw['log_mw_age'] = np.array(log_mw_ages)
+        model_params_raw['log_sfr_inst'] = np.array(log_sfrs_inst) 
+        model_params_raw['log_sfr_100'] = np.array(log_sfrs_100)
+    else:
+        # Handle case with no models
+        return []
+
+    # 2. --- START BATCH FITTING LOOP (one loop per observed SED) ---
+    print("Starting batch SED fitting with SED-specific priors...")
+    all_fit_results = []
+    
+    iterator = tqdm(zip(obs_fluxes, obs_flux_errs, priors_list), total=N_obs, desc="Batch SED Fitting (Bayesian)")
+    for obs_flux, obs_flux_err, current_param_priors in iterator:
+        
+        # 2a. Calculate Chi-square and Normalization for all models/SED
+        def compute_all_chisq_for_one_sed(obs_f, obs_ferr, model_seds, n_jobs):
+            results = Parallel(n_jobs=n_jobs)(
+                delayed(compute_chisq)(i, model_seds[i], obs_f, obs_ferr)
+                for i in range(model_seds.shape[0])
+            )
+            return zip(*results) 
+
+        _, chi_sq_list, norm_list = compute_all_chisq_for_one_sed(obs_flux, obs_flux_err, model_seds, n_cpu)
+        norm_arr = np.array(norm_list)
+        chi_sq_arr = np.array(chi_sq_list)
+        
+        # Find the *best-fit* normalization (anchor)
+        min_chi_sq_idx = np.argmin(chi_sq_arr)
+        
+        # 2b. Calculate Likelihood for all models
+        likelihood_list, _ = calculate_likelihood(
+            obs_flux, obs_flux_err, model_seds, chi_sq_arr, likelihood_type, dof
+        )
+        
+        # 2c. Calculate Normalized log_mass (for Anchor & Final Output)
+        log_mass_raw_arr = model_params_raw['log_mass']
+        log_norm_arr = np.log10(norm_arr, out=np.full_like(norm_arr, np.nan), where=norm_arr > 0.0)
+        
+        normalized_log_mass_arr = log_mass_raw_arr + log_norm_arr
+        
+        # Find the best-fit normalized log_mass (The Anchor Value)
+        best_fit_normalized_log_mass = normalized_log_mass_arr[min_chi_sq_idx]
+        
+        
+        # 2d. --- BATCH CALCULATE SED-SPECIFIC PRIORS ---
+        prior_list_independent = np.ones(N_models)
+        joint_prior_defs = {}
+
+        for param, prior_def in current_param_priors.items():
+            form = prior_def['form']
+            if form == 'uniform':
+                continue
+                
+            elif form == 'gaussian':
+                loc = prior_def['loc']
+                scale = prior_def['scale']
+                param_values = model_params_raw.get(param)
+                
+                if param_values is not None:
+                    # Vectorized Gaussian PDF (un-normalized P(x) proportional to exp(-0.5 * z^2))
+                    term = (param_values - loc) / scale
+                    prior_prob = np.exp(-0.5 * term**2)
+                    
+                    prior_list_independent *= prior_prob
+
+            elif form == 'joint_with_mass':
+                joint_prior_defs[param] = prior_def
+        
+        # Normalize the independent prior component to avoid underflow
+        max_prior_indep = np.max(prior_list_independent[np.isfinite(prior_list_independent)])
+        if max_prior_indep > 0.0:
+            prior_list_independent[np.isfinite(prior_list_independent)] /= max_prior_indep
+        else:
+            prior_list_independent[:] = 1.0
+
+
+        # 2e. Anchor-Based Joint Prior Calculation
+        prior_list_joint = np.ones(N_models)
+        
+        if len(joint_prior_defs) > 0:
+            if np.isnan(best_fit_normalized_log_mass):
+                prior_list_joint[:] = 0.0
+            else:
+                from scipy.interpolate import interp1d
+                for param, prior_def in joint_prior_defs.items():
+                    if param not in ['log_mw_age', 'logzsol']:
+                         continue
+
+                    corr_log_mass = prior_def['corr_log_mass']
+                    corr_pval = prior_def['corr_pval']
+                    scale = prior_def['scale']
+                    
+                    # Interpolate the median relation: find the expected 'loc' for the anchor mass
+                    median_relation_func = interp1d(corr_log_mass, corr_pval, kind='linear', fill_value='extrapolate')
+                    loc_from_mass = median_relation_func(best_fit_normalized_log_mass)
+
+                    param_values = model_params_raw.get(param)
+                    
+                    if param_values is not None:
+                        # Vectorized Gaussian Prior centered at the *anchor location*
+                        term = (param_values - loc_from_mass) / scale
+                        prior_prob = np.exp(-0.5 * term**2)
+                        
+                        prior_list_joint *= prior_prob
+
+        # 2f. Total Prior: independent * joint
+        prior_list_total = prior_list_independent * prior_list_joint
+        # Normalize the total prior component to avoid underflow
+        max_prior_total = np.max(prior_list_total[np.isfinite(prior_list_total)])
+        if max_prior_total > 0.0:
+            prior_list_total[np.isfinite(prior_list_total)] /= max_prior_total
+        else:
+            prior_list_total[:] = 0.0
+
+        # 2g. Calculate Total Posterior
+        total_posterior_list = likelihood_list * prior_list_total
+        
+        # Normalize the posterior to sum to 1
+        total_posterior_sum = np.sum(total_posterior_list[np.isfinite(total_posterior_list)])
+        if total_posterior_sum > 0:
+            total_posterior_list = total_posterior_list / total_posterior_sum
+        else:
+             total_posterior_list = np.zeros_like(total_posterior_list)
+             
+        # 2h. Prepare Normalized Parameter List (for Bayesian inference)
+        normalized_params_val_list = []
+        for i in range(N_models):
+            normalized_pv = {}
+            for k, v_arr in model_params_raw.items():
+                normalized_pv[k] = v_arr[i]
+                
+            # Overwrite mass/SFR with normalized values
+            normalized_pv['log_mass'] = normalized_log_mass_arr[i]
+            
+            # log_sfr_inst normalization
+            if 'log_sfr_inst' in normalized_pv and not np.isnan(log_norm_arr[i]):
+                 normalized_pv['log_sfr_inst'] += log_norm_arr[i]
+            else:
+                 normalized_pv['log_sfr_inst'] = np.nan
+                 
+            # log_sfr_100 normalization
+            if 'log_sfr_100' in normalized_pv and not np.isnan(log_norm_arr[i]):
+                 normalized_pv['log_sfr_100'] += log_norm_arr[i]
+            else:
+                 normalized_pv['log_sfr_100'] = np.nan
+            
+            if norm_arr[i] <= 0.0:
+                 normalized_pv['log_mass'] = np.nan
+                 normalized_pv['log_sfr_inst'] = np.nan
+                 normalized_pv['log_sfr_100'] = np.nan
+
+            normalized_params_val_list.append(normalized_pv)
+
+        # 2i. Perform Bayesian parameter inference
+        inferred_params = bayesian_inference_parameters(
+            normalized_params_val_list, total_posterior_list, perc_chi2
+        )
+        
+        all_fit_results.append({
+            'inferred_params': inferred_params,
+            'min_chi_sq': chi_sq_arr[min_chi_sq_idx],
+            'best_fit_model_idx': min_chi_sq_idx,
+            'model_likelihoods': likelihood_list,
+            'model_priors': prior_list_total,
+            'model_posteriors': total_posterior_list,
+            'model_chi_sq': chi_sq_arr,
+            'model_norms': norm_arr,
+        })
+
+    return all_fit_results
 
 
 
+def bayesian_fit_sed_batch_old1(obs_fluxes, obs_flux_errs, model_seds, params_val_list, param_priors=None, 
+						likelihood_type='gauss', dof=2.0, perc_chi2=90.0, n_cpu=None, sfh_form=4):
+    """
+    Batch fitting multiple observed SEDs using the Bayesian likelihood-weighted method.
+    
+    Optimized: Priors independent of normalization (Gaussian/Uniform) are pre-calculated.
+    Joint priors are calculated in-batch using the best-fit normalized mass as the anchor.
+    """
+    
+    if n_cpu is None:
+        from joblib import cpu_count
+        n_cpu = cpu_count()
+        
+    if param_priors is None:
+        param_priors = {}
+    
+    N_models = len(params_val_list)
+    
+    # 1. --- PRE-CALCULATE log_mw_age AND SFRs FOR ALL MODELS (UN-NORMALIZED) ---
+    print("Pre-calculating model-dependent parameters (log_mw_age, log_sfr)...")
+    log_mw_ages, log_sfrs_inst, log_sfrs_100 = calculate_log_mw_age_and_sfr_for_models(params_val_list, sfh_form)
+    
+    # --- AUGMENT params_val_list WITH log_mw_age, log_sfr_inst, log_sfr_100, and 'raw' log_mass ---
+    # Convert to a more efficient structure (e.g., NumPy record array or dict of arrays) for batch ops.
+    model_params_raw = {}
+    for k in params_val_list[0].keys():
+        model_params_raw[k] = np.array([p.get(k) for p in params_val_list])
+    
+    # Add calculated parameters
+    model_params_raw['log_mw_age'] = np.array(log_mw_ages)
+    model_params_raw['log_sfr_inst'] = np.array(log_sfrs_inst) 
+    model_params_raw['log_sfr_100'] = np.array(log_sfrs_100)
+    
+    
+    # 2. --- BATCH PRE-CALCULATE PRIORS INDEPENDENT OF NORMALIZATION (Gaussian/Uniform) ---
+    prior_list_independent = np.ones(N_models)
+    joint_prior_defs = {}
+
+    for param, prior_def in param_priors.items():
+        form = prior_def['form']
+        if form == 'uniform':
+            # Uniform prior is 1.0, already handled by initialization
+            continue
+            
+        elif form == 'gaussian':
+            loc = prior_def['loc']
+            scale = prior_def['scale']
+            param_values = model_params_raw.get(param)
+            
+            if param_values is not None:
+                # Vectorized Gaussian PDF (un-normalized P(x) proportional to exp(-0.5 * z^2))
+                term = (param_values - loc) / scale
+                prior_prob = np.exp(-0.5 * term**2)
+                
+                # Apply as a multiplicative factor
+                prior_list_independent *= prior_prob
+
+        elif form == 'joint_with_mass':
+            # Store joint prior definitions for in-loop calculation
+            joint_prior_defs[param] = prior_def
+            # Need interp1d inside the loop, so initialize here if not done
+            from scipy.interpolate import interp1d
+            
+    # Normalize the independent prior component to avoid underflow
+    max_prior_indep = np.max(prior_list_independent[np.isfinite(prior_list_independent)])
+    if max_prior_indep > 0.0:
+        prior_list_independent[np.isfinite(prior_list_independent)] /= max_prior_indep
+    else:
+        # If all independent priors are 0 (e.g., due to log(0)), treat as uniform 1.0
+        prior_list_independent[:] = 1.0
 
 
+    # 3. --- START BATCH FITTING LOOP (one loop per observed SED) ---
+    print("Starting batch SED fitting with anchor-based priors...")
+    all_fit_results = []
+    
+    for obs_flux, obs_flux_err in tqdm(zip(obs_fluxes, obs_flux_errs), total=len(obs_fluxes), desc="Batch SED Fitting (Bayesian)"):
+        
+        # 3a. Calculate Chi-square and Normalization for all models/SED
+        def compute_all_chisq_for_one_sed(obs_f, obs_ferr, model_seds, n_jobs):
+            results = Parallel(n_jobs=n_jobs)(
+                delayed(compute_chisq)(i, model_seds[i], obs_f, obs_ferr)
+                for i in range(model_seds.shape[0])
+            )
+            return zip(*results) 
 
+        _, chi_sq_list, norm_list = compute_all_chisq_for_one_sed(obs_flux, obs_flux_err, model_seds, n_cpu)
+        norm_arr = np.array(norm_list)
+        chi_sq_arr = np.array(chi_sq_list)
+        
+        # Find the *best-fit* normalization (anchor)
+        min_chi_sq_idx = np.argmin(chi_sq_arr)
+        best_fit_norm = norm_arr[min_chi_sq_idx]
+        
+        # 3b. Calculate Likelihood for all models
+        likelihood_list, _ = calculate_likelihood(
+            obs_flux, obs_flux_err, model_seds, chi_sq_arr, likelihood_type, dof
+        )
+        
+        # 3c. Calculate Normalized log_mass (The Anchor Value)
+        # log_mass_raw: the mass that formed the stellar population (M_formed)
+        log_mass_raw_arr = model_params_raw['log_mass']
+        log_norm_arr = np.log10(norm_arr, out=np.full_like(norm_arr, np.nan), where=norm_arr > 0.0)
+        
+        # This is the observation's log_mass: log10(M_formed * normalization)
+        normalized_log_mass_arr = log_mass_raw_arr + log_norm_arr
+        
+        # Find the best-fit normalized log_mass (The Anchor Value)
+        # Note: We take the best-fit model's raw log_mass and apply its norm
+        best_fit_normalized_log_mass = normalized_log_mass_arr[min_chi_sq_idx]
+        
+        
+        # 3d. Anchor-Based Joint Prior Calculation
+        prior_list_joint = np.ones(N_models)
+        
+        if len(joint_prior_defs) > 0:
+            if np.isnan(best_fit_normalized_log_mass):
+                # If the anchor mass is invalid, all joint priors are zero
+                prior_list_joint[:] = 0.0
+            else:
+                for param, prior_def in joint_prior_defs.items():
+                    # Check if the anchor parameter is available and valid
+                    if param not in ['log_mw_age', 'logzsol']:
+                         continue
 
+                    # Anchor interpolation setup
+                    corr_log_mass = prior_def['corr_log_mass']
+                    corr_pval = prior_def['corr_pval']
+                    scale = prior_def['scale']
+                    
+                    # Interpolate the median relation: find the expected 'loc' for the best-fit normalized log_mass
+                    median_relation_func = interp1d(corr_log_mass, corr_pval, kind='linear', fill_value='extrapolate')
+                    loc_from_mass = median_relation_func(best_fit_normalized_log_mass)
 
+                    # Model parameter values to check against the anchor
+                    param_values = model_params_raw.get(param)
+                    
+                    if param_values is not None:
+                        # Vectorized Gaussian Prior centered at the *anchor location*
+                        term = (param_values - loc_from_mass) / scale
+                        prior_prob = np.exp(-0.5 * term**2)
+                        
+                        # Apply as a multiplicative factor
+                        prior_list_joint *= prior_prob
 
+        # 3e. Total Prior: independent * joint
+        prior_list_total = prior_list_independent * prior_list_joint
+        # Normalize the total prior component to avoid underflow
+        max_prior_total = np.max(prior_list_total[np.isfinite(prior_list_total)])
+        if max_prior_total > 0.0:
+            prior_list_total[np.isfinite(prior_list_total)] /= max_prior_total
+        else:
+            prior_list_total[:] = 0.0 # Prior is 0 if no valid priors found
 
+        # 3f. Calculate Total Posterior
+        total_posterior_list = likelihood_list * prior_list_total
+        
+        # Normalize the posterior to sum to 1
+        total_posterior_sum = np.sum(total_posterior_list[np.isfinite(total_posterior_list)])
+        if total_posterior_sum > 0:
+            total_posterior_list = total_posterior_list / total_posterior_sum
+        else:
+             total_posterior_list = np.zeros_like(total_posterior_list)
+             
+        # 3g. Prepare Normalized Parameter List (for Bayesian inference)
+        # This part still requires zipping and is best done as a list of dicts.
+        normalized_params_val_list = []
+        for i in range(N_models):
+            # Create a dictionary of normalized parameters for the current model
+            normalized_pv = {}
+            # Start with raw parameters (non-mass/SFR parameters are not normalized)
+            for k, v_arr in model_params_raw.items():
+                normalized_pv[k] = v_arr[i]
+                
+            # Overwrite mass/SFR with normalized values
+            normalized_pv['log_mass'] = normalized_log_mass_arr[i]
+            
+            # log_sfr_inst normalization
+            if 'log_sfr_inst' in normalized_pv and not np.isnan(log_norm_arr[i]):
+                 normalized_pv['log_sfr_inst'] += log_norm_arr[i]
+            else:
+                 normalized_pv['log_sfr_inst'] = np.nan
+                 
+            # log_sfr_100 normalization
+            if 'log_sfr_100' in normalized_pv and not np.isnan(log_norm_arr[i]):
+                 normalized_pv['log_sfr_100'] += log_norm_arr[i]
+            else:
+                 normalized_pv['log_sfr_100'] = np.nan
+            
+            # Handle models with zero likelihood/norm (set non-fixed/non-age params to NaN)
+            if norm_arr[i] <= 0.0:
+                 # In this case, the posterior is 0, so the inference will ignore it,
+                 # but we can set mass/sfr to NaN for clarity.
+                 normalized_pv['log_mass'] = np.nan
+                 normalized_pv['log_sfr_inst'] = np.nan
+                 normalized_pv['log_sfr_100'] = np.nan
 
+            normalized_params_val_list.append(normalized_pv)
 
+        # 3h. Perform Bayesian parameter inference
+        inferred_params = bayesian_inference_parameters(
+            normalized_params_val_list, total_posterior_list, perc_chi2
+        )
+        
+        all_fit_results.append({
+            'inferred_params': inferred_params,
+            'min_chi_sq': chi_sq_arr[min_chi_sq_idx],
+            'best_fit_model_idx': min_chi_sq_idx,
+            'model_likelihoods': likelihood_list,
+            'model_priors': prior_list_total,
+            'model_posteriors': total_posterior_list,
+            'model_chi_sq': chi_sq_arr,
+            'model_norms': norm_arr,
+        })
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    return all_fit_results

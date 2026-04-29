@@ -21,7 +21,8 @@ __all__ = ["sort_filters", "kpc_per_pixel", "k_lmbd_Fitz1986_LMC", "EBV_foregrou
 	   "get_pixels_SED_fluxmap", "plot_SED_pixels", "get_total_SED", "get_curve_of_growth", "get_SNR_radial_profile", 
 	   "plot_SNR_radial_profile", "get_flux_radial_profile", "photometry_within_aperture", "draw_aperture_on_maps_fluxes", 
 	   "central_brightest_pixel", "curve_of_growth_psf", "rotate_pixels", "get_rectangular_region", "radial_profile_psf", 
-	   "test_psfmatching_kernel", "remove_naninfzeroneg_image_2dinterpolation"]
+	   "test_psfmatching_kernel", "remove_naninfzeroneg_image_2dinterpolation", "compute_fwhm_psf", "interpolate_psf_cube", 
+	   "crop_gal_region_datacube", "comb_segm_maps_gal_region"]
 
 
 def sort_filters(filters):
@@ -624,7 +625,7 @@ def var_img_WISE(sci_img,unc_img,filter_name,skyrms_img,name_out_fits=None):
 	sigma_B = skyrms_img_data
 	#sigma_conf = 0.0
 	sigma_src = np.sqrt(Fcorr*(np.square(sigma_i) + (0.5*pi*sigma_B*sigma_B)))
-	sigma_sq_img_data = np.square(sci_img_data)*((sigma_0*sigma_0/f_0/f_0) + (0.8483*sigma_magzp*sigma_magzp)) + np.square(sigma_src) ## in unit of DN
+	sigma_sq_img_data = np.square(sci_img_data)*((sigma_0*sigma_0/f_0/f_0) + (0.8483*sigma_magzp*sigma_magzp) + np.square(sigma_src)) ## in unit of DN
 
 	if name_out_fits is None:
 		name_out_fits = 'var_%s' % unc_img
@@ -786,8 +787,11 @@ def var_img_from_weight_img(wht_image, name_out_fits=None):
 	return name_out_fits
 
 
-def segm_sep(fits_image=None, thresh=1.5, var=None, minarea=5, deblend_nthresh=32, deblend_cont=0.005):
+def segm_sep_old(fits_image=None, thresh=1.5, var=None, minarea=5, deblend_nthresh=32, deblend_cont=0.005):
 	import sep 
+
+	# Increase the pixel stack limit
+	sep.set_extract_pixstack(1000000)  # You can tune this number (e.g., 1 million)
 
 	hdu = fits.open(fits_image)
 	data_img = hdu[0].data 
@@ -812,6 +816,68 @@ def segm_sep(fits_image=None, thresh=1.5, var=None, minarea=5, deblend_nthresh=3
 									segmentation_map=True)
 
 	return segm_map
+
+
+def segm_sep(sci_image, thresh=1.5, var_image=None, minarea=5, deblend_nthresh=32, deblend_cont=0.005):
+	import sep
+
+	# Increase the pixel stack limit
+	sep.set_extract_pixstack(1000000)  # You can tune this number (e.g., 1 million) 
+
+	if isinstance(sci_image, str):
+		hdu = fits.open(sci_image)
+		data_img = hdu[0].data 
+		hdu.close()
+	else:
+		data_img = sci_image
+
+	data_img = data_img.byteswap(inplace=True).newbyteorder()
+
+	if var_image is None:
+		rows,cols = np.where((np.isnan(data_img)==False) & (np.isinf(data_img)==False))
+		err = np.percentile(data_img[rows,cols], 2.5)
+	else:
+		if isinstance(var_image, str):
+			hdu = fits.open(var_image)
+			data_var = hdu[0].data 
+			hdu.close()
+		else:
+			data_var = var_image
+
+		data_var = data_var.byteswap(inplace=True).newbyteorder()
+		err = np.sqrt(data_var)
+
+
+	objects, segm_map = sep.extract(data=data_img, thresh=thresh, err=err, minarea=minarea, 
+									deblend_nthresh=deblend_nthresh, deblend_cont=deblend_cont, 
+									segmentation_map=True)
+
+	return segm_map
+
+
+def comb_segm_maps_gal_region(segm_maps, segm_ids=None):
+	""" Function to combine segmentation maps for defining galaxy's region of interest
+	segm_maps is list containing segmentation maps
+	"""
+
+	segm_maps = np.asarray(segm_maps)
+	nsegms = segm_maps.shape[0]
+
+	if segm_ids is None:
+		segm_ids = np.arange(nsegms)
+
+	dimy, dimx = segm_maps[0].shape[0], segm_maps[0].shape[1]
+	yc, xc = int((dimy-1)/2), int((dimx-1)/2)
+
+	roi = np.zeros(segm_maps[0].shape)
+	for ii in segm_ids:
+		cent_id = segm_maps[ii,yc,xc]
+		if cent_id > 0:
+			rows, cols = np.where(segm_maps[ii] == cent_id)
+			roi[rows,cols] = 1
+
+	return roi
+
 
 
 def mask_region_bgmodel(fits_image=None, thresh=1.5, var=None, minarea=5, deblend_nthresh=32, deblend_cont=0.005):
@@ -903,8 +969,8 @@ def subtract_background(fits_image, hdu_idx=0, sigma=3.0, box_size=None, mask_re
 				print ("dimension of mask_region should be the same with the dimension of fits_image!")
 				sys.exit()
 			else:
-				mask_region1 = np.zeros((dim_y,dim_x)).astype(int)
-				rows, cols = np.where((mask_region0==1) | (mask_region==1))
+				mask_region1 = np.zeros((dim_y,dim_x))
+				rows, cols = np.where((mask_region0==1) or (mask_region==1))
 				mask_region1[rows,cols] = 1
 
 		sigma_clip = SigmaClip(sigma=sigma)
@@ -1184,7 +1250,7 @@ def get_flux_or_sb(filters,img_unit):
 def create_kernel_gaussian(psf_fwhm_init=None, psf_fwhm_final=None, alpha_cosbell=1.5, pixsize_PSF_target=0.25, size=[101,101]):
 
 	from astropy.modeling.models import Gaussian2D
-	from photutils import CosineBellWindow, create_matching_kernel
+	from photutils.psf.matching import CosineBellWindow, create_matching_kernel
 
 	y_cent = (size[0]-1)/2
 	x_cent = (size[1]-1)/2 
@@ -1223,7 +1289,7 @@ def crop_image(data, new_dimx, new_dimy):
 	return new_data
 
 
-def create_psf_matching_kernel(init_PSF_name, target_PSF_name, pixscale_init_PSF, 
+def create_psf_matching_kernel_old(init_PSF_name, target_PSF_name, pixscale_init_PSF, 
 	pixscale_target_PSF, window='top_hat', window_arg=1.0):
 	"""A function for creating convolution kernel for PSF matching given initial and target PSFs.
 
@@ -1249,11 +1315,78 @@ def create_psf_matching_kernel(init_PSF_name, target_PSF_name, pixscale_init_PSF
 		The data of convolution kernel in 2D array. 
 	"""
 
-	from photutils import CosineBellWindow, TopHatWindow, create_matching_kernel
-	from photutils.psf.matching import resize_psf
+	from photutils.psf.matching import CosineBellWindow, TopHatWindow, create_matching_kernel, resize_psf
 
 	init_PSF = fits.open(init_PSF_name)[0].data
 	target_PSF = fits.open(target_PSF_name)[0].data
+
+	# resize PSFs
+	pixscale1 = 0
+	if pixscale_init_PSF>pixscale_target_PSF:
+		init_PSF = resize_psf(init_PSF, pixscale_init_PSF, pixscale_target_PSF, order=3)
+		pixscale1 = pixscale_target_PSF
+	elif pixscale_init_PSF<pixscale_target_PSF:
+		target_PSF = resize_psf(target_PSF, pixscale_target_PSF, pixscale_init_PSF, order=3)
+		pixscale1 = pixscale_init_PSF
+
+	if init_PSF.shape[0]>target_PSF.shape[0]:
+		init_PSF = crop_image(init_PSF, target_PSF.shape[1], target_PSF.shape[0])
+	elif init_PSF.shape[0]<target_PSF.shape[0]:
+		target_PSF = crop_image(target_PSF, init_PSF.shape[1], init_PSF.shape[0])
+	
+	if window == 'cosine_bell':
+		window = CosineBellWindow(alpha=window_arg)
+	elif window == 'top_hat':
+		window = TopHatWindow(window_arg)
+	else:
+		print ('Window type is not recognized!')
+		sys.exit()
+
+	kernel = create_matching_kernel(init_PSF, target_PSF, window=window)
+
+	if pixscale1 > 0:
+		kernel = resize_psf(kernel, pixscale1, pixscale_init_PSF, order=3)
+
+	return kernel
+
+
+def create_psf_matching_kernel(init_PSF0, target_PSF0, pixscale_init_PSF, 
+	pixscale_target_PSF, window='top_hat', window_arg=1.0):
+	"""A function for creating convolution kernel for PSF matching given initial and target PSFs.
+
+	:param init_PSF:
+		input/initial PSF. Can be the FITS file name or the data array (2D).
+
+	:param target_PSF:
+		Image of target PSF. Can be the FITS file name or the data array (2D).
+
+	:param pixscale_init_PSF:
+		Pixel size of the initial PSF in arcsec.
+
+	:param pixscale_target_PSF:
+		Pixel size of the target PSF in arcsec.
+
+	:param window:
+		Options are 'top_hat' and 'cosine_bell'.
+	
+	:param window_arg:
+		Coefficient value of the window function, following Photutils. 
+
+	:param kernel:
+		The data of convolution kernel in 2D array. 
+	"""
+
+	from photutils.psf.matching import CosineBellWindow, TopHatWindow, create_matching_kernel, resize_psf
+
+	if isinstance(init_PSF0, str):
+		init_PSF = fits.open(init_PSF0)[0].data
+	else:
+		init_PSF = init_PSF0
+
+	if isinstance(target_PSF0, str):
+		target_PSF = fits.open(target_PSF0)[0].data
+	else:
+		target_PSF = target_PSF0
 
 	# resize PSFs
 	pixscale1 = 0
@@ -1958,13 +2091,15 @@ def remove_naninfzeroneg_image_2dinterpolation(data_image):
 		xx, yy = np.meshgrid(x, y)
 
 		rows, cols = np.where((np.isnan(data_image)==False) & (np.isinf(data_image)==False) & (data_image>0))
-		data_image_new = griddata((rows,cols), data_image[rows,cols], (yy, xx), method='cubic')
-
-		rows_nan, cols_nan = np.where((np.isnan(data_image_new)==True) | (np.isinf(data_image_new)==True) | (data_image_new<=0))
-		if len(rows_nan)>0:
-			rows, cols = np.where((np.isnan(data_image_new)==False) & (np.isinf(data_image_new)==False) & (data_image_new>0))
-			#data_image_new = griddata((rows,cols), data_image_new[rows,cols], (yy, xx), method='cubic')
-			data_image_new[rows_nan,cols_nan] = np.percentile(data_image_new[rows,cols],50)
+		if len(rows) > 0.5*data_image.shape[0]*data_image.shape[1]:
+			data_image_new = griddata((rows,cols), data_image[rows,cols], (yy, xx), method='cubic')
+			rows_nan, cols_nan = np.where((np.isnan(data_image_new)==True) | (np.isinf(data_image_new)==True) | (data_image_new<=0))
+			if len(rows_nan)>0:
+				rows, cols = np.where((np.isnan(data_image_new)==False) & (np.isinf(data_image_new)==False) & (data_image_new>0))
+				#data_image_new = griddata((rows,cols), data_image_new[rows,cols], (yy, xx), method='cubic')
+				data_image_new[rows_nan,cols_nan] = np.percentile(data_image_new[rows,cols],50)
+		else:
+			data_image_new = data_image
 
 		return data_image_new
 	else:
@@ -2047,7 +2182,7 @@ def open_fluxmap_fits(flux_maps_fits):
 	return filters, gal_region, flux_map, flux_err_map, unit_flux
 
 
-def plot_maps_fluxes(flux_maps_fits, ncols=5, savefig=True, name_plot_mapflux=None, vmin=-22, vmax=-15, name_plot_mapfluxerr=None):
+def plot_maps_fluxes(flux_maps_fits, ncols=5, savefig=True, name_plot_mapflux=None, vmin=None, vmax=None, name_plot_mapfluxerr=None):
 	""" Function for plotting maps of multiband fluxes.
 
 	:param flux_maps_fits:
@@ -2063,10 +2198,10 @@ def plot_maps_fluxes(flux_maps_fits, ncols=5, savefig=True, name_plot_mapflux=No
 		Name of the output plot for the maps of multiband fluxes.
 
    	:param vmin:
-    		Minimum flux limit for the color bar in logarithmic scale.
+    	Minimum flux limit for the color bar in logarithmic scale.
 
-      	:param vmax:
-       		Maximum flux limit for the color bar in logarithmic scale.
+     :param vmax:
+       	Maximum flux limit for the color bar in logarithmic scale.
 
 	:param name_plot_mapfluxerr:
 		Name of the output plot for the maps of multiband flux uncertainties.
@@ -2076,6 +2211,12 @@ def plot_maps_fluxes(flux_maps_fits, ncols=5, savefig=True, name_plot_mapflux=No
 
 	filters, gal_region, flux_map, flux_err_map, unit_flux = open_fluxmap_fits(flux_maps_fits)
 	nbands = len(filters)
+
+	if vmin is None:
+		vmin = np.nanpercentile(np.log10(flux_map[flux_map>0]), 2.0)
+
+	if vmax is None:
+		vmax = np.nanpercentile(np.log10(flux_map[flux_map>0]), 99.9)
 
 	#=> plotting
 	map_plots, nrows = mapping_multiplots(nbands,ncols)
@@ -2132,6 +2273,7 @@ def plot_maps_fluxes(flux_maps_fits, ncols=5, savefig=True, name_plot_mapflux=No
 	cb.set_label(r'log(Flux uncertainty [erg $\rm{ s}^{-1}\rm{cm}^{-2}\AA^{-1}$])', fontsize=22)
 
 	plt.subplots_adjust(left=0.05, right=0.95, bottom=0.05, top=0.85, hspace=0.1, wspace=0.05)
+	#plt.subplots_adjust(hspace=0.05, wspace=0.05)
 
 	if savefig is True:
 		if name_plot_mapfluxerr is None:
@@ -2377,8 +2519,8 @@ def get_total_SED(flux_maps_fits):
 	:returns photo_wave:
 		The central wavelength of the filters.
 
-   	:returns filters:
-    		List of filters.
+	:returns filters:
+		List of filters.
 	"""
 
 	from ..utils.filtering import cwave_filters
@@ -2892,18 +3034,162 @@ def central_brightest_pixel(flux_maps_fits, filter_id, xrange=None, yrange=None)
 	return cent_x, cent_y	
 
 
+def compute_fwhm_psf(psf_image, error_image=None):
+    from astropy.modeling import models, fitting
+    from scipy.ndimage import center_of_mass
+
+    y, x = np.indices(psf_image.shape)
+    data = psf_image
+
+    # Estimate center and parameters
+    y0, x0 = center_of_mass(data)
+    amplitude = data.max()
+    offset = np.median(data)
+
+    # Gaussian + constant background model
+    gauss_init = models.Gaussian2D(
+        amplitude=amplitude,
+        x_mean=x0,
+        y_mean=y0,
+        x_stddev=1.0,
+        y_stddev=1.0,
+        theta=0.0
+    )
+    const_init = models.Const2D(amplitude=offset)
+    model_init = gauss_init + const_init
+
+    # Fit the model
+    fitter = fitting.LevMarLSQFitter()
+    weights = None if error_image is None else 1.0 / (error_image + 1e-8)
+
+    with np.errstate(invalid='ignore'):
+        best_fit = fitter(model_init, x, y, data, weights=weights)
+
+    # Extract FWHM from best-fit Gaussian component
+    fwhm_x = 2.3548 * best_fit[0].x_stddev.value
+    fwhm_y = 2.3548 * best_fit[0].y_stddev.value
+    fwhm = (fwhm_x + fwhm_y) / 2
+
+    # Compute reduced chi-square
+    model_image = best_fit(x, y)
+    residuals = data - model_image
+    if error_image is None:
+        chi2 = np.sum(residuals**2)
+    else:
+        chi2 = np.sum((residuals / (error_image + 1e-8))**2)
+
+    dof = data.size - len(best_fit.parameters)
+    reduced_chi2 = chi2 / dof
+
+    return {
+        "fwhm": fwhm,
+        "fwhm_x": fwhm_x,
+        "fwhm_y": fwhm_y,
+        "model_image": model_image,
+        "gaussian_model": best_fit,
+        "reduced_chi2": reduced_chi2
+    }
 
 
+def interpolate_psf_cube(psf_cube, wave_grid, target_wave, kind='cubic'):
+    """
+    Interpolate PSF image from a wavelength-dependent PSF cube.
+
+    Parameters:
+    -----------
+    psf_cube : ndarray
+        3D array of shape (n_wave, ny, nx) containing PSF images at different wavelengths.
+    wave_grid : 1D array
+        Array of wavelengths corresponding to each slice of the PSF cube.
+    target_wave : float
+        Target wavelength at which to interpolate the PSF.
+    kind : str
+        Interpolation method (default is 'linear'; options include 'nearest', 'cubic', etc.)
+
+    Returns:
+    --------
+    psf_interp : 2D array
+        Interpolated PSF image at the target wavelength.
+    """
+    from scipy.interpolate import interp1d
+
+    psf_cube = np.asarray(psf_cube)
+    wave_grid = np.asarray(wave_grid)
+
+    if psf_cube.ndim != 3:
+        raise ValueError("psf_cube must be a 3D array (n_wave, ny, nx).")
+    if wave_grid.ndim != 1 or wave_grid.shape[0] != psf_cube.shape[0]:
+        raise ValueError("wave_grid must be 1D and match the first dimension of psf_cube.")
+
+    if not (wave_grid[0] <= target_wave <= wave_grid[-1]):
+        raise ValueError("target_wave is outside the range of wave_grid.")
+
+    # Prepare interpolator
+    interp_func = interp1d(wave_grid, psf_cube, axis=0, kind=kind)
+    psf_interp = interp_func(target_wave)
+
+    return psf_interp
 
 
+def crop_gal_region_datacube(fits_datacube, gal_region, name_out_fits=None):
+	ignore_exts = ['PRIMARY', 'STAMP_IMAGE', 'CORR_FACTOR', 'GALAXY_REGION', 'SPEC_REGION']
 
+	out_rows, out_cols = np.where(gal_region != 1)
 
+	cube = fits.open(fits_datacube)
 
+	hdul = fits.HDUList()
 
+	if 'PRIMARY' in cube:
+		hdul.append(fits.PrimaryHDU(header=cube['PRIMARY'].header))
+	else:
+		if cube[0].name in ignore_exts:
+			hdul.append(fits.ImageHDU(data=cube[0].data, header=cube[0].header, name=cube[0].name))
+		else:
+			if len(cube[0].data.shape) == 1:
+				hdul.append(fits.ImageHDU(data=cube[0].data, header=cube[0].header, name=cube[0].name))
+			elif len(cube[0].data.shape) == 2:
+				temp_data = cube[0].data
+				temp_data[out_rows,out_cols] = 0.0
+				hdul.append(fits.ImageHDU(data=temp_data, header=cube[0].header, name=cube[0].name))
+			elif len(cube[0].data.shape) == 3:
+				temp_data = cube[0].data   # (wave, y, x)
+				for ww in range(temp_data.shape[0]):
+					temp_data[ww,out_rows,out_cols] = 0.0
+				hdul.append(fits.ImageHDU(data=temp_data, header=cube[0].header, name=cube[0].name))
+			else:
+				print ('%s data has dimension beyond 3 is not accepted!' % cube[0].name)
+				sys.exit()
 
+	hdul.append(fits.ImageHDU(data=gal_region, name='galaxy_region'))
 
+	for ii in range(1,len(cube)):
+		if cube[ii].name in ignore_exts:
+			hdul.append(fits.ImageHDU(data=cube[ii].data, header=cube[ii].header, name=cube[ii].name))
+		else:
+			if len(cube[ii].data.shape) == 1:
+				hdul.append(fits.ImageHDU(data=cube[ii].data, header=cube[ii].header, name=cube[ii].name))
+			elif len(cube[ii].data.shape) == 2:
+				temp_data = cube[ii].data
+				temp_data[out_rows,out_cols] = 0.0
+				hdul.append(fits.ImageHDU(data=temp_data, header=cube[ii].header, name=cube[ii].name))
+			elif len(cube[ii].data.shape) == 3:
+				temp_data = cube[ii].data   # (wave, y, x)
+				for ww in range(temp_data.shape[0]):
+					temp_data[ww,out_rows,out_cols] = 0.0
+				hdul.append(fits.ImageHDU(data=temp_data, header=cube[ii].header, name=cube[ii].name))
+			else:
+				print ('%s data has dimension beyond 3 is not accepted!' % cube[ii].name)
+				sys.exit()
 
+	cube.close()
 
+	if name_out_fits is None:
+		name_out_fits = 'croproi_'+fits_datacube
+
+	hdul.writeto(name_out_fits, overwrite=True)
+
+	return name_out_fits
 
 
 

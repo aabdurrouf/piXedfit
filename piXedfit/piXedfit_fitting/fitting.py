@@ -800,14 +800,16 @@ class dense_basis_SEDfit:
 		unit_bin = float(hdu[0].header['unit'])
 		if hdu[0].header['SPECPHOT'] == 0:
 			nbins = int(hdu[0].header['nbins'])
-			binmap = hdu['bin_map'].data
-			bin_flux = hdu['bin_flux'].data*unit_bin
-			bin_flux_err = hdu['bin_fluxerr'].data*unit_bin
+			binmap = hdu['PHOTO_BIN_MAP'].data
+			bin_flux = hdu['FLUX'].data*unit_bin
+			bin_flux_err = hdu['FLUX_ERR'].data*unit_bin
 		elif hdu[0].header['SPECPHOT'] == 1:
 			nbins = int(hdu[0].header['NBINSPH'])
 			binmap = hdu['PHOTO_BIN_MAP'].data
-			bin_flux = hdu['BIN_PHOTO_FLUX'].data*unit_bin
-			bin_flux_err = hdu['BIN_PHOTO_FLUXERR'].data*unit_bin
+			#bin_flux = hdu['BIN_PHOTO_FLUX'].data*unit_bin
+			#bin_flux_err = hdu['BIN_PHOTO_FLUXERR'].data*unit_bin
+			bin_flux = hdu['FLUX'].data*unit_bin
+			bin_flux_err = hdu['FLUX_ERR'].data*unit_bin
 		gal_z = float(hdu[0].header['z'])
 		nbands = int(hdu[0].header['nfilters'])
 		arcsec_per_pixel = float(hdu[0].header['PIXSIZE'])
@@ -844,7 +846,7 @@ class dense_basis_SEDfit:
 
 		nfiles = len(name_sampler_fits1)
 
-		params = ['log_mass', 'log_mass_form', 'log_sfr', 'Av', 'logzsol', 'log_mw_age']
+		params = ['log_mass', 'log_mass_form', 'log_sfr', 'Av', 'logzsol', 'log_mw_age', 'z']
 		params_sfh = []
 		hdu = fits.open(name_sampler_fits1[0])
 		for ii in range(hdu[0].header['Nparam']):
@@ -1092,17 +1094,46 @@ def maps_parameters(fits_binmap, bin_ids, name_sampler_fits, fits_fluxmap, refba
 
 	# open the FITS file containing the pixel binning map
 	hdu = fits.open(fits_binmap)
-	unit_bin = float(hdu[0].header['unit'])
-	if hdu[0].header['SPECPHOT'] == 0:
-		nbins = int(hdu[0].header['nbins'])
-		binmap = hdu['bin_map'].data
-		bin_flux = hdu['bin_flux'].data*unit_bin
-		bin_flux_err = hdu['bin_fluxerr'].data*unit_bin
-	elif hdu[0].header['SPECPHOT'] == 1:
-		nbins = int(hdu[0].header['NBINSPH'])
+	flux_scale = float(hdu[0].header['unit'])
+
+	if 'BIN_MAP' in hdu:
+		binmap = hdu['BIN_MAP'].data
+	elif 'PHOTO_BIN_MAP' in hdu:
 		binmap = hdu['PHOTO_BIN_MAP'].data
-		bin_flux = hdu['BIN_PHOTO_FLUX'].data*unit_bin
-		bin_flux_err = hdu['BIN_PHOTO_FLUXERR'].data*unit_bin
+	else:
+		binmap = None
+
+	if 'BIN_FLUX' in hdu:
+		bin_flux = hdu['BIN_FLUX'].data*flux_scale
+	elif 'BIN_PHOTO_FLUX' in hdu:
+		bin_flux = hdu['BIN_PHOTO_FLUX'].data*flux_scale 
+	elif 'FLUX' in hdu:
+		bin_flux = hdu['FLUX'].data*flux_scale
+	else:
+		bin_flux = None
+
+	if 'BIN_FLUXERR' in hdu:
+		bin_flux_err = hdu['BIN_FLUXERR'].data*flux_scale
+	elif 'BIN_PHOTO_FLUXERR' in hdu:
+		bin_flux_err = hdu['BIN_PHOTO_FLUXERR'].data*flux_scale
+	elif 'FLUX_ERR' in hdu:
+		bin_flux_err = hdu['FLUX_ERR'].data*flux_scale
+	else:
+		bin_flux_err = None
+
+	nbins = int(np.max(binmap))
+
+	#if hdu[0].header['SPECPHOT'] == 0:
+	#	nbins = int(hdu[0].header['nbins'])
+	#	binmap = hdu['bin_map'].data
+	#	bin_flux = hdu['bin_flux'].data*unit_bin
+	#	bin_flux_err = hdu['bin_fluxerr'].data*unit_bin
+	#elif hdu[0].header['SPECPHOT'] == 1:
+	#	nbins = int(hdu[0].header['NBINSPH'])
+	#	binmap = hdu['PHOTO_BIN_MAP'].data
+	#	bin_flux = hdu['BIN_PHOTO_FLUX'].data*unit_bin
+	#	bin_flux_err = hdu['BIN_PHOTO_FLUXERR'].data*unit_bin
+
 	gal_z = float(hdu[0].header['z'])
 	nbands = int(hdu[0].header['nfilters'])
 	hdu.close()

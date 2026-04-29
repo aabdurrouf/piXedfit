@@ -4,11 +4,19 @@ import random
 import operator
 from astropy.io import fits
 from scipy.interpolate import interp1d
+import multiprocessing
+from multiprocessing import get_context
+from tqdm import tqdm
+import fsps
+from concurrent.futures import ProcessPoolExecutor, as_completed
 
 from ..utils.redshifting import cosmo_redshifting
 from ..utils.filtering import filtering, cwave_filters
 from ..utils.igm_absorption import igm_att_madau, igm_att_inoue
 from .model_utils import *
+
+# Global variable to avoid reloading fsps per model
+_sp = None
 
 # warning is not logged here. Perfect for clean unit test output
 with np.errstate(divide='ignore'):
@@ -22,12 +30,14 @@ except:
 
 
 __all__ = ["generate_modelSED_propspecphoto", "generate_modelSED_spec", "generate_modelSED_photo", "generate_modelSED_specphoto", "generate_modelSED_spec_decompose", 
-			"generate_modelSED_specphoto_decompose","save_models_photo", "save_models_rest_spec", "add_fagn_bol_samplers"]
+			"generate_modelSED_specphoto_decompose","save_models_photo", "save_models_rest_spec", "add_fagn_bol_samplers", "model_sed_worker", "run_parallel_model_seds", 
+			"generate_model_seds_parallel", "model_sed_worker_with_unpacking", "save_model_seds_to_fits", "read_model_seds_from_fits"]
 
 def generate_modelSED_propspecphoto(sp=None,imf_type=1,duste_switch=1,add_neb_emission=1,dust_law=1,sfh_form=4,add_agn=0,filters=None,add_igm_absorption=0,igm_type=0,
-	smooth_velocity=True, sigma_smooth=0.0, smooth_lsf=False, lsf_wave=None, lsf_sigma=None, cosmo='flat_LCDM',H0=70.0,Om0=0.3,params_val={'log_mass':0.0,'z':0.001,
-	'log_fagn':-3.0,'log_tauagn':1.0,'log_qpah':0.54,'log_umin':0.0,'log_gamma':-2.0,'dust1':0.5,'dust2':0.5,'dust_index':-0.7,'log_age':1.0,'log_alpha':0.1,
-	'log_beta':0.1,'log_t0':0.4,'log_tau':0.4,'logzsol':0.0, 'gas_logu':-2.0,'gas_logz':None},add_neb_continuum=1):
+	smooth_velocity=True, sigma_smooth=0.0, spec_resolution=2000, smooth_lsf=False, lsf_wave=None, lsf_sigma=None, cosmo='flat_LCDM',H0=70.0,Om0=0.3,
+	params_val={'log_mass':0.0,'z':0.001, 'log_fagn':-3.0,'log_tauagn':1.0,'log_qpah':0.54,'log_umin':0.0,'log_gamma':-2.0,'dust1':0.5,'dust2':0.5,
+	'dust_index':-0.7,'log_age':1.0,'log_alpha':0.1,'log_beta':0.1,'log_t0':0.4,'log_tau':0.4,'logzsol':0.0, 'gas_logu':-2.0,'gas_logz':None},
+	add_neb_continuum=1):
 	"""A function to generate model SED in which the output includes: properties, spectrum, and photometric fluxes
 
 	:param sp:
@@ -67,6 +77,10 @@ def generate_modelSED_propspecphoto(sp=None,imf_type=1,duste_switch=1,add_neb_em
 		The same parameter as in FSPS. If smooth_velocity is True, this gives the velocity dispersion in km/s. Otherwise, it gives the width of the gaussian wavelength smoothing in Angstroms. 
 		These widths are in terms of sigma (standard deviation), not FWHM.
 
+	:param spec_resolution: (default: 2000)
+		Spectral resolution (R) of the input spectra. This is R=c/sigma_smooth if sigma_smooth is a velocity dispersion. 
+		This parameter will be considered if smooth_velocity=True and sigma_smooth=None. The sigma_smooth will then be calculated using the above equation.
+
 	:param smooth_lsf: (default: False)
 		The same parameter as in FSPS. Switch to apply smoothing of the SSPs by a wavelength dependent line spread function. Only takes effect if smooth_velocity is True.
 
@@ -96,8 +110,8 @@ def generate_modelSED_propspecphoto(sp=None,imf_type=1,duste_switch=1,add_neb_em
 	params_val = default_params(params_val)
 
 	sp, formed_mass, age, tau, t0, alpha, beta = set_initial_params_fsps(sp=sp,imf_type=imf_type,duste_switch=duste_switch,add_neb_emission=add_neb_emission,dust_law=dust_law,add_agn=add_agn,
-														smooth_velocity=smooth_velocity,sigma_smooth=sigma_smooth,smooth_lsf=smooth_lsf,lsf_wave=lsf_wave,lsf_sigma=lsf_sigma,
-														params_val=params_val,add_neb_continuum=add_neb_continuum)
+														smooth_velocity=smooth_velocity,sigma_smooth=sigma_smooth,spec_resolution=spec_resolution,smooth_lsf=smooth_lsf,lsf_wave=lsf_wave,
+														lsf_sigma=lsf_sigma, params_val=params_val,add_neb_continuum=add_neb_continuum)
 
 	SFR_fSM = -99.0
 	if sfh_form==0 or sfh_form==1:
@@ -201,10 +215,10 @@ def generate_modelSED_propspecphoto(sp=None,imf_type=1,duste_switch=1,add_neb_em
 
 
 def generate_modelSED_spec(sp=None,imf_type=1,duste_switch=1,add_neb_emission=1,dust_law=1,sfh_form=4,add_agn=0,add_igm_absorption=0,igm_type=0, 
-	smooth_velocity=True, sigma_smooth=0.0, smooth_lsf=False, lsf_wave=None, lsf_sigma=None, cosmo='flat_LCDM',H0=70.0,Om0=0.3, 
+	smooth_velocity=True, sigma_smooth=0.0, spec_resolution=2000, smooth_lsf=False, lsf_wave=None, lsf_sigma=None, cosmo='flat_LCDM',H0=70.0,Om0=0.3, 
 	params_val={'log_mass':0.0,'z':0.001,'log_fagn':-3.0,'log_tauagn':1.0,'log_qpah':0.54,'log_umin':0.0,'log_gamma':-2.0,
 	'dust1':0.5,'dust2':0.5,'dust_index':-0.7,'log_age':1.0,'log_alpha':0.1,'log_beta':0.1,'log_t0':0.4,'log_tau':0.4,'logzsol':0.0, 
-	'gas_logu':-2.0,'gas_logz':None},add_neb_continuum=1):
+	'gas_logu':-2.0,'gas_logz':None}, add_neb_continuum=1):
 
 	"""Function for generating a model spectrum given some parameters.
 
@@ -243,8 +257,12 @@ def generate_modelSED_spec(sp=None,imf_type=1,duste_switch=1,add_neb_emission=1,
 		The same parameter as in FSPS. If smooth_velocity is True, this gives the velocity dispersion in km/s. Otherwise, it gives the width of the gaussian wavelength smoothing in Angstroms. 
 		These widths are in terms of sigma (standard deviation), not FWHM.
 
+	:param spec_resolution: (default: 2000)
+		Spectral resolution (R) of the input spectra. This is R=c/sigma_smooth if sigma_smooth is a velocity dispersion. 
+		This parameter will be considered if smooth_velocity=True and sigma_smooth=None. The sigma_smooth will then be calculated using the above equation.
+
 	:param smooth_lsf: (default: False)
-		The same parameter as in FSPS. Switch to apply smoothing of the SSPs by a wavelength dependent line spread function. Only takes effect if smooth_velocity is True.
+		The same parameter as in FSPS. Switch to apply smoothing of the SSPs by a wavelength dependent line spread function. Only takes effect if smooth_velocity is True.  
 
 	:param lsf_wave:
 		Wavelength grids for the input line spread function. This must be in the units of Angstroms, and sorted ascending.   
@@ -274,7 +292,7 @@ def generate_modelSED_spec(sp=None,imf_type=1,duste_switch=1,add_neb_emission=1,
 	params_val = default_params(params_val)
 
 	sp, formed_mass, age, tau, t0, alpha, beta = set_initial_params_fsps(sp=sp,imf_type=imf_type,duste_switch=duste_switch,add_neb_emission=add_neb_emission,dust_law=dust_law,add_agn=add_agn,
-															smooth_velocity=smooth_velocity,sigma_smooth=sigma_smooth,smooth_lsf=smooth_lsf,lsf_wave=lsf_wave,lsf_sigma=lsf_sigma,
+															smooth_velocity=smooth_velocity,sigma_smooth=sigma_smooth,spec_resolution=spec_resolution,smooth_lsf=smooth_lsf,lsf_wave=lsf_wave,lsf_sigma=lsf_sigma,
 															params_val=params_val,add_neb_continuum=add_neb_continuum)
 
 	if sfh_form==0 or sfh_form==1:
@@ -327,8 +345,8 @@ def generate_modelSED_spec(sp=None,imf_type=1,duste_switch=1,add_neb_emission=1,
 
 
 def generate_modelSED_photo(filters,sp=None,imf_type=1,duste_switch=0,add_neb_emission=1,dust_law=1,sfh_form=4,add_agn=0,
-	add_igm_absorption=0,igm_type=0,smooth_velocity=True, sigma_smooth=0.0, smooth_lsf=False, lsf_wave=None, lsf_sigma=None,
-	cosmo='flat_LCDM',H0=70.0,Om0=0.3,params_val={'log_mass':0.0,'z':0.001,'log_fagn':-3.0,'log_tauagn':1.0,'log_qpah':0.54,
+	add_igm_absorption=0,igm_type=0,smooth_velocity=True, sigma_smooth=0.0, spec_resolution=2000, smooth_lsf=False, lsf_wave=None, 
+	lsf_sigma=None, cosmo='flat_LCDM',H0=70.0,Om0=0.3,params_val={'log_mass':0.0,'z':0.001,'log_fagn':-3.0,'log_tauagn':1.0,'log_qpah':0.54,
 	'log_umin':0.0,'log_gamma':-2.0,'dust1':0.5,'dust2':0.5,'dust_index':-0.7,'log_age':1.0,'log_alpha':0.1,'log_beta':0.1,
 	'log_t0':0.4,'log_tau':0.4,'logzsol':0.0,'gas_logu':-2.0,'gas_logz':None}):
 	"""Function for generating a model photometric SED given some parameters.
@@ -372,6 +390,10 @@ def generate_modelSED_photo(filters,sp=None,imf_type=1,duste_switch=0,add_neb_em
 		The same parameter as in FSPS. If smooth_velocity is True, this gives the velocity dispersion in km/s. Otherwise, it gives the width of the gaussian wavelength smoothing in Angstroms. 
 		These widths are in terms of sigma (standard deviation), not FWHM.
 
+	:param spec_resolution: (default: 2000)
+		Spectral resolution (R) of the input spectra. This is R=c/sigma_smooth if sigma_smooth is a velocity dispersion. 
+		This parameter will be considered if smooth_velocity=True and sigma_smooth=None. The sigma_smooth will then be calculated using the above equation.
+
 	:param smooth_lsf: (default: False)
 		The same parameter as in FSPS. Switch to apply smoothing of the SSPs by a wavelength dependent line spread function. Only takes effect if smooth_velocity is True.
 
@@ -403,7 +425,7 @@ def generate_modelSED_photo(filters,sp=None,imf_type=1,duste_switch=0,add_neb_em
 	params_val = default_params(params_val)
 
 	sp, formed_mass, age, tau, t0, alpha, beta = set_initial_params_fsps(sp=sp,imf_type=imf_type,duste_switch=duste_switch,add_neb_emission=add_neb_emission,dust_law=dust_law,add_agn=add_agn,
-														smooth_velocity=smooth_velocity,sigma_smooth=sigma_smooth,smooth_lsf=smooth_lsf,lsf_wave=lsf_wave,lsf_sigma=lsf_sigma,params_val=params_val)
+														smooth_velocity=smooth_velocity,sigma_smooth=sigma_smooth,spec_resolution=spec_resolution,smooth_lsf=smooth_lsf,lsf_wave=lsf_wave,lsf_sigma=lsf_sigma,params_val=params_val)
 
 	if sfh_form==0 or sfh_form==1:
 		if sfh_form==0:
@@ -465,8 +487,8 @@ def generate_modelSED_photo(filters,sp=None,imf_type=1,duste_switch=0,add_neb_em
 
 def generate_modelSED_specphoto(sp=None,imf_type=1,duste_switch=1,add_neb_emission=1,dust_law=1,sfh_form=4,
 	add_agn=0,filters=['galex_fuv','galex_nuv','sdss_u','sdss_g','sdss_r','sdss_i','sdss_z'],add_igm_absorption=0,igm_type=0,
-	smooth_velocity=True, sigma_smooth=0.0, smooth_lsf=False, lsf_wave=None, lsf_sigma=None,cosmo='flat_LCDM',H0=70.0,Om0=0.3,
-	params_val={'log_mass':0.0,'z':0.001,'log_fagn':-3.0,'log_tauagn':1.0,'log_qpah':0.54,'log_umin':0.0,'log_gamma':-2.0,
+	smooth_velocity=True, sigma_smooth=0.0, spec_resolution=2000, smooth_lsf=False, lsf_wave=None, lsf_sigma=None,cosmo='flat_LCDM',
+	H0=70.0,Om0=0.3,params_val={'log_mass':0.0,'z':0.001,'log_fagn':-3.0,'log_tauagn':1.0,'log_qpah':0.54,'log_umin':0.0,'log_gamma':-2.0,
 	'dust1':0.5,'dust2':0.5,'dust_index':-0.7,'log_age':1.0,'log_alpha':0.1,'log_beta':0.1,'log_t0':0.4,'log_tau':0.4,'logzsol':0.0, 
 	'gas_logu':-2.0,'gas_logz':None},add_neb_continuum=1):
 	"""A function to generate model spectrophotometric SED
@@ -508,6 +530,10 @@ def generate_modelSED_specphoto(sp=None,imf_type=1,duste_switch=1,add_neb_emissi
 		The same parameter as in FSPS. If smooth_velocity is True, this gives the velocity dispersion in km/s. Otherwise, it gives the width of the gaussian wavelength smoothing in Angstroms. 
 		These widths are in terms of sigma (standard deviation), not FWHM.
 
+	:param spec_resolution: (default: 2000)
+		Spectral resolution (R) of the input spectra. This is R=c/sigma_smooth if sigma_smooth is a velocity dispersion. 
+		This parameter will be considered if smooth_velocity=True and sigma_smooth=None. The sigma_smooth will then be calculated using the above equation.
+
 	:param smooth_lsf: (default: False)
 		The same parameter as in FSPS. Switch to apply smoothing of the SSPs by a wavelength dependent line spread function. Only takes effect if smooth_velocity is True.
 
@@ -534,7 +560,7 @@ def generate_modelSED_specphoto(sp=None,imf_type=1,duste_switch=1,add_neb_emissi
 	params_val = default_params(params_val)
 
 	sp, formed_mass, age, tau, t0, alpha, beta = set_initial_params_fsps(sp=sp,imf_type=imf_type,duste_switch=duste_switch,add_neb_emission=add_neb_emission,dust_law=dust_law,add_agn=add_agn,
-														smooth_velocity=smooth_velocity,sigma_smooth=sigma_smooth,smooth_lsf=smooth_lsf,lsf_wave=lsf_wave,lsf_sigma=lsf_sigma,
+														smooth_velocity=smooth_velocity,sigma_smooth=sigma_smooth,spec_resolution=spec_resolution,smooth_lsf=smooth_lsf,lsf_wave=lsf_wave,lsf_sigma=lsf_sigma,
 														params_val=params_val,add_neb_continuum=add_neb_continuum)
 
 	if sfh_form==0 or sfh_form==1:
@@ -594,8 +620,8 @@ def generate_modelSED_specphoto(sp=None,imf_type=1,duste_switch=1,add_neb_emissi
 	return spec_SED, photo_SED
 
 def generate_modelSED_spec_decompose(sp=None,imf=1, duste_switch=1,add_neb_emission=1,dust_law=1,add_agn=1,add_igm_absorption=0,
-	igm_type=0,sfh_form=4,funit='erg/s/cm2/A',smooth_velocity=True,sigma_smooth=0.0,smooth_lsf=False,lsf_wave=None,lsf_sigma=None, 
-	cosmo='flat_LCDM',H0=70.0,Om0=0.3,params_val={'log_mass':0.0,'z':0.001,'log_fagn':-3.0,'log_tauagn':1.0,'log_qpah':0.54,
+	igm_type=0,sfh_form=4,funit='erg/s/cm2/A',smooth_velocity=True,sigma_smooth=0.0,spec_resolution=2000,smooth_lsf=False,lsf_wave=None,
+	lsf_sigma=None, cosmo='flat_LCDM',H0=70.0,Om0=0.3,params_val={'log_mass':0.0,'z':0.001,'log_fagn':-3.0,'log_tauagn':1.0,'log_qpah':0.54,
 	'log_umin':0.0,'log_gamma':-2.0,'dust1':0.5,'dust2':0.5,'dust_index':-0.7,'log_age':1.0,'log_alpha':0.1,'log_beta':0.1,
 	'log_t0':0.4,'log_tau':0.4,'logzsol':0.0, 'gas_logu':-2.0,'gas_logz':None}):
 	"""A function for generating model spectroscopic SED and decompose the SED into its components.
@@ -618,13 +644,15 @@ def generate_modelSED_spec_decompose(sp=None,imf=1, duste_switch=1,add_neb_emiss
 	# generate model spectrum: total
 	spec_SED_tot = generate_modelSED_spec(sp=sp,imf_type=imf,duste_switch=duste_switch,add_neb_emission=add_neb_emission,dust_law=dust_law,
 					sfh_form=sfh_form,add_agn=add_agn,add_igm_absorption=add_igm_absorption,igm_type=igm_type,smooth_velocity=smooth_velocity, 
-					sigma_smooth=sigma_smooth,smooth_lsf=smooth_lsf,lsf_wave=lsf_wave,lsf_sigma=lsf_sigma,cosmo=cosmo,H0=H0,Om0=Om0,params_val=params_val)
+					sigma_smooth=sigma_smooth,spec_resolution=spec_resolution,smooth_lsf=smooth_lsf,lsf_wave=lsf_wave,lsf_sigma=lsf_sigma,
+					cosmo=cosmo,H0=H0,Om0=Om0,params_val=params_val)
 	spec_SED['wave'] = spec_SED_tot['wave']
 	spec_SED['flux_total'] = convert_unit_spec_from_ergscm2A(spec_SED_tot['wave'],spec_SED_tot['flux'],funit=funit)
 
 	spec_SED_temp = generate_modelSED_spec(sp=sp,imf_type=imf,duste_switch=0,add_neb_emission=0,dust_law=dust_law,sfh_form=sfh_form,add_agn=0,
 					add_igm_absorption=add_igm_absorption,igm_type=igm_type,cosmo=cosmo,H0=H0,Om0=Om0,params_val=params_val,
-					smooth_velocity=smooth_velocity,sigma_smooth=sigma_smooth,smooth_lsf=smooth_lsf,lsf_wave=lsf_wave,lsf_sigma=lsf_sigma)
+					smooth_velocity=smooth_velocity,sigma_smooth=sigma_smooth,spec_resolution=spec_resolution,smooth_lsf=smooth_lsf,
+					lsf_wave=lsf_wave,lsf_sigma=lsf_sigma)
 	spec_flux_stellar = spec_SED_temp['flux']
 	spec_SED['flux_stellar'] = convert_unit_spec_from_ergscm2A(spec_SED_temp['wave'],spec_flux_stellar,funit=funit)
 
@@ -633,19 +661,19 @@ def generate_modelSED_spec_decompose(sp=None,imf=1, duste_switch=1,add_neb_emiss
 		spec_SED_temp1 = generate_modelSED_spec(sp=sp,imf_type=imf,duste_switch=0,add_neb_emission=1,
 							dust_law=dust_law,sfh_form=sfh_form,add_agn=0,add_igm_absorption=add_igm_absorption,igm_type=igm_type,
 							cosmo=cosmo,H0=H0,Om0=Om0,params_val=params_val,smooth_velocity=smooth_velocity,sigma_smooth=sigma_smooth,
-							smooth_lsf=smooth_lsf,lsf_wave=lsf_wave,lsf_sigma=lsf_sigma,add_neb_continuum=1)
+							spec_resolution=spec_resolution,smooth_lsf=smooth_lsf,lsf_wave=lsf_wave,lsf_sigma=lsf_sigma,add_neb_continuum=1)
 
 		spec_SED_temp2 = generate_modelSED_spec(sp=sp,imf_type=imf,duste_switch=0,add_neb_emission=0,
 							dust_law=dust_law,sfh_form=sfh_form,add_agn=0,add_igm_absorption=add_igm_absorption,igm_type=igm_type,
 							cosmo=cosmo,H0=H0,Om0=Om0,params_val=params_val,smooth_velocity=smooth_velocity,
-							sigma_smooth=sigma_smooth,smooth_lsf=smooth_lsf,lsf_wave=lsf_wave,lsf_sigma=lsf_sigma)
+							sigma_smooth=sigma_smooth,spec_resolution=spec_resolution,smooth_lsf=smooth_lsf,lsf_wave=lsf_wave,lsf_sigma=lsf_sigma)
 		spec_flux_nebe = spec_SED_temp1['flux'] - spec_SED_temp2['flux']
 		spec_SED['flux_nebe'] = convert_unit_spec_from_ergscm2A(spec_SED_temp['wave'],spec_flux_nebe,funit=funit)
 
 		spec_SED_temp3 = generate_modelSED_spec(sp=sp,imf_type=imf,duste_switch=0,add_neb_emission=1,
 							dust_law=dust_law,sfh_form=sfh_form,add_agn=0,add_igm_absorption=add_igm_absorption,igm_type=igm_type,
 							cosmo=cosmo,H0=H0,Om0=Om0,params_val=params_val,smooth_velocity=smooth_velocity,sigma_smooth=sigma_smooth,
-							smooth_lsf=smooth_lsf,lsf_wave=lsf_wave,lsf_sigma=lsf_sigma,add_neb_continuum=0)
+							spec_resolution=spec_resolution,smooth_lsf=smooth_lsf,lsf_wave=lsf_wave,lsf_sigma=lsf_sigma,add_neb_continuum=0)
 		spec_flux_nebe_cont = spec_SED_temp1['flux'] - spec_SED_temp3['flux']
 		spec_SED['flux_nebe_cont'] = convert_unit_spec_from_ergscm2A(spec_SED_temp['wave'],spec_flux_nebe_cont,funit=funit)
 
@@ -656,7 +684,7 @@ def generate_modelSED_spec_decompose(sp=None,imf=1, duste_switch=1,add_neb_emiss
 		spec_SED_temp = generate_modelSED_spec(sp=sp,imf_type=imf,duste_switch=duste_switch_temp,add_neb_emission=add_neb_emission,
 							dust_law=dust_law,sfh_form=sfh_form,add_agn=add_agn,add_igm_absorption=add_igm_absorption,igm_type=igm_type,
 							cosmo=cosmo,H0=H0,Om0=Om0,params_val=params_val,smooth_velocity=smooth_velocity,sigma_smooth=sigma_smooth,
-							smooth_lsf=smooth_lsf,lsf_wave=lsf_wave,lsf_sigma=lsf_sigma)
+							spec_resolution=spec_resolution,smooth_lsf=smooth_lsf,lsf_wave=lsf_wave,lsf_sigma=lsf_sigma)
 		spec_flux_duste = spec_SED_tot['flux'] - spec_SED_temp['flux']
 		spec_SED['flux_duste'] = convert_unit_spec_from_ergscm2A(spec_SED_temp['wave'],spec_flux_duste,funit=funit)
 	
@@ -666,7 +694,8 @@ def generate_modelSED_spec_decompose(sp=None,imf=1, duste_switch=1,add_neb_emiss
 		spec_SED_temp = generate_modelSED_spec(sp=sp,imf_type=imf,duste_switch=duste_switch,add_neb_emission=add_neb_emission,
 							dust_law=dust_law,sfh_form=sfh_form,add_agn=add_agn_temp,add_igm_absorption=add_igm_absorption,
 							igm_type=igm_type,cosmo=cosmo,H0=H0,Om0=Om0,params_val=params_val,smooth_velocity=smooth_velocity,
-							sigma_smooth=sigma_smooth,smooth_lsf=smooth_lsf,lsf_wave=lsf_wave,lsf_sigma=lsf_sigma)
+							sigma_smooth=sigma_smooth,spec_resolution=spec_resolution,smooth_lsf=smooth_lsf,lsf_wave=lsf_wave,
+							lsf_sigma=lsf_sigma)
 		spec_flux_agn = spec_SED_tot['flux'] - spec_SED_temp['flux']
 		spec_SED['flux_agn'] = convert_unit_spec_from_ergscm2A(spec_SED_temp['wave'],spec_flux_agn,funit=funit)
 
@@ -675,17 +704,17 @@ def generate_modelSED_spec_decompose(sp=None,imf=1, duste_switch=1,add_neb_emiss
 
 
 def generate_modelSED_specphoto_decompose(sp=None,imf=1,duste_switch=1,add_neb_emission=1,dust_law=1,add_agn=1,
-	add_igm_absorption=0,igm_type=0,smooth_velocity=True, sigma_smooth=0.0, smooth_lsf=False, lsf_wave=None, lsf_sigma=None,
-	cosmo='flat_LCDM',H0=70.0,Om0=0.3,sfh_form=4,funit='erg/s/cm2/A',filters=None,params_val={'log_mass':0.0,'z':0.001,
-	'log_fagn':-3.0,'log_tauagn':1.0,'log_qpah':0.54,'log_umin':0.0,'log_gamma':-2.0,'dust1':0.5,'dust2':0.5,'dust_index':-0.7,
-	'log_age':1.0,'log_alpha':0.1,'log_beta':0.1,'log_t0':0.4,'log_tau':0.4,'logzsol':0.0, 'gas_logu':-2.0,'gas_logz':None}):
+	add_igm_absorption=0,igm_type=0,smooth_velocity=True, sigma_smooth=0.0, spec_resolution=2000, smooth_lsf=False, 
+	lsf_wave=None, lsf_sigma=None, cosmo='flat_LCDM',H0=70.0,Om0=0.3,sfh_form=4,funit='erg/s/cm2/A',filters=None,
+	params_val={'log_mass':0.0,'z':0.001,'log_fagn':-3.0,'log_tauagn':1.0,'log_qpah':0.54,'log_umin':0.0,'log_gamma':-2.0,
+	'dust1':0.5,'dust2':0.5,'dust_index':-0.7,'log_age':1.0,'log_alpha':0.1,'log_beta':0.1,'log_t0':0.4,'log_tau':0.4,'logzsol':0.0, 
+	'gas_logu':-2.0,'gas_logz':None}):
 	"""A function for generating model spectroscopic SED and decompose the SED into its components.
 	
 	:param funit:
 		Flux unit. Options are: [0/'erg/s/cm2/A', 1/'erg/s/cm2', 2/'Jy']
 
 	"""
-
 	# allocate memories:
 	spec_SED = {}
 	spec_SED['wave'] = []
@@ -704,7 +733,7 @@ def generate_modelSED_specphoto_decompose(sp=None,imf=1,duste_switch=1,add_neb_e
 	spec_SED_tot,photo_SED_tot = generate_modelSED_specphoto(sp=sp,imf_type=imf,duste_switch=duste_switch,add_neb_emission=add_neb_emission,
 										dust_law=dust_law,sfh_form=sfh_form,add_agn=add_agn,filters=filters,add_igm_absorption=add_igm_absorption,
 										igm_type=igm_type,cosmo=cosmo,H0=H0,Om0=Om0,params_val=params_val,smooth_velocity=smooth_velocity,
-										sigma_smooth=sigma_smooth,smooth_lsf=smooth_lsf,lsf_wave=lsf_wave,lsf_sigma=lsf_sigma)
+										sigma_smooth=sigma_smooth,spec_resolution=spec_resolution,smooth_lsf=smooth_lsf,lsf_wave=lsf_wave,lsf_sigma=lsf_sigma)
 	spec_SED['wave'] = spec_SED_tot['wave']
 	spec_SED['flux_total'] = convert_unit_spec_from_ergscm2A(spec_SED_tot['wave'],spec_SED_tot['flux'],funit=funit)
 
@@ -712,8 +741,8 @@ def generate_modelSED_specphoto_decompose(sp=None,imf=1,duste_switch=1,add_neb_e
 
 	spec_SED_temp = generate_modelSED_spec(sp=sp,imf_type=imf,duste_switch=0,add_neb_emission=0,dust_law=dust_law,sfh_form=sfh_form,
 											add_agn=0,add_igm_absorption=add_igm_absorption,igm_type=igm_type,cosmo=cosmo,H0=H0,Om0=Om0,
-											params_val=params_val,smooth_velocity=smooth_velocity,sigma_smooth=sigma_smooth,smooth_lsf=smooth_lsf,
-											lsf_wave=lsf_wave,lsf_sigma=lsf_sigma)
+											params_val=params_val,smooth_velocity=smooth_velocity,sigma_smooth=sigma_smooth,spec_resolution=spec_resolution,
+											smooth_lsf=smooth_lsf,lsf_wave=lsf_wave,lsf_sigma=lsf_sigma)
 	spec_flux_stellar = spec_SED_temp['flux']
 	spec_SED['flux_stellar'] = convert_unit_spec_from_ergscm2A(spec_SED_temp['wave'],spec_flux_stellar,funit=funit)
 
@@ -722,19 +751,20 @@ def generate_modelSED_specphoto_decompose(sp=None,imf=1,duste_switch=1,add_neb_e
 	if add_neb_emission == 1:
 		spec_SED_temp1 = generate_modelSED_spec(sp=sp,imf_type=imf,duste_switch=0,add_neb_emission=1,dust_law=dust_law,
 							sfh_form=sfh_form,add_agn=add_agn,add_igm_absorption=add_igm_absorption,igm_type=igm_type,cosmo=cosmo,H0=H0,Om0=Om0,
-							params_val=params_val,smooth_velocity=smooth_velocity,sigma_smooth=sigma_smooth,smooth_lsf=smooth_lsf,
+							params_val=params_val,smooth_velocity=smooth_velocity,sigma_smooth=sigma_smooth,spec_resolution=spec_resolution,smooth_lsf=smooth_lsf,
 							lsf_wave=lsf_wave,lsf_sigma=lsf_sigma,add_neb_continuum=1)
 
 		spec_SED_temp2 = generate_modelSED_spec(sp=sp,imf_type=imf,duste_switch=0,add_neb_emission=0,dust_law=dust_law,
 							sfh_form=sfh_form,add_agn=add_agn,add_igm_absorption=add_igm_absorption,igm_type=igm_type,cosmo=cosmo,H0=H0,Om0=Om0,
-							params_val=params_val,smooth_velocity=smooth_velocity,sigma_smooth=sigma_smooth,smooth_lsf=smooth_lsf,lsf_wave=lsf_wave,lsf_sigma=lsf_sigma)
+							params_val=params_val,smooth_velocity=smooth_velocity,sigma_smooth=sigma_smooth,spec_resolution=spec_resolution,
+							smooth_lsf=smooth_lsf,lsf_wave=lsf_wave,lsf_sigma=lsf_sigma)
 
 		spec_flux_nebe = spec_SED_temp1['flux'] - spec_SED_temp2['flux']
 		spec_SED['flux_nebe'] = convert_unit_spec_from_ergscm2A(spec_SED_temp['wave'],spec_flux_nebe,funit=funit)
 
 		spec_SED_temp3 = generate_modelSED_spec(sp=sp,imf_type=imf,duste_switch=0,add_neb_emission=1,dust_law=dust_law,
 							sfh_form=sfh_form,add_agn=add_agn,add_igm_absorption=add_igm_absorption,igm_type=igm_type,cosmo=cosmo,H0=H0,Om0=Om0,
-							params_val=params_val,smooth_velocity=smooth_velocity,sigma_smooth=sigma_smooth,smooth_lsf=smooth_lsf,
+							params_val=params_val,smooth_velocity=smooth_velocity,sigma_smooth=sigma_smooth,spec_resolution=spec_resolution,smooth_lsf=smooth_lsf,
 							lsf_wave=lsf_wave,lsf_sigma=lsf_sigma,add_neb_continuum=0)
 		spec_flux_nebe_cont = spec_SED_temp1['flux'] - spec_SED_temp3['flux']
 		spec_SED['flux_nebe_cont'] = convert_unit_spec_from_ergscm2A(spec_SED_temp['wave'],spec_flux_nebe_cont,funit=funit)
@@ -746,7 +776,7 @@ def generate_modelSED_specphoto_decompose(sp=None,imf=1,duste_switch=1,add_neb_e
 		spec_SED_temp = generate_modelSED_spec(sp=sp,imf_type=imf,duste_switch=duste_switch_temp,add_neb_emission=add_neb_emission,
 							dust_law=dust_law,sfh_form=sfh_form,add_agn=add_agn,add_igm_absorption=add_igm_absorption,igm_type=igm_type,
 							cosmo=cosmo,H0=H0,Om0=Om0,params_val=params_val,smooth_velocity=smooth_velocity,sigma_smooth=sigma_smooth,
-							smooth_lsf=smooth_lsf,lsf_wave=lsf_wave,lsf_sigma=lsf_sigma)
+							spec_resolution=spec_resolution,smooth_lsf=smooth_lsf,lsf_wave=lsf_wave,lsf_sigma=lsf_sigma)
 		spec_flux_duste = spec_SED_tot['flux'] - spec_SED_temp['flux']
 		spec_SED['flux_duste'] = convert_unit_spec_from_ergscm2A(spec_SED_temp['wave'],spec_flux_duste,funit=funit)
 	# get AGN emission:
@@ -754,8 +784,8 @@ def generate_modelSED_specphoto_decompose(sp=None,imf=1,duste_switch=1,add_neb_e
 		add_agn_temp = 0
 		spec_SED_temp = generate_modelSED_spec(sp=sp,imf_type=imf,duste_switch=duste_switch,add_neb_emission=add_neb_emission,
 							dust_law=dust_law,sfh_form=sfh_form,add_agn=add_agn_temp,add_igm_absorption=add_igm_absorption,igm_type=igm_type,
-							cosmo=cosmo,H0=H0,Om0=Om0,params_val=params_val,smooth_velocity=smooth_velocity,sigma_smooth=sigma_smooth,smooth_lsf=smooth_lsf,
-							lsf_wave=lsf_wave,lsf_sigma=lsf_sigma)
+							cosmo=cosmo,H0=H0,Om0=Om0,params_val=params_val,smooth_velocity=smooth_velocity,sigma_smooth=sigma_smooth,spec_resolution=spec_resolution,
+							smooth_lsf=smooth_lsf,lsf_wave=lsf_wave,lsf_sigma=lsf_sigma)
 		spec_flux_agn = spec_SED_tot['flux'] - spec_SED_temp['flux']
 		spec_SED['flux_agn'] = convert_unit_spec_from_ergscm2A(spec_SED_temp['wave'],spec_flux_agn,funit=funit)
 
@@ -974,5 +1004,172 @@ def add_fagn_bol_samplers(name_sampler_fits=None, name_out_fits=None, nproc=10):
 	return name_out_fits
 
 
+def init_worker():
+    global _sp
+    _sp = fsps.StellarPopulation(zcontinuous=1, add_neb_emission=1)
 
+def model_sed_worker_old(args):
+    global _sp
+    params_val, shared_inputs = args
+
+    filters, imf_type, duste_switch, add_neb_emission, dust_law, sfh_form, add_agn, \
+    add_igm_absorption, igm_type, smooth_velocity, sigma_smooth, spec_resolution, smooth_lsf, \
+    lsf_wave, lsf_sigma, cosmo, H0, Om0 = shared_inputs
+
+    photo_SED = generate_modelSED_photo(
+        filters=filters,
+        sp=_sp,
+        imf_type=imf_type,
+        duste_switch=duste_switch,
+        add_neb_emission=add_neb_emission,
+        dust_law=dust_law,
+        sfh_form=sfh_form,
+        add_agn=add_agn,
+        add_igm_absorption=add_igm_absorption,
+        igm_type=igm_type,
+        smooth_velocity=smooth_velocity,
+        sigma_smooth=sigma_smooth,
+		spec_resolution=spec_resolution,
+        smooth_lsf=smooth_lsf,
+        lsf_wave=lsf_wave,
+        lsf_sigma=lsf_sigma,
+        cosmo=cosmo,
+        H0=H0,
+        Om0=Om0,
+        params_val=params_val
+    )
+    return photo_SED['flux']
+
+def run_parallel_model_seds(params_val_list, shared_inputs, num_cpus=4):
+    input_data = [(pv, shared_inputs) for pv in params_val_list]
+
+    #with multiprocessing.Pool(processes=num_cpus, initializer=init_worker) as pool:
+    #    results = list(tqdm(pool.imap(model_sed_worker, input_data), total=len(input_data)))
+
+    ctx = multiprocessing.get_context("spawn")  # safer on macOS/Windows
+    with ctx.Pool(processes=num_cpus, initializer=init_worker) as pool:
+        results = list(tqdm(pool.imap(model_sed_worker, input_data), total=len(input_data)))
+
+    return results
+
+
+
+def model_sed_worker(params_val, shared_inputs):
+    global _sp
+
+    filters, imf_type, duste_switch, add_neb_emission, dust_law, sfh_form, add_agn, \
+    add_igm_absorption, igm_type, smooth_velocity, sigma_smooth, spec_resolution, smooth_lsf, \
+    lsf_wave, lsf_sigma, cosmo, H0, Om0 = shared_inputs
+
+    photo_SED = generate_modelSED_photo(
+        filters=filters,
+        sp=_sp,
+        imf_type=imf_type,
+        duste_switch=duste_switch,
+        add_neb_emission=add_neb_emission,
+        dust_law=dust_law,
+        sfh_form=sfh_form,
+        add_agn=add_agn,
+        add_igm_absorption=add_igm_absorption,
+        igm_type=igm_type,
+        smooth_velocity=smooth_velocity,
+        sigma_smooth=sigma_smooth,
+		spec_resolution=spec_resolution,
+        smooth_lsf=smooth_lsf,
+        lsf_wave=lsf_wave,
+        lsf_sigma=lsf_sigma,
+        cosmo=cosmo,
+        H0=H0,
+        Om0=Om0,
+        params_val=params_val
+    )
+
+    return photo_SED['flux']
+
+def generate_model_seds_parallel(params_val_list, shared_inputs, num_cpus=4):
+    ctx = get_context("spawn")  # Important on macOS/Windows
+
+    with ctx.Pool(processes=num_cpus, initializer=init_worker) as pool:
+        from functools import partial
+        # Pack arguments into a single function
+        worker = partial(model_sed_worker_with_unpacking, shared_inputs=shared_inputs)
+
+        results = list(tqdm(pool.imap(worker, params_val_list), total=len(params_val_list)))
+
+    return results
+
+def model_sed_worker_with_unpacking(params_val, shared_inputs):
+    return model_sed_worker(params_val, shared_inputs)
+
+
+def save_model_seds_to_fits(name_out, params_val_list, results, filters):
+    """
+    Saves model SEDs, parameters, and filters to FITS. 
+    Handles None types by converting them to np.nan.
+    """
+    from astropy.table import Table
+    from astropy.io import fits
+    import numpy as np
+
+    # 1. Sanitize params_val_list to handle None types (like gas_logz)
+    # This prevents the "TypeError: unsupported object types" in FITS
+    sanitized_params = []
+    for dict_item in params_val_list:
+        new_dict = {k: (v if v is not None else np.nan) for k, v in dict_item.items()}
+        sanitized_params.append(new_dict)
+
+    # 2. Prepare the Flux data (ImageHDU)
+    flux_matrix = np.array(results)
+    flux_hdu = fits.PrimaryHDU(flux_matrix)
+    flux_hdu.header['EXTNAME'] = 'FLUXES'
+    flux_hdu.header['NMODELS'] = len(results)
+    flux_hdu.header['NFILT'] = len(filters)
+
+    # 3. Prepare the Parameters data (BinTableHDU)
+    params_table = Table(sanitized_params)
+    params_hdu = fits.BinTableHDU(params_table)
+    params_hdu.header['EXTNAME'] = 'PARAMS'
+
+    # 4. Prepare the Filter list (BinTableHDU)
+    filter_table = Table([filters], names=['filter_name'])
+    filter_hdu = fits.BinTableHDU(filter_table)
+    filter_hdu.header['EXTNAME'] = 'FILTERS'
+
+    # 5. Write to file
+    hdul = fits.HDUList([flux_hdu, params_hdu, filter_hdu])
+    hdul.writeto(name_out, overwrite=True)
+    print(f"Successfully saved {len(results)} models to {name_out}")
+
+
+def read_model_seds_from_fits(name_in):
+    """
+    Reads model data from FITS and reconstructs original data structures.
+    Converts np.nan back to None for compatibility with model_utils defaults.
+    """
+    from astropy.io import fits
+    import numpy as np
+    
+    with fits.open(name_in) as hdul:
+        # 1. Extract Fluxes
+        flux_matrix = hdul['FLUXES'].data
+        results = [row for row in flux_matrix]
+
+        # 2. Extract Parameters
+        params_data = hdul['PARAMS'].data
+        params_val_list = []
+        colnames = params_data.names
+        for row in params_data:
+            # Convert np.nan back to None where necessary
+            # (Matches piXedfit's convention for parameters like gas_logz)
+            p_dict = {}
+            for col in colnames:
+                val = row[col]
+                p_dict[col] = None if (isinstance(val, (float, np.floating)) and np.isnan(val)) else val
+            params_val_list.append(p_dict)
+
+        # 3. Extract Filters
+        filter_data = hdul['FILTERS'].data
+        filters = list(filter_data['filter_name'])
+
+    return params_val_list, results, filters
 

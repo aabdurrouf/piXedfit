@@ -109,38 +109,46 @@ def store_to_fits(nsamples=None,sampler_params=None,sampler_log_sfr=None,sampler
 			mod_chi2_temp[int(count)] = calc_chi2(d_merge, derr_merge, m_merge)
 
 			# get ratio
-			spec_flux_ratio = spec_flux_clean/conv_mod_spec_flux_clean
+			#spec_flux_ratio = spec_flux_clean/conv_mod_spec_flux_clean
+			spec_flux_ratio = spec_flux_clean - conv_mod_spec_flux_clean
 
 			# fit with legendre polynomial and get the correction factor
 			poly_legendre1 = np.polynomial.legendre.Legendre.fit(spec_wave_clean, spec_flux_ratio, poly_order)
 			corr_factor = poly_legendre1(spec_wave)
+
 			bfit_corr_factor_temp[:,int(count)] = corr_factor
 
 			bfit_spec_wave = spec_wave
 
 			func = interp1d(spec_SED['wave'],spec_SED['flux_total'], fill_value='extrapolate')
-			bfit_spec_tot_temp[:,int(count)] = corr_factor*func(bfit_spec_wave)
+			#bfit_spec_tot_temp[:,int(count)] = corr_factor*func(bfit_spec_wave)
+			bfit_spec_tot_temp[:,int(count)] = corr_factor + func(bfit_spec_wave)
 
 			func = interp1d(spec_SED['wave'],spec_SED['flux_stellar'], fill_value='extrapolate')
-			bfit_spec_stellar_temp[:,int(count)] = corr_factor*func(bfit_spec_wave)
+			#bfit_spec_stellar_temp[:,int(count)] = corr_factor*func(bfit_spec_wave)
+			bfit_spec_stellar_temp[:,int(count)] = corr_factor + func(bfit_spec_wave)
 
 			if add_neb_emission == 1:
 				func = interp1d(spec_SED['wave'],spec_SED['flux_nebe'], fill_value='extrapolate')
-				bfit_spec_nebe_temp[:,int(count)] = corr_factor*func(bfit_spec_wave)
+				#bfit_spec_nebe_temp[:,int(count)] = corr_factor*func(bfit_spec_wave)
+				bfit_spec_nebe_temp[:,int(count)] = corr_factor + func(bfit_spec_wave)
 
 				func = interp1d(spec_SED['wave'],spec_SED['flux_nebe_cont'], fill_value='extrapolate')
-				bfit_spec_nebe_cont_temp[:,int(count)] = corr_factor*func(bfit_spec_wave)
+				#bfit_spec_nebe_cont_temp[:,int(count)] = corr_factor*func(bfit_spec_wave)
+				bfit_spec_nebe_cont_temp[:,int(count)] = corr_factor + func(bfit_spec_wave)
 
 			if duste_switch==1:
 				if max_spec_wave/(params_val['z']+1.0) > 1e+4:
 					func = interp1d(spec_SED['wave'], spec_SED['flux_duste'], fill_value='extrapolate')
-					bfit_spec_duste_temp[:,int(count)] = corr_factor*func(bfit_spec_wave)
+					#bfit_spec_duste_temp[:,int(count)] = corr_factor*func(bfit_spec_wave)
+					bfit_spec_duste_temp[:,int(count)] = corr_factor + func(bfit_spec_wave)
 				else:
 					bfit_spec_duste_temp[:,int(count)] = spec_SED['flux_duste']
 			if add_agn == 1:
 				if max_spec_wave/(params_val['z']+1.0) > 1e+4:
 					func = interp1d(spec_SED['wave'], spec_SED['flux_agn'], fill_value='extrapolate')
-					bfit_spec_agn_temp[:,int(count)] = corr_factor*func(bfit_spec_wave)
+					#bfit_spec_agn_temp[:,int(count)] = corr_factor*func(bfit_spec_wave)
+					bfit_spec_agn_temp[:,int(count)] = corr_factor + func(bfit_spec_wave)
 				else:
 					bfit_spec_agn_temp[:,int(count)] = spec_SED['flux_agn']
 
@@ -847,6 +855,7 @@ def calc_sampler_SFR_othSFH(nsamples=0,sampler_params=None):
 
 	comm.Gather(sampler_log_sfr0, sampler_log_sfr, root=0)
 	comm.Bcast(sampler_log_sfr, root=0)
+
 	return sampler_log_sfr
 
 

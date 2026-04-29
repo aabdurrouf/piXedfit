@@ -256,6 +256,7 @@ def generate_modelSED_spec_restframe_props(sp=None,imf_type=1,sfh_form=4,add_agn
 			sp.params[str_temp] = pow(10.0,params_val[params_fsps[pp]])
 
 	sp.params['imf_type'] = imf_type
+	sp.params['tage'] = age
 
 	# generate the SED:
 	if sfh_form==0 or sfh_form==1:

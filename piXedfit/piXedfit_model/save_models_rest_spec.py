@@ -44,7 +44,7 @@ else:
 
 # call FSPS
 global sp 
-sp = fsps.StellarPopulation(zcontinuous=1, imf_type=imf)
+sp = fsps.StellarPopulation(zcontinuous=1, imf_type=imf, add_neb_emission=add_neb_emission)
 sp = set_initial_fsps(sp,duste_switch,add_neb_emission,add_agn,sfh_form,dust_law,smooth_velocity=smooth_velocity,sigma_smooth=sigma_smooth,
 					smooth_lsf=smooth_lsf,lsf_wave=lsf_wave,lsf_sigma=lsf_sigma)
 
@@ -97,7 +97,10 @@ for ii in recvbuf_idx:
 	wave, spec_flux, formed_mass, SFR_fSM, dust_mass, log_fagn_bol, mw_age = generate_modelSED_spec_restframe_props(sp=sp,imf_type=imf,sfh_form=sfh_form,
 																				  add_agn=add_agn,params_fsps=params_fsps, params_val=params_val)
 	mod_log_mass_temp[int(count)] = log10(formed_mass)
-	mod_log_sfr_temp[int(count)] = log10(SFR_fSM)
+	if SFR_fSM <= 0:
+		mod_log_sfr_temp[int(count)] = -33.0
+	else:
+		mod_log_sfr_temp[int(count)] = log10(SFR_fSM)
 	mod_log_mw_age_temp[int(count)] = np.log10(mw_age)
 
 	if duste_switch==1:
