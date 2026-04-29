@@ -1,9 +1,9 @@
 numpy
 scipy
-astropy==5.3
-photutils==1.1.0
+astropy
+photutils
 matplotlib
-reproject >= 0.7
+reproject
 sep
 emcee
 schwimmbad
