@@ -449,7 +449,8 @@ for ii in range(0,nwalkers):
 	pos_temp = np.zeros(nparams)
 	for jj in range(0,nparams):
 		width = width_initpos*(priors_max[jj] - priors_min[jj])
-		pos_temp[jj] = np.random.normal(init_pos[jj],width,1)
+		#pos_temp[jj] = np.random.normal(init_pos[jj],width,1)
+		pos_temp[jj] = np.random.normal(init_pos[jj],width)
 	pos.append(pos_temp)
 
 with MPIPool() as pool:
