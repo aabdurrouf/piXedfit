@@ -22,7 +22,7 @@ __all__ = ["sort_filters", "kpc_per_pixel", "k_lmbd_Fitz1986_LMC", "EBV_foregrou
 	   "plot_SNR_radial_profile", "get_flux_radial_profile", "photometry_within_aperture", "draw_aperture_on_maps_fluxes", 
 	   "central_brightest_pixel", "curve_of_growth_psf", "rotate_pixels", "get_rectangular_region", "radial_profile_psf", 
 	   "test_psfmatching_kernel", "remove_naninfzeroneg_image_2dinterpolation", "compute_fwhm_psf", "interpolate_psf_cube", 
-	   "crop_gal_region_datacube", "comb_segm_maps_gal_region"]
+	   "crop_gal_region_datacube", "comb_segm_maps_gal_region", "run_segmentations_on_datacube", "define_roi_from_segmentation_maps"]
 
 
 def sort_filters(filters):
@@ -3192,4 +3192,60 @@ def crop_gal_region_datacube(fits_datacube, gal_region, name_out_fits=None):
 	return name_out_fits
 
 
+def run_segmentations_on_datacube(data_cube, thresh=1.5, minarea=5, deblend_nthresh=32, deblend_cont=0.005, include_err=False):
+	import sep 
+	
+	# Increase the pixel stack limit
+	sep.set_extract_pixstack(1000000)  # You can tune this number (e.g., 1 million)
+
+	# open the fits file
+	hdu = fits.open(data_cube)
+	header = hdu[0].header
+	map_flux = hdu['photo_flux'].data 
+	map_flux_err = hdu['photo_fluxerr'].data
+	hdu.close()
+
+	nbands = header['nfilters']
+	filters = []
+	for bb in range(nbands):
+		filters.append(header['fil'+str(bb)])
+
+	segm_maps = []
+	for bb in range(nbands):
+
+		#data_sci = map_flux[bb].byteswap(inplace=True).newbyteorder()
+		temp_data = map_flux[bb].byteswap(inplace=True)
+		data_sci = temp_data.view(temp_data.dtype.newbyteorder())
+		
+		if include_err == True:
+			#data_err = map_flux_err[bb].byteswap(inplace=True).newbyteorder()
+			temp_data1 = map_flux_err[bb].byteswap(inplace=True)
+			data_err = temp_data1.view(temp_data1.dtype.newbyteorder())
+		else:
+			data_err = np.median(map_flux_err[bb])
+			#data_err=None
+
+		objects, segm_map = sep.extract(data=data_sci, thresh=thresh, err=data_err, minarea=minarea, 
+									deblend_nthresh=deblend_nthresh, deblend_cont=deblend_cont, 
+									segmentation_map=True)
+
+		segm_maps.append(segm_map)
+
+	segm_maps = np.asarray(segm_maps)
+
+	return segm_maps
+
+def define_roi_from_segmentation_maps(segm_maps):
+	nmaps = len(segm_maps)
+	dimy, dimx = segm_maps[0].shape[0], segm_maps[0].shape[1]
+	y_cent, x_cent = (dimy-1.0)/2.0, (dimx-1.0)/2.0
+
+	gal_roi = np.zeros((dimy,dimx))
+	for ii in range(nmaps):
+		cent_index = segm_maps[ii][int(y_cent),int(x_cent)]
+		if cent_index > 0:
+			rows, cols = np.where(segm_maps[ii]==cent_index)
+			gal_roi[rows,cols] = 1
+
+	return gal_roi
 
