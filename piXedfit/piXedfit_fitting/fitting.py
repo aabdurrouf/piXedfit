@@ -1158,7 +1158,10 @@ def maps_parameters(fits_binmap, bin_ids, name_sampler_fits, fits_fluxmap, refba
 		pix_flux = hdu['flux'].data*unit_pix
 		pix_flux_err = hdu['flux_err'].data*unit_pix
 	elif hdu[0].header['SPECPHOT'] == 1:
-		galaxy_region = hdu['PHOTO_REGION'].data
+		if 'GALAXY_REGION' in hdu:
+			galaxy_region = hdu['GALAXY_REGION'].data
+		else:
+			galaxy_region = hdu['PHOTO_REGION'].data
 		pix_flux = hdu['PHOTO_FLUX'].data*unit_pix
 		pix_flux_err = hdu['PHOTO_FLUXERR'].data*unit_pix
 	hdu.close()
