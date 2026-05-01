@@ -467,55 +467,6 @@ def var_img_GALEX(sci_img,filter_name,name_out_fits=None):
 	return name_out_fits
 
 
-def old_var_img_GALEX(sci_img,skybg_img,filter_name,name_out_fits=None):
-	"""Function for calculating variance image from an input GALEX image
-
-	:param sci_img:
-		Input GALEX science image (i.e., background subtracted). 
-		This type of image is provided in the GALEX website as indicated with "-intbgsub" (i.e., background subtracted intensity map). 
-
-	:param skybg_img:
-		Input sky background image .
-
-	:param filter_name:
-		A string of filter name. Options are: 'galex_fuv' and 'galex_nuv'.
-
-	:param name_out_fits:
-		Desired name for the output variance image. If None, a generic name will be used.
-	"""
-
-	# get science image:
-	hdu = fits.open(sci_img)
-	sci_img_data = hdu[0].data
-	sci_img_header = hdu[0].header
-	hdu.close()
-
-	# get sky background image:
-	hdu = fits.open(skybg_img)
-	skybg_img_data = hdu[0].data
-	hdu.close()
-
-	# get exposure time:
-	exp_time = float(sci_img_header['EXPTIME'])
-
-	val0 = sci_img_data + skybg_img_data
-
-	rows, cols = np.where(val0==0.0)
-	val0[rows,cols] = skybg_img_data[rows,cols]
-
-	if filter_name == 'galex_fuv':
-		sigma_sq_img_data = (np.absolute(val0*exp_time) + np.square(0.050*val0*exp_time))/exp_time/exp_time
-	elif filter_name == 'galex_nuv':
-		sigma_sq_img_data = (np.absolute(val0*exp_time) + np.square(0.027*val0*exp_time))/exp_time/exp_time
-								
-	if name_out_fits is None:
-		name_out_fits = 'var_%s' % sci_img
-	fits.writeto(name_out_fits, sigma_sq_img_data, sci_img_header, overwrite=True)
-
-	#return sigma_sq_img_data
-	return name_out_fits
-
-
 def var_img_2MASS(sci_img,skyrms_img=None,skyrms_value=None,name_out_fits=None):
 	"""Function for constructing a variance image from an input 2MASS image. 
 	The estimation of flux uncertainty follows the information provided on the `2MASS website <http://wise2.ipac.caltech.edu/staff/jarrett/2mass/3chan/noise/#coadd>`_.
@@ -785,37 +736,6 @@ def var_img_from_weight_img(wht_image, name_out_fits=None):
 	fits.writeto(name_out_fits, var_data, header=header, overwrite=True)
 
 	return name_out_fits
-
-
-def segm_sep_old(fits_image=None, thresh=1.5, var=None, minarea=5, deblend_nthresh=32, deblend_cont=0.005):
-	import sep 
-
-	# Increase the pixel stack limit
-	sep.set_extract_pixstack(1000000)  # You can tune this number (e.g., 1 million)
-
-	hdu = fits.open(fits_image)
-	data_img = hdu[0].data 
-	hdu.close()
-
-	data_img = data_img.byteswap(inplace=True).newbyteorder()
-
-	if var is None:
-		rows,cols = np.where((np.isnan(data_img)==False) & (np.isinf(data_img)==False))
-		err = np.percentile(data_img[rows,cols], 2.5)
-	else:
-		hdu = fits.open(var)
-		data_var = hdu[0].data 
-		hdu.close()
-
-		data_var = data_var.byteswap(inplace=True).newbyteorder()
-		err = np.sqrt(data_var)
-
-
-	objects, segm_map = sep.extract(data=data_img, thresh=thresh, err=err, minarea=minarea, 
-									deblend_nthresh=deblend_nthresh, deblend_cont=deblend_cont, 
-									segmentation_map=True)
-
-	return segm_map
 
 
 def segm_sep(sci_image, thresh=1.5, var_image=None, minarea=5, deblend_nthresh=32, deblend_cont=0.005):
