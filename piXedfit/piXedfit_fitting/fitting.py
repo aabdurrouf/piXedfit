@@ -1101,25 +1101,32 @@ def maps_parameters(fits_binmap, bin_ids, name_sampler_fits, fits_fluxmap, refba
 	elif 'PHOTO_BIN_MAP' in hdu:
 		binmap = hdu['PHOTO_BIN_MAP'].data
 	else:
-		binmap = None
+		print ("Cant find BIN_MAP or PHOTO_BIN_MAP in the FITS file.")
+		sys.exit()
 
 	if 'BIN_FLUX' in hdu:
-		bin_flux = hdu['BIN_FLUX'].data*flux_scale
+		bin_flux = hdu['BIN_FLUX'].data * flux_scale
 	elif 'BIN_PHOTO_FLUX' in hdu:
-		bin_flux = hdu['BIN_PHOTO_FLUX'].data*flux_scale 
+		bin_flux = hdu['BIN_PHOTO_FLUX'].data * flux_scale 
 	elif 'FLUX' in hdu:
-		bin_flux = hdu['FLUX'].data*flux_scale
+		bin_flux = hdu['FLUX'].data * flux_scale
+	elif 'PHOTO_FLUX' in hdu:
+		bin_flux = hdu['PHOTO_FLUX'].data * flux_scale
 	else:
-		bin_flux = None
+		print ("Cant find any flux data in the FITS file.")
+		sys.exit()
 
 	if 'BIN_FLUXERR' in hdu:
-		bin_flux_err = hdu['BIN_FLUXERR'].data*flux_scale
+		bin_flux_err = hdu['BIN_FLUXERR'].data * flux_scale
 	elif 'BIN_PHOTO_FLUXERR' in hdu:
-		bin_flux_err = hdu['BIN_PHOTO_FLUXERR'].data*flux_scale
+		bin_flux_err = hdu['BIN_PHOTO_FLUXERR'].data * flux_scale
 	elif 'FLUX_ERR' in hdu:
-		bin_flux_err = hdu['FLUX_ERR'].data*flux_scale
+		bin_flux_err = hdu['FLUX_ERR'].data * flux_scale
+	elif 'PHOTO_FLUXERR' in hdu:
+		bin_flux_err = hdu['PHOTO_FLUXERR'].data * flux_scale
 	else:
-		bin_flux_err = None
+		print ("Cant find any flux error data in the FITS file.")
+		sys.exit()
 
 	nbins = int(np.max(binmap))
 
