@@ -1167,31 +1167,49 @@ def get_flux_or_sb(filters,img_unit):
 	return flux_or_sb
 
 
-def create_kernel_gaussian(psf_fwhm_init=None, psf_fwhm_final=None, alpha_cosbell=1.5, pixsize_PSF_target=0.25, size=[101,101]):
+def create_kernel_gaussian(psf_fwhm_init, psf_fwhm_final, alpha_cosbell=0.35, pixsize_PSF_target=0.25, size=(101, 101)):
 
-	from astropy.modeling.models import Gaussian2D
-	from photutils.psf.matching import CosineBellWindow, create_matching_kernel
+    from astropy.modeling.models import Gaussian2D
+    from photutils.psf.matching import CosineBellWindow, create_matching_kernel
 
-	y_cent = (size[0]-1)/2
-	x_cent = (size[1]-1)/2 
+    """
+    Creates a PSF matching kernel to degrade an image from init_FWHM to final_FWHM.
+    """
+    # 1. Validation: Ensure we are actually smoothing the image
+    if psf_fwhm_final <= psf_fwhm_init:
+        raise ValueError("Target FWHM must be larger than initial FWHM to avoid noise amplification.")
 
-	# Make PSF. estimate sigma in unit of pixel:
-	# by definition fwhm = 2.355*sigma
-	sigma = psf_fwhm_init/2.355/pixsize_PSF_target			# in pixel
-	y, x = np.mgrid[0:size[0], 0:size[1]]
-	gm1 = Gaussian2D(100, x_cent, y_cent, sigma, sigma)
-	model_psf_init = gm1(x, y)
+    y_cent = (size[0] - 1) / 2
+    x_cent = (size[1] - 1) / 2 
+    y, x = np.mgrid[0:size[0], 0:size[1]]
 
-	sigma = psf_fwhm_final/2.355/pixsize_PSF_target
-	y, x = np.mgrid[0:size[0], 0:size[1]]
-	gm1 = Gaussian2D(100, x_cent, y_cent, sigma, sigma)
-	model_psf_final = gm1(x, y)
+    # 2. Define Sigmas (fwhm = 2 * sqrt(2 * ln(2)) * sigma ≈ 2.35482 * sigma)
+    # Using the exact constant for better precision
+    fwhm_to_sigma = 1 / (2 * np.sqrt(2 * np.log(2)))
+    
+    sig_init = (psf_fwhm_init / pixsize_PSF_target) * fwhm_to_sigma
+    sig_final = (psf_fwhm_final / pixsize_PSF_target) * fwhm_to_sigma
 
-	### calculate the kernel:
-	window = CosineBellWindow(alpha=alpha_cosbell)
-	kernel = create_matching_kernel(model_psf_init, model_psf_final, window=window)
+    # 3. Create Models and Normalize
+    # We normalize each PSF so their sum is 1.0; this is critical for flux conservation
+    gm_init = Gaussian2D(amplitude=1, x_mean=x_cent, y_mean=y_cent, x_stddev=sig_init, y_stddev=sig_init)
+    psf_init = gm_init(x, y)
+    psf_init /= psf_init.sum()
 
-	return kernel
+    gm_final = Gaussian2D(amplitude=1, x_mean=x_cent, y_mean=y_cent, x_stddev=sig_final, y_stddev=sig_final)
+    psf_final = gm_final(x, y)
+    psf_final /= psf_final.sum()
+
+    # 4. Generate Matching Kernel
+    # Lower alpha_cosbell values provide a smoother cutoff in the Fourier domain
+    window = CosineBellWindow(alpha=alpha_cosbell)
+    kernel = create_matching_kernel(psf_init, psf_final, window=window)
+
+    # 5. Final Normalization
+    # The kernel must sum to 1 to ensure the total counts in your image don't change
+    kernel /= kernel.sum()
+
+    return kernel
 
 
 def crop_image(data, new_dimx, new_dimy):
@@ -1207,67 +1225,6 @@ def crop_image(data, new_dimx, new_dimy):
 	new_data = data[int(row_start):int(row_end), int(col_start):int(col_end)]
 
 	return new_data
-
-
-def create_psf_matching_kernel_old(init_PSF_name, target_PSF_name, pixscale_init_PSF, 
-	pixscale_target_PSF, window='top_hat', window_arg=1.0):
-	"""A function for creating convolution kernel for PSF matching given initial and target PSFs.
-
-	:param init_PSF_name:
-		Image of input/initial PSF.
-
-	:param target_PSF_name:
-		Image of target PSF.
-
-	:param pixscale_init_PSF:
-		Pixel size of the initial PSF in arcsec.
-
-	:param pixscale_target_PSF:
-		Pixel size of the target PSF in arcsec.
-
-	:param window:
-		Options are 'top_hat' and 'cosine_bell'.
-	
-	:param window_arg:
-		Coefficient value of the window function, following Photutils. 
-
-	:param kernel:
-		The data of convolution kernel in 2D array. 
-	"""
-
-	from photutils.psf.matching import CosineBellWindow, TopHatWindow, create_matching_kernel, resize_psf
-
-	init_PSF = fits.open(init_PSF_name)[0].data
-	target_PSF = fits.open(target_PSF_name)[0].data
-
-	# resize PSFs
-	pixscale1 = 0
-	if pixscale_init_PSF>pixscale_target_PSF:
-		init_PSF = resize_psf(init_PSF, pixscale_init_PSF, pixscale_target_PSF, order=3)
-		pixscale1 = pixscale_target_PSF
-	elif pixscale_init_PSF<pixscale_target_PSF:
-		target_PSF = resize_psf(target_PSF, pixscale_target_PSF, pixscale_init_PSF, order=3)
-		pixscale1 = pixscale_init_PSF
-
-	if init_PSF.shape[0]>target_PSF.shape[0]:
-		init_PSF = crop_image(init_PSF, target_PSF.shape[1], target_PSF.shape[0])
-	elif init_PSF.shape[0]<target_PSF.shape[0]:
-		target_PSF = crop_image(target_PSF, init_PSF.shape[1], init_PSF.shape[0])
-	
-	if window == 'cosine_bell':
-		window = CosineBellWindow(alpha=window_arg)
-	elif window == 'top_hat':
-		window = TopHatWindow(window_arg)
-	else:
-		print ('Window type is not recognized!')
-		sys.exit()
-
-	kernel = create_matching_kernel(init_PSF, target_PSF, window=window)
-
-	if pixscale1 > 0:
-		kernel = resize_psf(kernel, pixscale1, pixscale_init_PSF, order=3)
-
-	return kernel
 
 
 def create_psf_matching_kernel(init_PSF0, target_PSF0, pixscale_init_PSF, 
