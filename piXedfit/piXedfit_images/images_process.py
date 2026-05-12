@@ -95,7 +95,8 @@ class images_processing:
 	"""
 
 	def __init__(self, filters, sci_img, var_img, gal_ra, gal_dec, dir_images=None, img_unit=None, img_scale=None, img_pixsizes=None, run_image_processing=True,
-		flag_psfmatch=0, flag_reproject=0, flag_crop=0, kernels=None, gal_z=None, stamp_size=[101,101], remove_files=True, idfil_align=None, verbose=False):
+		flag_psfmatch=0, flag_reproject=0, flag_crop=0, kernels=None, gal_z=None, stamp_size=[101,101], remove_files=True, idfil_align=None, verbose=False, 
+		convolve_var_img=True):
 
 		raise_errors(filters, kernels, flag_psfmatch, img_unit, img_scale)
 
@@ -126,6 +127,7 @@ class images_processing:
 		self.idfil_align = idfil_align
 		self.run_image_processing = run_image_processing
 		self.verbose = verbose
+		self.convolve_var_img = convolve_var_img
 
 		if run_image_processing == True:
 			self.reduced_stamps()
@@ -167,6 +169,7 @@ class images_processing:
 		stamp_size = self.stamp_size
 		idfil_align = self.idfil_align
 		verbose = self.verbose
+		convolve_var_img = self.convolve_var_img
 
 		# check directory
 		dir_images = check_dir(dir_images)
@@ -357,8 +360,11 @@ class images_processing:
 					#++> variance image
 					name_fits = check_name_remove_dir(var_img_name[filters[int(bb)]],dir_images)
 					hdu = fits.open(name_fits)
-					psfmatch_data = convolve_fft(hdu[0].data, kernel_resize, allow_huge=True)
-					psfmatch_data = remove_naninfzeroneg_image_2dinterpolation(psfmatch_data)
+					if convolve_var_img == True:
+						psfmatch_data = convolve_fft(hdu[0].data, kernel_resize, allow_huge=True)
+					else:
+						psfmatch_data = hdu[0].data
+					#psfmatch_data = remove_naninfzeroneg_image_2dinterpolation(psfmatch_data)
 					name_out = "psfmatch_%s" % name_fits
 					psfmatch_var_img_name[filters[bb]] = name_out
 					fits.writeto(name_out,psfmatch_data,hdu[0].header,overwrite=True)
@@ -437,34 +443,57 @@ class images_processing:
 				align_psfmatch_sci_img_name[filters[bb]] = None
 				align_psfmatch_var_img_name[filters[bb]] = None
 
-			# for image with largest pixel size: just crop the image
-			#++> science image
-			hdu = fits.open(psfmatch_sci_img_name[filters[idfil_align]])[0]
-			wcs = WCS(hdu.header)
-			gal_x, gal_y = wcs.wcs_world2pix(gal_ra, gal_dec, 1)
-			position = (gal_x,gal_y)
-			cutout = Cutout2D(hdu.data, position=position, size=stamp_size, wcs=wcs)
-			hdu.data = cutout.data
-			hdu.header.update(cutout.wcs.to_header())
-			name_out = 'stamp_%s' % check_name_remove_dir(psfmatch_sci_img_name[filters[idfil_align]],dir_images)
-			hdu.writeto(name_out, overwrite=True)
-			align_psfmatch_sci_img_name[filters[idfil_align]] = name_out
-			if verbose:
-				print ("produce %s" % name_out)
+			dimy0, dimx0 = fits.open(psfmatch_sci_img_name[filters[idfil_align]])[0].shape
 
-			#++> variance image
-			hdu = fits.open(psfmatch_var_img_name[filters[idfil_align]])[0]
-			wcs = WCS(hdu.header)
-			gal_x, gal_y = wcs.wcs_world2pix(gal_ra, gal_dec, 1)
-			position = (gal_x,gal_y)
-			cutout = Cutout2D(hdu.data, position=position, size=stamp_size, wcs=wcs)
-			hdu.data = cutout.data
-			hdu.header.update(cutout.wcs.to_header())
-			name_out = 'stamp_%s' % check_name_remove_dir(psfmatch_var_img_name[filters[idfil_align]],dir_images)
-			hdu.writeto(name_out, overwrite=True)
-			align_psfmatch_var_img_name[filters[idfil_align]] = name_out
-			if verbose:
-				print ("produce %s" % name_out)
+			if dim_y0 == stamp_size[0] and dim_x0 == stamp_size[1]: 
+				#++> science image
+				hdu = fits.open(psfmatch_sci_img_name[filters[idfil_align]])
+				name_out = 'stamp_%s' % check_name_remove_dir(psfmatch_sci_img_name[filters[idfil_align]], dir_images)
+				fits.writeto(name_out, hdu[0].data, header=hdu[0].header, overwrite=True)
+				align_psfmatch_sci_img_name[filters[idfil_align]] = name_out
+				if verbose:
+					print ("produce %s" % name_out)
+				hdu.close()
+
+				#++> variance image
+				hdu = fits.open(psfmatch_var_img_name[filters[idfil_align]])
+				name_out = 'stamp_%s' % check_name_remove_dir(psfmatch_var_img_name[filters[idfil_align]], dir_images)
+				fits.writeto(name_out, hdu[0].data, header=hdu[0].header, overwrite=True)
+				align_psfmatch_var_img_name[filters[idfil_align]] = name_out
+				if verbose:
+					print ("produce %s" % name_out)
+				hdu.close()
+
+			else: 
+				# for image with largest pixel size: just crop the image
+				#++> science image
+				hdu = fits.open(psfmatch_sci_img_name[filters[idfil_align]])[0]
+				wcs = WCS(hdu.header)
+				gal_x, gal_y = wcs.wcs_world2pix(gal_ra, gal_dec, 1)
+				position = (gal_x,gal_y)
+				cutout = Cutout2D(hdu.data, position=position, size=stamp_size, wcs=wcs)
+				hdu.data = cutout.data
+				hdu.header.update(cutout.wcs.to_header())
+				name_out = 'stamp_%s' % check_name_remove_dir(psfmatch_sci_img_name[filters[idfil_align]],dir_images)
+				hdu.writeto(name_out, overwrite=True)
+				align_psfmatch_sci_img_name[filters[idfil_align]] = name_out
+				if verbose:
+					print ("produce %s" % name_out)
+
+				#++> variance image
+				hdu = fits.open(psfmatch_var_img_name[filters[idfil_align]])[0]
+				wcs = WCS(hdu.header)
+				gal_x, gal_y = wcs.wcs_world2pix(gal_ra, gal_dec, 1)
+				position = (gal_x,gal_y)
+				cutout = Cutout2D(hdu.data, position=position, size=stamp_size, wcs=wcs)
+				hdu.data = cutout.data
+				hdu.header.update(cutout.wcs.to_header())
+				name_out = 'stamp_%s' % check_name_remove_dir(psfmatch_var_img_name[filters[idfil_align]],dir_images)
+				hdu.writeto(name_out, overwrite=True)
+				align_psfmatch_var_img_name[filters[idfil_align]] = name_out
+				if verbose:
+					print ("produce %s" % name_out)
+
 
 			# for other filters:
 			# get header of stamp image that has largest pixel scale
