@@ -1167,7 +1167,9 @@ def get_flux_or_sb(filters,img_unit):
 	return flux_or_sb
 
 
-def create_kernel_gaussian(psf_fwhm_init, psf_fwhm_final, alpha_cosbell=0.35, pixsize_PSF_target=0.25, size=(101, 101)):
+def create_kernel_gaussian(psf_fwhm_init, psf_fwhm_final, alpha_cosbell=0.35, 
+						   pixsize_PSF_target=0.25, size=(101, 101), name_psf_init='psf_init.fits', 
+						   name_psf_final='psf_final.fits', name_kernel='matching_kernel.fits'):
 
     from astropy.modeling.models import Gaussian2D
     from photutils.psf.matching import CosineBellWindow, create_matching_kernel
@@ -1195,10 +1197,16 @@ def create_kernel_gaussian(psf_fwhm_init, psf_fwhm_final, alpha_cosbell=0.35, pi
     gm_init = Gaussian2D(amplitude=1, x_mean=x_cent, y_mean=y_cent, x_stddev=sig_init, y_stddev=sig_init)
     psf_init = gm_init(x, y)
     psf_init /= psf_init.sum()
+	# save to FITS file
+    hdu_init = fits.PrimaryHDU(psf_init)
+    hdu_init.writeto(name_psf_init, overwrite=True)
 
     gm_final = Gaussian2D(amplitude=1, x_mean=x_cent, y_mean=y_cent, x_stddev=sig_final, y_stddev=sig_final)
     psf_final = gm_final(x, y)
     psf_final /= psf_final.sum()
+	# save to FITS file
+    hdu_final = fits.PrimaryHDU(psf_final)
+    hdu_final.writeto(name_psf_final, overwrite=True)
 
     # 4. Generate Matching Kernel
     # Lower alpha_cosbell values provide a smoother cutoff in the Fourier domain
@@ -1208,6 +1216,9 @@ def create_kernel_gaussian(psf_fwhm_init, psf_fwhm_final, alpha_cosbell=0.35, pi
     # 5. Final Normalization
     # The kernel must sum to 1 to ensure the total counts in your image don't change
     kernel /= kernel.sum()
+	# save to FITS file
+    hdu_kernel = fits.PrimaryHDU(kernel)
+    hdu_kernel.writeto(name_kernel, overwrite=True)
 
     return kernel
 
