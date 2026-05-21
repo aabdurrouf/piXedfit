@@ -445,7 +445,8 @@ class images_processing:
 
 			dimy0, dimx0 = fits.open(psfmatch_sci_img_name[filters[idfil_align]])[0].shape
 
-			if dimy0 == stamp_size[0] and dimx0 == stamp_size[1]: 
+
+			if dimy0 <= stamp_size[0] and dimx0 <= stamp_size[1]: 
 				#++> science image
 				hdu = fits.open(psfmatch_sci_img_name[filters[idfil_align]])
 				name_out = 'stamp_%s' % check_name_remove_dir(psfmatch_sci_img_name[filters[idfil_align]], dir_images)

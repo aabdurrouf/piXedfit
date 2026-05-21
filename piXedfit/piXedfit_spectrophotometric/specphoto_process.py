@@ -527,9 +527,12 @@ def combine_nirspec_ifu_and_images(nirspec_ifu, disperser_filter, gal_ra, gal_de
     stamp_size = [int(dimx_ifu*2), int(dimx_ifu*2)]
     if verbose==True and flag_psfmatch==0:
         print ('perform PSF matching and reprojection for the images...')
+    #img_process = images_processing(filters, sci_img, var_img, gal_ra, gal_dec, dir_images=dir_images, img_unit=img_unit, img_scale=img_scale, 
+    #                                img_pixsizes=img_pixsizes, kernels=kernels, gal_z=gal_z, stamp_size=stamp_size, flag_psfmatch=flag_psfmatch, 
+    #                                flag_reproject=flag_reproject, flag_crop=0, idfil_align=0, remove_files=False, verbose=False)
     img_process = images_processing(filters, sci_img, var_img, gal_ra, gal_dec, dir_images=dir_images, img_unit=img_unit, img_scale=img_scale, 
                                     img_pixsizes=img_pixsizes, kernels=kernels, gal_z=gal_z, stamp_size=stamp_size, flag_psfmatch=flag_psfmatch, 
-                                    flag_reproject=flag_reproject, flag_crop=0, idfil_align=0, remove_files=False, verbose=False)
+                                    flag_reproject=flag_reproject, flag_crop=0, idfil_align=0, remove_files=False, verbose=True)
     output_stamps = img_process.get_output_stamps()
 
     os.system('rm %s%s' % (dir_images,ifu_img_sci))
