@@ -710,8 +710,10 @@ class images_processing:
 			data_var = hdu[0].data 
 			hdu.close()
 
-			data_img = data_img.byteswap(inplace=True).newbyteorder()
-			data_var = data_var.byteswap(inplace=True).newbyteorder()
+			#data_img = data_img.byteswap(inplace=True).newbyteorder()
+			#data_var = data_var.byteswap(inplace=True).newbyteorder()
+			data_img = data_img.byteswap(inplace=True).view(data_img.dtype.newbyteorder())
+			data_var = data_var.byteswap(inplace=True).view(data_var.dtype.newbyteorder())
 
 			rows,cols = np.where((np.isnan(data_var)==False) & (np.isinf(data_var)==False))
 			med_var = np.median(data_var[rows,cols])
