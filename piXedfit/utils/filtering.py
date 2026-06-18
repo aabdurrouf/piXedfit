@@ -326,8 +326,8 @@ def filtering(wave,spec,filters):
 		fil_trans = np.interp(gwave, fil_w, fil_t)
 		spec_flux = np.interp(gwave, wave, spec)
 
-		tot_u = np.sum(spec_flux*gwave*fil_trans)
-		tot_l = np.sum(gwave*fil_trans)
+		tot_u = np.nansum(spec_flux*gwave*fil_trans)
+		tot_l = np.nansum(gwave*fil_trans)
 
 		fluxes[bb] = tot_u/tot_l
 

@@ -819,7 +819,7 @@ def open_binmap_fits(binmap_fits):
 	nbins_photo = int(hdu[0].header['nbins'])
 
 	if 'nbinssp' in hdu[0].header:
-		int(hdu[0].header['nbinssp'])
+		nbins_spec = int(hdu[0].header['nbinssp'])
 	else:
 		nbins_spec = 0
 
@@ -846,6 +846,8 @@ def open_binmap_fits(binmap_fits):
 		map_photo_flux = hdu['BIN_PHOTO_FLUX'].data 
 	elif 'FLUX' in hdu:
 		map_photo_flux = hdu['FLUX'].data
+	elif 'PHOTO_FLUX' in hdu:
+		map_photo_flux = hdu['PHOTO_FLUX'].data
 	else:
 		map_photo_flux = None
 
@@ -855,6 +857,8 @@ def open_binmap_fits(binmap_fits):
 		map_photo_flux_err = hdu['BIN_PHOTO_FLUXERR'].data
 	elif 'FLUX_ERR' in hdu:
 		map_photo_flux_err = hdu['FLUX_ERR'].data
+	elif 'PHOTO_FLUXERR' in hdu:
+		map_photo_flux_err = hdu['PHOTO_FLUXERR'].data
 	else:
 		map_photo_flux_err = None
 
@@ -875,7 +879,7 @@ def open_binmap_fits(binmap_fits):
 	if 'BIN_SPEC_FLUXERR' in hdu:
 		map_spec_flux_err = hdu['BIN_SPEC_FLUXERR'].data
 	elif 'SPEC_FLUXERR' in hdu:
-		map_spec_flux = hdu['SPEC_FLUXERR'].data
+		map_spec_flux_err = hdu['SPEC_FLUXERR'].data
 	else:
 		map_spec_flux_err = None 
 
@@ -910,7 +914,6 @@ def plot_binmap(binmap_fits, plot_binmap_spec=True, savefig=True, name_plot_binm
 	import matplotlib.pyplot as plt
 	from mpl_toolkits.axes_grid1 import make_axes_locatable
 
-	#flag_specphoto, nbins_photo, nbins_spec, filters, unit_flux, binmap_photo, spec_region, binmap_spec, map_photo_flux, map_photo_flux_err, spec_wave, map_spec_flux, map_spec_flux_err = open_binmap_fits(binmap_fits)
 	hdu = fits.open(binmap_fits)
 	if 'PHOTO_BIN_MAP' in hdu:
 		binmap_photo = hdu['PHOTO_BIN_MAP'].data
